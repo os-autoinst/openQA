@@ -813,6 +813,41 @@ if (typeof window !== 'undefined' && window.jQuery) {
         };
       }
     }
+
+    document.addEventListener('click', function (event) {
+      const button = event.target.closest('.copy-badge-btn');
+      if (!button) return;
+      event.preventDefault();
+      const text = button.dataset.clipboardText;
+      if (text) {
+        navigator.clipboard
+          .writeText(text)
+          .then(() => {
+            const icon = button.querySelector('i');
+            if (icon) {
+              icon.classList.remove('fa-image');
+              icon.classList.add('fa-check', 'text-success');
+              setTimeout(() => {
+                icon.classList.remove('fa-check', 'text-success');
+                icon.classList.add('fa-image');
+              }, 2000);
+            }
+            const tooltip = bootstrap.Tooltip.getInstance(button);
+            if (tooltip) {
+              const originalTitle = button.getAttribute('data-bs-original-title') || button.getAttribute('title');
+              tooltip.setContent({'.tooltip-inner': 'Copied!'});
+              tooltip.show();
+              setTimeout(() => {
+                tooltip.setContent({'.tooltip-inner': originalTitle});
+                tooltip.hide();
+              }, 2000);
+            }
+          })
+          .catch(err => {
+            console.error('Failed to copy text: ', err);
+          });
+      }
+    });
   })(window.jQuery);
 
   $(document).ready(function () {

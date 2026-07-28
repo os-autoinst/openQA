@@ -14,6 +14,7 @@
     <h2>Test result overview</h2>
     <div id="summary" class="card <%= ($aggregate_status =~ /^(?:failed|not_complete)$/) ? 'border-danger' : 'border-success' %>">
         <div class="card-header">
+            %= badge_markdown_copy_button('overview', '[![openQA build status](' . (url_with('tests_overview_badge')->to_abs->to_string =~ s/\.svg\b//r) . ')](' . url_with->to_abs . ')', 'float-end')
             Overall Summary of
             % if (@$groups) {
                 <strong>

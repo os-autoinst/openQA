@@ -18,29 +18,33 @@
                 % }
             >
                 <div class="col-xl">
+                    <div class="d-flex align-items-center gap-1 modules-badge-container">
+                        %= badge_markdown_copy_button($job->id, '[![' . $job->name . ' test result](' . url_for('test_result_badge', testid => $job->id)->to_abs . ')](' . url_for('test', testid => $job->id)->to_abs . ')')
+                        % if ($job->state eq DONE) {
+                            <div class="badge rounded-pill text-bg-light modules-badge">
+                                %= $job->passed_module_count
+                                <i class='fa-solid module_passed fa-star' title='modules passed'></i>
+                                % if ($job->softfailed_module_count) {
+                                    %= $job->softfailed_module_count
+                                    <i class='fa-solid module_softfailed fa-star-half-stroke' title='modules with warnings'></i>
+                                % }
+                                % if ($job->failed_module_count) {
+                                    %= $job->failed_module_count
+                                    <i class='fa-solid module_failed fa-star' title='modules failed'></i>
+                                % }
+                                % if ($job->skipped_module_count) {
+                                    %= $job->skipped_module_count
+                                    <i class='fa-solid module_none fa-ban' title='modules skipped'></i>
+                                % }
+                                % if ($job->externally_skipped_module_count) {
+                                    %= $job->externally_skipped_module_count
+                                    <i class='fa-solid module_skipped fa-angles-right' title='modules externally skipped'></i>
+                                % }
+                            </div>
+                        % }
+                    </div>
                 <div>
                     % if ($job->state eq DONE) {
-                        <div class="badge rounded-pill text-bg-light modules-badge">
-                            %= $job->passed_module_count
-                            <i class='fa-solid module_passed fa-star' title='modules passed'></i>
-                            % if ($job->softfailed_module_count) {
-                                %= $job->softfailed_module_count
-                                <i class='fa-solid module_softfailed fa-star-half-stroke' title='modules with warnings'></i>
-                            % }
-                            % if ($job->failed_module_count) {
-                                %= $job->failed_module_count
-                                <i class='fa-solid module_failed fa-star' title='modules failed'></i>
-                            % }
-                            % if ($job->skipped_module_count) {
-                                %= $job->skipped_module_count
-                                <i class='fa-solid module_none fa-ban' title='modules skipped'></i>
-                            % }
-                            % if ($job->externally_skipped_module_count) {
-                                %= $job->externally_skipped_module_count
-                                <i class='fa-solid module_skipped fa-angles-right' title='modules externally skipped'></i>
-                            % }
-                        </div>
-
                         Result: <b><%= $job->result %></b>\
                     % }
                     % else {

@@ -175,6 +175,24 @@ sub register ($self, $app, $config) {
             return $c->t(a => (tabindex => 0, class => $class, role => 'button', data => \%d, @args));
           });
 
+
+
+    $app->helper(
+        badge_markdown_copy_button => sub ($c, $id, $markdown, $outer_classes = 'd-inline') {
+            my $button = $c->t(
+                button => (
+                    class => "btn btn-sm btn-outline-secondary copy-badge-btn $outer_classes",
+                    type => 'button',
+                    id => "badgeCopyButton-$id",
+                    'data-clipboard-text' => $markdown,
+                    'data-bs-toggle' => 'tooltip',
+                    title => 'Copy Markdown snippet to embed this status badge'
+                ) => sub {
+                    $c->t(i => (class => 'fa-solid fa-image') => '') . ' Badge';
+                });
+            return Mojo::ByteStream->new($button);
+        });
+
     $app->helper(
         help_popover_todo => sub ($c) {
             $c->help_popover(
