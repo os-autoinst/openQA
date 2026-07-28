@@ -58,7 +58,7 @@ a:focus, a:hover {
 }
 
 // buttons
-.btn i[class*="fa-"] + span {
+.btn i[class*='fa-'] + span {
   padding-left: 8px;
 }
 .btn-group-sm .btn.help_popover, .btn-sm.help_popover {
@@ -236,6 +236,10 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   &:focus, &:hover {
     outline: none;
     text-decoration: none;
+  }
+  &.btn {
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
   }
 }
 .popover code {

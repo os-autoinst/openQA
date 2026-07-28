@@ -111,3 +111,4 @@ function updateListCounter() {
     counter.update($$('input[name=jobs]:checked').length);
   }
 }
+window.updateListCounter = updateListCounter;

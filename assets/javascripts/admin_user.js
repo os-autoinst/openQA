@@ -76,3 +76,4 @@ function setup_admin_user() {
       });
   };
 }
+window.setup_admin_user = setup_admin_user;

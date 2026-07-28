@@ -1,4 +1,4 @@
-<script type="text/javascript">
+<script type="module">
 (() => {
   let mode;
   let path = document.getElementById('script').dataset.path;

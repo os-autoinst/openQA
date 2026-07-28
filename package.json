@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "description": "Testing Framework",
   "scripts": {
+    "dev": "vite",
+    "build": "vite build",
     "lint": "eslint \"assets/javascripts/**/*.js\" && stylelint \"assets/stylesheets/**/*.{scss,css}\" \"docs/*.css\"",
     "fix": "eslint --fix \"assets/javascripts/**/*.js\" && stylelint --fix \"assets/stylesheets/**/*.{scss,css}\" \"docs/*.css\""
   },
@@ -13,17 +15,23 @@
   "homepage": "https://github.com/os-autoinst/openQA#readme",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@rollup/plugin-inject": "^5.0.5",
     "@stylistic/stylelint-plugin": "^5.0.1",
+    "autoprefixer": "^10.5.4",
     "eslint": "^10.2.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
     "globals": "^17.4.0",
+    "postcss": "^8.5.23",
     "prettier": "^3.9.6",
-    "stylelint": "^17.14.1",
+    "sass-embedded": "^1.100.0",
+    "stylelint": "^17.4.0",
     "stylelint-config-standard-scss": "^17.0.0",
-    "stylelint-prettier": "^5.0.3"
+    "stylelint-prettier": "^5.0.3",
+    "vite": "^8.1.5"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-free": "^6.5.1",
     "ace-builds": "^1.43.4",
     "anser": "^2.3.5",
     "bootstrap": "^5.3.8",
@@ -31,7 +39,6 @@
     "d3": "^7.9.0",
     "dagre-d3": "^0.6.4",
     "datatables.net-bs5": "^2.3.4",
-    "@fortawesome/fontawesome-free": "^6.5.1",
     "jquery": "^4.0.0",
     "jquery-ujs": "^1.2.3",
     "timeago.js": "^4.0.2"

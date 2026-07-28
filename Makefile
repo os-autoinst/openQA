@@ -123,7 +123,7 @@ install-nginx: ## Install the NGINX configuration
 
 .PHONY: install-generic
 install-generic: generate-assets generate-completions install-nginx ## Install generic components
-	for f in $(shell perl -Ilib -mOpenQA::Assets -e OpenQA::Assets::list); do \
+	for f in $$(find public/dist -type f); do \
 		install -m 644 -D --target-directory="$(DESTDIR)/usr/share/openqa/$${f%/*}" "$$f";\
 	done
 
@@ -233,6 +233,8 @@ endif
 #       dependencies on its own anyway.
 node_modules: package-lock.json ## Build web-related dependencies (NPM, JS, CSS)
 	@command -v local-npm-registry >/dev/null 2>&1 || npm clean-install --no-audit --no-fund --ignore-scripts --omit=dev
+	@# Vite and its plugins are in devDependencies. Install them temporarily if missing to build assets
+	@npm run build || (npm install --no-audit --no-fund --ignore-scripts && npm run build && npm prune --omit=dev)
 	@touch node_modules
 
 .PHONY: test

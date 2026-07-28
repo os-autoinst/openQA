@@ -40,3 +40,5 @@ function autoRefresh(fullscreen, interval) {
     })
   );
 }
+window.toggleFullscreenMode = toggleFullscreenMode;
+window.autoRefresh = autoRefresh;

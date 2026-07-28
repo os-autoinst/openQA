@@ -1,16 +1,13 @@
 /* jshint esversion: 6 */
 
 const filters = ['todo', 'relevant'];
-let is_operator;
-let restart_url;
-let cancel_url;
 
 function addClassToArray(data, theclass) {
-  for (i = 0; i < data.length; ++i) $('#job_' + data[i]).addClass(theclass);
+  for (let i = 0; i < data.length; ++i) $('#job_' + data[i]).addClass(theclass);
 }
 
 function removeClassFromArray(data, theclass) {
-  for (i = 0; i < data.length; ++i) $('#job_' + data[i]).removeClass(theclass);
+  for (let i = 0; i < data.length; ++i) $('#job_' + data[i]).removeClass(theclass);
 }
 
 function highlightJobs() {
@@ -56,13 +53,13 @@ function renderTestName(data, type, row) {
   }
 
   let html = '';
-  if (is_operator) {
+  if (window.is_operator) {
     html += '<a class="copy-jobid" href="#" data-jobid="' + row.id + '">';
     html += '<i class="action fa-solid fa-fw fa-copy" title="Copy job id"></i></a>';
     if (row.result !== 'none') {
       // allow to restart finished jobs
       if (!row.clone) {
-        const url = restart_url.replace('REPLACEIT', row.id);
+        const url = window.restart_url.replace('REPLACEIT', row.id);
         html += ' <a class="restart" href="' + htmlEscape(url) + '">';
         html += '<i class="action fa-solid fa-fw fa-rotate-left" title="Restart job"></i></a>';
       } else {
@@ -70,7 +67,7 @@ function renderTestName(data, type, row) {
       }
     } else {
       // allow to cancel scheduled and running jobs
-      const url = cancel_url.replace('REPLACEIT', row.id);
+      const url = window.cancel_url.replace('REPLACEIT', row.id);
       html += ' <a class="cancel" href="' + url + '">';
       html += '<i class="action fa-solid fa-fw fa-circle-xmark" title="Cancel job"></i></a>';
     }
@@ -167,7 +164,7 @@ function renderPriority(data, type, row) {
     text =
       ' <span class="prio-value" data-bs-toggle="tooltip" title="' + row.prio_explanation + '">' + data + '</span> ';
   }
-  if (!is_operator) {
+  if (!window.is_operator) {
     return text;
   }
   const jobId = row.id;
@@ -619,3 +616,24 @@ $(document).on('click', '.copy-jobid', function (event) {
   event.preventDefault();
   navigator.clipboard.writeText(this.dataset.jobid);
 });
+window.addClassToArray = addClassToArray;
+window.removeClassFromArray = removeClassFromArray;
+window.highlightJobs = highlightJobs;
+window.unhighlightJobs = unhighlightJobs;
+window.highlightJobsHtml = highlightJobsHtml;
+window.renderMediumName = renderMediumName;
+window.renderTestName = renderTestName;
+window.renderTimeAgo = renderTimeAgo;
+window.renderTimeAgoForFinished = renderTimeAgoForFinished;
+window.renderProgress = renderProgress;
+window.renderPriority = renderPriority;
+window.increaseJobPrio = increaseJobPrio;
+window.decreaseJobPrio = decreaseJobPrio;
+window.changeJobPrio = changeJobPrio;
+window.renderTestSummary = renderTestSummary;
+window.renderTestResult = renderTestResult;
+window.renderTestLists = renderTestLists;
+window.setupTestButtons = setupTestButtons;
+window.setupResultButtons = setupResultButtons;
+window.setupLazyLoadingFailedSteps = setupLazyLoadingFailedSteps;
+window.showJobDependency = showJobDependency;

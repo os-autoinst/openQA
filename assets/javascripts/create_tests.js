@@ -80,3 +80,9 @@ function cloneTests(link) {
     }
   });
 }
+window.getNonEmptyFormParams = getNonEmptyFormParams;
+window.setupAceEditor = setupAceEditor;
+window.setupCreateTestsForm = setupCreateTestsForm;
+window.resetCreateTestsForm = resetCreateTestsForm;
+window.createTests = createTests;
+window.cloneTests = cloneTests;

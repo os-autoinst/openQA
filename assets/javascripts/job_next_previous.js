@@ -184,3 +184,9 @@ function triggerJobNextPrevious() {
     setupJobNextPrevious();
   }
 }
+window.setupJobNextPrevious = setupJobNextPrevious;
+window.renderMarks = renderMarks;
+window.renderJobResults = renderJobResults;
+window.renderBuild = renderBuild;
+window.renderFinishTime = renderFinishTime;
+window.triggerJobNextPrevious = triggerJobNextPrevious;

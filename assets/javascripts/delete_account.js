@@ -19,3 +19,4 @@ function setup_delete_account() {
     });
   });
 }
+window.setup_delete_account = setup_delete_account;
