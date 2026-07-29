@@ -55,6 +55,7 @@ BEGIN {
         pio => 'https://pagure.io/',
         ggo => 'https://gitlab.gnome.org/',
         gfs => 'https://gitlab.com/fedora/sigs/',
+        ffo => 'https://forge.fedoraproject.org/',
     );
     %BUGURLS = (
         'https://bugzilla.novell.com/show_bug.cgi?id=' => 'bsc',
@@ -73,6 +74,7 @@ BEGIN {
         $BUGREFS{pio} => 'pio',
         $BUGREFS{ggo} => 'ggo',
         $BUGREFS{gfs} => 'gfs',
+        $BUGREFS{ffo} => 'ffo',
     );
 
     $MARKER_REFS = join '|', keys %BUGREFS;
@@ -473,7 +475,7 @@ sub href_to_bugref ($text) {
     # gitlab URLs have an odd /-/ after the repo name, e.g.
     # https://gitlab.gnome.org/GNOME/gnome-shell/-/issues/5244
     $regex
-      = qr{(?<!["\(\[])(?<url_root>$regex)((?<repo>.*?)/(-/)?(issues?|pull|work_items)/)?(?<id>([A-Z]+-)?\d+)(?![\w])};
+      = qr{(?<!["\(\[])(?<url_root>$regex)((?<repo>.*?)/(-/)?(issues?|pulls?|work_items)/)?(?<id>([A-Z]+-)?\d+)(?![\w])};
     $text =~ s{$regex}{@{[$BUGURLS{$+{url_root}} . ($+{repo} ? '#' . $+{repo} : '')]}#$+{id}}gi;
     return $text;
 }
