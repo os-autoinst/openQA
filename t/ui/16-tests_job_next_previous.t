@@ -312,5 +312,54 @@ subtest 'server-side limit has precedence over user-specified limit' => sub {
     like $info->get_text, qr/previous.*6.*exceeded/is, 'info about previous jobs being limited shown';
 };
 
+subtest 'history isolation toggle for "Next & Previous"' => sub {
+    my $jobs_rs = $schema->resultset('Jobs');
+    my $base_id = 99500;
+    my %base = (
+        group_id => 1001,
+        priority => 35,
+        result => 'passed',
+        state => 'done',
+        TEST => 'isoscen',
+        FLAVOR => 'DVD',
+        DISTRI => 'opensuse',
+        BUILD => '0091',
+        VERSION => '13.1',
+        MACHINE => '32bit',
+        ARCH => 'i586',
+    );
+    # 3 jobs of PR 1 and 2 jobs of PR 2, all sharing the scenario
+    for my $spec ([1, 1], [2, 1], [3, 1], [4, 2], [5, 2]) {
+        my ($n, $pr) = @$spec;
+        $jobs_rs->create(
+            {
+                %base,
+                id => $base_id + $n,
+                settings => [{key => 'PR_ID', value => $pr}, {key => '_HISTORY_ISOLATION_KEYS', value => 'PR_ID'}],
+            });
+    }
+    my $current = $base_id + 3;    # a PR 1 job
+
+    $t->get_ok("/tests/$current/ajax", 'generalized next/previous')->status_is(200);
+    my %gen = map { $_->{id} => 1 } @{$t->tx->res->json->{data}};
+    ok $gen{$base_id + 4}, 'generalized view includes a job from the other PR';
+
+    $t->get_ok("/tests/$current/ajax?strict=1", 'strict next/previous')->status_is(200);
+    my %strict = map { $_->{id} => 1 } @{$t->tx->res->json->{data}};
+    ok !$strict{$base_id + 4}, 'strict view excludes jobs from the other PR';
+    ok $strict{$base_id + 1}, 'strict view keeps same-PR jobs';
+    ok $strict{$current}, 'strict view keeps the current job';
+
+    subtest 'toggle renders and syncs the URL' => sub {
+        $driver->get("/tests/$current#next_previous");
+        my $toggle = wait_for_element selector => '#next_previous_strict', desc => 'strict toggle present';
+        like $driver->find_element('label[for=next_previous_strict]')->get_text, qr/isolate history by PR_ID/,
+          'toggle labelled with the isolation key';
+        $toggle->click;
+        wait_for_ajax msg => 'table reloaded after enabling strict';
+        like $driver->get_current_url, qr/strict=1/, 'URL reflects the strict view for sharing';
+    };
+};
+
 kill_driver();
 done_testing();

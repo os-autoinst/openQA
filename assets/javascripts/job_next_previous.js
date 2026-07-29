@@ -18,6 +18,10 @@ function setupJobNextPrevious() {
   };
 
   const tableElement = document.getElementById('job_next_previous_table');
+  const strictToggle = document.getElementById('next_previous_strict');
+  if (strictToggle && params.strict && params.strict[0] === '1') {
+    strictToggle.checked = true; // restore the shared/bookmarked strict view
+  }
   const table = $(tableElement).DataTable({
     ajax: {
       url: tableElement.dataset.ajaxUrl,
@@ -27,6 +31,9 @@ function setupJobNextPrevious() {
         }
         if (typeof params.next_limit != 'undefined') {
           d.next_limit = params.next_limit.toString();
+        }
+        if (strictToggle && strictToggle.checked) {
+          d.strict = '1';
         }
       }
     },
@@ -71,6 +78,18 @@ function setupJobNextPrevious() {
     setupLazyLoadingFailedSteps();
     document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(e => new bootstrap.Tooltip(e));
   });
+  if (strictToggle) {
+    strictToggle.addEventListener('change', function () {
+      const p = parseQueryParams();
+      if (strictToggle.checked) {
+        p.strict = ['1'];
+      } else {
+        delete p.strict;
+      }
+      updateQueryParams(p); // keep the view bookmarkable/shareable
+      table.ajax.reload();
+    });
+  }
 }
 
 function renderMarks(data, type, row) {
