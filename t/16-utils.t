@@ -144,6 +144,11 @@ is href_to_bugref('https://gitlab.com/fedora/sigs/flatpak/fedora-flatpaks/-/issu
   'Fedora SIGs gitlab url to bugref';
 is href_to_bugref('https://invent.kde.org/plasma/systemsettings/-/work_items/49'), 'kdi#plasma/systemsettings#49',
   'KDE Invent gitlab url to bugref (with newer "work_items" name)';
+is bugurl('ffo#foo/bar#1234'), 'https://forge.fedoraproject.org/foo/bar/issues/1234', 'forge.fp.o bugurl';
+is href_to_bugref('https://forge.fedoraproject.org/foo/bar/issues/1234'), 'ffo#foo/bar#1234',
+  'forge.fp.o url to bugref';
+is href_to_bugref('https://forge.fedoraproject.org/foo/bar/pulls/1235'), 'ffo#foo/bar#1235',
+  'forge.fp.o PR url to bugref';
 is find_bug_number('yast_roleconf-ntp-servers-empty-bsc1114818-20181115.png'), 'bsc1114818',
   'find the bug number from the needle name';
 
