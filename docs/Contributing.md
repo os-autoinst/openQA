@@ -1,4 +1,5 @@
 <a id="contributing"></a>
+
 # Contributing
 
 ## Introduction
@@ -24,8 +25,6 @@ are available at the
 As mentioned, the central point of development is the
 [os-autoinst organization on GitHub](https://github.com/os-autoinst) where several
 repositories can be found.
-
-
 
 ### Repository URLs
 
@@ -61,8 +60,6 @@ are the right way to contribute improvements and fixes.
   you create a pull request, but you **should** run the tidy scripts locally, i.e.
   before every commit call:
 
-
-
 ```sh
 make tidy
 ```
@@ -94,8 +91,6 @@ requests for consideration or create an issue with a code change proposal.
 <a id="code_style_suggestions"></a>
 
 - In Perl files:
-
-
 
 - Sort the use statements in this order from top to bottom:
   - `strict`, `warnings` or other modules that provide static checks
@@ -136,8 +131,6 @@ openSUSE's project management tool. This Redmine instance is used to coordinate
 the main development effort organizing the existing issues (bugs and desired
 features) into 'target versions'.
 
-
-
 [Future improvements](https://progress.opensuse.org/versions/490) groups
 features that are in the developers' and users' wish list but that have little
 chances to be addressed in the short term, normally because they are out of
@@ -164,8 +157,6 @@ develop openQA. Of course, in addition to bare Perl, several libraries and
 additional tools are required. The easiest way to install all needed
 dependencies is using the available os-autoinst and openQA packages, as
 described in the Installation Guide.
-
-
 
 In the case of [os-autoinst](https://github.com/os-autoinst/os-autoinst), some
 [CPAN](http://www.cpan.org/) modules are required. Additionally, several external
@@ -445,7 +436,7 @@ Setting up a PostgreSQL database for openQA takes the following steps:
     the same as the UNIX user you start your local openQA instance with. For a
     development instance that is normally your regular user.
 
-5.  Create database: `createdb -O your_username openqa-local` where  `openqa-local` is the name you want to use for the database
+5.  Create database: `createdb -O your_username openqa-local` where `openqa-local` is the name you want to use for the database
 
 6.  Configure openQA to use PostgreSQL as described in the section
     [Database](Installing.md#database) of the installation guide.
@@ -542,6 +533,7 @@ Also find more details in
   [openQA-helper repository](https://github.com/Martchus/openQA-helper).
 
 <a id="quick-container-development-setup"></a>
+
 ### Quick container development setup
 
 #### Requirements
@@ -836,7 +828,7 @@ any statements) you can just drop the migration again.
 <!-- -->
 
 3.  Afterwards you need to generate the deployment files for existing installations,
-    this is done by running `./script/upgradedb --prepare_upgrade`. After doing so, the directories `dbicdh/$ENGINE/deploy/<new version>` and  `dbicdh/$ENGINE/upgrade/<prev version>-<new version>` for PostgreSQL
+    this is done by running `./script/upgradedb --prepare_upgrade`. After doing so, the directories `dbicdh/$ENGINE/deploy/<new version>` and `dbicdh/$ENGINE/upgrade/<prev version>-<new version>` for PostgreSQL
     should have been created with some SQL files inside containing the statements to
     initialize the schema and to upgrade from one version
     to the next in the corresponding database engine.
@@ -942,8 +934,6 @@ specific to that environment.
 
 Be sure to install all required dependencies. The package `openQA-devel` will
 provide them.
-
-
 
 For more information look into
 [Development Dependencies](Contributing.md#development-dependencies).
@@ -1076,6 +1066,7 @@ be set to a higher value. See
 <https://metacpan.org/pod/Selenium>::Chrome#startup_timeout for details.
 
 <a id="circleci-local-container"></a>
+
 ### Run tests using the circleci tool
 
 After installing the `circleci` tool the following commands will be available.
@@ -1170,11 +1161,11 @@ consistent look, and make the UI menu available everywhere.
 
 For UI plugins there are two named authentication routes defined:
 
-1.  `ensure_operator`: under `/admin/`, only allows logged in users with `operator` privileges 2.  `ensure_admin`: under `/admin/`, only allows logged in users with `admin` privileges
+1.  `ensure_operator`: under `/admin/`, only allows logged in users with `operator` privileges 2. `ensure_admin`: under `/admin/`, only allows logged in users with `admin` privileges
 
 And for HTTP API plugins there are four named authentication routes defined:
 
-1.  `api_public`: under `/api/v1/`, allows access to everyone 2.  `api_ensure_user`: under `/api/v1/`, only allows authenticated users 3.  `api_ensure_operator`: under `/api/v1/`, only allows authenticated users with `operator` privileges 4.  `api_ensure_admin`: under `/api/v1/`, only allows authenticated nusers with `admin` privileges
+1.  `api_public`: under `/api/v1/`, allows access to everyone 2. `api_ensure_user`: under `/api/v1/`, only allows authenticated users 3. `api_ensure_operator`: under `/api/v1/`, only allows authenticated users with `operator` privileges 4. `api_ensure_admin`: under `/api/v1/`, only allows authenticated nusers with `admin` privileges
 
 To generate a minimal installable plugin with a CPAN distribution directory
 structure you can use the Mojolicious tools. It can be packaged just like any
