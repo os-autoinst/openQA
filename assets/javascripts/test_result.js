@@ -184,11 +184,11 @@ function previewSuccess(stepPreviewContainer, data, force) {
     });
   });
   // hide needle info popover when hiding drop down
-  var needleDiffDropdown = document.getElementById('needlediff_dropdown');
+  const needleDiffDropdown = document.getElementById('needlediff_dropdown');
   if (needleDiffDropdown) {
     needleDiffDropdown.addEventListener('hide.bs.dropdown', function (event) {
       document.querySelectorAll('#needlediff_selector [data-bs-toggle="popover"]').forEach(el => {
-        var popover = bootstrap.Popover.getInstance(el);
+        const popover = bootstrap.Popover.getInstance(el);
         if (popover) popover.hide();
       });
     });
@@ -349,14 +349,14 @@ function selectPreview(which) {
     return;
   }
   // select first/last detail in next/prev module
-  const row = currentPreview.closest('tr');
+  let row = currentPreview.closest('tr');
   for (;;) {
     if (!row) break;
     row = which === 'next' ? row.nextElementSibling : row.previousElementSibling;
     if (!row) {
       return;
     }
-    var links = row.querySelectorAll('.links_a');
+    const links = row.querySelectorAll('.links_a');
     if (links.length) {
       setCurrentPreview(which === 'next' ? links[0] : links[links.length - 1]);
       return;
@@ -379,11 +379,11 @@ function prevNeedle() {
   let newSelection = currentSelection.previousElementSibling;
   if (!newSelection) {
     // select last in previous tag
-    var currentLi = currentSelection.closest('li');
+    const currentLi = currentSelection.closest('li');
     if (currentLi) {
-      var prevLi = currentLi.previousElementSibling;
+      let prevLi = currentLi.previousElementSibling;
       while (prevLi) {
-        var trs = prevLi.querySelectorAll('tbody tr');
+        const trs = prevLi.querySelectorAll('tbody tr');
         if (trs.length) {
           newSelection = trs[trs.length - 1];
           break;
@@ -408,11 +408,11 @@ function nextNeedle() {
     newSelection = currentSelection.nextElementSibling;
     if (!newSelection) {
       // select first of next tag
-      var currentLi = currentSelection.closest('li');
+      const currentLi = currentSelection.closest('li');
       if (currentLi) {
-        var nextLi = currentLi.nextElementSibling;
+        let nextLi = currentLi.nextElementSibling;
         while (nextLi) {
-          var trs = nextLi.querySelectorAll('tbody tr');
+          const trs = nextLi.querySelectorAll('tbody tr');
           if (trs.length) {
             newSelection = trs[0];
             break;
@@ -597,7 +597,7 @@ function activateTabAccordingToHashChange() {
   // show the tab only if supposed to be shown for the current job state; otherwise fall back to the default tab
   const tabConfig = tabConfiguration[tabName];
   if (tabConfig && (!tabConfig.conditionForShowingNavItem || tabConfig.conditionForShowingNavItem())) {
-    var tab = bootstrap.Tab.getOrCreateInstance(link);
+    const tab = bootstrap.Tab.getOrCreateInstance(link);
     tab.show();
   } else {
     window.location.hash = '#';
@@ -952,7 +952,7 @@ function setupTestDetailsFilter(tabConfig) {
   if (tabConfig._hasFilterHandlers) return;
 
   // load the embedded logfiles (autoinst-log.txt); assume that in this case no test modules are available and skip further processing
-  if (this.panelElement.getElementsByClassName('embedded-logfile').length > 0) {
+  if (tabConfig.panelElement.getElementsByClassName('embedded-logfile').length > 0) {
     loadEmbeddedLogFiles();
     return;
   }
@@ -972,21 +972,6 @@ function setupTestDetailsFilter(tabConfig) {
     setCurrentPreviewFromStepLinkIfPossible(
       document.querySelector("[href='" + hash + "'], [data-href='" + hash + "']")
     );
-  }
-
-  // setup event handlers for the window
-  if (!this.hasWindowEventHandlers) {
-    // setup keyboard navigation through test details
-    window.addEventListener('keydown', handleKeyDownOnTestDetails);
-
-    // ensure the size of the preview container is adjusted when the window size changes
-    window.addEventListener('resize', function () {
-      const currentPreview = document.querySelector('.current_preview');
-      if (currentPreview) {
-        setCurrentPreview(currentPreview, true);
-      }
-    });
-    this.hasWindowEventHandlers = true;
   }
 
   // setup result filter, define function to apply filter changes
@@ -1052,14 +1037,15 @@ function setupTestDetailsFilter(tabConfig) {
 }
 
 function setupTestDetailsWindowEventHandlers(tabConfig) {
-  if (tabConfig._hasWindowEventHandlers) return;
-  $(window).keydown(handleKeyDownOnTestDetails);
-  $(window).resize(() => {
-    if ($('.current_preview').length) {
-      setCurrentPreview($('.current_preview'), true);
+  if (window._hasTestDetailsWindowEventHandlers) return;
+  window.addEventListener('keydown', handleKeyDownOnTestDetails);
+  window.addEventListener('resize', () => {
+    const currentPreview = document.querySelector('.current_preview');
+    if (currentPreview) {
+      setCurrentPreview(currentPreview, true);
     }
   });
-  tabConfig._hasWindowEventHandlers = true;
+  window._hasTestDetailsWindowEventHandlers = true;
 }
 
 function renderTestModules(response) {
