@@ -221,7 +221,7 @@ sub overwrite_needle {
     my ($needlename) = @_;
 
     # remove animation from modal to speed up test
-    $driver->execute_script('$(\'#modal-overwrite\').removeClass(\'fade\');');
+    $driver->execute_script('document.getElementById("modal-overwrite")?.classList.remove("fade");');
 
     $driver->find_element_by_id('needleeditor_name')->clear();
     is element_prop('needleeditor_name'), '', 'needle name input clean up';
@@ -379,7 +379,7 @@ subtest 'Create new needle' => sub {
     $driver->execute_script("document.getElementById('image_select').selectedIndex = 0; loadBackground();");
 
     # select 'Copy areas from: None'
-    $driver->execute_script('$("#area_select option").eq(0).prop("selected", true)');
+    $driver->execute_script('document.getElementById("area_select").selectedIndex = 0;');
     $driver->find_element_by_id('save')->click();
     wait_for_ajax(with_minion => $minion);
     is
@@ -387,10 +387,10 @@ subtest 'Create new needle' => sub {
       "Unable to save needle:\nAt least one match area must be defined.",
       'areas verified via JavaScript when "Copy areas from: None" selected';
     # dismiss the alert (can't use click because of fade effect)
-    $driver->execute_script('$(".alert-danger").remove()');
+    $driver->execute_script('document.querySelectorAll(".alert-danger").forEach(el => el.remove());');
 
     # select 'Copy areas from: 100%: inst-timezone-text' again
-    $driver->execute_script('$("#area_select option").eq(1).prop("selected", true)');
+    $driver->execute_script('document.getElementById("area_select").selectedIndex = 1;');
 
     # specify commit message
     my $commit_message = "Example\n\nMulti\nline";
@@ -425,7 +425,7 @@ subtest 'Create new needle' => sub {
 
     # load needle editor for 'logpackages-before-package-selection', removing animation from modal again
     $driver->get('/tests/99938/modules/logpackages/steps/1/edit');
-    $driver->execute_script('$(\'#modal-overwrite\').removeClass(\'fade\');');
+    $driver->execute_script('document.getElementById("modal-overwrite")?.classList.remove("fade");');
 };
 
 subtest 'Saving needle when "taking matches" selected but no matches present' => sub {
@@ -446,7 +446,7 @@ subtest 'Saving needle when "taking matches" not selected' => sub {
 
 subtest 'Saving needle with only OCR areas' => sub {
     $driver->get('/tests/99938/modules/logpackages/steps/1/edit');
-    $driver->execute_script('$(\'#modal-overwrite\').removeClass(\'fade\');');
+    $driver->execute_script('document.getElementById("modal-overwrite")?.classList.remove("fade");');
     $driver->find_element_by_id('tag_ENV-DESKTOP-kde')->click();
     create_needle(200, 250);
     $driver->double_click;
@@ -561,8 +561,8 @@ subtest 'Showing new needles limited to the 5 most recent ones' => sub {
         $needle_name_input->clear();
         $needle_name_input->send_keys($new_needle_name);
         # ensure there are areas selected (by taking over areas from previously created needle)
-        $driver->execute_script('$("#area_select option").eq(1).prop("selected", true);'
-              . 'if ($("#take_matches").prop("checked")) { $("#take_matches").click(); }');
+        $driver->execute_script('document.getElementById("area_select").selectedIndex = 1;'
+              . 'const tm = document.getElementById("take_matches"); if (tm && tm.checked) { tm.click(); }');
         $driver->find_element_by_id('save')->click();
         wait_for_ajax(with_minion => $minion);
         # add expected warnings and needle names for needle

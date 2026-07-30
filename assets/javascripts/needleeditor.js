@@ -225,9 +225,6 @@ NeedleEditor.prototype.LoadNeedle = function (url) {
       ctx.font = '20pt Verdana';
       ctx.fillText('Failed to load Needle, Code ' + (error.status || error), 10, 50);
     });
-      ctx.font = '20pt Verdana';
-      ctx.fillText('Failed to load Needle, Code ' + (error.status || error), 10, 50);
-    });
 };
 
 NeedleEditor.prototype.LoadAreas = function (areas) {
@@ -383,13 +380,13 @@ function loadBackground() {
   const needle = window.needles[imageSelect.value];
   nEditor.LoadBackground(needle.imageurl);
   const editorImage = document.getElementById('needleeditor_image');
-  if (editorImage) editorImage.value = needle.imagename;
+  if (editorImage) editorImage.value = needle.imagename || '';
   const editorDistri = document.getElementById('needleeditor_imagedistri');
-  if (editorDistri) editorDistri.value = needle.imagedistri;
+  if (editorDistri) editorDistri.value = needle.imagedistri || '';
   const editorVersion = document.getElementById('needleeditor_imageversion');
-  if (editorVersion) editorVersion.value = needle.imageversion;
+  if (editorVersion) editorVersion.value = needle.imageversion || '';
   const editorDir = document.getElementById('needleeditor_imagedir');
-  if (editorDir) editorDir.value = needle.imagedir;
+  if (editorDir) editorDir.value = needle.imagedir || '';
 }
 
 function loadTagsAndName() {
@@ -430,9 +427,9 @@ function loadTagsAndName() {
   }
 
   const editorName = document.getElementById('needleeditor_name');
-  if (editorName) editorName.value = needle.suggested_name;
+  if (editorName) editorName.value = needle.suggested_name || '';
   const areaSelect = document.getElementById('area_select');
-  if (areaSelect) areaSelect.value = needle.name;
+  if (areaSelect) areaSelect.value = needle.name || '';
   loadAreas();
   nEditor.LoadTags(tags);
   nEditor.LoadProperty(needle.properties);
@@ -519,7 +516,8 @@ function saveNeedle(overwrite) {
   const propWorkaround = document.getElementById('property_workaround');
   const inputWorkaroundDesc = document.getElementById('input_workaround_desc');
   if (!overwrite && propWorkaround && propWorkaround.checked && inputWorkaroundDesc && !inputWorkaroundDesc.value) {
-    const confirmMessage = 'You set the workaround property for this needle without a description. Are you sure you want to save without a description?';
+    const confirmMessage =
+      'You set the workaround property for this needle without a description. Are you sure you want to save without a description?';
     if (!confirm(confirmMessage)) {
       return false;
     }
@@ -534,18 +532,7 @@ function saveNeedle(overwrite) {
   document.getElementById('needleeditor_overwrite').value = overwrite ? '1' : '0';
 
   fetchWithCSRF(form.action, {method: 'POST', body: new FormData(form)})
-    .then(response => {
-      return response
-        .json()
-        .then(json => {
-          // Attach the parsed JSON to the response object for further use
-          return {response, json};
-        })
-        .catch(() => {
-          // If parsing fails, handle it as a non-JSON response
-          throw `Server returned ${response.status}: ${response.statusText}`;
-        });
-    })
+    .then(handleJSONResponseOrThrow)
     .then(({response, json}) => {
       if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}<br>${json.error || ''}`;
       if (json.error) throw json.error;
@@ -598,7 +585,8 @@ function saveNeedle(overwrite) {
 
 let nEditor;
 
-function submitMargin() {
+function submitMargin(event) {
+  if (event) event.preventDefault();
   setMargin();
   const modalEl = document.getElementById('change-margin-form');
   const modal = bootstrap.Modal.getInstance(modalEl);
@@ -606,7 +594,8 @@ function submitMargin() {
   return false;
 }
 
-function submitMatch() {
+function submitMatch(event) {
+  if (event) event.preventDefault();
   setMatch();
   const modalEl = document.getElementById('change-match-form');
   const modal = bootstrap.Modal.getInstance(modalEl);
