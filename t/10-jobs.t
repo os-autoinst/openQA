@@ -1256,6 +1256,36 @@ subtest 'history isolation keys separate the scenario history' => sub {
           'undef isolation with no declared keys behaves generalized';
     };
 
+    subtest 'reserved SUBMISSION_ID default key' => sub {
+        my %d = (%settings, TEST => 'submission', DISTRI => 'sub-distri');
+        my @cases = (
+            {
+                settings => {%d, SUBMISSION_ID => 5},
+                expected => ['SUBMISSION_ID'],
+                desc => 'SUBMISSION_ID present but no meta-setting auto-isolates on SUBMISSION_ID',
+            },
+            {
+                settings => {%d},
+                expected => [],
+                desc => 'no keys with missing SUBMISSION_ID and no meta-setting (no-op default)',
+            },
+            {
+                settings => {%d, SUBMISSION_ID => 5, _HISTORY_ISOLATION_KEYS => ''},
+                expected => [],
+                desc => 'empty meta-setting disables the SUBMISSION_ID default',
+            },
+            {
+                settings => {%d, SUBMISSION_ID => 5, _HISTORY_ISOLATION_KEYS => 'PR_ID,SUBMISSION_ID'},
+                expected => [qw(PR_ID SUBMISSION_ID)],
+                desc => 'explicit meta-setting overrides or extends the SUBMISSION_ID default',
+            },
+        );
+
+        for my $case (@cases) {
+            is_deeply _job_create($case->{settings})->history_isolation_keys, $case->{expected}, $case->{desc};
+        }
+    };
+
     subtest 'next_previous_jobs_query honors isolation keys' => sub {
         # the raw view returns rows under multiple sources (l/n/p/c); assert on
         # the unique id set which is the meaningful isolation contract
