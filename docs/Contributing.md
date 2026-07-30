@@ -665,10 +665,9 @@ zypper addrepo -G -p 95 https://download.opensuse.org/repositories/devel:/openQA
     && zypper addrepo -G -p 95 https://download.opensuse.org/repositories/devel:/openQA:/Leap:/16.0/16.0/ devel-openqa-leap
 
 # Tumbleweed
-#zypper addrepo -G -p 95 https://download.opensuse.org/repositories/devel:/openQA/openSUSE_Tumbleweed devel-openqa \
-#        && zypper addrepo -G -p 95 https://download.opensuse.org/repositories/SUSE:/CA/openSUSE_Tumbleweed/SUSE:CA.repo
+#zypper addrepo -G -p 95 https://download.opensuse.org/repositories/devel:/openQA/openSUSE_Tumbleweed devel-openqa
 
-zypper -n ref && zypper -n install ca-certificates-suse \
+zypper -n ref && zypper -n install \
         os-autoinst-devel openQA-devel \
         os-autoinst-scripts-deps \
         os-autoinst-scripts-deps-devel \
