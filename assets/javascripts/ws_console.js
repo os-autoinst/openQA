@@ -104,7 +104,7 @@ function setupWebSocketConsole() {
   if (!form) {
     return;
   }
-  var url = form.dataset.url;
+  let url = form.dataset.url;
   if (!url || !url.length) {
     return;
   }
@@ -112,7 +112,7 @@ function setupWebSocketConsole() {
 
   // establish and handle web socket connection
   window.wsUrl = url;
-  window.wsUsingProxy = form.dataset.usingProxy;
+  window.wsUsingProxy = form.dataset.usingProxy === '1' || form.dataset.usingProxy === 'true';
   window.wsProxyConnectionConcluded = false;
   window.stashedCommands = [];
   document.logElement = document.getElementById('log');

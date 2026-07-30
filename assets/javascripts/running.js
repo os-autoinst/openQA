@@ -194,18 +194,7 @@ function updateStatus() {
   }
 
   fetch(testStatus.status_url)
-    .then(response => {
-      return response
-        .json()
-        .then(json => {
-          // Attach the parsed JSON to the response object for further use
-          return {response, json};
-        })
-        .catch(() => {
-          // If parsing fails, handle it as a non-JSON response
-          throw `Server returned ${response.status}: ${response.statusText}`;
-        });
-    })
+    .then(handleJSONResponseOrThrow)
     .then(({response, json}) => {
       if (!response.ok || json.error)
         throw `Server returned ${response.status}: ${response.statusText}\n${json.error || ''}`;
@@ -312,19 +301,20 @@ function initLivelogAndTerminal() {
     value.panel.querySelector('.card-header').addEventListener('click', function () {
       // toggle visibility
       const body = value.panel.querySelector('.card-body');
-      if (body.style.display === 'none' || body.style.display === '') {
-        body.style.display = 'block';
-      } else {
-        body.style.display = 'none';
-      }
+      body.classList.add('collapse');
+      const bsCollapse = bootstrap.Collapse.getOrCreateInstance(body, {toggle: false});
+      bsCollapse.toggle();
       value.panel.bodyVisible = !value.panel.bodyVisible;
 
       // toggle receiving updates
       if (value.panel.bodyVisible) {
         addDataListener(value.log, value.callback);
 
-        // scroll to bottom of panel when expanding
-        value.panel.scrollIntoView({behavior: 'smooth', block: 'end'});
+        body.addEventListener('shown.bs.collapse', function onShown() {
+          body.removeEventListener('shown.bs.collapse', onShown);
+          // scroll to bottom of panel when expanding
+          value.panel.scrollIntoView({behavior: 'smooth', block: 'end'});
+        });
       } else {
         removeDataListener(value.log);
       }
@@ -424,7 +414,11 @@ function handleJobStateTransition(oldJobState, newJobState, newJobResult) {
   if (newJobState === 'running') {
     // avoid overriding explicitly specified tab/step
     if (!location.hash || location.hash === '#') {
-      $("[href='#live']").tab('show');
+      const liveTabLink = document.querySelector("[href='#live']");
+      if (liveTabLink) {
+        const tab = bootstrap.Tab.getOrCreateInstance(liveTabLink);
+        tab.show();
+      }
     } else {
       // ensure the live tab is loaded even when not showing it initially because it is needed to
       // process the test status updates
@@ -435,7 +429,11 @@ function handleJobStateTransition(oldJobState, newJobState, newJobResult) {
   }
   // go back from the live tab to the details tab if job is done
   if (newJobState === 'done' && tabConfiguration.live.isActive) {
-    $("[href='#details']").tab('show');
+    const detailsTabLink = document.querySelector("[href='#details']");
+    if (detailsTabLink) {
+      const tab = bootstrap.Tab.getOrCreateInstance(detailsTabLink);
+      tab.show();
+    }
   }
   // disable the developer mode and livestream (but *not* livelog) if the job is not running anymore
   if (oldJobState === 'running') {
@@ -604,11 +602,9 @@ function setupDeveloperPanel() {
         developerMode.panelExplicitelyCollapsed = true;
       }
       if (panelBody) {
-        if (panelBody.style.display === 'none' || panelBody.style.display === '') {
-          panelBody.style.display = 'block';
-        } else {
-          panelBody.style.display = 'none';
-        }
+        panelBody.classList.add('collapse');
+        const bsCollapse = bootstrap.Collapse.getOrCreateInstance(panelBody, {toggle: false});
+        bsCollapse.toggle();
       }
     });
   } else {
@@ -665,7 +661,7 @@ function updateDeveloperPanel() {
     } else if (element.classList.contains('btn')) {
       element.style.display = 'inline-block';
     } else {
-      element.style.display = '';
+      element.style.display = element.tagName === 'SPAN' ? 'inline' : 'block';
     }
   });
 
@@ -690,7 +686,13 @@ function updateDeveloperPanel() {
   const panelBody = panel.querySelector('.card-body');
   if (panelBody && developerMode.panelExpanded !== developerMode.panelActuallyExpanded) {
     developerMode.panelActuallyExpanded = developerMode.panelExpanded;
-    panelBody.style.display = developerMode.panelExpanded ? 'block' : 'none';
+    panelBody.classList.add('collapse');
+    const bsCollapse = bootstrap.Collapse.getOrCreateInstance(panelBody, {toggle: false});
+    if (developerMode.panelExpanded) {
+      bsCollapse.show();
+    } else {
+      bsCollapse.hide();
+    }
   }
 
   // find modules and determine the index of the current module
@@ -755,13 +757,16 @@ function updateDeveloperPanel() {
     }
   }
   if (!developerMode.badConfiguration && developerMode.currentApiFunction) {
-    $('#developer-current-api-function').text('(' + developerMode.isPaused + ')');
+    const apiFnEl = document.getElementById('developer-current-api-function');
+    if (apiFnEl) apiFnEl.textContent = '(' + developerMode.isPaused + ')';
   }
-  $('#developer-status-info').text(statusInfo);
-  $('#developer-status-appendix').text(statusAppendix);
+  const statusInfoEl = document.getElementById('developer-status-info');
+  if (statusInfoEl) statusInfoEl.textContent = statusInfo;
+  const statusAppendixEl = document.getElementById('developer-status-appendix');
+  if (statusAppendixEl) statusAppendixEl.textContent = statusAppendix;
 
   // update session info
-  const sessionInfoElement = $('#developer-session-info');
+  const sessionInfoElement = document.getElementById('developer-session-info');
   let sessionInfo;
   if (developerMode.develSessionDeveloper) {
     sessionInfo = 'owned by ' + developerMode.develSessionDeveloper + ' (';
@@ -854,7 +859,7 @@ function handleModuleToPauseAtSelected() {
     selectedModuleOption.parentElement && selectedModuleOption.parentElement.nodeName === 'OPTGROUP'
       ? selectedModuleOption.parentElement.label
       : null;
-  const selectedModuleName = null;
+  let selectedModuleName = null;
   if (category) {
     selectedModuleName = category + '-' + selectedModuleOption.textContent;
   }
