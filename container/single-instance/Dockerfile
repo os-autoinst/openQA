@@ -27,4 +27,4 @@ ENV OPENQA_SERVICE_PORT_DELTA=0
 ENV LC_ALL=C.UTF-8
 
 ENTRYPOINT ["/usr/share/openqa/script/openqa-bootstrap"]
-HEALTHCHECK CMD curl -f http://localhost || exit 1
+HEALTHCHECK CMD ["curl", "-f", "http://localhost"]
