@@ -349,15 +349,13 @@ $driver->title_is('openQA: opensuse-Factory-DVD-x86_64-Build0048-doc@64bit test 
 subtest 'copy badge button click' => sub {
     $driver->execute_script(
         'navigator.clipboard.writeText = function(text) { window.copiedText = text; return Promise.resolve(); };');
-    my $copy_btn = $driver->find_element('button#badgeCopyButton-99938');
-    ok $copy_btn, 'Copy badge button is displayed on job details page' or return;
-    $copy_btn->click();
+    $driver->find_element('button#badgeCopyButton-99938')->click();
     wait_until sub {
         my $copied = $driver->execute_script('return window.copiedText;');
         return $copied && $copied =~ qr/!\[opensuse-Factory-DVD-x86_64-Build0048-doc\@64bit test result\]/;
     }, 'clipboard contains markdown status badge snippet';
 
-    my $icon = $driver->find_child_element($copy_btn, 'i', 'css');
+    my $icon = $driver->find_element('button#badgeCopyButton-99938 i');
     wait_until sub {
         return $icon->get_attribute('class') =~ /fa-check/;
     }, 'icon class changes to fa-check';
