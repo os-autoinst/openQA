@@ -158,7 +158,10 @@ sub _group_overview ($self, $resultset, $template) {
     my $pinned_cond = {like => '%pinned-description%'};
     my @pinned_comments = grep { $_->user->is_operator } $comments->search({text => $pinned_cond})->all;
 
-    my $tags = $group->tags;
+    # Avoid reloading all builds just for browsing comments
+    $limit_builds = 0 if $page > 1;
+    my $tags = $page > 1 ? {} : $group->tags;
+
     my $max_jobs_limit = $self->app->config->{misc_limits}->{job_groups_overview_max_jobs};
     my $ignored_groups = $self->app->ignored_groups;
     my $cbr;

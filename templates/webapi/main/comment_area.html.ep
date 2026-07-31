@@ -1,3 +1,8 @@
+% if (!@$build_results && $comments_pager->current_page > 0) {
+<div class="alert alert-info">
+    Builds are only shown on the first page and not when browsing through the comments.
+</div>
+% }
 <h2>Comments</h2>
 <div id="comments-preview">
     % for my $comment (@$comments) {
