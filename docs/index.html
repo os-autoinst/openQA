@@ -3254,19 +3254,31 @@ and the &quot;Next &amp; Previous&quot; list) match jobs by the scenario keys
 Independent submissions (e.g. different pull-requests) that share all
 these keys are therefore treated as one consecutive history, causing
 unintended carry-overs and misleading &quot;last good&quot; builds.</p>
-<p>Set the job setting <code>_HISTORY_ISOLATION_KEYS</code> to a
-comma-separated list of other job settings whose values must
-additionally match for two jobs to share a history. For example, tagging
-each submission with a <code>PR_ID</code> and setting
-<code>_HISTORY_ISOLATION_KEYS=PR_ID</code> keeps <code>VERSION</code>
-pristine while separating the history per pull-request:</p>
+<p>The simplest way to enable this is the reserved, well-known job
+setting <code>SUBMISSION_ID</code>. Tagging each independent submission
+with a distinct <code>SUBMISSION_ID</code> value keeps
+<code>VERSION</code> pristine while separating the history per
+submission, without any further configuration:</p>
 <pre><code>VERSION=16.1
-PR_ID=1234
-_HISTORY_ISOLATION_KEYS=PR_ID</code></pre>
+SUBMISSION_ID=1234</code></pre>
+<p>For finer control, set the meta-setting
+<code>_HISTORY_ISOLATION_KEYS</code> to a comma-separated list of the
+job settings whose values must additionally match for two jobs to share
+a history:</p>
+<ul>
+<li>unset (default): isolate on <code>SUBMISSION_ID</code> if the job
+carries it, otherwise no isolation (so existing jobs are
+unaffected);</li>
+<li>empty (<code>_HISTORY_ISOLATION_KEYS=</code>): isolation disabled,
+even if <code>SUBMISSION_ID</code> is present;</li>
+<li>explicit keys (e.g.
+<code>_HISTORY_ISOLATION_KEYS=PR_ID,SUBMISSION_ID</code>): exactly those
+keys, overriding or extending the default.</li>
+</ul>
 <p>Carry-over and investigation isolate on all declared keys
 automatically. The &quot;Next &amp; Previous&quot; tab keeps showing the
 generalized history by default and offers a switch to the isolated
-(&quot;strict&quot;) view when a job declares isolation keys.</p>
+(&quot;strict&quot;) view when a job has isolation keys in effect.</p>
 <h3 data-number="3.2.4" id="test-suites"><span class="header-section-number">3.2.4</span> Test Suites</h3>
 <p>A test suite consists of a name and a set of test variables that are
 used inside this particular test together with an optional description.
@@ -8538,15 +8550,14 @@ installed.</p>
 <span id="cb300-11"><a href="#cb300-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">&amp;&amp;</span> <span class="ex">zypper</span> addrepo <span class="at">-G</span> <span class="at">-p</span> 95 https://download.opensuse.org/repositories/devel:/openQA:/Leap:/16.0/16.0/ devel-openqa-leap</span>
 <span id="cb300-12"><a href="#cb300-12" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb300-13"><a href="#cb300-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Tumbleweed</span></span>
-<span id="cb300-14"><a href="#cb300-14" aria-hidden="true" tabindex="-1"></a><span class="co">#zypper addrepo -G -p 95 https://download.opensuse.org/repositories/devel:/openQA/openSUSE_Tumbleweed devel-openqa \</span></span>
-<span id="cb300-15"><a href="#cb300-15" aria-hidden="true" tabindex="-1"></a><span class="co">#        &amp;&amp; zypper addrepo -G -p 95 https://download.opensuse.org/repositories/SUSE:/CA/openSUSE_Tumbleweed/SUSE:CA.repo</span></span>
-<span id="cb300-16"><a href="#cb300-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb300-17"><a href="#cb300-17" aria-hidden="true" tabindex="-1"></a><span class="ex">zypper</span> <span class="at">-n</span> ref <span class="kw">&amp;&amp;</span> <span class="ex">zypper</span> <span class="at">-n</span> install ca-certificates-suse <span class="dt">\</span></span>
-<span id="cb300-18"><a href="#cb300-18" aria-hidden="true" tabindex="-1"></a>        os-autoinst-devel openQA-devel <span class="dt">\</span></span>
-<span id="cb300-19"><a href="#cb300-19" aria-hidden="true" tabindex="-1"></a>        os-autoinst-scripts-deps <span class="dt">\</span></span>
-<span id="cb300-20"><a href="#cb300-20" aria-hidden="true" tabindex="-1"></a>        os-autoinst-scripts-deps-devel <span class="dt">\</span></span>
-<span id="cb300-21"><a href="#cb300-21" aria-hidden="true" tabindex="-1"></a>        crudini</span>
-<span id="cb300-22"><a href="#cb300-22" aria-hidden="true" tabindex="-1"></a><span class="co"># plus your favourite dev tools, e.g. tmux</span></span></code></pre></div>
+<span id="cb300-14"><a href="#cb300-14" aria-hidden="true" tabindex="-1"></a><span class="co">#zypper addrepo -G -p 95 https://download.opensuse.org/repositories/devel:/openQA/openSUSE_Tumbleweed devel-openqa</span></span>
+<span id="cb300-15"><a href="#cb300-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb300-16"><a href="#cb300-16" aria-hidden="true" tabindex="-1"></a><span class="ex">zypper</span> <span class="at">-n</span> ref <span class="kw">&amp;&amp;</span> <span class="ex">zypper</span> <span class="at">-n</span> install <span class="dt">\</span></span>
+<span id="cb300-17"><a href="#cb300-17" aria-hidden="true" tabindex="-1"></a>        os-autoinst-devel openQA-devel <span class="dt">\</span></span>
+<span id="cb300-18"><a href="#cb300-18" aria-hidden="true" tabindex="-1"></a>        os-autoinst-scripts-deps <span class="dt">\</span></span>
+<span id="cb300-19"><a href="#cb300-19" aria-hidden="true" tabindex="-1"></a>        os-autoinst-scripts-deps-devel <span class="dt">\</span></span>
+<span id="cb300-20"><a href="#cb300-20" aria-hidden="true" tabindex="-1"></a>        crudini</span>
+<span id="cb300-21"><a href="#cb300-21" aria-hidden="true" tabindex="-1"></a><span class="co"># plus your favourite dev tools, e.g. tmux</span></span></code></pre></div>
 <p>Note: <a href="https://github.com/pixelb/crudini"><code>crudini</code></a> is a
 tool for manipulating values in ini files.</p>
 <h4 data-number="9.7.6.6" id="git"><span class="header-section-number">9.7.6.6</span> Git</h4>
