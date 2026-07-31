@@ -205,6 +205,14 @@ sub default_config () {
             unique_name => '',
             id_from => 'id',
         },
+        oidc => {
+            key => '',
+            secret => '',
+            autorize_url => '',
+            token_url => '',
+            access_group => '',
+            grous_from => 'groups',
+        },
         webui => {
             render_batch_size => 50,
         },
