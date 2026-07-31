@@ -3,11 +3,13 @@
   background-color: $color-softfailed;
   color: $color-result;
 }
-.modules-badge {
-  font-size: 85%;
+.modules-badge-container {
   position: absolute;
   top: 8px;
   right: 8px;
+}
+.modules-badge {
+  font-size: 85%;
 }
 
 // test result

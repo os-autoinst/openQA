@@ -47,6 +47,8 @@ $jobs->find($_)->comments->create({text => 'foobar', user_id => 99901}) for 9994
 
 subtest 'Basic overview display' => sub {
     $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1', build => '0091'})->status_is(200);
+    $t->element_exists('button#badgeCopyButton-overview', 'Badge copy button is displayed on tests overview page');
+    $t->element_exists('button.copy-badge-btn', 'Copy badge button is displayed on tests overview page');
 
     my $summary = get_summary;
     like $summary, qr/Overall Summary of opensuse 13\.1 build 0091/i, 'Summary header shows distri, version and build';
