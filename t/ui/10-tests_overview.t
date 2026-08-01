@@ -204,6 +204,7 @@ subtest 'stacking of parallel children' => sub {
     element_hidden '#res-99963', 'parallel child collapsed after clicking "Collapse all" button';
     $jobs->find(99963)->update({state => DONE, result => SOFTFAILED});
     $driver->refresh;
+    wait_for_element(selector => '#res-99963', is_displayed => 0);
     element_hidden '#res-99963', 'parallel child collapse by default if one of OK_RESULTS';
     my %dep = (parent_job_id => 99764, child_job_id => 99982, dependency => PARALLEL);
     my $another_dependency = $schema->resultset('JobDependencies')->create(\%dep);
