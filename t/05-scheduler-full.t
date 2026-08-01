@@ -92,15 +92,17 @@ sub mark_all_workers_as_dead ($schema) {
     $workers->update({t_seen => DateTime->from_epoch(epoch => time - DEFAULT_WORKER_TIMEOUT - DB_TIMESTAMP_ACCURACY)});
 }
 
-# waits until a worker with the given ID has registered; this does not mean its ws connection is ready so we might still need to retry job allocation
+# waits until a worker with the given ID has registered and optionally its websocket connection is ready
 sub wait_for_worker ($schema, $instance_number, %opts) {
     my $expected_id = expected_worker_id($instance_number);
     my $expected_error = $opts{error};
+    my $websocket = exists $opts{websocket} ? $opts{websocket} : (!defined $expected_error);
     wait_for_or_bail_out {
         my $worker = $workers->find($expected_id);
         defined $worker
           && !$worker->dead
-          && (!defined $expected_error || ($worker->error // '') eq $expected_error);
+          && (!defined $expected_error || ($worker->error // '') eq $expected_error)
+          && (!$websocket || $worker->properties->search({key => 'WEBSOCKET_API_VERSION'})->count);
     }
     "worker instance $instance_number has registered with ID $expected_id";
 }
