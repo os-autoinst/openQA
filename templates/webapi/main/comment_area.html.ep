@@ -1,3 +1,4 @@
+<div class="comments-container">
 % if (!@$build_results && $comments_pager->current_page > 1) {
 <div class="alert alert-info">
     Builds are only shown on the first page and not when browsing through the comments.
@@ -14,7 +15,8 @@
     <script id="comment-row-template" type="text/template">
         %= include 'comments/comment_row', comment_id => '@comment_id@', comment => 0, user => current_user, context => {type => $comment_context, id => $group->{id}}, put_action => $comment_put_action, delete_action => $comment_delete_action
     </script>
-    %= form_for url_for($comment_post_action, $comment_context . '_id' => $group->{id}) => (method => "post", class => "form-horizontal", id => "commentForm", onsubmit => "addComment(this, false); return false;") => begin
+    %= form_for url_for($comment_post_action, $comment_context . '_id' => $group->{id}) => (method => "post", class => "form-horizontal", id => "commentForm", "data-insert-at-bottom" => "false") => begin
         %= include 'comments/add_comment_form_groups', group_comment => 1
     % end
 % }
+</div>

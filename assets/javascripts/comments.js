@@ -1,3 +1,5 @@
+// jshint esversion: 6
+
 function displayElements(elements, displayValue) {
   elements.forEach(element => (element.style.display = displayValue));
 }
@@ -187,13 +189,37 @@ function insertTemplate(button) {
   const template = button.dataset.template;
   textarea.value += textarea.value ? '\n' + template : template;
 }
-window.displayElements = displayElements;
-window.showCommentEditor = showCommentEditor;
-window.hideCommentEditor = hideCommentEditor;
-window.renderDate = renderDate;
-window.renderCommentHeading = renderCommentHeading;
-window.updateNumerOfComments = updateNumerOfComments;
-window.deleteComment = deleteComment;
-window.updateComment = updateComment;
-window.addComment = addComment;
-window.insertTemplate = insertTemplate;
+
+$(function () {
+  const $commentsRoot = $('#comments, .comments-container');
+
+  $(document).on('submit', '#commentForm', function (e) {
+    e.preventDefault();
+    const insertAtBottom = $(this).data('insert-at-bottom') !== false;
+    addComment(this, insertAtBottom);
+  });
+
+  $(document).on('click', '.comment-toolbar a[data-template]', function (e) {
+    e.preventDefault();
+    insertTemplate(this);
+  });
+
+  $commentsRoot.on('click', 'button[name="removeComment"]', function (e) {
+    e.preventDefault();
+    deleteComment(this);
+  });
+
+  $commentsRoot.on('click', 'button[name="editComment"]', function (e) {
+    e.preventDefault();
+    showCommentEditor(this.form);
+  });
+
+  $commentsRoot.on('submit', 'form:not(#commentForm)', function (e) {
+    e.preventDefault();
+    updateComment(this);
+  });
+
+  $commentsRoot.on('reset', 'form:not(#commentForm)', function (e) {
+    hideCommentEditor(this);
+  });
+});
