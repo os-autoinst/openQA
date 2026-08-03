@@ -220,8 +220,8 @@ subtest 'incompleting previous job on worker registration' => sub {
 
 subtest 'server-side limit has precedence over user-specified limit' => sub {
     my $limits = OpenQA::App->singleton->config->{misc_limits};
-    $limits->{generic_max_limit} = 5;
-    $limits->{generic_default_limit} = 2;
+    $limits->{admin_table_max_limit} = 5;
+    $limits->{admin_table_default_limit} = 2;
 
     # create more test-workers
     my $id = 4;

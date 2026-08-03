@@ -49,7 +49,8 @@ sub list ($self) {
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
     my $limits = OpenQA::App->singleton->config->{misc_limits};
-    my $limit = min($limits->{generic_max_limit}, $validation->param('limit') // $limits->{generic_default_limit});
+    my $limit
+      = min($limits->{admin_table_max_limit}, $validation->param('limit') // $limits->{admin_table_default_limit});
     my $offset = $validation->param('offset') // 0;
 
     my @all = $self->schema->resultset('Workers')->search({}, {rows => $limit + 1, offset => $offset})->all;

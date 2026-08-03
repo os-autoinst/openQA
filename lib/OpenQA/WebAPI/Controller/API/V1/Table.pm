@@ -98,7 +98,8 @@ sub list ($self) {
     $validation->optional('offset')->num;
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
-    my $limit = min($limits->{generic_max_limit}, $validation->param('limit') // $limits->{generic_default_limit});
+    my $limit
+      = min($limits->{admin_table_max_limit}, $validation->param('limit') // $limits->{admin_table_default_limit});
     my $offset = $validation->param('offset') // 0;
 
     my $table = $self->stash('table');

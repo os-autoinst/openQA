@@ -4,7 +4,7 @@
 use Test::Most;
 
 use FindBin;
-use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
+use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
 use OpenQA::Utils;
 require OpenQA::Test::Database;
 use OpenQA::Test::TimeLimit '10';
