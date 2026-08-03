@@ -12,7 +12,7 @@
                 <h4 class="modal-title"></h4>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="#" id="new_group_form" onsubmit="return createGroup(this);"
+            <form action="#" id="new_group_form"
               data-post-job-group-url="<%= url_for('apiv1_post_job_group') %>"
               data-post-parent-group-url="<%= url_for('apiv1_post_parent_group') %>"
               data-job-group-row-url="<%= url_for('admin_job_group_row') %>"
@@ -48,18 +48,18 @@
         <h2><%= title %></h2>
         %= include 'layouts/info'
         % if (is_admin) {
-            <a href="#" onclick="return showAddParentGroup(this);" class="add-parent-group fa-stack" title="Add new folder">
+            <a href="#" class="add-parent-group-btn add-parent-group fa-stack" title="Add new folder">
                 <i class="fa-solid fa-folder fa-stack-1x"></i>
                 <i class="fa-solid fa-plus fa-stack-1x"></i>
             </a>
-            <a href="#" onclick="return showAddJobGroup();" class="add-parent-group fa-stack" title="Add new job group on top-level">
+            <a href="#" class="add-job-group-top-btn add-parent-group fa-stack" title="Add new job group on top-level">
                 <i class="fa-solid fa-plus fa-stack-1x"></i>
             </a>
             <p>Drag & Drop job groups to order. Click on a group to edit group properties and jobs.</p>
             <div id="reorganize_groups_panel" style="display: none;">
                 <p id="reorganize_groups_progress" style="display: none;">
-                    <i class="fa-solid fa-gear fa-spin fa-3x fa-fw"></i>
-                    Committing changes
+                     <i class="fa-solid fa-gear fa-spin fa-3x fa-fw"></i>
+                     Committing changes
                 </p>
                 <div id="reorganize_groups_error" class="card" style="display: none;">
                     <div class="card-header">Saving</div>
@@ -69,8 +69,8 @@
                             Unable to save: <strong id="reorganize_groups_error_message"></strong>
                         </p>
                         <p>
-                            <button onclick="saveReorganizedGroups();" class="btn btn-primary">Retry saving</button>
-                            <button onclick="window.location.reload();" class="btn btn-light">Refresh page</button>
+                            <button id="retry-save-reorganized-btn" class="btn btn-primary">Retry saving</button>
+                            <button id="refresh-page-btn" class="btn btn-light">Refresh page</button>
                         </p>
                     </div>
                 </div>
