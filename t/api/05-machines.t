@@ -247,8 +247,8 @@ $t->delete_ok("/api/v1/machines/$machine_id")->status_is(403);
 
 subtest 'server-side limit has precedence over user-specified limit' => sub {
     my $limits = OpenQA::App->singleton->config->{misc_limits};
-    $limits->{generic_max_limit} = 5;
-    $limits->{generic_default_limit} = 2;
+    $limits->{admin_table_max_limit} = 5;
+    $limits->{admin_table_default_limit} = 2;
 
     $t->get_ok('/api/v1/machines?limit=10', 'query with exceeding user-specified limit for machines')->status_is(200);
     my $machines = $t->tx->res->json->{Machines};

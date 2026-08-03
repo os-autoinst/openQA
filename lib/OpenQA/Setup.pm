@@ -294,6 +294,8 @@ sub default_config () {
             job_groups_overview_max_jobs => 25000,
             all_tests_default_finished_jobs => 500,
             all_tests_max_finished_jobs => 5000,
+            admin_table_default_limit => 10000,
+            admin_table_max_limit => 100000,
             list_templates_default_limit => 5000,
             list_templates_max_limit => 20000,
             next_jobs_default_limit => 500,
