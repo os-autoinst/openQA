@@ -231,11 +231,19 @@ endif
 # note: Excluding dev dependencies like `eslint` via `--omit=dev` to pull in only dependencies needed at runtime (and for
 #       regular tests). Development tests/tooling like `js-tidy` will invoke `npm clean-install …` to install missing
 #       dependencies on its own anyway.
-node_modules: package-lock.json ## Build web-related dependencies (NPM, JS, CSS)
-	@command -v local-npm-registry >/dev/null 2>&1 || npm clean-install --no-audit --no-fund --ignore-scripts --omit=dev
-	@# Vite and its plugins are in devDependencies. Install them temporarily if missing to build assets
-	@npm run build || (npm install --no-audit --no-fund --ignore-scripts && npm run build && npm prune --omit=dev)
-	@touch node_modules
+.PHONY: node_modules
+node_modules: ## Build web-related dependencies (NPM, JS, CSS)
+	@need_build=0; \
+	if [ ! -d node_modules ] || [ package-lock.json -nt node_modules ]; then \
+		command -v local-npm-registry >/dev/null 2>&1 || npm clean-install --no-audit --no-fund --ignore-scripts --omit=dev; \
+		need_build=1; \
+		touch node_modules; \
+	elif [ ! -f public/dist/.vite/manifest.json ]; then \
+		need_build=1; \
+	fi; \
+	if [ "$$need_build" = 1 ]; then \
+		npm run build || (npm install --no-audit --no-fund --ignore-scripts && npm run build && npm prune --omit=dev); \
+	fi
 
 .PHONY: test
 ifeq ($(CHECKSTYLE),0)
