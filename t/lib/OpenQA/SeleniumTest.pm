@@ -114,11 +114,14 @@ sub start_driver ($mojoport) {
                           . 'return true;');
                     last if $jsReady;
                     if ($timeout <= 0) {
-                        my $src = eval { $_DRIVER->get_page_source } // 'could not get page source';
-                        my $curr_url = eval { $_DRIVER->get_current_url } // 'could not get current url';
-                        my $log = eval { $_DRIVER->get_log('browser') } // [];
-                        my $log_str = join "\n", map { $_->{level} . ': ' . $_->{message} } @$log;
-                        die
+                        my $src
+                          = eval { $_DRIVER->get_page_source } // 'could not get page source';   # uncoverable statement
+                        my $curr_url
+                          = eval { $_DRIVER->get_current_url } // 'could not get current url';   # uncoverable statement
+                        my $log = eval { $_DRIVER->get_log('browser') } // [];    # uncoverable statement
+                        my $log_str = join "\n",
+                          map { $_->{level} . ': ' . $_->{message} } @$log;    # uncoverable statement
+                        die    # uncoverable statement
                           "Timeout waiting for jsLoaded flag in get(). URL was: $curr_url.\nLOGS:\n$log_str\nHTML was: "
                           . substr $src, 0, 1000;
                     }
