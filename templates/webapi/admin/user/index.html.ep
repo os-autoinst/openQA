@@ -1,10 +1,6 @@
 % layout 'bootstrap';
 % title 'Users';
 
-% content_for 'ready_function' => begin
-    setup_admin_user();
-% end
-
 % my $show_user_actions = is_admin;
 
 <div class="row">
@@ -66,7 +62,7 @@
                         % if ($show_user_actions) {
                         <td class="text-nowrap">
                             <a class="btn p-0">
-                                <i class="fa-solid fa-trash" aria-hidden="true" onclick="deleteUser(<%= $user->id %>)"></i>
+                                <i class="fa-solid fa-trash delete-user-btn" aria-hidden="true" data-user-id="<%= $user->id %>"></i>
                             </a>
                         </td>
                         % }
