@@ -7,7 +7,6 @@
     cancel_url = "<%= url_for("apiv1_cancel", jobid => 'REPLACEIT') %>";
     updateTimeago();
     setupResultButtons();
-    setupWorkerNeedles();
 % end
 
 <div class="row">
