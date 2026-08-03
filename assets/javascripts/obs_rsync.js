@@ -1,4 +1,4 @@
-function fetchValue(url, element, controlToShow) {
+export function fetchValue(url, element, controlToShow) {
   fetch(url)
     .then(response => {
       if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
@@ -20,7 +20,7 @@ function fetchValue(url, element, controlToShow) {
     });
 }
 
-function postAndRedrawElement(btn, id, delay = 0, confirmMessage = '') {
+export function postAndRedrawElement(btn, id, delay = 0, confirmMessage = '') {
   if (confirmMessage && !confirm(confirmMessage)) {
     return;
   }
@@ -65,7 +65,7 @@ function postAndRedrawElement(btn, id, delay = 0, confirmMessage = '') {
     });
 }
 
-function postAndRedirect(btn, redir = '') {
+export function postAndRedirect(btn, redir = '') {
   fetchWithCSRF(btn.dataset.posturl, {method: 'POST'})
     .then(response => {
       return response
@@ -91,6 +91,7 @@ function postAndRedirect(btn, redir = '') {
       addFlash('danger', `Error: ${error}`);
     });
 }
+
 window.fetchValue = fetchValue;
 window.postAndRedrawElement = postAndRedrawElement;
 window.postAndRedirect = postAndRedirect;
