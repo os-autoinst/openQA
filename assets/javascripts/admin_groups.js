@@ -525,3 +525,10 @@ $(document).on('click', '#refresh-page-btn', function (e) {
   e.preventDefault();
   window.location.reload();
 });
+
+$(function () {
+  const form = document.getElementById('group_properties_form');
+  if (form) {
+    validateJobGroupForm(form);
+  }
+});

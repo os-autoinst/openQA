@@ -1,8 +1,5 @@
 % use OpenQA::Utils 'human_readable_size';
 % use OpenQA::Constants qw(BUILD_SORT_BY_NAME BUILD_SORT_BY_NEWEST_JOB BUILD_SORT_BY_OLDEST_JOB);
-% content_for 'ready_function' => begin
-    validateJobGroupForm(document.getElementById('group_properties_form'));
-% end
 <div id="properties" class="card"
     % if (!$is_parent) {
         style="display: none;"

@@ -39,7 +39,6 @@
           }
           $(function() {
             setupForAll();
-            backToTop();
             %= content_for 'ready_function'
             document.body.dataset.jsLoaded = 'true';
           });
