@@ -54,9 +54,9 @@ export function setupAdminAssets() {
           }
           return (
             data +
-            '<a href="#" onclick="deleteAsset(' +
+            '<a href="#" class="delete-asset-btn" data-asset-id="' +
             row.id +
-            ');"><i class="action fa-solid fa-fw fa-circle-xmark" title="Delete asset from disk"></i></a>'
+            '"><i class="action fa-solid fa-fw fa-circle-xmark" title="Delete asset from disk"></i></a>'
           );
         }
       },
@@ -111,6 +111,23 @@ export function setupAdminAssets() {
   if (searchParams && searchParams.length > 0) {
     window.assetsTable.search(searchParams[0]).draw();
   }
+
+  // Delegated event listeners for actions
+  $('#assets').on('click', '.delete-asset-btn', function (e) {
+    e.preventDefault();
+    const assetId = $(this).data('asset-id');
+    deleteAsset(assetId);
+  });
+
+  $('#trigger-asset-cleanup-form').on('submit', function (e) {
+    e.preventDefault();
+    triggerAssetCleanup(this);
+  });
+
+  $('#flash-messages').on('click', '.retry-assets-btn', function (e) {
+    e.preventDefault();
+    reloadAssetsTable();
+  });
 }
 
 export function reloadAssetsTable() {
@@ -257,7 +274,8 @@ function makeAssetsByGroup(assetStatus) {
       groupLi.append(label);
 
       // add configure button
-      if (window.isAdmin && groupId !== null && groupId !== undefined && groupInfo.group !== 'Untracked') {
+      const isAdmin = $('#assets').data('is-admin') === true;
+      if (isAdmin && groupId !== null && groupId !== undefined && groupInfo.group !== 'Untracked') {
         const path = isParent ? '/admin/edit_parent_group/' + groupId : '/admin/job_templates/' + groupId;
         groupLi.append('<a href="' + path + '"><i class="fa-solid fa-wrench" title="Configure"></i></a>');
       }
@@ -289,7 +307,9 @@ function makeAssetsByGroup(assetStatus) {
 
   assetsByGroupHeading.text('Assets by group (total ' + renderDataSize(totalSize) + ')');
 }
-window.setupAdminAssets = setupAdminAssets;
-window.reloadAssetsTable = reloadAssetsTable;
-window.deleteAsset = deleteAsset;
-window.triggerAssetCleanup = triggerAssetCleanup;
+
+$(function () {
+  if ($('#assets').length) {
+    setupAdminAssets();
+  }
+});
