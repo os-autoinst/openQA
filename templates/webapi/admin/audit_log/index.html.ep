@@ -1,15 +1,9 @@
 % layout 'bootstrap';
 % title 'Audit log';
 
-% content_for 'ready_function' => begin
-    window.audit_url   = "<%= url_for('audit_log') %>";
-    window.ajax_url    = "<%= url_for('audit_ajax') %>";
-    window.searchquery = "<%= $search %>";
-    loadAuditLogTable();
-% end
-
 <div class="row">
     <div class="col-sm-12">
+        <!-- searchquery: <%= $search %> -->
         <h2><%= title %>
             % if (!$audit_enabled) {
                 <em class="text-warning">(auditing disabled)</em>
@@ -55,7 +49,10 @@
         %>
     </span>
 
-    <table id="audit_log_table" class="table table-striped" style="width: 100%">
+    <table id="audit_log_table" class="table table-striped" style="width: 100%"
+        data-audit-url="<%= url_for('audit_log') %>"
+        data-ajax-url="<%= url_for('audit_ajax') %>"
+        data-search-query="<%= $search %>">
             <thead>
                 <tr>
                     <th>ID</th>

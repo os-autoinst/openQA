@@ -1,7 +1,7 @@
 // jshint multistr: true
 // jshint esversion: 6
 
-function getURLForType(type, event_data) {
+export function getURLForType(type, event_data) {
   if (!event_data) {
     return;
   }
@@ -50,7 +50,7 @@ function getURLForType(type, event_data) {
   }
 }
 
-function undoComments(undoButton) {
+export function undoComments(undoButton) {
   const ids = undoButton.dataset.ids.split(',');
   if (!window.confirm(`Do you really want to delete the ${ids.length} comment(s)?`)) {
     return;
@@ -75,7 +75,7 @@ function undoComments(undoButton) {
     });
 }
 
-function getElementForEventType(type, eventData) {
+export function getElementForEventType(type, eventData) {
   if (type !== 'comments_create') {
     return '';
   }
@@ -83,10 +83,10 @@ function getElementForEventType(type, eventData) {
     .map(data => parseInt(data?.id))
     .filter(Number.isInteger)
     .join(',');
-  return `<br><button class="btn btn-danger undo-event" style="float: right" data-ids="${ids}" onclick="undoComments(this)">Undo</button>`;
+  return `<br><button class="btn btn-danger undo-event undo-comments-btn" style="float: right" data-ids="${ids}">Undo</button>`;
 }
 
-function loadAuditLogTable() {
+export function loadAuditLogTable() {
   $('#audit_log_table').DataTable({
     lengthMenu: [20, 40, 100],
     processing: true,
@@ -171,7 +171,7 @@ function loadAuditLogTable() {
 
 let scheduledProductsTable;
 
-function dataForLink(link) {
+export function dataForLink(link) {
   const rowData = scheduledProductsTable.row(link.parentElement?.parentElement).data();
   if (rowData === undefined) {
     console.error('unable to find row data for action link');
@@ -179,7 +179,7 @@ function dataForLink(link) {
   return rowData;
 }
 
-function showScheduledProductModalDialog(title, body) {
+export function showScheduledProductModalDialog(title, body) {
   const modalElement = document.getElementById('scheduled-product-modal');
   const modalDialog = new bootstrap.Modal(modalElement);
   modalElement.getElementsByClassName('modal-title')[0].textContent = title;
@@ -187,7 +187,7 @@ function showScheduledProductModalDialog(title, body) {
   modalDialog.show();
 }
 
-function renderScheduledProductSettings(settings) {
+export function renderScheduledProductSettings(settings) {
   const tbody = document.createElement('tbody');
   for (const [key, value] of Object.entries(settings || {})) {
     const tr = document.createElement('tr');
@@ -205,14 +205,14 @@ function renderScheduledProductSettings(settings) {
   return table;
 }
 
-function showScheduledProductSettings(link) {
+export function showScheduledProductSettings(link) {
   const rowData = dataForLink(link);
   if (rowData !== undefined) {
     showScheduledProductModalDialog('Scheduled product settings', renderScheduledProductSettings(rowData.settings));
   }
 }
 
-function renderFailedJobInfo(results) {
+export function renderFailedJobInfo(results) {
   const failedJobInfo = results.failed_job_info;
   delete results.failed_job_info;
   if (!Array.isArray(failedJobInfo) || failedJobInfo.length === 0) {
@@ -228,7 +228,7 @@ function renderFailedJobInfo(results) {
   return [createElement('div', [heading, failedElements], {class: 'alert alert-danger'})];
 }
 
-function renderSuccessfullyScheduledJobs(results) {
+export function renderSuccessfullyScheduledJobs(results) {
   const successfulJobIDs = results.successful_job_ids;
   delete results.successful_job_ids;
   if (!Array.isArray(successfulJobIDs) || successfulJobIDs.length === 0) {
@@ -242,17 +242,17 @@ function renderSuccessfullyScheduledJobs(results) {
   return [createElement('div', [heading, ...jobLinks], {class: 'alert alert-success'})];
 }
 
-function renderNotes(results, property, type = 'info') {
+export function renderNotes(results, property, type = 'info') {
   const note = results[property];
   delete results[property];
   return note !== undefined ? [createElement('div', [renderMessages(note)], {class: `alert alert-${type}`})] : [];
 }
 
-function renderUnknownResults(results) {
+export function renderUnknownResults(results) {
   return Object.keys(results).length > 0 ? [createElement('pre', JSON.stringify(results, undefined, 4))] : [];
 }
 
-function renderScheduledProductResults(results) {
+export function renderScheduledProductResults(results) {
   if (results === null || typeof results !== 'object') {
     return createElement('p', 'No results available.');
   }
@@ -267,7 +267,7 @@ function renderScheduledProductResults(results) {
   ]);
 }
 
-function showScheduledProductResults(link) {
+export function showScheduledProductResults(link) {
   const rowData = dataForLink(link);
   if (rowData !== undefined) {
     showScheduledProductModalDialog(
@@ -277,14 +277,14 @@ function showScheduledProductResults(link) {
   }
 }
 
-function rescheduleProductForActionLink(link) {
+export function rescheduleProductForActionLink(link) {
   const id = dataForLink(link)?.id;
   if (id && window.confirm('Do you really want to reschedule all jobs for the product ' + id + '?')) {
     rescheduleProduct(scheduledProductsTable.rescheduleUrlTemplate.replace('XXXXX', id));
   }
 }
 
-function rescheduleProduct(url) {
+export function rescheduleProduct(url) {
   $.post({
     url: url,
     success: (data, textStatus, jqXHR) => {
@@ -301,7 +301,7 @@ function rescheduleProduct(url) {
   });
 }
 
-function showSettingsAndResults(rowData) {
+export function showSettingsAndResults(rowData) {
   const scheduledProductsDiv = $('#scheduled-products');
   scheduledProductsDiv.append($('<h3>Results</h3>'));
   scheduledProductsDiv.append(renderScheduledProductResults(rowData.results));
@@ -309,7 +309,7 @@ function showSettingsAndResults(rowData) {
   scheduledProductsDiv.append(renderScheduledProductSettings(rowData.settings));
 }
 
-function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions) {
+export function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions) {
   const params = new URLSearchParams(document.location.search.substring(1));
   const id = params.get('id');
   const q = params.get('q');
@@ -438,21 +438,27 @@ function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions) {
     wrapper.removeChild(wrapper.lastChild);
   }
 }
-window.getURLForType = getURLForType;
-window.undoComments = undoComments;
-window.getElementForEventType = getElementForEventType;
-window.loadAuditLogTable = loadAuditLogTable;
-window.dataForLink = dataForLink;
-window.showScheduledProductModalDialog = showScheduledProductModalDialog;
-window.renderScheduledProductSettings = renderScheduledProductSettings;
-window.showScheduledProductSettings = showScheduledProductSettings;
-window.renderFailedJobInfo = renderFailedJobInfo;
-window.renderSuccessfullyScheduledJobs = renderSuccessfullyScheduledJobs;
-window.renderNotes = renderNotes;
-window.renderUnknownResults = renderUnknownResults;
-window.renderScheduledProductResults = renderScheduledProductResults;
-window.showScheduledProductResults = showScheduledProductResults;
-window.rescheduleProductForActionLink = rescheduleProductForActionLink;
-window.rescheduleProduct = rescheduleProduct;
-window.showSettingsAndResults = showSettingsAndResults;
-window.loadProductLogTable = loadProductLogTable;
+
+$(function () {
+  const auditTable = $('#audit_log_table');
+  if (auditTable.length) {
+    window.audit_url = auditTable.data('audit-url');
+    window.ajax_url = auditTable.data('ajax-url');
+    window.searchquery = auditTable.data('search-query') || '';
+    loadAuditLogTable();
+
+    // Bind undo comments click handler synchronously on the table
+    auditTable.on('click', '.undo-comments-btn', function (e) {
+      e.preventDefault();
+      undoComments(this);
+    });
+  }
+
+  const productTable = $('#product_log_table');
+  if (productTable.length) {
+    const ajaxUrl = productTable.data('ajax-url');
+    const rescheduleUrlTemplate = productTable.data('reschedule-url-template');
+    const isOperator = productTable.data('is-operator') === true;
+    loadProductLogTable(ajaxUrl, rescheduleUrlTemplate, isOperator);
+  }
+});
