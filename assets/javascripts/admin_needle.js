@@ -1,4 +1,4 @@
-function setupAdminNeedles() {
+export function setupAdminNeedles() {
   function ajaxUrl() {
     const url = $('#needles').data('ajax-url');
     let lastMatch = $('#last_match_filter').val();
@@ -249,4 +249,9 @@ function setupAdminNeedles() {
   $('#custom_last_match').toggle($('#last_match_filter').val() === 'custom');
   $('#custom_last_seen').toggle($('#last_seen_filter').val() === 'custom');
 }
-window.setupAdminNeedles = setupAdminNeedles;
+
+$(function () {
+  if ($('#needles').length) {
+    setupAdminNeedles();
+  }
+});

@@ -1,10 +1,6 @@
 % layout 'bootstrap';
 % title 'Needles';
 
-% content_for 'ready_function' => begin
-    setupAdminNeedles();
-% end
-
 <div class="modal fade" id="confirm_delete" tabindex="-1"
         role="dialog" data-delete-url="<%= url_for('admin_needle_delete') %>"
         data-backdrop="static" data-keyboard="false">
