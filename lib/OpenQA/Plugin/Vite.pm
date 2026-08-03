@@ -51,8 +51,7 @@ sub register ($self, $app, $conf = {}) {
                     $manifest = decode_json($manifest_file->slurp);
                 }
                 else {
-                    $app->log->warn("Vite manifest not found at $manifest_file. Did you run 'npm run build'?")
-                      ;    # uncoverable statement
+                    $app->log->warn("Vite manifest not found at $manifest_file");    # uncoverable statement
                     $manifest = {};    # uncoverable statement
                 }
             }
