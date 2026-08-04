@@ -1,48 +1,56 @@
+// jshint esversion: 6
+
+let wsUrl;
+let wsUsingProxy;
+let wsProxyConnectionConcluded;
+let stashedCommands = [];
+let ws;
+let $logElement;
+let $followLogCheckBox;
+
 function followLog() {
-  if (!document.followLogCheckBox.prop('checked')) {
+  if (!$followLogCheckBox.prop('checked')) {
     return;
   }
-  document.logElement[0].scrollTop = document.logElement[0].scrollHeight;
+  $logElement[0].scrollTop = $logElement[0].scrollHeight;
 }
 
 function logLine(msg) {
-  document.logElement.append(document.createTextNode('<== ' + msg + '\n'));
+  $logElement.append(document.createTextNode('<== ' + msg + '\n'));
   followLog();
 }
 
-function sendAndLogCommand(ws, command) {
-  ws.send(command);
-  document.logElement.append(document.createTextNode('==> ' + command + '\n'));
+function sendAndLogCommand(wsConnection, command) {
+  wsConnection.send(command);
+  $logElement.append(document.createTextNode('==> ' + command + '\n'));
   followLog();
 }
 
 function logStatus(msg) {
-  document.logElement.append('status: ' + msg + '\n');
+  $logElement.append('status: ' + msg + '\n');
   followLog();
 }
 
-function replayStashedCommands(ws) {
-  const stashedCommands = window.stashedCommands;
+function replayStashedCommands(wsConnection) {
   if (stashedCommands.length < 1) {
     return;
   }
 
   logStatus('replaying commands stashed while offline');
-  for (let i = 0, count = stashedCommands.length; i != count; ++i) {
-    sendAndLogCommand(ws, stashedCommands[i]);
+  for (let i = 0, count = stashedCommands.length; i !== count; ++i) {
+    sendAndLogCommand(wsConnection, stashedCommands[i]);
   }
-  window.stashedCommands = [];
+  stashedCommands = [];
 }
 
 function establishWebSocketConnection() {
-  const ws = new WebSocket(window.wsUrl);
-  logStatus('Connecting to ' + window.wsUrl);
-  logStatus('Using proxy: ' + (window.wsUsingProxy ? 'yes' : 'no'));
+  ws = new WebSocket(wsUrl);
+  logStatus('Connecting to ' + wsUrl);
+  logStatus('Using proxy: ' + (wsUsingProxy ? 'yes' : 'no'));
   ws.onopen = function () {
     logStatus('Connection opened');
-    window.ws = ws;
 
-    if (!window.wsUsingProxy) {
+    if (!wsUsingProxy) {
       // request current status like the developer mode would do
       sendAndLogCommand(ws, '{"cmd":"status"}');
       // replay commands stashed while offline if connecting directly to isotovideo
@@ -54,8 +62,8 @@ function establishWebSocketConnection() {
   };
   ws.onclose = function () {
     logStatus('Connection closed, trying to reconnect in 500 ms');
-    window.ws = undefined;
-    window.wsProxyConnectionConcluded = false;
+    ws = undefined;
+    wsProxyConnectionConcluded = false;
     setTimeout(function () {
       establishWebSocketConnection();
     }, 500);
@@ -76,7 +84,7 @@ function establishWebSocketConnection() {
 
     if (proxyConnectionConcluded) {
       logStatus('tunnelled connection to os-autoinst concluded');
-      window.wsProxyConnectionConcluded = true;
+      wsProxyConnectionConcluded = true;
       sendAndLogCommand(ws, '{"cmd":"status"}');
       replayStashedCommands(ws);
     }
@@ -87,44 +95,42 @@ function submitWebSocketCommand(event) {
   if (event) {
     event.preventDefault();
   }
-  const msg = document.getElementById('msg');
-  const command = msg.value;
-  if (!window.ws || (window.wsUsingProxy && !window.wsProxyConnectionConcluded)) {
+  const msgInput = document.getElementById('msg');
+  const command = msgInput.value;
+  if (!ws || (wsUsingProxy && !wsProxyConnectionConcluded)) {
     logStatus("Can't send command, no ws connection opened! Will try to send when connection has been restored.");
-    window.stashedCommands.push(command);
+    stashedCommands.push(command);
   } else {
-    sendAndLogCommand(window.ws, command);
+    sendAndLogCommand(ws, command);
   }
-  msg.value = '';
+  msgInput.value = '';
 }
 
 function setupWebSocketConsole() {
   // determine ws URL
   const form = $('#ws_console_form');
   let url = form.data('url');
-  if (!url.length) {
+  if (!url || !url.length) {
     return;
   }
   url = makeWsUrlAbsolute(url, form.data('service-port-delta'));
 
   // establish and handle web socket connection
-  window.wsUrl = url;
-  window.wsUsingProxy = form.data('using-proxy');
-  window.wsProxyConnectionConcluded = false;
-  window.stashedCommands = [];
-  document.logElement = $('#log');
-  document.followLogCheckBox = $('#follow_log');
+  wsUrl = url;
+  wsUsingProxy = form.data('using-proxy');
+  wsProxyConnectionConcluded = false;
+  stashedCommands = [];
+  $logElement = $('#log');
+  $followLogCheckBox = $('#follow_log');
   establishWebSocketConnection();
 
   // send command when user presses return
   form.submit(submitWebSocketCommand);
   document.getElementById('msg').focus();
 }
-window.followLog = followLog;
-window.logLine = logLine;
-window.sendAndLogCommand = sendAndLogCommand;
-window.logStatus = logStatus;
-window.replayStashedCommands = replayStashedCommands;
-window.establishWebSocketConnection = establishWebSocketConnection;
-window.submitWebSocketCommand = submitWebSocketCommand;
-window.setupWebSocketConsole = setupWebSocketConsole;
+
+$(function () {
+  if ($('#ws_console_form').length) {
+    setupWebSocketConsole();
+  }
+});
