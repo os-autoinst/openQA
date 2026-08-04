@@ -60,6 +60,14 @@ sub run ($job, $args) {
       unless my $concurrency_guard = $helper->concurrency_guard();
 
     $helper->log_job_id($project, $job->id);
+
+# Return if the minion worker is already shutting down due to a systemd restart. (https://progress.opensuse.org/issues/196478#note-48)
+    if (OpenQA::Task::SignalGuard->signaled()) {
+        $app->log->info("Aborting rsync spawn for $project: shutting down");
+        sleep 2;    # Assure SignalGuard trap can exit
+        return undef;
+    }
+
     my @cmd = (Mojo::File->new($home, 'script', 'rsync.sh')->to_string, $project);
     my ($stdin, $stdout, $error);
     my $exit_code = -1;
