@@ -1,12 +1,11 @@
 % layout 'bootstrap';
 % title 'Test results';
 
-% content_for 'ready_function' => begin
-  window.is_operator = <%= (is_operator) ? 'true' : 'false' %>;
-  window.restart_url = "<%= url_for("apiv1_restart", jobid => 'REPLACEIT') %>";
-  window.cancel_url = "<%= url_for("apiv1_cancel", jobid => 'REPLACEIT') %>";
-  renderTestLists();
-% end
+<div id="test-list-config"
+     data-is-operator="<%= (is_operator) ? 'true' : 'false' %>"
+     data-restart-url="<%= url_for("apiv1_restart", jobid => 'REPLACEIT') %>"
+     data-cancel-url="<%= url_for("apiv1_cancel", jobid => 'REPLACEIT') %>">
+</div>
 
 <div id="flash-messages">
     %= include 'layouts/flash_messages';

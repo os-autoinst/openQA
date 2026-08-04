@@ -1,5 +1,7 @@
 /* jshint esversion: 6 */
 
+import {setupLazyLoadingFailedSteps, showJobDependency} from './tests.js';
+
 export function overviewRowDisplay(expand) {
   return expand ? 'table-row' : 'none';
 }

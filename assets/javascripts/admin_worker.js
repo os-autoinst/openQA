@@ -1,3 +1,5 @@
+import {renderTestName, renderTestResult, renderTimeAgo, setupTestButtons} from './tests.js';
+
 export function setupWorkerNeedles() {
   const table = $('#previous_jobs').DataTable({
     ajax: $('#previous_jobs').data('ajax-url'),

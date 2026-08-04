@@ -5,10 +5,6 @@
 % end
 %= content_for 'title'
 
-% content_for 'ready_function' => begin
-    setupResultButtons();
-% end
-
 <div class="container">
   %= content_for 'src_code'
   %= include 'layouts/js_editor'

@@ -14,7 +14,6 @@
         window.needles['<%= $needle->{name} %>'] = <%= b(Cpanel::JSON::XS->new->pretty->encode($needle)) %>;
     % }
     setup_needle_editor( <%= b(encode_json($default_needle)) %> );
-    setupResultButtons();
 % end
 
 <div id="change-margin-form" title="Change search margin" class="modal" role="dialog" tabindex="-1">
