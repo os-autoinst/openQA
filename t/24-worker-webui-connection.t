@@ -78,6 +78,19 @@ my $job_mock = Test::MockModule->new('OpenQA::Worker::Job');
 $job_mock->redefine(start_livelog => sub { shift->{_livelog_viewers} = 1 });
 $job_mock->redefine(stop_livelog => sub { shift->{_livelog_viewers} = 0 });
 
+subtest 'redirect' => sub {
+    my $ua_mock = Test::MockModule->new('Mojo::UserAgent');
+    my $fake_tx_head = Mojo::Transaction::HTTP->new;
+    $ua_mock->redefine(head => $fake_tx_head);
+    $fake_tx_head->res->code(308);
+    $fake_tx_head->res->headers->location('https://test.tld:1234/');
+    my $client_redirect = undef;
+    combined_like { $client_redirect = OpenQA::Worker::WebUIConnection->new('http://127.0.0.1:12', {}) }
+    qr|Configured host was 'http://127.0.0.1:12' but got redirected to 'https://test.tld:1234/|,
+      'Warning printed on redirect';
+    is $client_redirect->url, 'https://test.tld:1234/api/v1/', 'New URL saved after redirect';
+};
+
 subtest 'attempt to register and send a command' => sub {
     my @expected_events;
     subtest 'handling registration failure on connection error' => sub {
