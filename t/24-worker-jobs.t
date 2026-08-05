@@ -15,6 +15,7 @@ BEGIN {
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
+$ENV{OPENQA_CONFIG} = "$FindBin::Bin/data/24-worker-overall";
 use Mojo::Base -signatures;
 
 use Capture::Tiny qw(capture);
@@ -186,7 +187,7 @@ sub usual_status_updates {
                 result => {},
                 test_execution_paused => 0,
                 test_order => [],
-                worker_hostname => undef,
+                worker_hostname => '127.0.0.1',
                 worker_id => 1
             }
         },
@@ -619,7 +620,7 @@ subtest 'Successful job' => sub {
                 status => {
                     cmd_srv_url => $engine_url,
                     test_execution_paused => 0,
-                    worker_hostname => undef,
+                    worker_hostname => '127.0.0.1',
                     worker_id => 1
                 }
             },
@@ -758,7 +759,7 @@ subtest 'Livelog' => sub {
                         'offset' => 0
                     },
                     test_execution_paused => 0,
-                    worker_hostname => undef,
+                    worker_hostname => '127.0.0.1',
                     worker_id => 1
                 }
             },
@@ -776,7 +777,7 @@ subtest 'Livelog' => sub {
                         'offset' => (length $user_console_text)
                     },
                     test_execution_paused => 0,
-                    worker_hostname => undef,
+                    worker_hostname => '127.0.0.1',
                     worker_id => 1
                 }
             },
@@ -872,7 +873,7 @@ subtest 'handling API failures' => sub {
                 status => {
                     cmd_srv_url => $engine_url,
                     test_execution_paused => 0,
-                    worker_hostname => undef,
+                    worker_hostname => '127.0.0.1',
                     worker_id => 1
                 }
             },
@@ -958,7 +959,7 @@ subtest 'handle upload failure' => sub {
                 status => {
                     cmd_srv_url => $engine_url,
                     test_execution_paused => 0,
-                    worker_hostname => undef,
+                    worker_hostname => '127.0.0.1',
                     worker_id => 1
                 }
             },
