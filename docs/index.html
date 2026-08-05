@@ -5558,7 +5558,28 @@ to <code>master</code>).</li>
 to use (defaults to
 <code>registry.opensuse.org/devel/openqa/containers/os-autoinst_dev:latest</code>).
 <code>OS_AUTOINST_CONTAINER_IMAGE</code> requires
-<code>OS_AUTOINST_GIT_REPO</code> to be set.</li>
+<code>OS_AUTOINST_GIT_REPO</code> to be set. For openSUSE
+test-distribution testing, you can use
+<code>registry.opensuse.org/devel/openqa/containers/osado-dev-container:latest</code>
+which pre-installs necessary test dependencies like
+<code>os-autoinst-distri-opensuse-deps</code>.</li>
+</ul>
+<p>When running inside a rootless container using these variables, the
+container starts as a clean environment. Consequently, default local
+worker test directories (such as
+<code>/var/lib/openqa/share/tests/opensuse</code>) are not mounted. To
+ensure the container can find and execute your test suite, you must
+configure the following:</p>
+<ul>
+<li><code>CASEDIR</code>: Set this to the public Git repository of your
+test distribution (e.g.
+<code>https://github.com/os-autoinst/os-autoinst-distri-opensuse.git</code>)
+so the container can clone and locate the test scripts.</li>
+<li><code>NEEDLES_DIR</code>: Since needles are typically managed in a
+separate repository, you must point this to the corresponding needles
+Git repository (e.g.
+<code>https://github.com/os-autoinst/os-autoinst-needles-opensuse.git</code>)
+so the container can clone and initialize the required needles.</li>
 </ul>
 <p><em>Note</em>: Running <code>os-autoinst</code> in a rootless
 container requires that the <code>_openqa-worker</code> user has
