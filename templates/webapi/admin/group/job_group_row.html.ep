@@ -5,20 +5,16 @@
 >
     <div
         % if (is_admin) {
-            ondrop="insertGroup(event, this);" ondragover="checkDrop(event, this);"
-            ondragstart="dragGroup(event, this);"
-            ondragleave="leaveDrag(event, this);" draggable="true"
+            class="job_group_row_div"
+            draggable="true"
         % }
     >
         % if (is_admin) {
             <div
                 class="enforce-parent-drop"
-                ondrop="insertParentGroup(event, this.parentElement);"
-                ondragover="checkParentDrop(event, this.parentElement, true, true);"
-                ondragstart="dragParentGroup(event, this.parentElement);"
             >
             </div>
-            <a href="#" onclick="return deleteGroup(this, false);" class="fa-solid fa-trash" title="Delete job group <%= $group->name %>"></a>
+            <a href="#" class="delete-job-group-btn fa-solid fa-trash" title="Delete job group <%= $group->name %>"></a>
         % }
         <i class="fa-solid fa-bars"></i>
         <span>

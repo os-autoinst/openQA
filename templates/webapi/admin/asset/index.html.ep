@@ -1,14 +1,10 @@
 % layout 'bootstrap';
 % title 'Assets';
-% content_for 'ready_function' => begin
-    window.isAdmin = <%= is_admin_js %>;
-    setupAdminAssets();
-% end
 
 <div class="row">
     <div class="col-sm-12">
         % if (is_admin) {
-            <form action="<%= url_for('apiv1_trigger_asset_cleanup') %>" method="post" onsubmit="triggerAssetCleanup(this); return false;" class="corner-buttons">
+            <form id="trigger-asset-cleanup-form" action="<%= url_for('apiv1_trigger_asset_cleanup') %>" method="post" class="corner-buttons">
                 <button type="submit" class="btn btn-secondary" title="Enqueues a new asset cleanup task if none is outstanding anyways">
                     <i class="fa-solid fa-sync"></i> Trigger asset cleanup
                 </button>
@@ -21,7 +17,8 @@
         <h3>Used assets</h3>
         <p>The following assets are used by at least one job which is part of a group.</p>
         <table id="assets" class="table table-striped"  style="width: 100%"
-            data-status-url="<%= url_for('admin_asset_status_json') %>">
+            data-status-url="<%= url_for('admin_asset_status_json') %>"
+            data-is-admin="<%= is_admin_js %>">
             <thead>
                 <tr>
                     <th>Asset</th>

@@ -1,4 +1,7 @@
-function getNonEmptyFormParams(form) {
+let scenarioDefinitionsEditor;
+let settingsEditor;
+
+export function getNonEmptyFormParams(form) {
   const formData = new FormData(form);
   const queryParams = new URLSearchParams();
   for (const [key, value] of formData) {
@@ -9,7 +12,7 @@ function getNonEmptyFormParams(form) {
   return queryParams;
 }
 
-function setupAceEditor(elementID, mode) {
+export function setupAceEditor(elementID, mode) {
   const element = document.getElementById(elementID);
   const initialValue = element.textContent;
   const editor = ace.edit(element, {
@@ -23,22 +26,20 @@ function setupAceEditor(elementID, mode) {
   return editor;
 }
 
-function setupCreateTestsForm() {
-  window.scenarioDefinitionsEditor = setupAceEditor('create-tests-scenario-definitions', 'ace/mode/yaml');
-  window.settingsEditor = setupAceEditor('create-tests-settings', 'ace/mode/ini');
+export function setupCreateTestsForm() {
+  scenarioDefinitionsEditor = setupAceEditor('create-tests-scenario-definitions', 'ace/mode/yaml');
+  settingsEditor = setupAceEditor('create-tests-settings', 'ace/mode/ini');
 }
 
-function resetCreateTestsForm() {
-  window.scenarioDefinitionsEditor.setValue(window.scenarioDefinitionsEditor.initialValue, -1);
-  window.settingsEditor.setValue(window.settingsEditor.initialValue, -1);
+export function resetCreateTestsForm() {
+  scenarioDefinitionsEditor.setValue(scenarioDefinitionsEditor.initialValue, -1);
+  settingsEditor.setValue(settingsEditor.initialValue, -1);
 }
 
-function createTests(form) {
-  event.preventDefault();
-
-  const scenarioDefinitions = window.scenarioDefinitionsEditor.getValue();
+export function createTests(form) {
+  const scenarioDefinitions = scenarioDefinitionsEditor.getValue();
   const queryParams = getNonEmptyFormParams(form);
-  window.settingsEditor
+  settingsEditor
     .getValue()
     .split('\n')
     .map(line => line.split('=', 2))
@@ -62,7 +63,7 @@ function createTests(form) {
   });
 }
 
-function cloneTests(link) {
+export function cloneTests(link) {
   const loadingIndication = document.createElement('span');
   loadingIndication.append('Cloning test distribution …');
   link.parentNode.replaceWith(loadingIndication);
@@ -73,10 +74,30 @@ function cloneTests(link) {
       location.reload();
     },
     error: function (xhr, ajaxOptions, thrownError) {
-      const retryButton = '<br/><a class="btn btn-primary" href="#" onclick="cloneTests(this)">Retry</a>';
+      const retryButton = '<br/><a class="btn btn-primary clone-tests-btn" href="#">Retry</a>';
       const error = xhr.responseJSON?.error ?? xhr.responseText ?? thrownError;
       loadingIndication.parentNode.classList.replace('alert-primary', 'alert-danger');
       loadingIndication.innerHTML = `Unable to clone: ${error} ${retryButton}`;
     }
   });
 }
+
+$(function () {
+  if ($('#create-tests-form').length) {
+    setupCreateTestsForm();
+  }
+});
+
+$(document).on('submit', '#create-tests-form', function (e) {
+  e.preventDefault();
+  createTests(this);
+});
+
+$(document).on('reset', '#create-tests-form', function (e) {
+  resetCreateTestsForm(this);
+});
+
+$(document).on('click', '.clone-tests-btn', function (e) {
+  e.preventDefault();
+  cloneTests(this);
+});

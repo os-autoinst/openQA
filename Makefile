@@ -116,7 +116,7 @@ generate-assets: ## Generate packed assets and copy to DESTDIR
 
 .PHONY: install-generic
 install-generic: generate-assets generate-completions ## Install generic components
-	for f in $(shell perl -Ilib -mOpenQA::Assets -e OpenQA::Assets::list); do \
+	for f in $$(find public/dist -type f); do \
 		install -m 644 -D --target-directory="$(DESTDIR)/usr/share/openqa/$${f%/*}" "$$f";\
 	done
 
@@ -229,9 +229,15 @@ endif
 # note: Excluding dev dependencies like `eslint` via `--omit=dev` to pull in only dependencies needed at runtime (and for
 #       regular tests). Development tests/tooling like `js-tidy` will invoke `npm clean-install …` to install missing
 #       dependencies on its own anyway.
-node_modules: package-lock.json ## Build web-related dependencies (NPM, JS, CSS)
-	@command -v local-npm-registry >/dev/null 2>&1 || npm clean-install --no-audit --no-fund --ignore-scripts --omit=dev
-	@touch node_modules
+.PHONY: node_modules
+node_modules: ## Build web-related dependencies (NPM, JS, CSS)
+	@if [ ! -d node_modules ] || [ package-lock.json -nt node_modules ]; then \
+		command -v local-npm-registry >/dev/null 2>&1 || npm clean-install --no-audit --no-fund --ignore-scripts --omit=dev; \
+		npm run build || (npm install --no-audit --no-fund --ignore-scripts && npm run build && npm prune --omit=dev); \
+		touch node_modules; \
+	elif [ ! -f public/dist/.vite/manifest.json ]; then \
+		npm run build || (npm install --no-audit --no-fund --ignore-scripts && npm run build && npm prune --omit=dev); \
+	fi
 
 .PHONY: test
 ifeq ($(CHECKSTYLE),0)

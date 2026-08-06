@@ -13,11 +13,12 @@
 </style>
 % end
 
-% content_for 'ready_function' => begin
-    updateTimeago();
-    setupResultButtons();
-    setupResult(<%= $job->id %>, '<%= $job->state %>', '<%= $job->result %>', '<%= url_for('status', testid => $job->id) %>', '<%= url_for('test_details', testid => $job->id) %>');
-% end
+<div id="test-result-config"
+     data-job-id="<%= $job->id %>"
+     data-state="<%= $job->state %>"
+     data-result="<%= $job->result %>"
+     data-status-url="<%= url_for('status', testid => $job->id) %>">
+</div>
 
 <div class="row">
     <div class="col-sm-12">

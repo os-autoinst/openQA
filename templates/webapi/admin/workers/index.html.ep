@@ -1,10 +1,6 @@
 % layout 'bootstrap';
 % title 'Workers';
 
-% content_for 'ready_function' => begin
-    loadWorkerTable();
-% end
-
 <h2><%= title %></h2>
 <div id="summary" class="card">
     <div class="card-header">Statistics</div>
@@ -72,7 +68,7 @@
                         </td>
                         <td class='action'>
                             % if($is_admin == 1 && ($worker->{status} eq 'dead' && !$worker->{job})) {
-                                <button class='btn' type='submit' alt='Delete' title='Delete' post_delete_url="<%= url_for('apiv1_worker_delete', worker_id => $worker->{id}) %>" onclick='deleteWorker(this)'><i class="fa-regular fa-trash-can"></i></button>
+                                <button class='btn delete-worker-btn' type='submit' alt='Delete' title='Delete' post_delete_url="<%= url_for('apiv1_worker_delete', worker_id => $worker->{id}) %>"><i class="fa-regular fa-trash-can"></i></button>
                             % }
                         </td>
                     </tr>

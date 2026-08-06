@@ -564,7 +564,7 @@ function saveNeedle(overwrite) {
   return false;
 }
 
-let nEditor;
+let nEditor = window.nEditor;
 
 function submitMargin() {
   setMargin();
@@ -579,7 +579,7 @@ function submitMatch() {
 }
 
 function setup_needle_editor(imageurl, default_needle) {
-  nEditor = new NeedleEditor(imageurl, default_needle);
+  nEditor = window.nEditor = new NeedleEditor(imageurl, default_needle);
 
   $('.tag_checkbox').click(function () {
     nEditor.changeTag(this.value, this.checked);
@@ -655,3 +655,17 @@ function setup_needle_editor(imageurl, default_needle) {
 }
 
 // Now go make something amazing!
+window.NeedleEditor = NeedleEditor;
+window.loadBackground = loadBackground;
+window.loadTagsAndName = loadTagsAndName;
+window.loadAreas = loadAreas;
+window.addTag = addTag;
+window.setMargin = setMargin;
+window.setMatch = setMatch;
+window.toggleClickCoordinates = toggleClickCoordinates;
+window.updateToggleClickCoordinatesButton = updateToggleClickCoordinatesButton;
+window.hasMatchAreas = hasMatchAreas;
+window.saveNeedle = saveNeedle;
+window.submitMargin = submitMargin;
+window.submitMatch = submitMatch;
+window.setup_needle_editor = setup_needle_editor;

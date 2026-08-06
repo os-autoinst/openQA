@@ -26,9 +26,10 @@
 
       %= content_for 'head'
 
-      %= javascript begin
+      <script type="module">
+          import "<%= vite('bootstrap.js') %>";
           %= content_for 'head_javascript'
-          function urlWithBase(path) {
+          window.urlWithBase = function(path) {
             % my $url_base = url_for 'index';
             % if ($url_base eq '/') {
               return path;
@@ -38,10 +39,10 @@
           }
           $(function() {
             setupForAll();
-            backToTop();
             %= content_for 'ready_function'
+            document.body.dataset.jsLoaded = 'true';
           });
-      % end
+      </script>
 
       <link id="favicon-16" rel="icon" href="<%= favicon_url '-16.png' %>" sizes="16x16" type="image/png">
       <link id="favicon-svg" rel="icon" href="<%= favicon_url '.svg' %>" sizes="any" type="image/svg+xml">
@@ -51,7 +52,7 @@
       %= include 'layouts/navbar'
       <div class="container-fluid" id="content">
           %= content
-          <button id="back-to-top" class="btn btn-primary btn-lg back-to-top">
+          <button id="back-to-top" class="btn btn-primary btn-lg back-to-top" style="display: none;">
             <i class="fa-solid fa-angle-up"></i>
           </button>
       </div>

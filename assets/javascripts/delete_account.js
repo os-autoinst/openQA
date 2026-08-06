@@ -1,4 +1,4 @@
-function setup_delete_account() {
+export function setup_delete_account() {
   const input = document.getElementById('confirm-delete');
   const btn = document.getElementById('confirm-delete-btn');
   if (!input || !btn) return;
@@ -19,3 +19,9 @@ function setup_delete_account() {
     });
   });
 }
+
+$(function () {
+  if ($('#confirm-delete').length) {
+    setup_delete_account();
+  }
+});

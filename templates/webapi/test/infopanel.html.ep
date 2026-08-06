@@ -116,7 +116,7 @@
                     <div>
                         Priority:
                         % if (is_operator) {
-                            <a class="prio-down" data-method="post" href="javascript:void(0);" onclick="decreaseJobPrio(<%= $job->id %>, this);">
+                            <a class="prio-down" data-method="post" href="javascript:void(0);" data-job-id="<%= $job->id %>">
                                 <i class="fa-regular fa-square-minus"></i>
                             </a>
                             % if (my $prio_explanation = $job->settings_hash->{_PRIORITY_EXPLANATION}) {
@@ -124,7 +124,7 @@
                             % } else {
                                 <span class="prio-value"><%= $job->priority %></span>
                             % }
-                            <a class="prio-up" data-method="post" href="javascript:void(0);" onclick="increaseJobPrio(<%= $job->id %>, this);">
+                            <a class="prio-up" data-method="post" href="javascript:void(0);" data-job-id="<%= $job->id %>">
                                 <i class="fa-regular fa-square-plus"></i>
                             </a>
                         % } else {
@@ -193,7 +193,6 @@
                       <div class="btn-group btn-group-sm">
                         <a href="#"
                           id="restart-scheduled-product" \
-                          onclick="return rescheduleProductForJob(this);" \
                           class="btn btn-danger"\
                            data-url="<%= url_for('apiv1_create_iso')->query(scheduled_product_clone_id => $sp_id, TEST => $job->TEST, _SKIP_CHAINED_DEPS => 1, _INCLUDE_CHILDREN => 1) %>">\
                              <i class="fa-solid fa-2 fa-rotate"></i><span>Reschedule product from here</span>

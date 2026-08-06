@@ -1,8 +1,5 @@
 % layout 'bootstrap';
 % title 'API Keys';
-% content_for 'ready_function' => begin
-    setup_delete_account();
-% end
 <div>
     <h2><%= title %></h2>
     %= include 'layouts/info'
@@ -13,7 +10,7 @@
             %= form_for api_keys => (id => 'api-keys-form', method => 'post') => begin
                 <div class="mb-3">
                     <label class="form-label" for="expiration">Expiration</label>
-                    <input type="checkbox" id="expiration" checked onchange="toggleExpiration(this)">
+                    <input type="checkbox" id="expiration" checked>
                     %= datetime_field 't_expiration', id => 'expiration-datetime-field', size => 14, class => 'form-control', value => DateTime->now()->add(years => 1)->strftime('%FT%H:%M')
                 </div>
                 <div class="mb-3">

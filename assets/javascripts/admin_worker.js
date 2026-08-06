@@ -1,4 +1,6 @@
-function setupWorkerNeedles() {
+import {renderTestName, renderTestResult, renderTimeAgo, setupTestButtons} from './tests.js';
+
+export function setupWorkerNeedles() {
   const table = $('#previous_jobs').DataTable({
     ajax: $('#previous_jobs').data('ajax-url'),
     deferRender: true,
@@ -20,7 +22,7 @@ function setupWorkerNeedles() {
   $('#previous_jobs_filter').hide();
 }
 
-function loadWorkerTable() {
+export function loadWorkerTable() {
   $('#workers').DataTable({
     initComplete: function () {
       this.api()
@@ -57,9 +59,15 @@ function loadWorkerTable() {
   $('#workers_online').on('click', function (event) {
     event.stopPropagation();
   });
+
+  // Delegated event listener for deleting workers
+  $('#workers').on('click', '.delete-worker-btn', function (e) {
+    e.preventDefault();
+    deleteWorker(this);
+  });
 }
 
-function deleteWorker(deleteBtn) {
+export function deleteWorker(deleteBtn) {
   const post_url = $(deleteBtn).attr('post_delete_url');
   fetchWithCSRF(post_url, {method: 'DELETE'})
     .then(response => {
@@ -75,3 +83,12 @@ function deleteWorker(deleteBtn) {
       addFlash('danger', "The worker couldn't be deleted: " + error);
     });
 }
+
+$(function () {
+  if ($('#previous_jobs').length) {
+    setupWorkerNeedles();
+  }
+  if ($('#workers').length) {
+    loadWorkerTable();
+  }
+});

@@ -1,6 +1,6 @@
 /* jshint multistr: true */
 
-function setupAdminAssets() {
+export function setupAdminAssets() {
   // determine params for AJAX queries
   const pageQueryParams = parseQueryParams();
   const ajaxQueryParams = {};
@@ -54,9 +54,9 @@ function setupAdminAssets() {
           }
           return (
             data +
-            '<a href="#" onclick="deleteAsset(' +
+            '<a href="#" class="delete-asset-btn" data-asset-id="' +
             row.id +
-            ');"><i class="action fa-solid fa-fw fa-circle-xmark" title="Delete asset from disk"></i></a>'
+            '"><i class="action fa-solid fa-fw fa-circle-xmark" title="Delete asset from disk"></i></a>'
           );
         }
       },
@@ -111,16 +111,33 @@ function setupAdminAssets() {
   if (searchParams && searchParams.length > 0) {
     window.assetsTable.search(searchParams[0]).draw();
   }
+
+  // Delegated event listeners for actions
+  $('#assets').on('click', '.delete-asset-btn', function (e) {
+    e.preventDefault();
+    const assetId = $(this).data('asset-id');
+    deleteAsset(assetId);
+  });
+
+  $('#trigger-asset-cleanup-form').on('submit', function (e) {
+    e.preventDefault();
+    triggerAssetCleanup(this);
+  });
+
+  $('#flash-messages').on('click', '.retry-assets-btn', function (e) {
+    e.preventDefault();
+    reloadAssetsTable();
+  });
 }
 
-function reloadAssetsTable() {
+export function reloadAssetsTable() {
   $('#assets-by-group-loading').show();
   $('#assets-status').text('loading');
   $('#flash-messages div.alert').remove();
   window.assetsTable.ajax.reload();
 }
 
-function deleteAsset(assetId) {
+export function deleteAsset(assetId) {
   fetchWithCSRF(urlWithBase(`/api/v1/assets/${assetId}`), {method: 'DELETE'})
     .then(response => {
       // not checking for status code as 404 case also returns proper json
@@ -141,7 +158,7 @@ function deleteAsset(assetId) {
     });
 }
 
-function triggerAssetCleanup(form) {
+export function triggerAssetCleanup(form) {
   fetchWithCSRF(form.action, {method: form.method})
     .then(response => {
       return response
@@ -257,7 +274,8 @@ function makeAssetsByGroup(assetStatus) {
       groupLi.append(label);
 
       // add configure button
-      if (window.isAdmin && groupId !== null && groupId !== undefined && groupInfo.group !== 'Untracked') {
+      const isAdmin = $('#assets').data('is-admin') === true;
+      if (isAdmin && groupId !== null && groupId !== undefined && groupInfo.group !== 'Untracked') {
         const path = isParent ? '/admin/edit_parent_group/' + groupId : '/admin/job_templates/' + groupId;
         groupLi.append('<a href="' + path + '"><i class="fa-solid fa-wrench" title="Configure"></i></a>');
       }
@@ -289,3 +307,9 @@ function makeAssetsByGroup(assetStatus) {
 
   assetsByGroupHeading.text('Assets by group (total ' + renderDataSize(totalSize) + ')');
 }
+
+$(function () {
+  if ($('#assets').length) {
+    setupAdminAssets();
+  }
+});

@@ -5,9 +5,6 @@
   %= asset 'ace.css'
   %= asset 'create_tests.js'
 % end
-% content_for 'ready_function' => begin
-  setupCreateTestsForm();
-% end
 
 <h2><%= title %></h2>
 
@@ -15,7 +12,7 @@
     %= include 'layouts/flash_messages';
 </div>
 
-<form id="create-tests-form" class="row g-3" method="post" onsubmit="createTests(this)" onreset="resetCreateTestsForm(this)" data-post-url="<%= url_for('apiv1_create_iso') %>" data-productlog-url="<%= url_for('admin_product_log') %>">
+<form id="create-tests-form" class="row g-3" method="post" data-post-url="<%= url_for('apiv1_create_iso') %>" data-productlog-url="<%= url_for('admin_product_log') %>">
     <div class="col-md-6">
       <label for="create-tests-distri" class="form-label"><strong>Distribution (<code>DISTRI</code>)</strong></label>
       <%= help_popover('Distribution' => '<p>Creates only tests for the specified distribution. This is a mandatory parameter.</p>', undef, undef, 'left') %>

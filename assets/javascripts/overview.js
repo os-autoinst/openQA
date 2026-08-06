@@ -1,23 +1,25 @@
 /* jshint esversion: 6 */
 
-function overviewRowDisplay(expand) {
+import {setupLazyLoadingFailedSteps, showJobDependency} from './tests.js';
+
+export function overviewRowDisplay(expand) {
   return expand ? 'table-row' : 'none';
 }
 
-function toggleParallelChildren(expand, parentJobID) {
+export function toggleParallelChildren(expand, parentJobID) {
   const display = overviewRowDisplay(expand);
   Array.from(document.getElementsByClassName('parallel-child-of-' + parentJobID)).forEach(childRow => {
     childRow.style.display = display;
   });
 }
 
-function considerChildrenChanged(expanded, parentElement) {
+export function considerChildrenChanged(expanded, parentElement) {
   Array.from(parentElement.getElementsByClassName('toggle-parallel-children')).forEach(toggleLink => {
     toggleLink.dataset.expanded = expanded ? '1' : '';
   });
 }
 
-function toggleAllParallelChildren(expand, table) {
+export function toggleAllParallelChildren(expand, table) {
   const display = overviewRowDisplay(expand);
   Array.from(table.getElementsByClassName('parallel-child')).forEach(childRow => {
     childRow.style.display = display;
@@ -25,12 +27,12 @@ function toggleAllParallelChildren(expand, table) {
   considerChildrenChanged(expand, table);
 }
 
-function hasOnlyOkChildren(table, parentID) {
+export function hasOnlyOkChildren(table, parentID) {
   const sel = '.parallel-child-of-' + parentID + window.overviewParallelChildrenCollapsableResultsSel;
   return table.querySelector(sel) === null;
 }
 
-function collapseOkParallelChildren() {
+export function collapseOkParallelChildren() {
   Array.from(document.getElementsByClassName('parallel-parent')).forEach(parentRow => {
     const parentIDs = parentRow.dataset.parallelParents.split(',');
     if (parentIDs.find(hasOnlyOkChildren.bind(this, parentRow.parentElement))) {
@@ -40,19 +42,19 @@ function collapseOkParallelChildren() {
   });
 }
 
-function appendParallelChildren(parentRow, parentJobID) {
+export function appendParallelChildren(parentRow, parentJobID) {
   Array.from(document.getElementsByClassName('parallel-child-of-' + parentJobID)).forEach(childRow => {
     parentRow.insertAdjacentElement('afterend', childRow);
   });
 }
 
-function ensureParallelParentsComeFirst() {
+export function ensureParallelParentsComeFirst() {
   Array.from(document.getElementsByClassName('parallel-parent')).forEach(parentRow => {
     parentRow.dataset.parallelParents.split(',').forEach(appendParallelChildren.bind(undefined, parentRow));
   });
 }
 
-function showToggleLinkForParallelParents(relatedRow, relatedTable, resElement, parallelChildren) {
+export function showToggleLinkForParallelParents(relatedRow, relatedTable, resElement, parallelChildren) {
   if (!Array.isArray(parallelChildren)) {
     return false;
   }
@@ -102,7 +104,7 @@ function showToggleLinkForParallelParents(relatedRow, relatedTable, resElement, 
   return true;
 }
 
-function initCollapsedParallelChildren(relatedRow, relatedTable, parallelParents) {
+export function initCollapsedParallelChildren(relatedRow, relatedTable, parallelParents) {
   if (!Array.isArray(parallelParents) || parallelParents.length !== 1) {
     return false;
   }
@@ -112,7 +114,7 @@ function initCollapsedParallelChildren(relatedRow, relatedTable, parallelParents
   }
 }
 
-function stackParallelChildren(depElement, dependencyInfo) {
+export function stackParallelChildren(depElement, dependencyInfo) {
   const relatedRow = depElement.parentElement.parentElement;
   const relatedTable = relatedRow.parentElement;
   const resElement = depElement.previousElementSibling;
@@ -120,7 +122,7 @@ function stackParallelChildren(depElement, dependencyInfo) {
     initCollapsedParallelChildren(relatedRow, relatedTable, dependencyInfo.parents.Parallel);
 }
 
-function setupOverview(options) {
+export function setupOverview(options) {
   setupLazyLoadingFailedSteps();
   updateTimeago();
   $('.cancel').bind('ajax:success', function (event, xhr, status) {
@@ -200,7 +202,9 @@ function setupOverview(options) {
 
   setupFilterForm(options);
   const form = document.getElementById('filter-form');
-  form.todo = false;
+  if (form?.todo) {
+    form.todo.checked = false;
+  }
 
   // initialize filter for modules results
   const modulesResultFilter = $('#modules_result');
@@ -268,27 +272,27 @@ function setupOverview(options) {
   }
 }
 
-function setCheckboxStatesForFlags(containerId, flags) {
+export function setCheckboxStatesForFlags(containerId, flags) {
   Array.from(document.getElementById(containerId).getElementsByTagName('input')).forEach(e => {
     e.checked = flags[e.id.substr(7)];
   });
 }
 
-function highlightDeps() {
+export function highlightDeps() {
   const parentData = JSON.parse(this.dataset.parentsDeps);
   const childData = JSON.parse(this.dataset.childrenDeps);
   changeClassOfDependencyJob(parentData, 'highlight_parent', true);
   changeClassOfDependencyJob(childData, 'highlight_child', true);
 }
 
-function unhighlightDeps() {
+export function unhighlightDeps() {
   const parentData = JSON.parse(this.dataset.parentsDeps);
   const childData = JSON.parse(this.dataset.childrenDeps);
   changeClassOfDependencyJob(parentData, 'highlight_parent', false);
   changeClassOfDependencyJob(childData, 'highlight_child', false);
 }
 
-function changeClassOfDependencyJob(array, className, add) {
+export function changeClassOfDependencyJob(array, className, add) {
   for (let i = 0; i < array.length; i++) {
     const ele = document.getElementsByName('jobid_td_' + array[i])[0];
     if (ele === undefined) {
@@ -299,12 +303,12 @@ function changeClassOfDependencyJob(array, className, add) {
   }
 }
 
-function showAddCommentsDialog() {
+export function showAddCommentsDialog() {
   const modal = (window.addCommentsModal = new bootstrap.Modal('#add-comments-modal'));
   modal.show();
 }
 
-function restartJobsWithComment(btn) {
+export function restartJobsWithComment(btn) {
   const form = btn.form;
   const text = form.elements.text.value;
   const jobs = btn.dataset.jobs
@@ -327,7 +331,7 @@ function restartJobsWithComment(btn) {
   });
 }
 
-function addComments(btn) {
+export function addComments(btn) {
   const form = btn.form;
   const text = form.elements.text.value;
   const apiUrl = btn.dataset.url;
@@ -355,3 +359,27 @@ function addComments(btn) {
       done();
     });
 }
+
+$(function () {
+  const container = $('#test-overview-container');
+  if (container.length) {
+    const metaMapping = container.data('meta-mapping');
+    window.overviewParallelChildrenCollapsableResultsSel = container.data('parallel-children-collapsable-results-sel');
+    setupOverview({metaMapping: metaMapping});
+  }
+});
+
+$(document).on('click', '#trigger-add-comments-btn', function (e) {
+  e.preventDefault();
+  showAddCommentsDialog();
+});
+
+$(document).on('click', '#commentJobsBtn', function (e) {
+  e.preventDefault();
+  addComments(this);
+});
+
+$(document).on('click', '#restartAndCommentJobsBtn', function (e) {
+  e.preventDefault();
+  restartJobsWithComment(this);
+});

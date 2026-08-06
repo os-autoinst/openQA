@@ -4,13 +4,10 @@
 % use OpenQA::Jobs::Constants;
 % use List::Util qw(any sum);
 
-% content_for 'ready_function' => begin
-  window.overviewParallelChildrenCollapsableResultsSel = '<%= $parallel_children_collapsable_results_sel %>';
-  setupOverview({metaMapping: <%== Mojo::JSON::to_json($meta_mapping) %>});
-% end
-
 %= include 'layouts/limit_warning'
-<div>
+<div id="test-overview-container"
+     data-parallel-children-collapsable-results-sel="<%= $parallel_children_collapsable_results_sel %>"
+     data-meta-mapping="<%= Mojo::JSON::to_json($meta_mapping) %>">
     <h2>Test result overview</h2>
     <div id="summary" class="card <%= ($aggregate_status =~ /^(?:failed|not_complete)$/) ? 'border-danger' : 'border-success' %>">
         <div class="card-header">
@@ -58,7 +55,7 @@
         <div class="card-body">
             % my $allow_commenting = @$job_ids && current_user;
             % if ($allow_commenting) {
-            <button type="button" class="btn btn-secondary btn-circle btn-sm trigger-edit-button" onclick="showAddCommentsDialog()" title="Restart or comment jobs">
+            <button id="trigger-add-comments-btn" type="button" class="btn btn-secondary btn-circle btn-sm trigger-edit-button" title="Restart or comment jobs">
                 <span class="fa-stack group-comment-icon-stack">
                     <i class="fa-solid fa-comment fa-stack-2x text-danger-info" aria-hidden="true"></i>
                     <i class="fa-solid fa-rotate-left fa-stack-1x" aria-hidden="true"></i>
@@ -158,7 +155,8 @@
                             <select name="modules_result" id="modules_result" data-placeholder="any" class="chosen-select" multiple>
                                 % for my $modules_result (OpenQA::Jobs::Constants::MODULE_RESULTS) {
                                     <option><%= $modules_result %></option>
-                                % }
+</div>
+% }
                             </select>
                         </div>
                     </div>
@@ -243,14 +241,12 @@
           </div>
           <div id="add-comments-controls">
             <button type="button" class="btn btn-warning" id="commentJobsBtn"
-                    data-url="<%= url_for('apiv1_post_comments')->query(job_id=>$job_ids) %>"
-                    onclick="addComments(this);">
+                    data-url="<%= url_for('apiv1_post_comments')->query(job_id=>$job_ids) %>">
               <i class="fa-solid fa-comment"></i> Comment on all <%= scalar @$job_ids %> jobs
             </button>
             <button type="button" class="btn btn-danger" id="restartAndCommentJobsBtn"
                     data-jobs="<%= join(',', @$job_ids) %>"
-                    data-url="<%= url_for('apiv1_restart_jobs')->query(jobs=>$job_ids) %>"
-                    onclick="restartJobsWithComment(this);">
+                    data-url="<%= url_for('apiv1_restart_jobs')->query(jobs=>$job_ids) %>">
               <i class="fa-regular fa-circle-play"></i> Restart and comment on <%= scalar @$job_ids %> jobs
             </button>
             <button type="button" class="btn btn-secondary"

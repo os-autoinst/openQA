@@ -1,4 +1,4 @@
-function showAddGroupModal(parentId, title) {
+export function showAddGroupModal(parentId, title) {
   const modal = document.getElementById('add_group_modal');
   const form = document.getElementById('new_group_form');
   modal.getElementsByClassName('modal-title')[0].textContent = title;
@@ -10,7 +10,7 @@ function showAddGroupModal(parentId, title) {
   return false;
 }
 
-function showAddJobGroup(plusElement) {
+export function showAddJobGroup(plusElement) {
   let parentId, title;
   if (plusElement) {
     const parentLiElement = $(plusElement).closest('li');
@@ -26,17 +26,17 @@ function showAddJobGroup(plusElement) {
   return showAddGroupModal(parentId, title);
 }
 
-function showAddParentGroup() {
+export function showAddParentGroup() {
   return showAddGroupModal(undefined, 'Add new folder');
 }
 
-function showError(message) {
+export function showError(message) {
   $('#new_group_creating').hide();
   $('#new_group_error').show();
   $('#new_group_error_message').text(message ? message : 'something went wrong');
 }
 
-function fetchHtmlEntry(url, targetElement) {
+export function fetchHtmlEntry(url, targetElement) {
   fetch(url)
     .then(response => {
       if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
@@ -56,14 +56,14 @@ function fetchHtmlEntry(url, targetElement) {
     });
 }
 
-function countEmptyInputs(form) {
+export function countEmptyInputs(form) {
   return Array.from(form.querySelectorAll('input')).reduce(
     (count, e) => count + (e.type !== 'number' && !e.value.trim().length),
     0
   );
 }
 
-function validateJobGroupForm(form) {
+export function validateJobGroupForm(form) {
   const $form = $(form);
   const $button = $form.find('button[type=submit]');
   const disableSubmit = function () {
@@ -79,7 +79,7 @@ function validateJobGroupForm(form) {
   disableSubmit();
 }
 
-function createGroup(form) {
+export function createGroup(form) {
   $('#new_group_error').hide();
   $('#new_group_creating').show();
 
@@ -134,13 +134,13 @@ function createGroup(form) {
 
 let dragData = undefined;
 
-function removeAllDropIndicators() {
+export function removeAllDropIndicators() {
   // workaround for Firefox which doesn't trigger leaveDrag when moving the mouse very fast
   $('.dragover').removeClass('dragover');
   $('.parent-dragover').removeClass('parent-dragover');
 }
 
-function checkDrop(event, parentDivElement) {
+export function checkDrop(event, parentDivElement) {
   if (dragData) {
     const parentLiElement = parentDivElement.parentElement;
     const isTopLevel = parentLiElement.parentElement.id === 'job_group_list';
@@ -155,7 +155,7 @@ function checkDrop(event, parentDivElement) {
   }
 }
 
-function checkParentDrop(event, parentDivElement, enforceParentDrop, noChildDrop) {
+export function checkParentDrop(event, parentDivElement, enforceParentDrop, noChildDrop) {
   if (dragData) {
     if (noChildDrop && dragData.isParent) {
       return;
@@ -173,13 +173,13 @@ function checkParentDrop(event, parentDivElement, enforceParentDrop, noChildDrop
   }
 }
 
-function leaveDrag(event, parentDivElement) {
+export function leaveDrag(event, parentDivElement) {
   $(parentDivElement).removeClass('dragover');
   $(parentDivElement).removeClass('parent-dragover');
   $(parentDivElement.parentElement).removeClass('dragover');
 }
 
-function concludeDrop(dropTargetElement) {
+export function concludeDrop(dropTargetElement) {
   // workaround for Firefox which doesn't emit the leaveDrag event reliably
   $(dropTargetElement).removeClass('dragover');
   $(dropTargetElement).removeClass('parent-dragover');
@@ -191,7 +191,7 @@ function concludeDrop(dropTargetElement) {
   saveReorganizedGroups();
 }
 
-function insertParentGroup(event, parentLiElement) {
+export function insertParentGroup(event, parentLiElement) {
   event.preventDefault();
   if (dragData) {
     dragData.liElement.hide();
@@ -206,7 +206,7 @@ function insertParentGroup(event, parentLiElement) {
   }
 }
 
-function insertGroup(event, siblingDivElement) {
+export function insertGroup(event, siblingDivElement) {
   event.preventDefault();
   if (dragData) {
     const siblingLiElement = siblingDivElement.parentElement;
@@ -217,7 +217,7 @@ function insertGroup(event, siblingDivElement) {
   }
 }
 
-function dragGroup(event, groupDivElement) {
+export function dragGroup(event, groupDivElement) {
   // workaround for Firefox which insists on having data in dataTransfer
   event.dataTransfer.setData('make', 'firefox happy');
 
@@ -231,7 +231,7 @@ function dragGroup(event, groupDivElement) {
   };
 }
 
-function dragParentGroup(event, groupDivElement) {
+export function dragParentGroup(event, groupDivElement) {
   event.dataTransfer.setData('make', 'firefox happy');
   const groupLiElement = groupDivElement.parentElement;
   dragData = {
@@ -245,7 +245,7 @@ function dragParentGroup(event, groupDivElement) {
 let ajaxQueries = [];
 let showPanelTimeout = undefined;
 
-function saveReorganizedGroups() {
+export function saveReorganizedGroups() {
   // wipe scheduled queries (for still uncommitted changes new queries will be added)
   ajaxQueries = [];
 
@@ -373,7 +373,7 @@ function saveReorganizedGroups() {
   return false;
 }
 
-function handleQuery(query) {
+export function handleQuery(query) {
   const url = query.url;
   delete query.url;
   const success = query.success;
@@ -404,7 +404,7 @@ function handleQuery(query) {
     .then(success)
     .catch(error);
 }
-function deleteGroup(elem, isParent) {
+export function deleteGroup(elem, isParent) {
   const li = $(elem).closest('li');
   const idAttr = li.attr('id');
   const id = parseInt(idAttr.replace(isParent ? 'parent_group_' : 'job_group_', ''));
@@ -441,3 +441,94 @@ function deleteGroup(elem, isParent) {
 
   return false;
 }
+
+$(function () {
+  const list = $('#job_group_list');
+  if (!list.length) return;
+
+  // Bind drag & drop events dynamically on the job group list
+  list.on('dragstart', '.parent_group_row_div', function (e) {
+    dragParentGroup(e.originalEvent, this);
+  });
+  list.on('dragstart', '.enforce-parent-drop', function (e) {
+    dragParentGroup(e.originalEvent, this.parentElement);
+  });
+  list.on('dragover', '.parent_group_row_div', function (e) {
+    checkParentDrop(e.originalEvent, this);
+  });
+  list.on('dragover', '.parent_group_row_div .enforce-parent-drop', function (e) {
+    checkParentDrop(e.originalEvent, this.parentElement, true);
+  });
+  list.on('dragover', '.job_group_row_div .enforce-parent-drop', function (e) {
+    checkParentDrop(e.originalEvent, this.parentElement, true, true);
+  });
+  list.on('dragleave', '.parent_group_row_div', function (e) {
+    leaveDrag(e.originalEvent, this);
+  });
+  list.on('drop', '.parent_group_row_div', function (e) {
+    insertParentGroup(e.originalEvent, this);
+  });
+  list.on('drop', '.parent_group_row_div .enforce-parent-drop', function (e) {
+    insertParentGroup(e.originalEvent, this.parentElement);
+  });
+
+  list.on('dragstart', '.job_group_row_div', function (e) {
+    dragGroup(e.originalEvent, this);
+  });
+  list.on('dragover', '.job_group_row_div', function (e) {
+    checkDrop(e.originalEvent, this);
+  });
+  list.on('dragleave', '.job_group_row_div', function (e) {
+    leaveDrag(e.originalEvent, this);
+  });
+  list.on('drop', '.job_group_row_div', function (e) {
+    insertGroup(e.originalEvent, this);
+  });
+});
+
+$(document).on('submit', '#new_group_form', function (e) {
+  e.preventDefault();
+  createGroup(this);
+});
+
+$(document).on('click', '.add-parent-group-btn', function (e) {
+  e.preventDefault();
+  showAddParentGroup(this);
+});
+
+$(document).on('click', '.add-job-group-top-btn', function (e) {
+  e.preventDefault();
+  showAddJobGroup();
+});
+
+$(document).on('click', '.show-add-job-group-btn', function (e) {
+  e.preventDefault();
+  showAddJobGroup(this);
+});
+
+$(document).on('click', '.delete-parent-group-btn', function (e) {
+  e.preventDefault();
+  deleteGroup(this, true);
+});
+
+$(document).on('click', '.delete-job-group-btn', function (e) {
+  e.preventDefault();
+  deleteGroup(this, false);
+});
+
+$(document).on('click', '#retry-save-reorganized-btn', function (e) {
+  e.preventDefault();
+  saveReorganizedGroups();
+});
+
+$(document).on('click', '#refresh-page-btn', function (e) {
+  e.preventDefault();
+  window.location.reload();
+});
+
+$(function () {
+  const form = document.getElementById('group_properties_form');
+  if (form) {
+    validateJobGroupForm(form);
+  }
+});

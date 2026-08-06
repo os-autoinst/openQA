@@ -1,16 +1,13 @@
 /* jshint esversion: 6 */
 
 const filters = ['todo', 'relevant'];
-let is_operator;
-let restart_url;
-let cancel_url;
 
 function addClassToArray(data, theclass) {
-  for (i = 0; i < data.length; ++i) $('#job_' + data[i]).addClass(theclass);
+  for (let i = 0; i < data.length; ++i) $('#job_' + data[i]).addClass(theclass);
 }
 
 function removeClassFromArray(data, theclass) {
-  for (i = 0; i < data.length; ++i) $('#job_' + data[i]).removeClass(theclass);
+  for (let i = 0; i < data.length; ++i) $('#job_' + data[i]).removeClass(theclass);
 }
 
 function highlightJobs() {
@@ -56,13 +53,13 @@ function renderTestName(data, type, row) {
   }
 
   let html = '';
-  if (is_operator) {
+  if (window.is_operator) {
     html += '<a class="copy-jobid" href="#" data-jobid="' + row.id + '">';
     html += '<i class="action fa-solid fa-fw fa-copy" title="Copy job id"></i></a>';
     if (row.result !== 'none') {
       // allow to restart finished jobs
       if (!row.clone) {
-        const url = restart_url.replace('REPLACEIT', row.id);
+        const url = window.restart_url.replace('REPLACEIT', row.id);
         html += ' <a class="restart" href="' + htmlEscape(url) + '">';
         html += '<i class="action fa-solid fa-fw fa-rotate-left" title="Restart job"></i></a>';
       } else {
@@ -70,7 +67,7 @@ function renderTestName(data, type, row) {
       }
     } else {
       // allow to cancel scheduled and running jobs
-      const url = cancel_url.replace('REPLACEIT', row.id);
+      const url = window.cancel_url.replace('REPLACEIT', row.id);
       html += ' <a class="cancel" href="' + url + '">';
       html += '<i class="action fa-solid fa-fw fa-circle-xmark" title="Cancel job"></i></a>';
     }
@@ -167,18 +164,18 @@ function renderPriority(data, type, row) {
     text =
       ' <span class="prio-value" data-bs-toggle="tooltip" title="' + row.prio_explanation + '">' + data + '</span> ';
   }
-  if (!is_operator) {
+  if (!window.is_operator) {
     return text;
   }
   const jobId = row.id;
   const decreasePrioLink =
-    '<a class="prio-down" data-method="post" href="javascript:void(0);" onclick="decreaseJobPrio(' +
+    '<a class="prio-down" data-method="post" href="javascript:void(0);" data-job-id="' +
     jobId +
-    ', this); return false;"><i class="fa-regular fa-square-minus"></i></a>';
+    '"><i class="fa-regular fa-square-minus"></i></a>';
   const increasePrioLink =
-    '<a class="prio-up" data-method="post" href="javascript:void(0);" onclick="increaseJobPrio(' +
+    '<a class="prio-up" data-method="post" href="javascript:void(0);" data-job-id="' +
     jobId +
-    ', this); return false;"><i class="fa-regular fa-square-plus"></i></a>';
+    '"><i class="fa-regular fa-square-plus"></i></a>';
   return decreasePrioLink + text + increasePrioLink;
 }
 
@@ -619,3 +616,89 @@ $(document).on('click', '.copy-jobid', function (event) {
   event.preventDefault();
   navigator.clipboard.writeText(this.dataset.jobid);
 });
+$(function () {
+  // 1. Parse configuration parameters from DOM attributes if present
+  const listConfig = $('#test-list-config');
+  if (listConfig.length) {
+    window.is_operator = listConfig.data('is-operator') === true;
+    window.restart_url = listConfig.data('restart-url');
+    window.cancel_url = listConfig.data('cancel-url');
+    renderTestLists();
+  }
+
+  // 2. Delegate click handlers globally for priority up/down buttons
+  $(document).on('click', '.prio-down', function (e) {
+    e.preventDefault();
+    decreaseJobPrio($(this).data('job-id'), this);
+  });
+  $(document).on('click', '.prio-up', function (e) {
+    e.preventDefault();
+    increaseJobPrio($(this).data('job-id'), this);
+  });
+
+  // 3. Delegate result button handlers (.restart-result)
+  $(document).on('click', '.restart-result', function (e) {
+    e.preventDefault();
+    restartJob(this.href, this.dataset.jobid);
+  });
+
+  // 4. Delegate lazy-load steps when tooltips are displayed (.failedmodule)
+  $(document).on('show.bs.tooltip', '.failedmodule', function () {
+    const failedModuleElement = this;
+    if (failedModuleElement.hasFailedSteps) {
+      return;
+    }
+    failedModuleElement.hasFailedSteps = true;
+
+    // query failed steps via AJAX
+    $.getJSON(failedModuleElement.dataset.bsAsync, function (fails) {
+      // hide tooltip if we have nothing to show
+      if (
+        typeof fails !== 'object' ||
+        fails.first_failed_step === undefined ||
+        !Array.isArray(fails.failed_needles) ||
+        !fails.failed_needles.length
+      ) {
+        failedModuleElement.dataset.bsOriginalTitle = '';
+        $(failedModuleElement).tooltip('hide');
+        return;
+      }
+
+      // update href to include the first failed step
+      failedModuleElement.href = failedModuleElement.href.replace(/\/1$/, '/' + fails.first_failed_step);
+
+      // show tooltip again with updated data
+      const list = fails.failed_needles.map(needle => `<li>${needle}</li>`).join('');
+      failedModuleElement.dataset.bsOriginalTitle = `<p>Failed needles:</p><ul>${list}</ul>`;
+      $(failedModuleElement).tooltip('show');
+    }).fail(function () {
+      // hide tooltip on error
+      failedModuleElement.hasFailedSteps = false;
+      $(failedModuleElement).tooltip('hide');
+    });
+  });
+});
+
+export {
+  addClassToArray,
+  removeClassFromArray,
+  highlightJobs,
+  unhighlightJobs,
+  highlightJobsHtml,
+  renderMediumName,
+  renderTestName,
+  renderTimeAgo,
+  renderTimeAgoForFinished,
+  renderProgress,
+  renderPriority,
+  increaseJobPrio,
+  decreaseJobPrio,
+  changeJobPrio,
+  renderTestSummary,
+  renderTestResult,
+  renderTestLists,
+  setupTestButtons,
+  setupResultButtons,
+  setupLazyLoadingFailedSteps,
+  showJobDependency
+};

@@ -1,9 +1,12 @@
 // jshint multistr: true
 // jshint esversion: 6
 
+import {setupLazyLoadingFailedSteps} from './tests.js';
+import {rescheduleProduct} from './audit_log.js';
+
 const testGitInfoRe = /TEST_GIT_HASH=([a-fA-F0-9]+) TEST_GIT_URL=([^\p{Cc}]+)/u;
 
-const testStatus = {
+const testStatus = (window.testStatus = {
   state: null,
   result: null,
   modlist_initialized: 0,
@@ -12,9 +15,9 @@ const testStatus = {
   workerid: null,
   status_url: null,
   img_reload_time: 0
-};
+});
 
-const tabConfiguration = {
+const tabConfiguration = (window.tabConfiguration = {
   details: {
     descriptiveName: 'test modules',
     conditionForShowingNavItem: function () {
@@ -74,7 +77,7 @@ const tabConfiguration = {
     renderContents: renderCommentsTab
   },
   next_previous: {}
-};
+});
 
 const DISPLAY_LOG_LIMIT = 5;
 const DISPLAY_LINE_LIMIT = 10;
@@ -791,7 +794,7 @@ function loadEmbeddedLogFiles(filter) {
   });
 }
 
-window.onload = function () {
+$(function () {
   const searchBox = document.getElementById('filter-log-file');
   if (!searchBox) {
     return;
@@ -800,7 +803,7 @@ window.onload = function () {
   searchBox.addEventListener('keyup', delay(filter), 1000);
   searchBox.addEventListener('change', filter, false);
   searchBox.addEventListener('search', filter, false);
-};
+});
 
 function displaySearchInfo(text) {
   document.getElementById('filter-info').innerHTML = text;
@@ -1359,4 +1362,63 @@ function rescheduleProductForJob(link) {
   return false; // avoid usual link handling
 }
 
-module = {};
+$(function () {
+  const config = $('#test-result-config');
+  if (config.length) {
+    setupResult(config.data('job-id'), config.data('state'), config.data('result'), config.data('status-url'));
+  }
+
+  $(document).on('click', '#restart-scheduled-product', function (e) {
+    e.preventDefault();
+    rescheduleProductForJob(this);
+  });
+});
+
+export {
+  checkPreviewVisible,
+  previewSuccess,
+  toggleTextPreview,
+  hidePreviewContainer,
+  setCurrentPreview,
+  selectPreview,
+  nextPreview,
+  prevPreview,
+  prevNeedle,
+  nextNeedle,
+  handleKeyDownOnTestDetails,
+  setPageHashAccordingToCurrentTab,
+  setupTabHandling,
+  tabNameForNavElement,
+  configureTabNavElement,
+  showTabNavElement,
+  showRelevantTabNavElements,
+  activateTabAccordingToHashChange,
+  renderTabContent,
+  loadTabPanelElement,
+  activateTab,
+  deactivateTab,
+  setInfoPanelClassName,
+  setupResult,
+  delay,
+  filterLogLines,
+  filterEmbeddedLogFiles,
+  createSourceLinks,
+  showLogLines,
+  loadEmbeddedLogFiles,
+  displaySearchInfo,
+  setCurrentPreviewFromStepLinkIfPossible,
+  githashToLink,
+  setupTestDetailsFilter,
+  setupTestDetailsWindowEventHandlers,
+  renderTestModules,
+  renderExternalTab,
+  renderLiveTab,
+  renderCommentsTab,
+  renderInvestigationTab,
+  toggleSign,
+  getInvestigationDataAttr,
+  renderSettingsTab,
+  renderDependencyTab,
+  renderDependencyGraph
+};
+window.rescheduleProductForJob = rescheduleProductForJob;
