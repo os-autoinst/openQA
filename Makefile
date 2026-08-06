@@ -114,8 +114,15 @@ generate-assets: ## Generate packed assets and copy to DESTDIR
 		cp -a $$i/* "$(DESTDIR)"/usr/share/openqa/$$i ;\
 	done
 
+.PHONY: install-nginx
+install-nginx: ## Install the NGINX configuration
+	install -d -m 755 "$(DESTDIR)"/etc/nginx/vhosts.d
+	for i in openqa-assets.inc openqa-endpoints.inc openqa-locations.inc openqa-upstreams.inc openqa.conf.template openqa-llm.conf.template; do \
+		install -m 644 etc/nginx/vhosts.d/$$i "$(DESTDIR)"/etc/nginx/vhosts.d ;\
+	done
+
 .PHONY: install-generic
-install-generic: generate-assets generate-completions ## Install generic components
+install-generic: generate-assets generate-completions install-nginx ## Install generic components
 	for f in $(shell perl -Ilib -mOpenQA::Assets -e OpenQA::Assets::list); do \
 		install -m 644 -D --target-directory="$(DESTDIR)/usr/share/openqa/$${f%/*}" "$$f";\
 	done
@@ -138,11 +145,6 @@ install-generic: generate-assets generate-completions ## Install generic compone
 	install -d -m 755 "$(DESTDIR)"/etc/apache2/vhosts.d
 	for i in openqa-common.inc openqa.conf.template openqa-ssl.conf.template; do \
 		install -m 644 etc/apache2/vhosts.d/$$i "$(DESTDIR)"/etc/apache2/vhosts.d ;\
-	done
-
-	install -d -m 755 "$(DESTDIR)"/etc/nginx/vhosts.d
-	for i in openqa-assets.inc openqa-endpoints.inc openqa-locations.inc openqa-upstreams.inc openqa.conf.template openqa-llm.conf.template; do \
-		install -m 644 etc/nginx/vhosts.d/$$i "$(DESTDIR)"/etc/nginx/vhosts.d ;\
 	done
 
 	for prefix in etc; do \
