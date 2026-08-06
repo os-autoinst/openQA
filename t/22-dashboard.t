@@ -608,6 +608,18 @@ subtest 'SUSE branding' => sub {
     $t->attr_like('a.fa-unlink', 'data-template', qr/\@review:acceptable_for/, 'review marker on test overview page');
 };
 
+subtest 'Privacy policy configuration' => sub {
+    $t->get_ok('/')->status_is(200)->text_like('#footer-legal a', qr/Privacy Policy/)
+      ->attr_like('#footer-legal a', 'href', qr|docs/PrivacyPolicy.md|);
+
+    my $original_url = $t->app->config->{global}->{privacy_policy_url};
+    $t->app->config->{global}->{privacy_policy_url} = 'https://custom-privacy-policy.org';
+    $t->get_ok('/')->status_is(200)->text_like('#footer-legal a', qr/Privacy Policy/)
+      ->attr_like('#footer-legal a', 'href', qr|^https://custom-privacy-policy\.org$|);
+
+    $t->app->config->{global}->{privacy_policy_url} = $original_url;
+};
+
 subtest 're-routing' => sub {
     # enable re-routing like it can be enabled via Mojolicious::Plugin::RequestBase
     $t->app->hook(before_dispatch => sub ($c) { $c->req->url->base->path('/base') });
