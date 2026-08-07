@@ -31,6 +31,9 @@ my @common_settings = (
     LOG_DIR => 'log/dir',
     RETRY_DELAY => 5,
     RETRY_DELAY_IF_WEBUI_BUSY => 60,
+    WORKER_LOAD_LOW_LIMIT => 4,
+    WORKER_LOAD_FACTOR => 0,
+    WORKER_LOAD_JITTER => 0,
 );
 
 is_deeply $settings->global_settings, {@common_settings, TERMINATE_AFTER_JOBS_DONE => 1},

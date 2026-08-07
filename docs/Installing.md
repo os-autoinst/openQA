@@ -1065,23 +1065,14 @@ to access files of the host) use the following setting:
 HOST = http://openqa.example.com
 ```
 
-The load of the system can affect test execution and cause failures due to delays of command execution and [thrashing](https://en.wikipedia.org/wiki/Thrashing_(computer_science)). If the average over a period of 15 minutes exceeds the specified value the worker will not accept new jobs.
-
-
-
-
-
-workers.ini
-
-
-
-``` ini
-[global]
-# Set to 0 to disable.
-#CRITICAL_LOAD_AVG_THRESHOLD = 40
-```
-
-
+The load of the system can affect test execution and cause failures due to delays
+of command execution and [thrashing](<https://en.wikipedia.org/wiki/Thrashing_(computer_science)>).
+To prevent "load storms" (synchronized boot avalanches), workers check the
+system load average before picking up jobs. If the load is very high, they
+temporarily reject jobs. If the load is moderately high, they introduce a
+load-proportionate sleep delay to stagger job acceptance. The specific load
+thresholds, factor, and jitter are configurable in `workers.ini` (e.g.,
+`CRITICAL_LOAD_AVG_THRESHOLD`, `WORKER_LOAD_LOW_LIMIT`).
 
 Once you got workers running they should show up in the admin section of openQA in
 the workers section as 'idle'. When you get so far, you have your own instance
