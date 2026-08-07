@@ -30,12 +30,15 @@ td div.progress {
       text-decoration: none;
     }
   }
-  .progress-bar-passed, .progress-bar-softfailed, .progress-bar-unfinished {
+  .progress-bar-passed,
+  .progress-bar-softfailed,
+  .progress-bar-unfinished {
     a {
       color: $color-result;
     }
   }
-  .progress-bar-failed, .progress-bar-skipped {
+  .progress-bar-failed,
+  .progress-bar-skipped {
     a {
       color: black;
     }
@@ -90,7 +93,8 @@ td div.progress {
   margin-left: 2px;
   margin-right: 2px;
 }
-.build_group_children, .build-row {
+.build_group_children,
+.build-row {
   .h4::before {
     display: inline-box;
     min-width: 10px;
