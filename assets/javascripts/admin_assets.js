@@ -1,6 +1,6 @@
 /* jshint multistr: true */
 
-function setupAdminAssets() {
+export function setupAdminAssets() {
   // determine params for AJAX queries
   const pageQueryParams = parseQueryParams();
   const ajaxQueryParams = {};
@@ -113,14 +113,14 @@ function setupAdminAssets() {
   }
 }
 
-function reloadAssetsTable() {
+export function reloadAssetsTable() {
   $('#assets-by-group-loading').show();
   $('#assets-status').text('loading');
   $('#flash-messages div.alert').remove();
   window.assetsTable.ajax.reload();
 }
 
-function deleteAsset(assetId) {
+export function deleteAsset(assetId) {
   fetchWithCSRF(urlWithBase(`/api/v1/assets/${assetId}`), {method: 'DELETE'})
     .then(response => {
       // not checking for status code as 404 case also returns proper json
@@ -141,7 +141,7 @@ function deleteAsset(assetId) {
     });
 }
 
-function triggerAssetCleanup(form) {
+export function triggerAssetCleanup(form) {
   fetchWithCSRF(form.action, {method: form.method})
     .then(response => {
       return response
@@ -289,3 +289,7 @@ function makeAssetsByGroup(assetStatus) {
 
   assetsByGroupHeading.text('Assets by group (total ' + renderDataSize(totalSize) + ')');
 }
+window.setupAdminAssets = setupAdminAssets;
+window.reloadAssetsTable = reloadAssetsTable;
+window.deleteAsset = deleteAsset;
+window.triggerAssetCleanup = triggerAssetCleanup;
