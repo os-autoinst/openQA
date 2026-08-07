@@ -10,6 +10,16 @@ client_body_buffer_size 12m;
 # Default is exact which would need an exact match of Last-Modified
 if_modified_since before;
 
+# Default proxy settings inherited by locations forwarding to Mojolicious
+tcp_nodelay        on;
+proxy_read_timeout 900;
+proxy_send_timeout 900;
+proxy_set_header Host $host;
+proxy_set_header X-Forwarded-Host $host:$server_port;
+proxy_set_header X-Forwarded-Server $host;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+proxy_set_header X-Forwarded-Proto $scheme;
+
 ## Optional to make use of auth_request to require authentication for asset downloads
 #location /api/v1/auth {
 #    internal;
@@ -58,27 +68,20 @@ location /liveviewhandler/ {
 
 location / {
     proxy_pass "http://webui";
-    tcp_nodelay        on;
-    proxy_read_timeout 900;
-    proxy_send_timeout 900;
-    proxy_set_header Host $host;
-    proxy_set_header X-Forwarded-Host $host:$server_port;
-    proxy_set_header X-Forwarded-Server $host;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
 }
 
 location ~ /tests/[0-9]+/(livelog|liveterminal)$ {
-    # Duplicate settings for location /, nginx can't merge locations :-(
+    # Default settings inherited from server block; only buffering needs tuning here
     proxy_pass "http://webui";
-    tcp_nodelay        on;
-    proxy_read_timeout 900;
-    proxy_send_timeout 900;
-    proxy_set_header Host $host;
-    proxy_set_header X-Forwarded-Host $host:$server_port;
-    proxy_set_header X-Forwarded-Server $host;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-
     proxy_buffering off;
+}
+
+location ~ ^/tests/[0-9]+/details_ajax$ {
+    # Apply rate limiting to details_ajax
+    limit_req zone=details_ajax_limit burst=10 nodelay;
+    limit_req_status 429;
+    add_header Retry-After 5 always;
+
+    # Backend settings are inherited from the server block
+    proxy_pass "http://webui";
 }

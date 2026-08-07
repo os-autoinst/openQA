@@ -1,5 +1,8 @@
 include vhosts.d/openqa-upstreams.inc;
 
+# Define rate limiting zone for details_ajax endpoint (10MB zone allows ~160,000 IPs)
+limit_req_zone $binary_remote_addr zone=details_ajax_limit:10m rate=5r/s;
+
 server {
     listen       80 default_server;
     listen       [::]:80 default_server;
