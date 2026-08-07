@@ -45,6 +45,20 @@ sub new ($class, $webui_host, $cli_options) {
     # append relative paths to the existing ones
     $url->path('/api/v1/');
 
+    # in case of redirect by server use new base_url
+    $ua->max_redirects(0);
+    my $target_url = $url->clone;
+    $target_url->path('workers');
+    $target_url->query('limit=0');
+    my $res = $ua->head($target_url)->res;
+    if ($res->is_redirect) {
+        my $new_url = Mojo::URL->new($res->headers->location)->query('')->path('/');
+        $url->host_port($new_url->host_port);
+        $url->scheme($new_url->scheme);
+        $ua->base_url($url->base);
+        log_warning("Configured host was '$webui_host' but got redirected to '$new_url'. Will use new host now.");
+    }
+
     # disable keep alive to avoid time outs in strange places - we only reach the
     # webapi once in a while so take the price of reopening the connection every time
     # we do
