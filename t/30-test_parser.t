@@ -4,6 +4,7 @@
 
 use Test::Most;
 use Test::Warnings qw(:report_warnings warning);
+use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -337,8 +338,7 @@ subtest 'Nested results' => sub {
     is $serialized->results->get(2)->first->first->result1->val, '2_0_0_result1_val', 'Can use the objects normally';
 };
 
-sub test_junit_file {
-    my $parser = shift;
+sub test_junit_file ($parser) {
 
     is_deeply $parser->tests->first->to_hash,
       {
@@ -421,8 +421,7 @@ sub test_junit_file {
 }
 
 
-sub test_xunit_file {
-    my $parser = shift;
+sub test_xunit_file ($parser) {
     is_deeply $parser->tests->first->to_hash,
       {
         'category' => 'xunit',
@@ -564,8 +563,7 @@ subtest junit_parse => sub {
     is $_->{result}, 'softfail', 'All testcases are softfailing' for @{$parser->results->first->details};
 };
 
-sub test_tap_file {
-    my $p = shift;
+sub test_tap_file ($p) {
     is $p->results->size, 1, 'Expected 1 results';
     $p->results->each(
         sub {
@@ -617,8 +615,7 @@ subtest tap_parse_invalid => sub {
     throws_ok { $parser->load($tap_test_file) } qr{A valid TAP starts with filename.tap}, 'Invalid TAP example';
 };
 
-sub test_ltp_file {
-    my $p = shift;
+sub test_ltp_file ($p) {
     is $p->results->size, 6, 'Expected 6 results';
     my $i = 2;
     $p->results->each(
@@ -637,8 +634,7 @@ sub test_ltp_file {
       'Environment information matches';
 }
 
-sub test_ipa_file {
-    my $p = shift;
+sub test_ipa_file ($p) {
     my %names;
     is $p->results->size, 18, 'Expected 18 results' or die always_explain $p->results;
     is $p->tests->size, 18, 'Expected 18 tests' or die always_explain $p->results;
@@ -663,8 +659,7 @@ sub test_ipa_file {
     is $p->extra->first->platform, 'ec2', 'Platform info parsed correctly';
 }
 
-sub test_ltp_file_v2 {
-    my $p = shift;
+sub test_ltp_file_v2 ($p) {
     is $p->results->size, 7, 'Expected 7 results';
     is $p->extra->first->gcc, 'gcc (SUSE Linux) 7.2.1 20171020 [gcc-7-branch revision 253932]';
     my $i = 2;
@@ -715,8 +710,7 @@ subtest ltp_parse => sub {
     test_ltp_file_v2($parser_format_v2);
 };
 
-sub serialize_test {
-    my ($parser_name, $file, $test_function) = @_;
+sub serialize_test ($parser_name, $file, $test_function) {
 
     subtest "Serialization test for $parser_name and $file with test $test_function" => sub {
         my $test_result_file = path($FindBin::Bin, 'data')->child($file);
@@ -1068,8 +1062,7 @@ package OpenQA::Parser::UnstructuredDummy {    # uncoverable statement count:2
     use Mojo::Base 'OpenQA::Parser::Format::Base';
     use Mojo::JSON 'decode_json';
 
-    sub parse () {
-        my ($self, $json) = @_;
+    sub parse ($self, $json) {
         die 'No JSON given/loaded' unless $json;
         my $decoded_json = decode_json $json;
 

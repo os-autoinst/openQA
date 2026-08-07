@@ -32,12 +32,11 @@ my $schema = $test_case->init_data(
 
 use OpenQA::SeleniumTest;
 
-sub decode_utf8_json {
-    my ($json_string) = @_;
+sub decode_utf8_json ($json_string) {
     return decode_json(encode_utf8($json_string));
 }
 
-sub create_running_job_for_needle_editor {
+sub create_running_job_for_needle_editor () {
     $schema->resultset('Jobs')->create(
         {
             id => 99980,
@@ -102,7 +101,7 @@ my $needle_json_file = prepare_default_needle($dir);
 my $elem;
 my $decode_textarea;
 
-sub goto_editor_for_installer_timezone {
+sub goto_editor_for_installer_timezone () {
     $driver->get('/tests/99946');
     is
       $driver->get_title(),
@@ -118,8 +117,7 @@ sub goto_editor_for_installer_timezone {
     $driver->find_element('.step_actions .create_new_needle')->click();
 }
 
-sub add_needle_tag {
-    my $tagname = shift || 'test-newtag';
+sub add_needle_tag ($tagname = 'test-newtag') {
     $elem = $driver->find_element_by_id('newtag');
     $elem->send_keys($tagname);
     $driver->find_element_by_id('tag_add_button')->click();
@@ -136,9 +134,7 @@ sub add_workaround_property () {
     ok $driver->find_element_by_id('input_workaround_desc')->is_displayed, 'workaround description displayed';
 }
 
-sub create_needle {
-    my ($xoffset, $yoffset) = @_;
-
+sub create_needle ($xoffset, $yoffset) {
     my $pre_offset = 10;    # we need this value as first position the cursor moved on
     my $elem = $driver->find_element_by_id('needleeditor_canvas');
     $driver->mouse_move_to_location(
@@ -156,9 +152,7 @@ sub create_needle {
     wait_for_ajax(with_minion => $minion);
 }
 
-sub change_needle_value {
-    my ($xoffset, $yoffset) = @_;
-
+sub change_needle_value ($xoffset, $yoffset) {
     my $decode_new_textarea = decode_utf8_json(element_prop('needleeditor_textarea'));
     ok $decode_new_textarea->{area}, 'json has area';
     ok $decode_new_textarea->{properties}, 'json has properties';
@@ -217,9 +211,7 @@ sub change_needle_value {
     is $decode_new_textarea->{area}[0]->{click_point}, undef, 'click_point removed';
 }
 
-sub overwrite_needle {
-    my ($needlename) = @_;
-
+sub overwrite_needle ($needlename) {
     # remove animation from modal to speed up test
     $driver->execute_script('$(\'#modal-overwrite\').removeClass(\'fade\');');
 
@@ -255,7 +247,7 @@ sub overwrite_needle {
       'no longer on needle editor';
 }
 
-sub check_flash_for_saving_logpackages {
+sub check_flash_for_saving_logpackages () {
     wait_for_ajax(with_minion => $minion);
     like
       $driver->find_element('#flash-messages .alert:last-child span')->get_text(),
@@ -499,9 +491,7 @@ subtest 'Verify new needle\'s JSON' => sub {
       'new ypos stored to new needle';
 } or always_explain $decoded_json;
 
-sub assert_needle_appears_in_selection {
-    my ($selection_id, $needlename) = @_;
-
+sub assert_needle_appears_in_selection ($selection_id, $needlename) {
     my $selection = $driver->find_element_by_id($selection_id);
     my $new_needle_options = $driver->find_child_elements($selection, "./option[\@value='$needlename']", 'xpath');
     is scalar @$new_needle_options, 1, "needle appears in $selection_id selection";

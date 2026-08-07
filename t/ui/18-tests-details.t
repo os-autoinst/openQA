@@ -73,7 +73,7 @@ prepare_database;
 
 driver_missing unless my $driver = call_driver;
 my $baseurl = $driver->get_current_url;
-sub current_tab { $driver->find_element('.nav.nav-tabs .active')->get_text }
+sub current_tab () { $driver->find_element('.nav.nav-tabs .active')->get_text }
 
 # returns the contents of the candidates combo box as hash (key: tag, value: array of needle names)
 sub find_candidate_needles ($enabled_expected = 1) {

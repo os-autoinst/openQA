@@ -36,6 +36,7 @@ $SIG{INT} = sub { session->clean };
 
 END { session->clean }
 
+
 my $mojo_tmpdir = tempdir;
 my $downloader = OpenQA::Downloader->new(log => $log, sleep_time => 0.05, attempts => 3, tmpdir => $mojo_tmpdir);
 my $ua = $downloader->ua;
@@ -81,7 +82,7 @@ my $server_instance = process sub {
   kill_sleeptime => 0;
 $server_instance->set_pipes(0)->start;
 wait_for_or_bail_out { defined $ua->get($host)->res->code } 'worker';
-sub stop_server { $server_instance->stop() }
+sub stop_server () { $server_instance->stop() }
 
 subtest 'Not found' => sub {
     my $from = "$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-404\@64bit.qcow2";

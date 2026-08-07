@@ -4,6 +4,9 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -signatures;
+
+BEGIN { $ENV{OPENQA_SCHEDULER_STARVATION_PROTECTION_PRIORITY_OFFSET} = 5 }
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Scheduler::Model::Jobs;
@@ -48,8 +51,13 @@ my %default_job_settings = (
     NICTYPE => 'tap',
 );
 
-sub _job_create {
-    my ($settings, $parallel_jobs, $start_after_jobs, $start_directly_after_jobs) = @_;
+sub _job_create (
+    $settings = undef,
+    $parallel_jobs = undef,
+    $start_after_jobs = undef,
+    $start_directly_after_jobs = undef
+  )
+{
     $settings = {%default_job_settings, TEST => $settings} unless ref $settings;
     $settings->{_PARALLEL_JOBS} = $parallel_jobs if $parallel_jobs;
     $settings->{_START_AFTER_JOBS} = $start_after_jobs if $start_after_jobs;
@@ -59,17 +67,16 @@ sub _job_create {
     return $job;
 }
 
-sub _jobs_update_state {
-    my ($jobs, $state, $result) = @_;
+sub _jobs_update_state ($jobs, $state, $result = undef) {
     for my $job (@$jobs) {
         $job->state($state);
         $job->result($result) if $result;
         $job->update;
     }
 }
-sub _job_deps { $jobs->find(shift, {prefetch => [qw(settings parents children)]})->to_hash(deps => 1) }
+sub _job_deps ($job_id) { $jobs->find($job_id, {prefetch => [qw(settings parents children)]})->to_hash(deps => 1) }
 
-sub _schedule {
+sub _schedule () {
     my $scheduling_info = OpenQA::Scheduler::Model::Jobs->singleton->schedule();
     _jobs_update_state([$jobs->find($_->{job})], RUNNING) for @$scheduling_info;
 }
@@ -277,8 +284,7 @@ my %exp_cluster_jobs = (
     },
 );
 
-sub exp_cluster_jobs_for {
-    my ($job) = @_;
+sub exp_cluster_jobs_for ($job) {
 
     # note: The actual dependency info is the same for every job within the cluster.
     #       The only difference is the 'is_parent_or_initial_job' flag (which is used
@@ -294,23 +300,23 @@ sub exp_cluster_jobs_for {
     return \%exp_cluster_jobs;
 }
 
-sub log_job_info {
+sub log_job_info () {
     my %jobs = (A => $jobA, B => $jobB, C => $jobC, D => $jobD, E => $jobE, F => $jobF);    # uncoverable statement
     note 'job IDs:';    # uncoverable statement
     note "job $_: " . $jobs{$_}->id for sort keys %jobs;    # uncoverable statement
 }
 subtest 'cluster info' => sub {
-    is_deeply $jobA->cluster_jobs, exp_cluster_jobs_for 'A', 'cluster info for job A';
+    is_deeply $jobA->cluster_jobs, (exp_cluster_jobs_for('A')), 'cluster info for job A';
     is $jobA->blocked_by_id, undef, 'job A is unblocked';
-    is_deeply $jobB->cluster_jobs, exp_cluster_jobs_for 'B', 'cluster info for job B';
+    is_deeply $jobB->cluster_jobs, (exp_cluster_jobs_for('B')), 'cluster info for job B';
     is $jobB->blocked_by_id, undef, 'job B is unblocked';
-    is_deeply $jobC->cluster_jobs, exp_cluster_jobs_for 'C', 'cluster info for job C';
+    is_deeply $jobC->cluster_jobs, (exp_cluster_jobs_for('C')), 'cluster info for job C';
     is $jobC->blocked_by_id, undef, 'job C is unblocked';
-    is_deeply $jobD->cluster_jobs, exp_cluster_jobs_for 'D', 'cluster info for job D';
+    is_deeply $jobD->cluster_jobs, (exp_cluster_jobs_for('D')), 'cluster info for job D';
     is $jobD->blocked_by_id, undef, 'job D is unblocked';
-    is_deeply $jobE->cluster_jobs, exp_cluster_jobs_for 'E', 'cluster info for job E';
+    is_deeply $jobE->cluster_jobs, (exp_cluster_jobs_for('E')), 'cluster info for job E';
     is $jobE->blocked_by_id, undef, 'job E is unblocked';
-    is_deeply $jobF->cluster_jobs, exp_cluster_jobs_for 'F', 'cluster info for job F';
+    is_deeply $jobF->cluster_jobs, (exp_cluster_jobs_for('F')), 'cluster info for job F';
     is $jobF->blocked_by_id, undef, 'job F is unblocked';
 } or log_job_info;
 
@@ -340,7 +346,7 @@ subtest 'failed parallel parent causes parallel children to fails as PARALLEL_FA
     is $job->{state}, RUNNING, 'job_set_done changed state';
 };
 
-sub _check_mm_api {
+sub _check_mm_api () {
     my $explain_tx_res = sub {
         always_explain $t->tx->res->body;    # uncoverable statement
     };

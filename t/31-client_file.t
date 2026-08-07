@@ -5,6 +5,7 @@
 use Test::Most;
 use Mojo::Base -signatures;
 use Test::Warnings ':report_warnings';
+use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -163,8 +164,7 @@ subtest 'verify_chunks' => sub {
     isnt $original->file->slurp, path($copied_file)->slurp, 'Not same content';
 };
 
-sub compare {
-    my ($file, $chunk_size) = @_;
+sub compare ($file, $chunk_size) {
     my $original = file_path($FindBin::Bin, 'data', $file);
     my $pieces = $original->split($chunk_size);
 

@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
@@ -626,8 +627,7 @@ subtest 'edit job templates' => sub() {
     ok $driver->find_element_by_id('editor-name')->is_displayed(), 'Group name can still be edited after refresh';
 };
 
-sub get_cell_contents {
-    my ($row) = @_;
+sub get_cell_contents ($row) {
     return [map { $_->get_text() } $driver->find_elements($row . ' td')];
 }
 
@@ -702,7 +702,7 @@ subtest 'asset list' => sub {
     unlink $asset_path;
 };
 
-sub api_keys_tbody { $driver->find_element_by_id('api-keys-tbody') }
+sub api_keys_tbody () { $driver->find_element_by_id('api-keys-tbody') }
 
 subtest 'Manage API keys' => sub {
     my $tbody;

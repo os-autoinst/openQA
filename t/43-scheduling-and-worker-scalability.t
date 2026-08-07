@@ -115,7 +115,7 @@ for my $job_count (@job_counts) {
         my $webui_host = "http://localhost:$webui_port";
         $webui_host .= ' http://localhost:12345' if $ENV{SCALABILITY_TEST_WITH_OFFLINE_WEBUI_HOST};
 
-        my $log_status = sub {
+        my $log_status = sub () {
             # uncoverable sub only used in case of failures
             my @job_info = map {    # uncoverable statement
                 sprintf 'id: %s, state: %s, result: %s, reason: %s', $_->id, $_->state,    # uncoverable statement
@@ -260,6 +260,7 @@ for my $job_count (@job_counts) {
         undef $webui;
     };
 }
+
 
 done_testing;
 

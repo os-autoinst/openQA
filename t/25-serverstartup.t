@@ -190,7 +190,7 @@ done_testing();
 package OpenQA::FakePlugin::Fuzzer;
 use Mojo::Base -base;
 
-sub configuration_fields {
+sub configuration_fields () {
     {
         bazzer => {
             realfoo => 1

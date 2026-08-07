@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
@@ -16,20 +17,18 @@ use Mojo::IOLoop;
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl');
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'), apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR');
 
-sub la {
+sub la () {
     return unless $ENV{HARNESS_IS_VERBOSE};
     $t->get_ok('/api/v1/assets')->status_is(200);    # uncoverable statement
     my @assets = @{$t->tx->res->json->{assets}};    # uncoverable statement
     note "asset: $_->{id}: $_->{type}/$_->{name}\n" for @assets;    # uncoverable statement
 }
 
-sub iso_path {
-    my ($iso) = @_;
+sub iso_path ($iso) {
     return "t/data/openqa/share/factory/iso/$iso";
 }
 
-sub touch_isos {
-    my ($isos) = @_;
+sub touch_isos ($isos) {
     for my $iso (@$isos) {
         ok open(my $fh, '>', iso_path($iso)), "touch $iso";
         close $fh;

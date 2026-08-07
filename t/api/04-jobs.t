@@ -86,7 +86,7 @@ exit unless $t->success;
 my @jobs = @{$t->tx->res->json->{jobs}};
 my $jobs_count = scalar @jobs;
 
-sub job_ids {
+sub job_ids () {
     [sort map { $_->{id} } @{$t->tx->res->json->{jobs}}];
 }
 
@@ -903,8 +903,7 @@ subtest 'cancel job' => sub {
 };
 
 # helper to find a build in the JSON results
-sub find_build {
-    my ($results, $build_id) = @_;
+sub find_build ($results, $build_id) {
 
     for my $build_res (@{$results->{build_results}}) {
         log_debug('key: ' . $build_res->{key});
@@ -1564,8 +1563,7 @@ subtest 'filter by worker_class' => sub {
     $t->json_is('/jobs/0/settings/WORKER_CLASS' => ':UFP:NCC1701F', 'Correct worker class');
 };
 
-sub junit_ok {
-    my ($parser, $jobid, $basedir, $result_files) = @_;
+sub junit_ok ($parser, $jobid, $basedir, $result_files) {
 
     ok -e path($basedir, $_), "$_ written" for @$result_files;
 

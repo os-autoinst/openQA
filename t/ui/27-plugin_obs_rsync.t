@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
@@ -11,20 +12,17 @@ use OpenQA::Test::ObsRsync 'setup_obs_rsync_test';
 
 my ($t, $tempdir, $home, $params) = setup_obs_rsync_test;
 
-sub _el {
-    my ($project, $run, $file) = @_;
+sub _el ($project, $run, $file) {
     return qq{a[href="/admin/obs_rsync/$project/runs/$run/download/$file"]} if $file;
     return qq{a[href="/admin/obs_rsync/$project/runs/$run"]} if $run;
     return qq{a[href="/admin/obs_rsync/$project"]};
 }
 
-sub _el1 {
-    my ($project, $file) = @_;
+sub _el1 ($project, $file) {
     return _el($project, '.run_last', $file);
 }
 
-sub test_project {
-    my ($t, $project, $batch, $dt, $build) = @_;
+sub test_project ($t, $project, $batch, $dt, $build) {
     $t->get_ok('/admin/obs_rsync')->status_is(200, 'index status')->element_exists(_el($project))
       ->content_unlike(qr/script\<\/a\>/);
 

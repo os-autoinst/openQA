@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -52,27 +53,24 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 my $t_livehandler = Test::Mojo->new('OpenQA::LiveHandler');
 
 # assigns a (fake) command server transaction for the specified job ID
-sub set_fake_cmd_srv_transaction {
-    my ($job_id, $fake_transaction) = @_;
+sub set_fake_cmd_srv_transaction ($job_id, $fake_transaction) {
     $t_livehandler->app->cmd_srv_transactions_by_job->{$job_id} = $fake_transaction;
 }
 
 # assigns (fake) development session JavaScript transactions for the specified job ID
-sub set_fake_devel_java_script_transactions {
-    my ($job_id, $fake_transactions) = @_;
+sub set_fake_devel_java_script_transactions ($job_id, $fake_transactions) {
     $t_livehandler->app->devel_java_script_transactions_by_job->{$job_id} = $fake_transactions;
 }
 
 # assigns (fake) status-only JavaScript transactions for the specified job ID
-sub set_fake_status_java_script_transactions {
-    my ($job_id, $fake_transactions) = @_;
+sub set_fake_status_java_script_transactions ($job_id, $fake_transactions) {
     $t_livehandler->app->status_java_script_transactions_by_job->{$job_id} = $fake_transactions;
 }
 
 my $finished_handled_mock = Test::MockModule->new('OpenQA::LiveHandler::Controller::LiveViewHandler');
 my $finished_handled;
 
-sub prepare_waiting_for_finished_handled {
+sub prepare_waiting_for_finished_handled () {
     my $subroutine_name = 'handle_disconnect_from_java_script_client';
     $finished_handled = 0;
     $finished_handled_mock->redefine(
@@ -82,8 +80,7 @@ sub prepare_waiting_for_finished_handled {
         });
 }
 
-sub wait_for_finished_handled {
-    # wait until the finished event is handled (but at most 5 seconds)
+sub wait_for_finished_handled () {
     my $timer = Mojo::IOLoop->timer(5.0 => sub { });
     Mojo::IOLoop->one_tick;
     Mojo::IOLoop->remove($timer);
@@ -98,8 +95,7 @@ my $auth = {'X-CSRF-Token' => $t->ua->get('/tests')->res->dom->at('meta[name=csr
 $t_livehandler->ua->cookie_jar($t->ua->cookie_jar);
 
 # login as arthur
-sub login {
-    my ($user_name) = @_;
+sub login ($user_name) {
     $test_case->login($t, $user_name);
     $test_case->login($t_livehandler, $user_name);
 }

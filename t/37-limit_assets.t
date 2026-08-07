@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -130,8 +131,7 @@ $schema->resultset('JobGroups')->search({id => 1002})->update({parent_id => 1});
 # * remove timestamps
 # * split into assets without max_job and assets with max_job because the ones
 #   without might occur in random order so tests shouldn't rely on it
-sub prepare_asset_status {
-    my ($asset_status) = @_;
+sub prepare_asset_status ($asset_status) {
 
     # ignore exact size of untracked assets since it depends on presence of other files (see %ignored_assets)
     my $groups = $asset_status->{groups};
