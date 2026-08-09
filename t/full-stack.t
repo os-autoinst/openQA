@@ -465,9 +465,9 @@ subtest 'Cache tests' => sub {
 done_testing;
 
 END {
+    local $?;
     kill_driver;
     turn_down_stack;
     session->clean;
-    $? = 0;
     $tempdir->list_tree->grep(qr/\.txt$/)->each(sub { print "$_:\n" . $_->slurp }) if defined $tempdir;
 }

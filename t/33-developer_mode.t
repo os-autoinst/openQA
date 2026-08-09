@@ -376,7 +376,7 @@ done_testing;
 
 # in case it dies
 END {
+    local $?;
     kill_driver;
     turn_down_stack;
-    $? = 0;
 }
