@@ -121,12 +121,16 @@ function renderModuleRow(module, snippets) {
   const srcElement = srcUrl ? E('a', [module.name], {href: srcUrl}) : E('span', [module.name]);
   const component = E('td', [E('div', [srcElement]), E('div', flags, {class: 'flags'})], {class: 'component'});
 
-  const result = E('td', [module.result], {class: 'result ' + moduleResultCSS(module.result)});
+  const result = E('td', [module.result], {
+    class: 'result ' + moduleResultCSS(module.result),
+    style: 'position: relative'
+  });
   const showPreviewForLink = function () {
     setCurrentPreview($(this).parent()); // show the preview when clicking on step links
     return false;
   };
 
+  let hasTextResults = false;
   for (const idx in module.details) {
     const step = module.details[idx];
     const title = step.display_title;
@@ -202,6 +206,7 @@ function renderModuleRow(module, snippets) {
       box.push(E('span', [content], {class: 'resborder ' + resborder}));
     }
     if (step.text && title !== 'Soft Failed') {
+      hasTextResults = true;
       const stepActions = E('span', [], {class: 'step_actions', style: 'float: right'});
       stepActions.innerHTML = renderTemplate(snippets.bug_actions, {MODULE: module.name, STEP: step.num});
 
@@ -214,6 +219,7 @@ function renderModuleRow(module, snippets) {
       const link = E('a', box, {
         class: 'no_hover' + (title === 'wait_serial' ? ' serial-result-preview' : ''),
         'data-text': txt,
+        'data-textorig': textData,
         title: title,
         href: href
       });
@@ -235,6 +241,17 @@ function renderModuleRow(module, snippets) {
       result.classList.add('textdatamissing');
       testStatus.textDataMissing = true;
     }
+  }
+
+  if (hasTextResults) {
+    const expandIcon = E('i', [''], {class: 'fa fa-expand'});
+    const expandButton = E('button', [expandIcon], {
+      class: 'logview_expand_btn',
+      'aria-label': 'Expand row',
+      title: 'Expand row'
+    });
+    expandButton.onclick = () => showTextBoxes(expandButton);
+    result.firstChild.before(expandButton);
   }
 
   const links = E('td', stepnodes, {class: 'links'});

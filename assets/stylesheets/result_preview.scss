@@ -1,3 +1,22 @@
+.logview_expand_btn {
+  position: absolute;
+  top: -2px;
+  right: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: grey;
+}
+div.log_container_out {
+  float: left;
+  width: 90%;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+div.log_container_in {
+  position: relative;
+}
 div.preview_container_outer {
   margin-bottom: 7px;
 }
@@ -50,7 +69,11 @@ div.preview_container_inner {
   color: $default-font-color-dark;
   background-color: $default-bg-color-dark;
 }
-.links > div {
+.links > div.logview {
+  clear: left;
+  float: left;
+}
+.links > div.links_a {
   display: inline-block;
   margin-top: 3px;
 }
