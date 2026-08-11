@@ -206,7 +206,6 @@ subtest 'pause at assert_screen timeout' => sub {
     wait_for_developer_console_like($driver, qr/\"resume_test_execution\":/, 'resume');
 
     # skip timeout (again)
-    sleep 5;    # workaround command processing issue, see https://progress.opensuse.org/issues/205206
     enter_developer_console_cmd $driver, '{"cmd":"set_assert_screen_timeout","timeout":0}';
     wait_for_developer_console_like(
         $driver,
