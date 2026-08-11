@@ -79,29 +79,51 @@ $driver->get('/group_overview/1002');
 is scalar @{$driver->find_elements('#group_description', 'css')},
   0, 'group description frame is not shown if none present';
 is $driver->get($build_url . '?limit_builds=2'), 1, 'group overview page accepts query parameter, too';
+$driver->get($build_url . '?limit_builds=4711');
+like $driver->find_element('body')->get_text(), qr/limit_builds invalid/,
+  'custom limit_builds value invalid when logged out';
+$driver->get($build_url . '?fullscreen=1&interval=4711');
+like $driver->find_element('body')->get_text(), qr/interval invalid/, 'custom interval value invalid when logged out';
+$driver->get('/login');
+$driver->get($build_url . '?fullscreen=1&interval=4711');
+is $driver->find_element('select[name=interval] option[value*="4711"][selected]')->get_text(), 4711,
+  'select has custom interval 4711';
 $driver->get($build_url . '?limit_builds=0');
 is scalar @{$driver->find_elements('div.build-row .h4', 'css')}, 0, 'all builds filtered out';
 is $driver->find_element('h2')->get_text(), 'Last Builds for opensuse',
   'group name shown correctly when all builds filtered out';
 
-$driver->find_element_by_link_text('400')->click();
-is $driver->find_element('#more_builds b')->get_text(), 400, 'limited to the selected number';
+$driver->find_element('select[name=limit_builds]')->click();
+$driver->find_element('option[value*="400"]')->click();
+is $driver->find_element('option[value*="400"][selected]')->get_text(), 400, 'limited to the selected number';
 like $driver->get_current_url(), qr/1001\?limit_builds=400/, 'url shows the selected build_limits';
-$driver->find_element_by_link_text('50')->click();
+$driver->find_element('select[name=limit_builds]')->click();
+$driver->find_element('option[value*="50"]')->click();
 my $actual_url = $driver->get_current_url();
 unlike $actual_url, qr/limit_builds=400/, 'url query does not show previous limit_builds';
 like $actual_url, qr/1001\?limit_builds=50/, 'url query has unique limit_builds entry';
-$driver->find_element_by_link_text('tagged')->click();
+$driver->find_element('label[for=only_tagged]')->click();
 is scalar @{$driver->find_elements('.h4', 'css')}, 0, 'no tagged builds exist';
-$driver->find_element_by_link_text('400')->click();
+$driver->find_element('select[name=limit_builds]')->click();
+$driver->find_element('option[value*="400"]')->click();
 $actual_url = $driver->get_current_url();
 unlike $actual_url, qr/limit_builds=50/, 'url query updates only limit_builds entry and old selection is removed';
 like $actual_url, qr/limit_builds=400/, 'url query updates only limit_builds entry and shows new selection';
 like $actual_url, qr/only_tagged=1/, 'url query contains tag settings';
+$driver->find_element('label[for=fullscreen]')->click();
+is scalar @{$driver->find_elements('#fullscreen[checked]', 'css')}, 1, 'fullscreen on';
+$actual_url = $driver->get_current_url();
+like $actual_url, qr/fullscreen=1/, 'url query contains fullscreen';
+$driver->find_element('select[name=interval]')->click();
+$driver->find_element('option[value*="120"]')->click();
+$actual_url = $driver->get_current_url();
+like $actual_url, qr/interval=120/, 'url query contains interval=120';
+is $driver->find_element('select[name=interval] option[value*="120"][selected]')->get_text(), 120,
+  'select has correct interval';
 
 $driver->get('/group_overview/1001');
 my $res = OpenQA::Test::Case::trim_whitespace($driver->find_element_by_id('more_builds')->get_text);
-is $res, q{Limit to 10 / 20 / 50 / 100 / 400 builds, only tagged / all}, 'more builds can be requested';
+is $res, q{Limit to 10 20 50 100 400 builds Only show tagged builds}, 'more builds can be requested';
 is $driver->get('/?group=opensuse'), 1, 'group parameter is not exact by default';
 wait_for_ajax;
 is scalar @{$driver->find_elements('h2', 'css')}, 2, 'both job groups shown';

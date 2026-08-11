@@ -96,3 +96,13 @@
 .group-comment-icon-stack [class*='fa-rotate-left'] {
   color: #0c4374;
 }
+/* job group overview page controls */
+#more_builds, #mode_section {
+  select {
+    width: auto;
+    display: inline-block;
+  }
+  .cbc {
+    display: inline-block;
+  }
+}

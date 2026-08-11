@@ -130,13 +130,28 @@ sub _group_overview ($self, $resultset, $template) {
     my $time_limit_days = $validation->param('time_limit_days') // 0;
     $self->app->log->debug("Retrieving results for up to $limit_builds builds up to $time_limit_days days old");
     my $only_tagged = $validation->param('only_tagged') // 0;
+    my $fullscreen = $validation->param('fullscreen') // 0;
+    my $interval = $validation->param('interval') // ONE_MINUTE;
+
+    my @limit_builds_preset = (10, 20, 50, 100, 400);
+    if ($self->current_user && !grep { $_ == $limit_builds } @limit_builds_preset) {
+        push @limit_builds_preset, $limit_builds;
+        @limit_builds_preset = (sort { $a <=> $b } @limit_builds_preset);
+    }
+    $validation->optional('limit_builds')->in(@limit_builds_preset);
+
+    my @interval_preset = (30, 60, 90, 120, 180);
+    if ($self->current_user && !grep { $_ == $interval } @interval_preset) {
+        push @interval_preset, $interval;
+        @interval_preset = (sort { $a <=> $b } @interval_preset);
+    }
+    $validation->optional('interval')->in(@interval_preset);
+    $self->stash(fullscreen => $fullscreen, interval => $interval, interval_preset => \@interval_preset);
+
+    return $self->reply->validation_error({format => $self->accepts('html', 'json')}) if $validation->has_error;
 
     my $group_id = $self->stash('groupid');
     return $self->reply->not_found unless my $group = $self->schema->resultset($resultset)->find($group_id);
-
-    my $fullscreen = $validation->param('fullscreen') // 0;
-    my $interval = $validation->param('interval') // ONE_MINUTE;
-    $self->stash(fullscreen => $fullscreen, interval => $interval);
 
     my $page = $validation->param('comments_page') // 1;
     my $page_limit = $validation->param('comments_limit') // 5;
@@ -206,6 +221,7 @@ sub _group_overview ($self, $resultset, $template) {
         group => $group_hash,
         sorting_note => $SORTING_NOTE{$group->build_version_sort},
         limit_builds => $limit_builds,
+        limit_builds_preset => \@limit_builds_preset,
         only_tagged => $only_tagged,
         comments => \@comments,
         pinned_comments => \@pinned_comments,
