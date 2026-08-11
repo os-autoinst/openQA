@@ -119,6 +119,7 @@ sub default_config () {
             appname => 'openQA',
             base_url => undef,
             branding => 'openSUSE',
+            privacy_policy_url => 'https://github.com/os-autoinst/openQA/blob/master/docs/PrivacyPolicy.md',
             download_domains => undef,
             suse_mirror => undef,
             # deprecated alternate for git_auto_commit below
