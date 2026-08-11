@@ -9,6 +9,7 @@ use Date::Format;
 use Mojo::File qw(path);
 use Mojo::Util qw(trim);
 use Time::Seconds;
+use List::Util qw(any);
 use OpenQA::Constants qw(BUILD_SORT_BY_NAME BUILD_SORT_BY_NEWEST_JOB BUILD_SORT_BY_OLDEST_JOB);
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
@@ -16,6 +17,8 @@ use OpenQA::BuildResults;
 use OpenQA::Utils;
 
 use constant OPENQA_WEBUI_OVERVIEW_INACTIVITY_TIMEOUT => $ENV{OPENQA_WEBUI_OVERVIEW_INACTIVITY_TIMEOUT} // 90;
+use constant LIMIT_BUILDS => (10, 20, 50, 100, 400);
+use constant INTERVAL => (30, 60, 90, 120, 180);
 
 sub dashboard_build_results ($self) {
     my $validation = $self->validation;
@@ -115,9 +118,9 @@ sub _group_overview ($self, $resultset, $template) {
     my $validation = $self->validation;
     $validation->optional('limit_builds')->num;
     $validation->optional('time_limit_days')->like(qr/^[0-9.]+$/);
-    $validation->optional('only_tagged');
-    $validation->optional('fullscreen');
-    $validation->optional('interval');
+    $validation->optional('only_tagged')->num;
+    $validation->optional('fullscreen')->num;
+    $validation->optional('interval')->num;
     $validation->optional('comments_page')->num;
     $validation->optional('comments_limit')->num;
     return $self->reply->validation_error({format => $self->accepts('html', 'json')}) if $validation->has_error;
@@ -133,15 +136,16 @@ sub _group_overview ($self, $resultset, $template) {
     my $fullscreen = $validation->param('fullscreen') // 0;
     my $interval = $validation->param('interval') // ONE_MINUTE;
 
-    my @limit_builds_preset = (10, 20, 50, 100, 400);
-    if ($self->current_user && !grep { $_ == $limit_builds } @limit_builds_preset) {
+    my $current_user = $self->current_user;
+    my @limit_builds_preset = LIMIT_BUILDS;
+    if ($current_user && !any { $_ == $limit_builds } @limit_builds_preset) {
         push @limit_builds_preset, $limit_builds;
         @limit_builds_preset = (sort { $a <=> $b } @limit_builds_preset);
     }
     $validation->optional('limit_builds')->in(@limit_builds_preset);
 
-    my @interval_preset = (30, 60, 90, 120, 180);
-    if ($self->current_user && !grep { $_ == $interval } @interval_preset) {
+    my @interval_preset = INTERVAL;
+    if ($current_user && !any { $_ == $interval } @interval_preset) {
         push @interval_preset, $interval;
         @interval_preset = (sort { $a <=> $b } @interval_preset);
     }
