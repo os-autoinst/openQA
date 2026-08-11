@@ -22,7 +22,7 @@ use IPC::Run qw(start);
 use Mojo::Server::Daemon;
 use Time::HiRes qw(time sleep);
 use OpenQA::WebAPI;
-use OpenQA::Log 'log_info';
+use OpenQA::Log qw(log_info log_warning);
 use OpenQA::Utils;
 use OpenQA::Test::TimeLimit ();
 use OpenQA::Test::Utils qw(wait_for);
@@ -99,7 +99,11 @@ sub start_driver ($mojoport) {
         enable_timeout;
         # Scripts are considered stuck after this timeout
         $_DRIVER->set_timeout(script => $ENV{OPENQA_SELENIUM_SCRIPT_TIMEOUT_MS} // 2000);
-        $_DRIVER->set_window_size(600, 800);
+        try { $_DRIVER->set_window_size(600, 800) }
+        catch ($e) {
+            # uncoverable statement
+            log_warning 'set_window_size failed, which could be due to a tiling WM. Continuing with current size.';
+        }
         $_DRIVER->get($base_url);
 
     }
