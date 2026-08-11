@@ -613,9 +613,9 @@ subtest 'Privacy policy configuration' => sub {
       ->attr_like('#footer-legal a', 'href', qr|docs/PrivacyPolicy.md|);
 
     my $original_url = $t->app->config->{global}->{privacy_policy_url};
-    $t->app->config->{global}->{privacy_policy_url} = 'https://custom-privacy-policy.org';
+    $t->app->config->{global}->{privacy_policy_url} = 'https://custom-privacy-policy.invalid';
     $t->get_ok('/')->status_is(200)->text_like('#footer-legal a', qr/Privacy Policy/)
-      ->attr_like('#footer-legal a', 'href', qr|^https://custom-privacy-policy\.org$|);
+      ->attr_like('#footer-legal a', 'href', qr|^https://custom-privacy-policy\.invalid$|);
 
     $t->app->config->{global}->{privacy_policy_url} = $original_url;
 };
