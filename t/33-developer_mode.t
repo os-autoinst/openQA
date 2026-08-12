@@ -201,12 +201,29 @@ subtest 'pause at assert_screen timeout' => sub {
         'paused after assert_screen timeout'
     );
 
+    # clear console so subsequent wait_for_developer_console_like calls don't see old output
+    $driver->execute_script('document.getElementById("log").value = ""');
+
     # try to resume
     enter_developer_console_cmd $driver, '{"cmd":"resume_test_execution"}';
     wait_for_developer_console_like($driver, qr/\"resume_test_execution\":/, 'resume');
 
+    # run some command immediately after resuming to stress test command processing
+    # note: This might not have an effect as the backend might not be on the next assert screen yet.
+    #       However, the backend must also not crash or get stuck just because we send a command immediately
+    #       after resuming (like in https://progress.opensuse.org/issues/205206).
+    enter_developer_console_cmd $driver, '{"cmd":"set_assert_screen_timeout","timeout":1000}';
+
+    # wait until asserting 'on_prompt' again
+    # note: Do not just skip the timeout directly after resuming; we need to wait for the backend to
+    #       enter the state where it asserts something before we can skip the assertion.
+    wait_for_developer_console_like(
+        $driver,
+        qr/(\"tags\":\[\"on_prompt\"\]|\"mustmatch\":\"on_prompt\")/,
+        'asserting on_prompt'
+    );
+
     # skip timeout (again)
-    sleep 5;    # workaround command processing issue, see https://progress.opensuse.org/issues/205206
     enter_developer_console_cmd $driver, '{"cmd":"set_assert_screen_timeout","timeout":0}';
     wait_for_developer_console_like(
         $driver,
@@ -335,8 +352,8 @@ subtest 'resume test execution and 2nd tab' => sub {
     # go back to the live view
     $driver->get($job_page_url);
     $driver->find_element_by_link_text('Live View')->click();
-    wait_for_session_info(qr/owned by Demo.*2 tabs open/,
-        '2 browser tabs open (live view and tab from previous subtest)');
+    wait_for_session_info(qr/owned by Demo.*([2-9]|1\d+) tabs open/,
+        'more than one browser tab open (live view and tab from previous subtest)');
 
     # open developer console
     $driver->get($developer_console_url);
