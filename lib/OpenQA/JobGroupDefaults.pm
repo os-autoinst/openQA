@@ -16,6 +16,7 @@ use constant {
     KEEP_IMPORTANT_JOBS_IN_DAYS => 0,
     PRIORITY => 50,
     CARRY_OVER_BUGREFS => 1,
+    ALWAYS_SHOW_VERSION => 0,
 };
 
 1;

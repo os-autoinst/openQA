@@ -95,7 +95,7 @@ sub load_properties ($self) {
         if ($param eq 'parent_id') {
             $properties{$param} = ($value eq 'none') ? undef : $value;
         }
-        elsif ($param eq 'size_limit_gb') {
+        elsif ($param eq 'size_limit_gb' || $param eq 'always_show_version') {
             $properties{$param} = ($value eq '') ? undef : $value;
         }
         else {
@@ -170,6 +170,7 @@ sub _validate_common_properties ($self) {
     $validation->optional('default_priority')->num(0);
     $validation->optional('carry_over_bugrefs')->num(0, 1);
     $validation->optional('ignore_on_dashboard')->num(0, 1);
+    $validation->optional('always_show_version')->in(0, 1, '');
     $validation->optional('description');
     for my $field (qw(logs important_logs results important_results jobs important_jobs)) {
         $validation->optional("keep_${field}_in_days")->num(0);
