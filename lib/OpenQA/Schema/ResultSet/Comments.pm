@@ -129,4 +129,24 @@ sub comment_data_for_jobs ($self, $jobs, $args = {}) {
     return \%res;
 }
 
+=over 4
+
+=item pinned_descriptions()
+
+Return comments matching pinned descriptions from operators.
+
+=back
+
+=cut
+
+sub pinned_descriptions ($self) {
+    return $self->search(
+        {
+            text => {like => '%pinned-description%'},
+            user_id => {
+                -in => $self->result_source->schema->resultset('Users')->search({is_operator => 1})->get_column('id')
+                  ->as_query
+            }});
+}
+
 1;

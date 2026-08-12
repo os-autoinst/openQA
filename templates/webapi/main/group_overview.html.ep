@@ -39,4 +39,4 @@
     %= include 'main/group_builds', build_results => $build_results, group => $group, children => undef, default_expanded => 1
 </div>
 %= include 'main/more_builds', limit_builds => $limit_builds
-%= include 'main/comment_area'
+<div id="comment-area"></div>

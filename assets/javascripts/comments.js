@@ -187,3 +187,100 @@ function insertTemplate(button) {
   const template = button.dataset.template;
   textarea.value += textarea.value ? '\n' + template : template;
 }
+
+function getUrlWithoutHash(urlStr) {
+  const url = new URL(urlStr, window.location.href);
+  url.hash = '';
+  return url.toString();
+}
+
+let lastLoadedUrl = getUrlWithoutHash(window.location.href);
+
+document.addEventListener('click', event => {
+  const link = event.target.closest('#comment-area .comments-pagination a');
+  if (!link) return;
+  event.preventDefault();
+
+  const urlStr = link.href;
+  if (!urlStr) return;
+
+  loadComments(urlStr, true);
+});
+
+function loadComments(urlStr, pushState) {
+  const wrapper = document.getElementById('comment-area');
+  if (!wrapper) return;
+
+  const url = new URL(urlStr, window.location.href);
+  // Transform the regular overview URL into the AJAX endpoint URL
+  url.pathname = url.pathname.replace(/\/?$/, '/comments_ajax');
+
+  fetch(url.toString(), {
+    headers: {
+      Accept: 'text/html'
+    }
+  })
+    .then(response => {
+      if (!response.ok) throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+      return response.text();
+    })
+    .then(html => {
+      wrapper.innerHTML = html;
+      lastLoadedUrl = getUrlWithoutHash(urlStr);
+      if (pushState) {
+        history.pushState({commentsUrl: urlStr}, '', urlStr);
+      }
+      if (typeof updateTimeago === 'function') {
+        updateTimeago();
+      }
+      // If the URL has a hash (e.g. #comment-123), scroll to it after AJAX loads
+      if (window.location.hash) {
+        // Try/catch in case the hash is an invalid CSS selector
+        try {
+          const target = document.querySelector(window.location.hash);
+          if (target) {
+            target.scrollIntoView();
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+    })
+    .catch(error => {
+      addFlash('danger', `Failed to load comments: ${error.message || error}`);
+    });
+}
+
+// A boolean to distinguish actual popstate events (user navigating history)
+// from the initial popstate event that some browsers (like older Safari/Chrome)
+// fire on page load.
+let popstateActive = false;
+
+// Load comments automatically when the DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  const wrapper = document.getElementById('comment-area');
+  if (wrapper) {
+    loadComments(window.location.href, false);
+  }
+});
+
+// We use setTimeout to defer setting popstateActive to true until after
+// the current execution queue is empty, effectively waiting until any
+// auto-triggered popstate event from page load has already fired.
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    popstateActive = true;
+  }, 0);
+});
+
+// Handle browser back/forward navigation within the comment pagination.
+window.addEventListener('popstate', event => {
+  if (!popstateActive) return;
+  const wrapper = document.getElementById('comment-area');
+  if (!wrapper) return;
+
+  const targetUrl = (event.state && event.state.commentsUrl) || window.location.href;
+  if (getUrlWithoutHash(targetUrl) === lastLoadedUrl) return;
+
+  loadComments(targetUrl, false);
+});
