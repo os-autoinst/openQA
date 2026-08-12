@@ -320,6 +320,7 @@ sub default_config () {
             prio_throttling_data => undef,
             prio_group_parameters => 'full_name:Development:50',
             prio_group_data => undef,
+            job_group_overview_max_unauth_builds_limit => 400,
         },
         archiving => {
             archive_preserved_important_jobs => 0,
