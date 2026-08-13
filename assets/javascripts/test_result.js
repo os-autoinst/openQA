@@ -1,6 +1,8 @@
 // jshint multistr: true
 // jshint esversion: 6
 
+let details_mode = 'default';
+
 const testGitInfoRe = /TEST_GIT_HASH=([a-fA-F0-9]+) TEST_GIT_URL=([^\p{Cc}]+)/u;
 
 const testStatus = {
@@ -117,6 +119,13 @@ function previewSuccess(stepPreviewContainer, data, force) {
   // insert and initialize preview data
   pin.html(data);
   pout.insertAfter(stepPreviewContainer);
+  if (details_mode === 'log') {
+    const caretSpace = 15; // .fa-caret-up is positioned bottom: -25px
+    pout.css('top', stepPreviewContainer.position().top + stepPreviewContainer.outerHeight() + caretSpace);
+  } else {
+    pout.css('top', '');
+  }
+
   if (!(pin.find('pre').length || pin.find('audio').length)) {
     const imageSource = pin.find('#step_view').data('image');
     if (!imageSource) {
@@ -229,6 +238,13 @@ function setCurrentPreview(stepPreviewContainer, force) {
     stepPreviewContainer.addClass('current_preview');
     setPageHashAccordingToCurrentTab(link.attr('href'));
     const text = unescape(link.data('text'));
+    if (details_mode === 'log') {
+      hidePreviewContainer();
+      const log_container = stepPreviewContainer.get(0).nextElementSibling;
+      log_container.querySelector('div').innerHTML = text;
+      return;
+    }
+
     previewSuccess(stepPreviewContainer, text, force);
     return;
   }
@@ -246,6 +262,46 @@ function setCurrentPreview(stepPreviewContainer, force) {
     console.warn('Failed to load data from: ' + link.data('url'));
     setCurrentPreview(null);
   });
+}
+
+function showTextBoxes(el) {
+  setCurrentPreview(null);
+  const E = createElement;
+  const currentTd = el.closest('td');
+  const nextTd = currentTd.nextElementSibling;
+  const divs = nextTd.querySelectorAll('div.links_a');
+  divs.forEach(div => {
+    const cl = div.getAttribute('class');
+
+    if (details_mode === 'log') {
+      div.classList.remove('logview');
+    } else {
+      const link = div.querySelector('a');
+      const textData = link.dataset.textorig;
+      if (textData) {
+        const textresult = E('pre', [textData]);
+        const logbox_inner = E('div', [textresult], {class: 'log_container_in preview_container_inner'});
+        const logbox = E('div', [logbox_inner], {class: 'log_container_out preview_container_outer'});
+        div.after(logbox);
+      }
+      div.classList.add('logview');
+    }
+  });
+  el.firstChild.classList.toggle('fa-expand');
+  el.firstChild.classList.toggle('fa-compress');
+  if (details_mode === 'log') {
+    details_mode = 'default';
+    el.setAttribute('title', 'Expand row');
+    el.setAttribute('aria-lebel', 'Expand row');
+    const logdivs = nextTd.querySelectorAll('div.log_container_out');
+    logdivs.forEach(div => {
+      div.remove();
+    });
+  } else {
+    details_mode = 'log';
+    el.setAttribute('title', 'Collapse row');
+    el.setAttribute('aria-lebel', 'Collapse row');
+  }
 }
 
 function selectPreview(which) {

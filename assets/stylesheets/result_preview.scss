@@ -1,13 +1,27 @@
-#preview_container_out {
+.logview_expand_btn {
   position: absolute;
-  z-index: 4;
-  display: none;
-  margin-top: 10px;
+  top: -2px;
+  right: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: grey;
+}
+div.log_container_out {
+  float: left;
+  width: 90%;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+div.log_container_in {
+  position: relative;
+}
+div.preview_container_outer {
   margin-bottom: 7px;
 }
-#preview_container_in {
+div.preview_container_inner {
   padding: 5px;
-  position: absolute;
   right: 0;
   text-align: center;
   background-color: #f5f5f5;
@@ -36,6 +50,15 @@
     background-color: inherit;
   }
 }
+#preview_container_out {
+  z-index: 4;
+  position: absolute;
+  display: none;
+  margin-top: 10px;
+}
+#preview_container_in {
+  position: absolute;
+}
 [data-bs-theme='dark'] #preview_container_in {
   background-color: #0a0a0a;
 }
@@ -46,7 +69,11 @@
   color: $default-font-color-dark;
   background-color: $default-bg-color-dark;
 }
-.links > div {
+.links > div.logview {
+  clear: left;
+  float: left;
+}
+.links > div.links_a {
   display: inline-block;
   margin-top: 3px;
 }

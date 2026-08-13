@@ -100,7 +100,7 @@
     </div>
 </div>
 
-<div id="preview_container_out">
-    <div id="preview_container_in" class="well well-lg">
+<div id="preview_container_out" class="preview_container_outer">
+    <div id="preview_container_in" class="well well-lg preview_container_inner">
     </div>
 </div>
