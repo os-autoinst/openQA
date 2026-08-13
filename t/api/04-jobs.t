@@ -1220,11 +1220,20 @@ subtest 'priority correctly assigned when posting job' => sub {
         subtest 'CASEDIR with URL: prio adjusted because CASEDIR does match positive regex' => sub {
             my %new_job_args = (priority => $default_prio);
             local $jobs_post_params{CASEDIR} = 'https://some-url/distri';
-            local $limits->{prio_throttling_patterns} = 'CASEDIR:15:=~^https?:';
+            local $limits->{prio_throttling_patterns} = 'CASEDIR:15:=~^https?:,CASEDIR:10:=~^$';
             $config = OpenQA::Setup::read_config($t->app);
             $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($t->app, $config);
             OpenQA::Schema::ResultSet::Jobs::_apply_prio_throttling($jobs, \%jobs_post_params, \%new_job_args);
             is $new_job_args{priority}, $default_prio + 15, 'prio adjusted because CASEDIR matches https?: with =~';
+        };
+        subtest 'empty CASEDIR: prio adjusted for non-existing variable via "$^" pattern' => sub {
+            my %new_job_args = (priority => $default_prio);
+            delete local $jobs_post_params{CASEDIR};
+            local $limits->{prio_throttling_patterns} = 'CASEDIR:15:=~^https?:,CASEDIR:10:=~^$';
+            $config = OpenQA::Setup::read_config($t->app);
+            $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($t->app, $config);
+            OpenQA::Schema::ResultSet::Jobs::_apply_prio_throttling($jobs, \%jobs_post_params, \%new_job_args);
+            is $new_job_args{priority}, $default_prio + 10, 'prio adjusted because CASEDIR does not exist';
         };
     };
 

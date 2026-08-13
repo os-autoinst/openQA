@@ -230,22 +230,24 @@ sub _apply_prio_throttling ($self, $settings, $new_job_args, $group = undef) {
             push @throttling_info, $info if $info;
         }
         for my $resource (sort keys %$throttling) {
-            next unless defined(my $value = $settings->{$resource});
             for my $rule (@{$throttling->{$resource}}) {
-                my $op = $rule->{operator};
-                if (!defined $op) {
+                my $value = $settings->{$resource};
+                my $op = $rule->{operator} // '';
+                if (defined $value && !$op) {
                     push @throttling_info, $resource . _update_priority($value, $rule, $new_job_args)
                       if $resource ne 'MAX_JOB_TIME';
                     next;
                 }
-                my $val = $value;
+                my $regex_str = $rule->{regex_str} // '';
+                next if !defined $value && $op ne '=~' && $regex_str ne '^$';
+                my $val = $value // '';
                 my $regex = $rule->{regex};
                 my $adj = $rule->{adjustment};
                 my $matches = $val =~ $regex;
                 if (($op eq '=~' && $matches) || ($op eq '!~' && !$matches)) {
                     my $sign = _change_prio_returning_sign($new_job_args, $adj);
                     push @throttling_info, sprintf '%s [%s%s: value %s %s %s]', $resource, $sign, $adj, $val, $op,
-                      $rule->{regex_str};
+                      $regex_str;
                 }
             }
         }

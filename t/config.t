@@ -370,6 +370,19 @@ subtest 'check throttling configuration validation and application' => sub {
           },
           'prio_throttling_data parses multiple patterns with spaces correctly';
     };
+    subtest 'multiple prio_throttling_patterns for one variable; pattern for matching empty variable' => sub {
+        local $config->{misc_limits}->{prio_throttling_parameters} = '';
+        local $config->{misc_limits}->{prio_throttling_patterns} = 'CASEDIR:15:!~^https?:,CASEDIR:10:=~^$';
+        $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($app, $config);
+        is_deeply $config->{misc_limits}->{prio_throttling_data},
+          {
+            CASEDIR => [
+                {adjustment => 15, operator => '!~', regex => qr/^https?:/, regex_str => '^https?:'},
+                {adjustment => 10, operator => '=~', regex => qr/^$/, regex_str => '^$'},
+            ],
+          },
+          'prio_throttling_data parses multiple patterns with spaces correctly';
+    };
     subtest 'combining parameters and patterns' => sub {
         local $config->{misc_limits}->{prio_throttling_parameters} = 'MAX_JOB_TIME:0.007';
         local $config->{misc_limits}->{prio_throttling_patterns} = 'CASEDIR:15:!~^https?:';
