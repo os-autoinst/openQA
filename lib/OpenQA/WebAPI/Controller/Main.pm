@@ -137,7 +137,10 @@ sub _group_overview ($self, $resultset, $template) {
     my $interval = $validation->param('interval') // ONE_MINUTE;
 
     my $current_user = $self->current_user;
-    my @limit_builds_preset = LIMIT_BUILDS;
+    my $max_unauth_builds_limit = $self->app->config->{misc_limits}->{job_group_overview_max_unauth_builds_limit};
+    my @limit_builds_preset = ($current_user) ? LIMIT_BUILDS : grep { $_ <= $max_unauth_builds_limit } LIMIT_BUILDS;
+    push @limit_builds_preset, $max_unauth_builds_limit
+      if (!$current_user && !any { $_ == $max_unauth_builds_limit } @limit_builds_preset);
     if ($current_user && !any { $_ == $limit_builds } @limit_builds_preset) {
         push @limit_builds_preset, $limit_builds;
         @limit_builds_preset = (sort { $a <=> $b } @limit_builds_preset);

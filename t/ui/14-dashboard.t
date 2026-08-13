@@ -9,6 +9,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
+use Mojo::File qw(tempdir);
 use OpenQA::Log 'log_debug';
 use OpenQA::Test::TimeLimit '30';
 use OpenQA::Test::Case;
@@ -16,6 +17,10 @@ use OpenQA::SeleniumTest;
 
 my $test_case = OpenQA::Test::Case->new;
 my $schema = $test_case->init_data(fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl');
+
+$ENV{OPENQA_CONFIG} = my $config_dir = tempdir("$FindBin::Script-XXXX");
+my $cfg = "[misc_limits]\njob_group_overview_max_unauth_builds_limit = 300";
+$config_dir->child('openqa.ini')->spew($cfg);
 
 driver_missing unless my $driver = call_driver;
 
@@ -78,12 +83,18 @@ is $driver->find_element('#group_description a')->get_attribute('href'),
 $driver->get('/group_overview/1002');
 is scalar @{$driver->find_elements('#group_description', 'css')},
   0, 'group description frame is not shown if none present';
+is scalar @{$driver->find_elements('option[value*="400"]', 'css')}, 0,
+  'job_limit 400 below job_group_overview_max_unauth_builds_limit not shown';
+is scalar @{$driver->find_elements('option[value*="300"]', 'css')}, 1,
+  'job_limit 300 = job_group_overview_max_unauth_builds_limit is shown';
 is $driver->get($build_url . '?limit_builds=2'), 1, 'group overview page accepts query parameter, too';
 $driver->get($build_url . '?limit_builds=4711');
 like $driver->find_element('body')->get_text(), qr/limit_builds invalid/,
   'custom limit_builds value invalid when logged out';
 $driver->get($build_url . '?fullscreen=1&interval=4711');
 like $driver->find_element('body')->get_text(), qr/interval invalid/, 'custom interval value invalid when logged out';
+$driver->get($build_url . '?limit_builds=400');
+like $driver->find_element('body')->get_text(), qr/limit_builds invalid/, 'too high limit_builds value when logged out';
 $driver->get('/login');
 $driver->get($build_url . '?fullscreen=1&interval=4711');
 is $driver->find_element('select[name=interval] option[value*="4711"][selected]')->get_text(), 4711,
