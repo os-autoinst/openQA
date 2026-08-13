@@ -13,28 +13,38 @@ local extra_disks = std.map(
   std.filter(function(d) d.logicalname != os_disk, disks_with_size)
 );
 
-// Helper function to create a unique, safe alias from the device name (e.g., "/dev/sdb" -> "raid-sdb")
+// Helper function to create a unique, safe alias from the device name
 local raid_alias = function(dev_name) "raid-" + std.strReplace(dev_name, "/dev/", "");
+
+// Check if we actually have enough extra disks to form a RAID 0
+local has_enough_disks_for_raid = std.length(extra_disks) >= 2;
 
 // 1. Build the OS drive config
 local os_drive_config = if os_disk != null then [{
   search: os_disk,
-  partitions: [{ search: '*', delete: true }, { generate: 'default' }],
+  partitions: [{ search: {}, delete: true }, { generate: 'default' }],
 }] else [];
 
 // 2. Build the extra drives config dynamically
-// Omitting 'size' tells Agama to use the maximum available space on the disk for the partition.
 local extra_drives_config = std.map(
   function(disk) {
     search: disk,
-    partitions: [{ search: '*', delete: true }, { alias: raid_alias(disk) }] 
+    ptableType: 'gpt',
+    partitions: [
+      { search: {}, delete: true },
+      // If we have 2+ disks, prep them for RAID. Otherwise, prep as a standard Linux partition.
+      if has_enough_disks_for_raid then
+        { alias: raid_alias(disk), id: 'raid' }
+      else
+        { id: 'linux' }
+    ]
   },
   extra_disks
 );
 
-// 3. Build the mdRaids config using the generated aliases
+// 3. Build the mdRaids config ONLY if we have at least 2 disks
 local mdraids =
-  if std.length(extra_disks) > 0 then
+  if has_enough_disks_for_raid then
     [{
       devices: std.map(raid_alias, extra_disks),
       level: "raid0",
@@ -47,8 +57,8 @@ local mdraids =
     id: 'openSUSE_Leap'
   },
   storage: {
-      // Concatenate the OS drive and the dynamically generated extra drives
       drives: os_drive_config + extra_drives_config,
+      // If mdraids is empty, Agama will just ignore it safely
       mdRaids: mdraids
   },
   localization: {
