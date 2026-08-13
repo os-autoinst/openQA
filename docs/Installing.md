@@ -741,6 +741,10 @@ where:
   latter applies `adjustment_n` if `regex_n` does not match
 - `regex_n`: a regex to match the value of `parameter_n` against
 
+Patterns like `…:=~^$` can be used to adjust the priority if a parameter does
+*not* exist or is empty. (Patterns are normally ignored if the parameter they
+refer to does not exist.)
+
 The final priority of a job is the sum of a base priority, defined in the job
 templates or scenario definitions, plus all adjustments calculated for the
 configured parameters that match the job settings.
