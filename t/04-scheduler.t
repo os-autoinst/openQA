@@ -55,8 +55,12 @@ my $job_dependencies = $schema->resultset('JobDependencies');
 my $workers = $schema->resultset('Workers');
 my $t = Test::Mojo->new('OpenQA::Scheduler');
 my $app = OpenQA::WebAPI->new;
+my $cfg = $app->config;
+my $limits = $cfg->{misc_limits};
 OpenQA::App->set_singleton($app);
-$app->config->{'scm git'}->{git_auto_update} = 'no';
+$cfg->{'scm git'}->{git_auto_update} = 'no';
+$limits->{prio_throttling_patterns} = '';
+$limits->{prio_throttling_data} = {};
 
 subtest 'Authentication' => sub {
     my $app = $t->app;

@@ -78,7 +78,10 @@ subtest 'Test configuration default modes' => sub {
     $test_config->{global}->{service_port_delta} = 2;
     $test_config->{misc_limits}->{prio_throttling_data} = {
         MAX_JOB_TIME => [{scale => '0.007', reference => 0}],
-        CASEDIR => [{adjustment => 15, operator => '!~', regex => qr/^https?:/, regex_str => '^https?:'}]};
+        CASEDIR => [
+            {adjustment => 15, operator => '!~', regex => qr/^https?:/, regex_str => '^https?:'},
+            {adjustment => 15, operator => '=~', regex => qr/^$/, regex_str => '^$'},
+        ]};
     $test_config->{misc_limits}->{prio_group_data}
       = [{property => 'full_name', regex => qr/Development/, increment => 50}];
     is ref delete $config->{global}->{auto_clone_regex}, 'Regexp', 'auto_clone_regex parsed as regex';

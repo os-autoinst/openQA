@@ -63,10 +63,14 @@ sub calculate_file_md5 ($file) {
 $ENV{MOJO_MAX_MESSAGE_SIZE} = 207_741_824;
 
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
-my $cfg = $t->app->config;
+my $app = $t->app;
+my $cfg = $app->config;
 $cfg->{'scm git'}->{git_auto_clone} = 'no';
 $cfg->{'scm git'}->{git_auto_update} = 'no';
 is $cfg->{audit}->{blocklist}, 'job_grab', 'blocklist updated';
+my $limits = $cfg->{misc_limits};
+$limits->{prio_throttling_patterns} = '';
+$limits->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($app, $cfg);
 
 my $schema = $t->app->schema;
 my $assets = $schema->resultset('Assets');
