@@ -494,10 +494,8 @@ subtest 'edit job templates' => sub() {
     my ($yaml, $form);
     subtest 'open YAML editor for legacy group' => sub {
         $driver->get('/admin/job_templates/1001');
-        $form = $driver->find_element_by_id('editor-form');
-        ok $form->is_hidden(), 'editor form is not shown by default';
-        $driver->find_element_by_id('toggle-yaml-editor')->click();
         wait_for_ajax;
+        $form = $driver->find_element_by_id('editor-form');
         ok $form->is_displayed(), 'editor form is shown';
         ok $form->child('.progress-indication')->is_hidden(), 'spinner is hidden';
         $yaml = $driver->execute_script('return editor.getValue();');
@@ -560,8 +558,8 @@ subtest 'edit job templates' => sub() {
       or always_explain $result->get_text();
 
     # Legacy UI is hidden and no longer available
-    ok $driver->find_element_by_id('toggle-yaml-editor')->is_hidden(), 'editor toggle hidden';
-    ok $driver->find_element_by_id('media')->is_hidden(), 'media editor hidden';
+    is scalar @{$driver->find_elements('toggle-yaml-editor', 'id')}, 0, 'editor toggle not present';
+    is scalar @{$driver->find_elements('media', 'id')}, 0, 'media editor not present';
 
     # More changes on top of the previous ones
     $yaml .= "    - advanced_kde_high_prio:\n";
