@@ -9,14 +9,17 @@
 <div id="summary" class="card">
     <div class="card-header">Statistics</div>
     <div class="card-body row">
-        <div class="col-sm-3">
+        <div class="col-sm-2">
             Online: <span class="badge text-bg-success"><%= $workers_online ? $workers_online : 0 %></span>
         </div>
-        <div class="col-sm-3">
+        <div class="col-sm-2">
             Busy: <span class="badge text-bg-primary"><%= $workers_busy ? $workers_busy : 0 %></span>
         </div>
-        <div class="col-sm-3">
+        <div class="col-sm-2">
             Idle: <span class="badge text-bg-secondary"><%= $workers_active_free ? $workers_active_free : 0 %></span>
+        </div>
+        <div class="col-sm-3">
+            Reserved: <span class="badge text-bg-info"><%= $workers_reserved ? $workers_reserved : 0 %></span>
         </div>
         <div class="col-sm-3">
             Total: <span class="badge text-bg-dark"><%= $total ? $total : 0 %></span>
@@ -71,8 +74,15 @@
                             <%= exists $worker->{properties} && $worker->{properties}->{ISOTOVIDEO_INTERFACE_VERSION} ? $worker->{properties}->{ISOTOVIDEO_INTERFACE_VERSION} : 'unknown' %>
                         </td>
                         <td class='action'>
+                            % if (is_operator) {
+                                % if ($worker->{reservation}) {
+                                    <button class="btn btn-sm btn-outline-danger" title="Release reservation" data-worker-id="<%= $worker->{id} %>" onclick="releaseWorker(this)">Release</button>
+                                % } else {
+                                    <button class="btn btn-sm btn-outline-success" title="Reserve worker" data-worker-id="<%= $worker->{id} %>" data-worker-name="<%= $workername %>" onclick="openReserveModal(this)">Reserve</button>
+                                % }
+                            % }
                             % if($is_admin == 1 && ($worker->{status} eq 'dead' && !$worker->{job})) {
-                                <button class='btn' type='submit' alt='Delete' title='Delete' post_delete_url="<%= url_for('apiv1_worker_delete', worker_id => $worker->{id}) %>" onclick='deleteWorker(this)'><i class="fa-regular fa-trash-can"></i></button>
+                                <button class='btn btn-sm' type='submit' alt='Delete' title='Delete' post_delete_url="<%= url_for('apiv1_worker_delete', worker_id => $worker->{id}) %>" onclick='deleteWorker(this)'><i class="fa-regular fa-trash-can"></i></button>
                             % }
                         </td>
                     </tr>
@@ -81,3 +91,5 @@
         </table>
     </div>
 </div>
+
+%= include 'admin/workers/reserve_modal' if is_operator
