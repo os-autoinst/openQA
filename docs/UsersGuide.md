@@ -352,16 +352,12 @@ views.
 
 Test suites can be described using API commands or the admin table for any operator using the web UI.
 
-<a id="test_suite_description_edit"></a>
-
 <figure>
 <img src="images/test_suite_description_edit.png" alt="test suite description edit field" />
 <figcaption>Entering a test suite description in the admin table using the web interface:</figcaption>
 </figure>
 
 If a description is defined, the name of the test suite on the tests overview page shows up as a link. Clicking the link will show the description in a popup. The same syntax as for comments can be used, that is Markdown with custom extensions such as shortened links to ticket systems.
-
-<a id="test_suite_description_shown"></a>
 
 <figure>
 <img src="images/test_suite_description_shown.png" alt="test suite description popup" />
@@ -430,8 +426,6 @@ carryover.
 > reference you need to wrap it into a label (see subsequent section), e.g.
 > `label:bsc#1234`.
 
-<a id="bug_icon"></a>
-
 <figure>
 <img src="images/bug_icon.png" alt="Bug icon on test result overview" />
 <figcaption>Bug icon for job with bug reference on test result overview</figcaption>
@@ -441,8 +435,6 @@ All bug references are stored within the internal database of openQA.
 The status can be updated using the `/bugs` API route with external tools.
 One can set the bug status this way which will then be shown in the web UI,
 see the figure below.
-
-<a id="labels_closed_tickets"></a>
 
 <figure>
 <img src="images/labels_closed_tickets.png" alt="Example for visualization of closed issues" />
@@ -461,8 +453,6 @@ A label is rendered as yellow box. The keywords are not defined within openQA
 itself. A valid list of keywords should be decided upon within each project
 or environment of one openQA instance. If a job has a label a special icon
 will be shown next to it in various places as shown in the figure below.
-
-<a id="label_icon"></a>
 
 <figure>
 <img src="images/label_icon.png" alt="Label icon on test result overview" />

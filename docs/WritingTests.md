@@ -201,8 +201,6 @@ sub post_run_hook {
 
 ### Notes on the Python API
 
-<a id="notes-python-api"></a>
-
 The Python integration that openQA offers through `Inline Python` also allows
 the test modules to import other Perl modules with the usage of the `perl`
 
@@ -254,8 +252,6 @@ Additionally, Python tests do not support `run_args` and treat the presence of
 references to complex Perl objects to Python.
 
 ### Notes on the Lua API
-
-<a id="notes-lua-api"></a>
 
 The Lua integration that openQA offers through `Inline Lua` also allows
 the test modules to import other Perl modules via the `use()` function which works similar to Perl's native `use` function.
@@ -315,8 +311,6 @@ x11_start_program('vncviewer :0',
 ```
 
 ### Example Perl test modules
-
-<a id="testmodule_perl_examples"></a>
 
 The following examples are short complete test modules written in Perl
 implementing the interface described above.
@@ -411,8 +405,6 @@ sub run {
 ```
 
 ### Example Python test modules
-
-<a id="testmodule_python_examples"></a>
 
 The following examples are short complete test modules written in Python
 implementing the interface described above.
@@ -1987,8 +1979,6 @@ test development. For example:
   needles anyway
 
 ### Using snapshots to speed up development of tests
-
-<a id="snapshots"></a>
 
 For lower turn-around times during test development based on virtual machines
 the QEMU backend provides a feature that allows a job to start from a snapshot

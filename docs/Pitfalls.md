@@ -69,7 +69,7 @@ setting `OPTIMIZE_IMAGES=0`.
 
 As a first step to start using postgreSQL, please, configure postgreSQL database
 according to the
-<a href="Contributing.md#setup-postgresql" class="cross-reference">postgreSQL setup guide</a>
+[postgreSQL setup guide](Contributing.md#setup-postgresql)
 
 To migrate api keys run following commands:
 
@@ -126,7 +126,7 @@ This is basically a checklist to go through in case the developer mode is broken
     which contains the URL the livehandler is attempting to query. In this case
     try the following sub-steps:
     1.  If the host is wrong, add `WORKER_HOSTNAME = correcthost` to
-        <a href="GettingStarted.md#configuration" class="cross-reference">the worker configuration</a>.
+        [the worker configuration](GettingStarted.md#configuration).
         The worker should then tell the web UI that it is reachable via
         `correcthost` resulting in a correct URL for the os-autoinst command server. Be sure the setting appears after the `[global]` section header.
 
