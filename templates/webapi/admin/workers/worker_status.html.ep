@@ -1,12 +1,19 @@
+% my $reservation = $worker->{reservation};
+% my $reservation_details = $reservation ? '<br>Reserved by: ' . escape_html($reservation->{user})
+%     . '<br>Comment: ' . escape_html($reservation->{comment})
+%     . '<br>Expires: ' . ($reservation->{t_expires} ? escape_html($reservation->{t_expires}) : 'never') : '';
 % if($worker->{status} eq 'running') {
-    Working
+    <%= $reservation ? 'Working (Reserved)' : 'Working' %>
     <%= help_popover('Worker status' =>
           'Job: ' .
           link_to($worker->{jobid}, url_for('test', testid => $worker->{jobid})) .
-          ( $worker->{status} eq 'running' && defined($worker->{currentstep}) ?
-          '<br> Step: '. $worker->{currentstep} : '' )
+          ( defined($worker->{currentstep}) ? '<br> Step: ' . escape_html($worker->{currentstep}) : '' ) .
+          $reservation_details
         )
     %>
+% } elsif ($worker->{status} eq 'reserved') {
+    Reserved
+    <%= help_popover('Worker status' => $reservation_details =~ s/^<br>//r) %>
 % } elsif ($worker->{status} eq 'dead' && $worker->{job}) {
     Dead
     <%= help_popover('Worker status' =>
@@ -15,7 +22,7 @@
         )
     %>
 % } elsif ($worker->{status} eq 'broken') {
-    Unavailable <%= help_popover(Details => $worker->{error}) %>
+    Unavailable <%= help_popover(Details => escape_html($worker->{error})) %>
 % } elsif ($worker->{alive}) {
     Idle
 % } else {
