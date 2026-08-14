@@ -173,6 +173,9 @@ h2 [class*="fa-"] {
 #results_filter label {
   vertical-align: top;
 }
+#results td.links {
+  max-width: 0; /* Forces cell to obey overflow rules of inner content */
+}
 .corner-buttons {
   display: inline-block;
   float: right;
