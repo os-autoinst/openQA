@@ -27,6 +27,10 @@ use Feature::Compat::Try;
 my %CARRY_OVER_DEFAULTS = (lookup_depth => 10, state_changes_limit => 3);
 sub carry_over_defaults () { \%CARRY_OVER_DEFAULTS }
 
+# durations in seconds, admin_max_duration 0 means unlimited
+use constant WORKER_RESERVATION_DURATION_DEFAULTS =>
+  {default_duration => 5 * ONE_HOUR, max_duration => 5 * ONE_DAY, admin_max_duration => 0};
+
 sub _read_config_file ($config, $config_file, $defaults, $mode_defaults) {
     for my $section (sort keys %$defaults) {
         my $section_defaults = $defaults->{$section};
@@ -325,6 +329,7 @@ sub default_config () {
         archiving => {
             archive_preserved_important_jobs => 0,
         },
+        worker_reservation => {%{+WORKER_RESERVATION_DURATION_DEFAULTS}, comment_required => 1},
         job_details_archive => {
             job_details_archive_cache_dir => undef,
             job_details_archive_cache_limit_gb => 5,
@@ -394,10 +399,25 @@ sub read_config ($app) {
     my $results = delete $global_config->{parallel_children_collapsable_results};
     $global_config->{parallel_children_collapsable_results_sel}
       = ' .status' . (join '', map { ":not(.result_$_)" } split /\s+/, $results);
+    _validate_worker_reservation_config($app);
     _validate_worker_timeout($app);
     _validate_security_policy($app, $global_config);
     _set_default_storage_durations($_) for $config->{default_group_limits}, $config->{no_group_limits};
     return $config;
+}
+
+sub _validate_worker_reservation_config ($app) {
+    my $cfg = $app->config->{worker_reservation};
+    my $defaults = WORKER_RESERVATION_DURATION_DEFAULTS;
+    for my $key (sort keys %$defaults) {
+        my $parsed = parse_duration($cfg->{$key});
+        $app->log->warn("Invalid worker_reservation $key specified, defaulting to $defaults->{$key} seconds")
+          unless defined $parsed;
+        $cfg->{$key} = $parsed // $defaults->{$key};
+    }
+    return undef if ($cfg->{comment_required} // '') =~ /^[01]$/;
+    $cfg->{comment_required} = 1;
+    $app->log->warn('Invalid worker_reservation comment_required specified, defaulting to 1');
 }
 
 sub _validate_worker_timeout ($app) {

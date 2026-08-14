@@ -12,6 +12,9 @@ use OpenQA::Log qw(log_error log_warning log_info);
 use OpenQA::WebSockets::Client;
 use OpenQA::Constants qw(WORKER_API_COMMANDS DB_TIMESTAMP_ACCURACY VNC_PORT);
 use OpenQA::Jobs::Constants;
+use OpenQA::Utils 'parse_duration';
+use OpenQA::WorkerReservation
+  qw(RESERVATION_PROPERTIES RESERVATION_TIMESTAMP_FORMAT reservation_active reservation_error);
 use Mojo::JSON qw(encode_json decode_json);
 use List::Util qw(any);
 use Time::Seconds;
@@ -114,6 +117,89 @@ sub set_property ($self, $key, $val) {
     }
 }
 
+sub _reservation_properties ($self) {
+    return {map { $_->key => $_->value } $self->properties->search({key => {-in => [RESERVATION_PROPERTIES]}})->all};
+}
+
+sub is_reserved ($self) {
+    my $properties = $self->_reservation_properties;
+    return reservation_active($properties->{RESERVED_BY_ID}, $properties->{RESERVED_T_EXPIRES});
+}
+
+sub _username_for ($self, $user_id) {
+    my $user = $self->result_source->schema->resultset('Users')->find($user_id);
+    return $user ? $user->username : 'unknown';
+}
+
+sub _reserved_by_name ($self) { $self->_username_for($self->_reservation_properties->{RESERVED_BY_ID}) }
+
+sub _iso_timestamp ($epoch) {
+    $epoch ? DateTime->from_epoch(epoch => $epoch, time_zone => 'UTC')->strftime(RESERVATION_TIMESTAMP_FORMAT) : undef;
+}
+
+sub _reservation_info ($self, $properties) {
+    {
+        user => $self->_username_for($properties->{RESERVED_BY_ID}),
+        comment => $properties->{RESERVED_COMMENT},
+        t_created => _iso_timestamp($properties->{RESERVED_T_CREATED}),
+        t_expires => _iso_timestamp($properties->{RESERVED_T_EXPIRES}),
+    };
+}
+
+# the active reservation in the form exposed via the API, undef if the worker is not reserved;
+# expired reservations are reported as absent so that stale properties are never observable
+sub reservation ($self) {
+    my $properties = $self->_reservation_properties;
+    return undef unless reservation_active($properties->{RESERVED_BY_ID}, $properties->{RESERVED_T_EXPIRES});
+    return $self->_reservation_info($properties);
+}
+
+# returns the duration in seconds a reservation may last for, 0 meaning unlimited
+sub _reservation_duration ($duration, $is_admin) {
+    my $config = OpenQA::App->singleton->config->{worker_reservation};
+    my $seconds = defined $duration ? parse_duration($duration) : $config->{default_duration};
+    die reservation_error(invalid => "Invalid duration format '$duration'") unless defined $seconds;
+    die reservation_error(forbidden => 'Indefinite reservations are only allowed for admins')
+      if $seconds == 0 && !$is_admin;
+    my $limit = $is_admin ? $config->{admin_max_duration} : $config->{max_duration};
+    die reservation_error(invalid => "Duration of ${seconds}s exceeds the maximum of ${limit}s")
+      if $limit > 0 && $seconds > $limit;
+    return $seconds;
+}
+
+sub reserve ($self, $user, $comment = undef, $duration = undef, $force = 0) {
+    my $is_admin = $user->is_admin;
+    die reservation_error(forbidden => 'Insufficient permissions to reserve a worker')
+      unless $is_admin || $user->is_operator;
+    die reservation_error(invalid => 'A comment is required for worker reservation')
+      if OpenQA::App->singleton->config->{worker_reservation}->{comment_required}
+      && (!defined $comment || $comment =~ /^\s*$/);
+    my $seconds = _reservation_duration($duration, $is_admin);
+
+    # the conflict check and all property writes must be atomic, a partially written reservation
+    # without expiry would keep the worker reserved forever
+    my $now = time;
+    $self->result_source->schema->txn_do(
+        sub {
+            die reservation_error(conflict => 'Worker is already reserved by ' . $self->_reserved_by_name)
+              if $self->is_reserved && !($force && $is_admin);
+            $self->set_property(RESERVED_BY_ID => $user->id);
+            $self->set_property(RESERVED_COMMENT => $comment);
+            $self->set_property(RESERVED_T_CREATED => $now);
+            $self->set_property(RESERVED_T_EXPIRES => $seconds == 0 ? 0 : $now + $seconds);
+        });
+    return $self;
+}
+
+sub release ($self, $user) {
+    die reservation_error(invalid => 'Worker is not reserved') unless $self->is_reserved;
+    die reservation_error(
+        forbidden => 'Insufficient permissions to release reservation owned by ' . $self->_reserved_by_name)
+      unless $user->is_admin || $self->_reservation_properties->{RESERVED_BY_ID} == $user->id;
+    $self->delete_properties([RESERVATION_PROPERTIES]);
+    return $self;
+}
+
 sub dead ($self) {
     return 1 unless my $t_seen = $self->t_seen;
     my $dt = DateTime->now(time_zone => 'UTC');
@@ -142,10 +228,12 @@ sub currentstep ($self) {
     $r->name if $r;
 }
 
-sub status ($self) {
+# $is_reserved can be passed by callers which already know the reservation state to save queries
+sub status ($self, $is_reserved = undef) {
     return 'dead' if ($self->dead);
     return 'broken' if ($self->error);
     return 'running' if ($self->job);
+    return 'reserved' if ($is_reserved // $self->is_reserved);
     return 'idle';
 }
 
@@ -157,17 +245,18 @@ sub unprepare_for_work ($self) {
 }
 
 sub info ($self) {
+    my %properties = map { $_->key => $_->value } $self->properties->all;
+    my $reserved = reservation_active($properties{RESERVED_BY_ID}, $properties{RESERVED_T_EXPIRES});
     my $settings = {
         id => $self->id,
         host => $self->host,
         instance => $self->instance,
-        status => $self->status,
+        status => $self->status($reserved),
         error => $self->error,
     };
-    $settings->{properties} = {};
-    for my $p ($self->properties->all) {
-        $settings->{properties}->{$p->key} = $p->value;
-    }
+    $settings->{reservation} = $self->_reservation_info(\%properties) if $reserved;
+    # the reservation is exposed in structured form only, not as raw internal properties
+    $settings->{properties} = {map { $_ => $properties{$_} } grep { !/^RESERVED_/ } keys %properties};
     # puts job id in status, otherwise is idle
     my $job = $self->job;
     if ($job) {
