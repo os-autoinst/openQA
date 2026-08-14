@@ -1,4 +1,5 @@
 <a id="writingtests"></a>
+
 # Writing Tests
 
 ## Introduction
@@ -490,6 +491,7 @@ Variables are accessible via the **get_var** and **check_var** functions.
 ## Advanced test features
 
 <a id="changing_timeouts"></a>
+
 ### Changing timeouts
 
 By default, tests are aborted after two hours by the worker. To change this
@@ -502,6 +504,7 @@ within the worker settings on slow worker hosts. It has no influence on the
 video setting.
 
 ### Enabling UEFI with QEMU
+
 Use `UEFI=1` to enable UEFI with the QEMU backend. If your image does not boot
 due to SecureBoot, you can specify the certificate you image is signed with via
 e.g. `UEFI_PFLASH_CERTS=custom.crt` (and use e.g. `ASSET_1=custom.crt` to track
@@ -580,9 +583,10 @@ the corresponding [asset variables](UsersGuide.md#asset_handling).
 
 In addition to that, the following variables can be found in the file
 `vars.json` when Git is used:
+
 - `TEST_GIT_HASH`: The specific version of the tests that were executed.
 - `NEEDLES_GIT_HASH`: The specific version of the needles that were used during
-the test run.
+  the test run.
 
 This file is upload when a test run has concluded and can be found under the
 "Logs & Assets" tab.
@@ -658,6 +662,7 @@ Sometimes issues are sporadic and therefore hard to reproduce. The section about
 might be helpful in this case.
 
 <a id="assigning_jobs_to_workers"></a>
+
 ### Assigning jobs to workers
 
 By default, any worker can get any job with the matching architecture.
@@ -731,8 +736,9 @@ container by setting `OS_AUTOINST_GIT_REPO` to a Git repository URL.
 openQA will construct a Podman command to clone, build, and execute
 `os-autoinst` from that repository.
 The following optional test variables are supported:
-* `OS_AUTOINST_GIT_BRANCH`: The branch to clone (defaults to `master`).
-* `OS_AUTOINST_CONTAINER_IMAGE`: A custom container image to use (defaults to
+
+- `OS_AUTOINST_GIT_BRANCH`: The branch to clone (defaults to `master`).
+- `OS_AUTOINST_CONTAINER_IMAGE`: A custom container image to use (defaults to
   `registry.opensuse.org/devel/openqa/containers/os-autoinst_dev:latest`).
   `OS_AUTOINST_CONTAINER_IMAGE` requires `OS_AUTOINST_GIT_REPO` to be set.
   For openSUSE test-distribution testing, you can use
@@ -745,15 +751,16 @@ starts as a clean environment. Consequently, default local worker test
 directories (such as `/var/lib/openqa/share/tests/opensuse`) are not mounted.
 To ensure the container can find and execute your test suite, you must
 configure the following:
-* `CASEDIR`: Set this to the public Git repository of your test distribution
+
+- `CASEDIR`: Set this to the public Git repository of your test distribution
   (e.g. `https://github.com/os-autoinst/os-autoinst-distri-opensuse.git`) so
   the container can clone and locate the test scripts.
-* `NEEDLES_DIR`: Since needles are typically managed in a separate repository,
+- `NEEDLES_DIR`: Since needles are typically managed in a separate repository,
   you must point this to the corresponding needles Git repository (e.g.
   `https://github.com/os-autoinst/os-autoinst-needles-opensuse.git`) so the
   container can clone and initialize the required needles.
 
-*Note*: Running `os-autoinst` in a rootless container requires that the
+_Note_: Running `os-autoinst` in a rootless container requires that the
 `_openqa-worker` user has subuid/subgid ranges assigned in `/etc/subuid`
 and `/etc/subgid`. If they are missing, you can configure them by running:
 `usermod --add-subuids 100000-165535 --add-subgids 100000-165535 _openqa-worker`.
@@ -786,6 +793,7 @@ causing incomplete jobs.
 can be used to apply more elaborate issue detection and retriggering of tests.
 
 <a id="job_dependencies"></a>
+
 ### Job dependencies
 
 There are different dependency **types**, most importantly _chained_ and
@@ -892,6 +900,7 @@ of scheduling as well as in the worker configuration file `workers.ini`.
 > we explore ways to make it more flexible.
 
 <a id="inter_machine_dependencies"></a>
+
 #### Inter-machine dependencies
 
 Those dependencies make it possible to create job dependencies between tests
@@ -2037,6 +2046,7 @@ flag as the behaviour is implied). In the latter mode every test module is also
 considered `fatal`. This means the job is aborted after the first failed test module (unless subsequent modules are marked with `always_run`).
 
 <a id="snapshots-for-each-module"></a>
+
 #### Enable snapshots for each module
 
 - Run the worker with `--no-cleanup` parameter. This will preserve the hard
@@ -2198,6 +2208,7 @@ downloaded once. New versions must be supplied as new, unambiguous download
 target file names.
 
 <a id="triggering_tests_based_on_an_any_remote_git_refspec_or_open_github_pull_request"></a>
+
 ### Triggering tests based on an any remote Git refspec or open GitHub pull request
 
 openQA also supports to trigger tests using test code from a pull request or

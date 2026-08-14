@@ -1,4 +1,5 @@
 <a id="gettingstarted"></a>
+
 # Getting Started
 
 ## Introduction
@@ -42,12 +43,9 @@ available in the [official repository](https://github.com/os-autoinst/openQA).
 
 ## Architecture
 
-
 Although the project as a whole is referred to as openQA, there are in fact
 several components that are hosted in separate repositories as shown in
 [the following figure](#arch_img).
-
-
 
 <a id="arch_img"></a>
 
@@ -55,8 +53,6 @@ several components that are hosted in separate repositories as shown in
 <img src="images/openqa_architecture.png" alt="openQA architecture" />
 <figcaption aria-hidden="true">openQA architecture</figcaption>
 </figure>
-
-
 
 The heart of the test engine is a standalone application called 'os-autoinst'
 (blue). In each execution, this application creates a virtual machine and uses
@@ -252,6 +248,7 @@ tags.
 ```
 
 #### Areas
+
 There are three kinds of areas:
 
 - **Regular areas** define relevant parts of the screenshot. Those must match
@@ -272,6 +269,7 @@ There are three kinds of areas:
   In the needle view exclude areas are displayed as gray boxes.
 
 #### Click points
+
 Each regular match area in a needle can optionally contain a **click point**.
 This is used with the `testapi::assert_and_click` function to match GUI
 elements such as buttons and then click inside the matched area.
@@ -288,6 +286,7 @@ Each click point can have an `id`, and if a needle contains multiple click point
 to use.
 
 <a id="configuration"></a>
+
 ### Configuration
 
 The different components of openQA read their configuration from the following
@@ -305,7 +304,7 @@ files:
   files are used to configure the openQA worker including its additional cache
   service.
 
-- `client.conf`, `client.conf.d/*.conf`: These files contain API credentials and are used by the openQA worker and other tooling such as `openqa-cli` and  `openqa-clone-job` to authenticate with the web interface. One API key/secret
+- `client.conf`, `client.conf.d/*.conf`: These files contain API credentials and are used by the openQA worker and other tooling such as `openqa-cli` and `openqa-clone-job` to authenticate with the web interface. One API key/secret
   can be configured per web UI host.
 
 If these files are not present, defaults are used.
@@ -406,8 +405,6 @@ section for details.
 
 ## Using the client script
 
-
-
 Just as the worker uses an API key+secret every user of the `client script`
 must do the same. The same API key+secret as previously created can be used or
 a new one created over the webUI.
@@ -416,6 +413,7 @@ The personal configuration should be stored in a file
 `~/.config/openqa/client.conf` in the same format as previously described for the `client.conf`, i.e. sections for each machine, e.g. `localhost`.
 
 <a id="get-testing"></a>
+
 ## Testing openSUSE or Fedora
 
 An easy way to start using openQA is to start testing openSUSE or Fedora as they
@@ -505,7 +503,7 @@ openqa-cli api -X POST isos \
 If your openQA is not running on port 80 on 'localhost', you can add option
 `--host=http://otherhost:9526` to specify a different port or host.
 
-> **WARNING:** 
+> **WARNING:**
 > Use only the ISO filename in the 'client' command. You must place the
 > file in `/var/lib/openqa/share/factory/iso`. You cannot place the file elsewhere and
 > specify its path in the command. However, openQA also supports a
