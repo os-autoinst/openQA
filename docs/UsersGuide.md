@@ -1144,6 +1144,31 @@ special.
 If you need the literal string `<<` (for example as a value in the job
 settings), you have to quote it.
 
+## Reserving workers
+
+Operators can reserve individual worker instances to take them out of the
+scheduling rotation, for example for maintenance or manual testing. Reserving a
+worker does not interrupt the job it is currently running, it only prevents new
+jobs from being assigned. A reservation expires automatically after its
+duration, releasing the worker again.
+
+Reservations are managed in the workers table of the admin area or via the REST
+API:
+
+```bash
+openqa-cli api -X POST workers/<id>/reservation comment="Manual testing" duration=5h
+openqa-cli api -X DELETE workers/<id>/reservation
+```
+
+The duration accepts a plain number of seconds or a value with a unit suffix
+such as `30m`, `5h` or `2d`. Only admins may use `0` for an indefinite
+reservation, override a reservation held by somebody else via `force=1` or
+release a reservation owned by somebody else.
+
+The comment requirement, the default duration and the maximum durations for
+operators and admins are configured in the `[worker_reservation]` section of
+`/etc/openqa/openqa.ini`.
+
 <a id="rest_api"></a>
 ## Use of the REST API
 

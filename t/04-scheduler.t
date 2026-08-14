@@ -848,4 +848,22 @@ subtest 'parallel pinning' => sub {
     } or diag $explain_slots->();
 };
 
+subtest 'scheduler excludes reserved workers' => sub {
+    my $operator
+      = $schema->resultset('Users')->create({username => 'percival', is_operator => 1, feature_version => 0});
+    my $worker = $workers->first;
+    my ($original_t_seen, $original_error) = ($worker->t_seen, $worker->error);
+    my $guard = scope_guard sub { $worker->update({t_seen => $original_t_seen, error => $original_error}) };
+    $worker->update({t_seen => DateTime->now(time_zone => 'UTC'), error => undef});
+    $worker->set_property(WEBSOCKET_API_VERSION => WEBSOCKET_API_VERSION);
+    my $is_online = sub {
+        scalar grep { $_->id == $worker->id } @{OpenQA::Scheduler::Model::Jobs::determine_online_workers(0)};
+    };
+
+    $worker->reserve($operator, 'scheduled reservation', '1h');
+    ok !$is_online->(), 'reserved worker is not returned as an online candidate by the scheduler';
+    $worker->release($operator);
+    ok $is_online->(), 'released worker is returned again as an online candidate by the scheduler';
+};
+
 done_testing;

@@ -569,4 +569,11 @@ subtest 'reserved ports' => sub {
     is raw_service_port('webui', $port), "$port&fd=$fileno", 'reserved port mapped to fd form';
 };
 
+subtest 'parse_duration' => sub {
+    my %seconds_for = ('0' => 0, '3600' => 3600, '5s' => 5, '10m' => 600, '2h' => 7200, '1d' => 86400, '5D' => 432000);
+    is parse_duration($_), $seconds_for{$_}, "duration '$_' is $seconds_for{$_} seconds" for sort keys %seconds_for;
+    my @unparsable = (undef, '', 'foo', '5x', '-1', '1.5h', '2 h', '99999999999999d');
+    is parse_duration($_), undef, "unparsable duration '" . ($_ // 'undef') . "' returns undef" for @unparsable;
+};
+
 done_testing;

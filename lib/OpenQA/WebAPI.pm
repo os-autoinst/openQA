@@ -374,6 +374,8 @@ sub startup ($self) {
     $api_ro->post('/workers')->name('apiv1_create_worker')->to('worker#create');
     $api_public_r->any('/workers/<workerid:num>')->get('/')->name('apiv1_worker')->to('worker#show');
     $api_ro->delete('/workers/<worker_id:num>')->name('apiv1_worker_delete')->to('worker#delete');
+    $api_ro->post('/workers/<workerid:num>/reservation')->name('apiv1_worker_reserve')->to('worker#reserve');
+    $api_ro->delete('/workers/<workerid:num>/reservation')->name('apiv1_worker_release')->to('worker#release');
 
     # api/v1/mutex
     $api_r_job->post('/mutex')->name('apiv1_mutex_create')->to('locks#mutex_create');
