@@ -49,6 +49,7 @@ sub register_tasks ($self) {
       OpenQA::Task::Iso::Schedule
       OpenQA::Task::Bug::Limit
       OpenQA::Task::ScheduledProduct::Limit
+      OpenQA::Task::Reservation::CheckExpiration
     );
 }
 

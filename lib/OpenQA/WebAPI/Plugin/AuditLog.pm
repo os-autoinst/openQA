@@ -18,7 +18,7 @@ my @comment_events = qw(comment_create comments_create comment_update comment_de
 my @asset_events = qw(asset_register asset_delete);
 my @iso_events = qw(iso_create iso_delete iso_cancel);
 my @worker_events
-  = qw(command_enqueue worker_register worker_delete worker_reserve worker_release worker_host_reserve worker_host_release);
+  = qw(command_enqueue worker_register worker_delete worker_reserve worker_release worker_host_reserve worker_host_release worker_reservation_expiring);
 my @needle_events = qw(needle_modify needle_delete);
 
 # disabled events:
