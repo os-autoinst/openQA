@@ -25,6 +25,12 @@ is qx{git grep -I -l 'like.*\$\@' {t,xt}/**.t}, '', 'Use throws_ok instead of ma
 is qx{git grep -I -l ' \\(if\\|unless\\) \$\@'}, '', 'Use try/catch instead of manual \$\@ checks';
 is qx{git grep -I -l '^use \\(Try::Tiny\\|TryCatch\\)'}, '',
   'No Try::Tiny or TryCatch necessary, use Feature::Compat::Try and later native Perl';
+
+is qx{git grep -I -l '<script' templates/ ':!templates/webapi/layouts/bootstrap.html.ep' ':!templates/webapi/layouts/js_editor.html.ep' ':!templates/webapi/main/comment_area.html.ep' ':!templates/webapi/test/comments.html.ep'}, '',
+  'No inline scripts in templates except for legacy templates';
+
+is qx{git grep -I -lw 'var' assets/javascripts/ ':!assets/javascripts/shapes.js'}, '',
+  'No legacy "var" keyword in modern JavaScript files (use const or let)';
 is
 qx{git grep -l -e '^sub \\S\\+ [^(]\\+' --and --not -e 'sub [(\{]' --and --not -e 'sub \\S\\+(' --and --not -e 'sub \\S\\+;' --and --not -e '# no:style:signatures' 'lib/'},
   '', 'All files use sub signatures everywhere (nameless and in-place definitions still allowed)';

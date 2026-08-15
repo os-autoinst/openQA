@@ -25,6 +25,14 @@ JavaScript (Bootstrap).
   motivation and details for "feat" commits. Atomic commits are REQUIRED: split
   refactorings, bug fixes, and features into separate commits.
 - Documentation: Markdown (`.md`).
+- **Frontend / JavaScript**: Modern ES6+ syntax (`const`, `let`, arrow
+  functions) is REQUIRED for all new JS development.
+- **No Inline Scripts**: NEVER write inline JavaScript code inside `<script>`
+  blocks in Mojolicious templates (`.html.ep`). All JavaScript must reside in
+  external, standalone files under `assets/javascripts/` so that it is subject to
+  ESLint/Prettier validation via `make tidy`. Only tiny initializers (e.g.
+  function calls inside `ready_function` helper blocks) are permitted in
+  templates.
 
 ## Agent Guidelines
 
