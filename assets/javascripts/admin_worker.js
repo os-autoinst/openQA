@@ -323,6 +323,19 @@ function deleteWorker(deleteBtn) {
     }
   );
 }
+function abortJob(jobId) {
+  if (!confirm('Are you sure you want to emergency abort Job #' + jobId + '?')) return;
+  fetchWithCSRF('/api/v1/jobs/' + jobId + '/cancel', {method: 'POST'})
+    .then(response => response.json())
+    .then(response => {
+      if (response.error) throw response.error;
+      addFlash('info', 'Job abort requested successfully.');
+      window.location.reload();
+    })
+    .catch(error => {
+      addFlash('danger', "The job couldn't be aborted: " + error);
+    });
+}
 
 window.setupWorkerNeedles = setupWorkerNeedles;
 window.loadWorkerTable = loadWorkerTable;
@@ -332,3 +345,4 @@ window.submitReserve = submitReserve;
 window.releaseWorker = releaseWorker;
 window.openExtendModal = openExtendModal;
 window.usePresetDuration = usePresetDuration;
+window.abortJob = abortJob;

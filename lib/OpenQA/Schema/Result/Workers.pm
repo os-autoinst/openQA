@@ -337,6 +337,11 @@ sub info ($self) {
     my $job = $self->job;
     if ($job) {
         $settings->{jobid} = $job->id;
+        $settings->{job_info} = {
+            id => $job->id,
+            test => $job->TEST,
+            t_started => $job->t_started ? $job->t_started->epoch : undef,
+        };
         my $cs = $self->currentstep;
         $settings->{currentstep} = $cs if $cs;
     }

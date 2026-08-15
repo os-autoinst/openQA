@@ -54,6 +54,18 @@
                         <button class="btn btn-success" data-worker-id="<%= $worker->{id} %>" data-worker-name="<%= $worker->{name} %>" onclick="openExtendModal(this)">Extend Reservation</button>
                     % }
                 % }
+                % if (my $job = $worker->{job_info}) {
+                    <div class="alert alert-warning mt-3">
+                        <h5>Worker is currently finishing Job #<%= $job->{id} %></h5>
+                        <p><strong>Test:</strong> <%= $job->{test} %></p>
+                        % if ($job->{t_started}) {
+                            <p><strong>Running for:</strong> <abbr class="timeago" title="<%= DateTime->from_epoch(epoch => $job->{t_started}, time_zone => 'UTC')->datetime . 'Z' %>"><%= $job->{t_started} %></abbr></p>
+                        % }
+                        % if (is_operator) {
+                            <button class="btn btn-warning btn-sm" onclick="abortJob(<%= $job->{id} %>)">Emergency Abort</button>
+                        % }
+                    </div>
+                % }
             % } else {
                 <p>This worker is not reserved.</p>
                 % if (is_operator) {

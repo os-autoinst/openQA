@@ -18,6 +18,7 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 my $db = $t->app->schema;
 my $workers = $db->resultset('Workers');
 my $users = $db->resultset('Users');
+my $jobs = $db->resultset('Jobs');
 
 subtest 'check reservation expiration warning task' => sub {
     my $worker = $workers->first;
@@ -106,6 +107,21 @@ subtest 'scheduler matching with upcoming reservation' => sub {
       'worker with a distant upcoming reservation remains eligible for scheduler matching';
 
     $worker->delete_properties([RESERVATION_PROPERTIES]);
+};
+
+subtest 'job drain visibility info' => sub {
+    my $worker = $workers->first;
+    my $job = $jobs->first;
+
+    $worker->update({job_id => $job->id});
+    $job->update({t_started => DateTime->now(time_zone => 'UTC')});
+
+    my $info = $worker->info;
+    ok exists $info->{job_info}, 'worker info includes active job_info dictionary';
+    is $info->{job_info}->{id}, $job->id, 'job_info contains the correct active job ID';
+    is $info->{job_info}->{test}, $job->TEST, 'job_info contains the correct active job test name';
+
+    $worker->update({job_id => undef});
 };
 
 done_testing();
