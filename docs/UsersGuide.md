@@ -1216,6 +1216,56 @@ navigates to the joint host administration view
 - **Aggregated job history**: A combined DataTable of previous jobs executed
   across all worker slots on the machine.
 
+### Reserving, Extending, and Scheduled Bookings
+
+#### Reservation Extensions
+
+Active reservations can be extended in-place to prevent auto-expiration using
+the CLI or WebUI:
+
+```bash
+openqa-cli reservation extend <id> --by=2h
+```
+
+Or via the REST API:
+
+```bash
+openqa-cli api -X POST workers/<id>/reservation/extend by=2h
+```
+
+In the WebUI under the Admin Workers table or the individual worker show page,
+a tester can click **Extend** and select a preset duration or enter a custom
+duration value.
+
+#### Advance / Scheduled Bookings
+
+A future reservation window can be booked in advance, allowing automated
+tests to run on the hardware up until that window starts:
+
+```bash
+openqa-cli reservation --comment="Manual testing next week" --duration=5h --start-time=2d <id>
+```
+
+The openQA scheduler checks upcoming reservations and automatically avoids
+assigning automated jobs that would overlap with the scheduled start window.
+
+#### Expiration Warning Notifications
+
+A Minion background task periodically checks for reservations that are close
+to expiring. It emits `openqa_worker_reservation_expiring` audit events and
+triggers notification hooks (Matrix/Slack webhooks or email alerts) so manual
+testers have sufficient time to extend their reservations.
+
+#### Post-Reservation Reset Hooks
+
+To prevent manual test state or leftovers from polluting subsequent automated
+runs, a post-reservation reset hook script can be optionally configured on the
+openQA server (under the `worker_reset_hook` config setting, defaulting to
+`/usr/lib/openqa/script/worker-reset-hook`).
+
+This hook is executed automatically upon reservation release. If the reset
+script fails (non-zero exit code), the worker is immediately marked as
+`broken` to protect automated test workflows.
 <a id="rest_api"></a>
 
 ## Use of the REST API
