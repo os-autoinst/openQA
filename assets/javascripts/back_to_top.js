@@ -1,17 +1,15 @@
 function backToTop() {
-  $(document).ready(function () {
-    $(window).scroll(function () {
-      // Increase the value to not show the button on shorter pages
-      if ($(this).scrollTop() > 50) {
-        $('#back-to-top').fadeIn();
-      } else {
-        $('#back-to-top').fadeOut();
-      }
-    });
-    $('#back-to-top').click(function () {
-      $('#back-to-top').tooltip('hide');
-      $('body, html').animate({scrollTop: 0}, 800);
-      return false;
-    });
+  const button = document.getElementById('back-to-top');
+  if (!button) return;
+
+  window.addEventListener('scroll', () => {
+    // Increase the value to not show the button on shorter pages
+    button.style.display = window.scrollY > 50 ? 'block' : 'none';
+  });
+  button.addEventListener('click', () => {
+    const tooltip = bootstrap.Tooltip.getInstance(button);
+    if (tooltip) tooltip.hide();
+    window.scrollTo({top: 0, behavior: 'smooth'});
+    return false;
   });
 }
