@@ -48,7 +48,7 @@ subtest 'worker with job and not updated in last 120s is considered dead' => sub
     qr/Dead job 99961 aborted and duplicated 99982\n.*Dead job 99963 aborted as incomplete/, 'dead jobs logged';
 
     for my $job_id (99961, 99963) {
-        my $job = $jobs->find(99963);
+        my $job = $jobs->find($job_id);
         is $job->state, DONE, "running job $job_id is now done";
         is $job->result, INCOMPLETE, "running job $job_id has been marked as incomplete";
         isnt $job->clone_id, undef, "running job $job_id a clone";
