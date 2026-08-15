@@ -415,6 +415,17 @@ sub _matching_workers (
         my $matches_effective = $worker->accepts_classes(\@needed, $res ? $res->{worker_class} : undef);
         my $matches_base = $worker->accepts_classes(\@needed, undef);
         $$has_matching_online_ref = 1 if $has_matching_online_ref && ($matches_effective || $matches_base);
+
+        my $upcoming = $worker->upcoming_reservation;
+        if ($upcoming) {
+            my $starts_epoch = $worker->_reservation_properties->{RESERVED_T_STARTS};
+            my $starts_in = $starts_epoch - time;
+            my $max_job_time = OpenQA::App->singleton->config->{worker_reservation}->{default_max_job_time} // 7200;
+            if ($starts_in < $max_job_time) {
+                next;
+            }
+        }
+
         push @free_matching, $worker if $matches_effective && !$worker->job_id;
     }
     $rejected->{join ',', @needed}++ unless @free_matching;

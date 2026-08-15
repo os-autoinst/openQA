@@ -15,7 +15,7 @@ our @EXPORT_OK = qw(RESERVATION_PROPERTIES RESERVATION_TIMESTAMP_FORMAT
 
 # worker properties holding the reservation, reused to avoid a dedicated table and migration
 use constant RESERVATION_PROPERTIES =>
-  qw(RESERVED_BY_ID RESERVED_COMMENT RESERVED_T_CREATED RESERVED_T_EXPIRES RESERVED_WORKER_CLASS RESERVED_SCOPE);
+  qw(RESERVED_BY_ID RESERVED_COMMENT RESERVED_T_CREATED RESERVED_T_EXPIRES RESERVED_WORKER_CLASS RESERVED_SCOPE RESERVED_T_STARTS);
 use constant RESERVATION_TIMESTAMP_FORMAT => '%Y-%m-%dT%H:%M:%SZ';
 use constant SCOPE_HOST => 'host';
 use constant SCOPE_INSTANCE => 'instance';
@@ -23,7 +23,13 @@ use constant SCOPE_INSTANCE => 'instance';
 my %ERROR_STATUS = (invalid => 400, forbidden => 403, conflict => 409, not_found => 404);
 
 # a reservation is active while an owner is assigned and the optional expiry has not passed yet
-sub reservation_active ($owner_id, $expires_epoch) { !!($owner_id && (!$expires_epoch || $expires_epoch > time)) }
+sub reservation_active ($owner_id, $expires_epoch, $starts_epoch = undef) {
+    return 0 unless $owner_id;
+    my $now = time;
+    return 0 if $starts_epoch && $starts_epoch > $now;
+    return 1 if !$expires_epoch || $expires_epoch > $now;
+    return 0;
+}
 
 sub reservation_class_valid ($tag) {
     return defined $tag && length $tag && $tag =~ /^[\w#.:-]+$/;
@@ -45,6 +51,7 @@ sub reservation_info ($properties) {
         user_id => $properties->{RESERVED_BY_ID},
         comment => $properties->{RESERVED_COMMENT},
         t_created => _iso_timestamp($properties->{RESERVED_T_CREATED}),
+        t_starts => _iso_timestamp($properties->{RESERVED_T_STARTS}),
         t_expires => _iso_timestamp($properties->{RESERVED_T_EXPIRES}),
         scope => $properties->{RESERVED_SCOPE} // 'instance',
     };

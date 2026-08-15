@@ -178,6 +178,7 @@ subcommands:
       - release|r              --Release an existing reservation
       - worker-host=s          --Reserve or release an entire worker host instead of individual WORKER_ID
       - by|b=s                 --Duration to extend the reservation by (e.g. 2h, 30m, 1d)
+      - start-time|s=s         --Delay start of the reservation by duration (e.g. 1h, 30m)
 
   schedule:
     summary: Schedules a set of jobs (via "isos post" creating a schedule product)

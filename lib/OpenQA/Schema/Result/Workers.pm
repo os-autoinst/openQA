@@ -124,7 +124,10 @@ sub _reservation_properties ($self) {
 
 sub is_reserved ($self) {
     my $properties = $self->_reservation_properties;
-    return reservation_active($properties->{RESERVED_BY_ID}, $properties->{RESERVED_T_EXPIRES});
+    return reservation_active(
+        $properties->{RESERVED_BY_ID},
+        $properties->{RESERVED_T_EXPIRES},
+        $properties->{RESERVED_T_STARTS});
 }
 
 sub _username_for ($self, $user_id) {
@@ -144,7 +147,18 @@ sub _reservation_info ($self, $properties) {
 # expired reservations are reported as absent so that stale properties are never observable
 sub reservation ($self) {
     my $properties = $self->_reservation_properties;
-    return undef unless reservation_active($properties->{RESERVED_BY_ID}, $properties->{RESERVED_T_EXPIRES});
+    return undef
+      unless reservation_active(
+        $properties->{RESERVED_BY_ID},
+        $properties->{RESERVED_T_EXPIRES},
+        $properties->{RESERVED_T_STARTS});
+    return $self->_reservation_info($properties);
+}
+
+sub upcoming_reservation ($self) {
+    my $properties = $self->_reservation_properties;
+    my $starts = $properties->{RESERVED_T_STARTS} // 0;
+    return undef if !$properties->{RESERVED_BY_ID} || $starts <= time;
     return $self->_reservation_info($properties);
 }
 
@@ -161,8 +175,7 @@ sub _reservation_duration ($duration, $is_admin) {
     return $seconds;
 }
 
-sub reserve ($self, $user, $comment = undef, $duration = undef, $force = 0, $worker_class = undef, $scope = 'instance')
-{
+sub reserve ($self, $user, $comment = undef, $duration = undef, $force = 0, $worker_class = undef, $scope = 'instance', $start_time = undef) {
     my $is_admin = $user->is_admin;
     die reservation_error(forbidden => 'Insufficient permissions to reserve a worker')
       unless $is_admin || $user->is_operator;
@@ -174,9 +187,17 @@ sub reserve ($self, $user, $comment = undef, $duration = undef, $force = 0, $wor
       if defined $worker_class && !reservation_class_valid($worker_class);
     my $seconds = _reservation_duration($duration, $is_admin);
 
+    my $now = time;
+    my $start_offset = 0;
+    if (defined $start_time) {
+        $start_offset = parse_duration($start_time);
+        die reservation_error(invalid => "Invalid start time format '$start_time'") unless defined $start_offset;
+    }
+    my $start_epoch = $now + $start_offset;
+    my $expires_epoch = $seconds == 0 ? 0 : $start_epoch + $seconds;
+
     # the conflict check and all property writes must be atomic, a partially written reservation
     # without expiry would keep the worker reserved forever
-    my $now = time;
     $self->result_source->schema->txn_do(
         sub {
             die reservation_error(conflict => 'Worker is already reserved by ' . $self->_reserved_by_name)
@@ -184,7 +205,8 @@ sub reserve ($self, $user, $comment = undef, $duration = undef, $force = 0, $wor
             $self->set_property(RESERVED_BY_ID => $user->id);
             $self->set_property(RESERVED_COMMENT => $comment);
             $self->set_property(RESERVED_T_CREATED => $now);
-            $self->set_property(RESERVED_T_EXPIRES => $seconds == 0 ? 0 : $now + $seconds);
+            $self->set_property(RESERVED_T_STARTS => $start_epoch);
+            $self->set_property(RESERVED_T_EXPIRES => $expires_epoch);
             $self->set_property(RESERVED_WORKER_CLASS => $worker_class);
             $self->set_property(RESERVED_SCOPE => $scope);
         });
@@ -206,12 +228,13 @@ sub _trigger_reset_hook ($self) {
 }
 
 sub release ($self, $user) {
-    die reservation_error(invalid => 'Worker is not reserved') unless $self->is_reserved;
+    my $properties = $self->_reservation_properties;
+    die reservation_error(invalid => 'Worker is not reserved') unless $properties->{RESERVED_BY_ID};
     die reservation_error(
         forbidden => 'Insufficient permissions to release reservation owned by ' . $self->_reserved_by_name)
       unless $user->is_admin
       || $user->username eq 'system'
-      || $self->_reservation_properties->{RESERVED_BY_ID} == $user->id;
+      || $properties->{RESERVED_BY_ID} == $user->id;
     $self->delete_properties([RESERVATION_PROPERTIES]);
     $self->_trigger_reset_hook;
     return $self;

@@ -319,11 +319,12 @@ sub reserve ($self) {
     my $user = $self->current_user;
     my $comment = $self->param('comment');
     my $worker_class = $self->param('worker_class');
+    my $start_time = $self->param('start_time');
     return undef
       unless $self->_apply_reservation(
-        sub { $worker->reserve($user, $comment, $self->param('duration'), $self->param('force'), $worker_class) });
+        sub { $worker->reserve($user, $comment, $self->param('duration'), $self->param('force'), $worker_class, $start_time) });
 
-    my $reservation = $worker->reservation;
+    my $reservation = $worker->reservation // $worker->upcoming_reservation;
     $self->emit_event(
         'openqa_worker_reserve',
         {
@@ -331,6 +332,7 @@ sub reserve ($self) {
             name => $worker->name,
             user => $user->username,
             comment => $comment,
+            starts => $reservation->{t_starts},
             expires => $reservation->{t_expires},
             (defined $worker_class && length $worker_class ? (worker_class => $worker_class) : ()),
         });

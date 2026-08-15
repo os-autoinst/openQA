@@ -42,6 +42,7 @@ sub command ($self, @args) {
         $params{duration} = $options{duration} if defined $options{duration};
         $params{worker_class} = $options{class} if defined $options{class};
         $params{force} = 1 if $options{force};
+        $params{start_time} = $options{'start-time'} if defined $options{'start-time'};
         $tx = $client->build_tx(POST => $url, form => \%params);
     }
     return $self->retry_tx($client, $tx);

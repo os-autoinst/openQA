@@ -76,4 +76,36 @@ subtest 'post-reservation reset hook' => sub {
     ok !$worker->discard_changes->is_reserved, 'worker is no longer reserved after background auto-release';
 };
 
+subtest 'scheduler matching with upcoming reservation' => sub {
+    my $worker = $workers->first;
+    my $operator = $users->find(99903);
+
+    $worker->update({job_id => undef});
+
+    $worker->delete_properties([RESERVATION_PROPERTIES]);
+    $worker->reserve($operator, 'upcoming reservation', '2h', 0, '30m');
+
+    ok !$worker->is_reserved, 'scheduled reservation is not active before its start time';
+    ok $worker->upcoming_reservation, 'scheduled reservation is reported as an upcoming reservation';
+
+    my $jobinfo = {worker_classes => ['x86_64'],};
+
+    use Test::MockModule;
+    my $worker_mock = Test::MockModule->new('OpenQA::Schema::Result::Workers');
+    $worker_mock->redefine(check_class => sub { 1 });
+
+    use OpenQA::Scheduler::Model::Jobs;
+    my $matching = OpenQA::Scheduler::Model::Jobs::_matching_workers($jobinfo, [$worker]);
+    is_deeply $matching, [], 'worker with an upcoming reservation starting soon is excluded from scheduler matching';
+
+    $worker->set_property(RESERVED_T_STARTS => time + 18000);
+    $worker->set_property(RESERVED_T_EXPIRES => time + 25200);
+
+    $matching = OpenQA::Scheduler::Model::Jobs::_matching_workers($jobinfo, [$worker]);
+    is_deeply $matching, [$worker],
+      'worker with a distant upcoming reservation remains eligible for scheduler matching';
+
+    $worker->delete_properties([RESERVATION_PROPERTIES]);
+};
+
 done_testing();
