@@ -93,7 +93,8 @@ sub compute_build_results (
         children => [map { {id => $_->id, name => $_->name} } @$children],
         group => {
             id => $group->id,
-            name => $group->name
+            name => $group->name,
+            always_show_version => $group->always_show_version,
         });
     return \%result if defined($limit) && int($limit) <= 0;
     # build sorting

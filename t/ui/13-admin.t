@@ -382,7 +382,7 @@ subtest 'job property editor' => sub() {
         is element_prop('editor-keep-results-in-days'), '365', 'keep results in days';
         is element_prop('editor-keep-important-results-in-days'), '0', 'keep important results in days';
         is element_prop('editor-default-priority'), '50', 'default priority';
-        ok element_prop('editor-carry-over-bugrefs', 'checked'), 'bug carry over by default enabled';
+        ok element_prop('editor-carry_over_bugrefs-cb', 'checked'), 'bug carry over by default enabled';
         is element_prop('editor-description'), '', 'no description yet';
     };
 
@@ -427,7 +427,7 @@ subtest 'job property editor' => sub() {
         $ele->send_keys('501');
         is $driver->find_element('#properties p.buttons button.btn-primary')->get_attribute('disabled'),
           undef, 'group properties save button is enabled';
-        $driver->find_element_by_id('editor-carry-over-bugrefs')->click();
+        $driver->find_element_by_id('editor-carry_over_bugrefs-cb')->click();
         $driver->find_element('#properties p.buttons button.btn-primary')->click();
         wait_for_ajax(msg => 'ensure there is no race condition, even though the page is reloaded');
         my $status = $driver->find_element('.properties-status')->get_text;
@@ -446,7 +446,7 @@ subtest 'job property editor' => sub() {
         is element_prop('editor-keep-important-results-in-days'), '501', 'keep important results in days edited';
         is element_prop('editor-keep-results-in-days'), '501', 'keep results in days edited';
         is element_prop('editor-default-priority'), '50', 'default priority should be the same';
-        ok !element_prop('editor-carry-over-bugrefs', 'checked'), 'bug carry over disabled';
+        ok !element_prop('editor-carry_over_bugrefs-cb', 'checked'), 'bug carry over disabled';
 
         # change the description as well and check that it toggles the Save button
         $driver->find_element_by_id('editor-description')->send_keys('Test group');

@@ -1,0 +1,18 @@
+% my $has_parent = !$is_parent && $group->can('parent') && $group->parent;
+% my $fallback = $has_parent ? $group->parent->$name : $default;
+<div class="mb-3 row">
+    <label for="editor-<%= $name %>-cb" class="form-label col-sm-2 control-label" data-bs-toggle="tooltip" title="<%= $label %>"><%= $label %></label>
+    <div class="col-sm-10 d-flex align-items-center">
+        <input type="hidden" id="editor-<%= $name %>" name="<%= $name %>" value="<%= defined $group->get_column($name) ? $group->get_column($name) : '' %>">
+        <input type="checkbox" id="editor-<%= $name %>-cb" class="me-2 tri-state-checkbox"
+               data-hidden-id="editor-<%= $name %>"
+               data-inherit-btn-id="btn-inherit-<%= $name %>"
+               data-fallback-value="<%= $fallback ? '1' : '0' %>">
+        <button type="button" id="btn-inherit-<%= $name %>" class="btn btn-sm btn-outline-secondary" <%= defined $group->get_column($name) ? '' : 'disabled="disabled"' %>>
+            <%= $has_parent ? 'Inherit from parent' : 'Inherit from config' %>
+        </button>
+        <span class="ms-2">
+            <%= help_popover $label => $help_text %>
+        </span>
+    </div>
+</div>

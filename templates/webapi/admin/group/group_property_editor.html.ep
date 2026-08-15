@@ -1,7 +1,9 @@
 % use OpenQA::Utils 'human_readable_size';
 % use OpenQA::Constants qw(BUILD_SORT_BY_NAME BUILD_SORT_BY_NEWEST_JOB BUILD_SORT_BY_OLDEST_JOB);
+% use OpenQA::JobGroupDefaults ();
 % content_for 'ready_function' => begin
     validateJobGroupForm(document.getElementById('group_properties_form'));
+    setupTriStateCheckboxes(document.getElementById('group_properties_form'));
 % end
 <div id="properties" class="card"
     % if (!$is_parent) {
@@ -34,47 +36,8 @@
                     <textarea class="form-control" id="editor-description" name="description" ><%= $group->description %></textarea>
                 </div>
             </div>
-            <div class="mb-3 row">
-                <label for="editor-carry-over-bugrefs" class="form-label col-sm-2 control-label" data-bs-toggle="tooltip" title="Carry over bug references">Bug reference carry over</label>
-                <div class="col-sm-10">
-                    <input type="hidden" name="carry_over_bugrefs" value="0">
-                    <input type="checkbox"
-                           id="editor-carry-over-bugrefs" name="carry_over_bugrefs"
-                           value="1"
-                        % if ($group->carry_over_bugrefs) {
-                            checked="checked"
-                        % }
-                    >
-                    <%= help_popover 'Bug reference carry over' =>
-                        '<p>
-                            Whether job comments containing bug references should be carried over automatically from previously failed jobs. Only previous jobs are considered
-                            which failed with an identical list of failed and softfailed test modules.
-                        </p>';
-                    %>
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label for="editor-always-show-version-cb" class="form-label col-sm-2 control-label" data-bs-toggle="tooltip" title="Always show version">Always show version</label>
-                <div class="col-sm-10 d-flex align-items-center">
-                    % if (!$is_parent && $group->can('parent') && $group->parent) {
-                        <input type="hidden" id="editor-always-show-version" name="always_show_version" value="<%= defined $group->get_column('always_show_version') ? $group->get_column('always_show_version') : '' %>">
-                        <input type="checkbox" id="editor-always-show-version-cb" class="me-2">
-                        <button type="button" id="btn-inherit-always-show-version" class="btn btn-sm btn-outline-secondary" <%= defined $group->get_column('always_show_version') ? '' : 'disabled="disabled"' %>>Inherit from parent</button>
-                    % } else {
-                        <input type="hidden" name="always_show_version" value="0">
-                        <input type="checkbox"
-                               id="editor-always-show-version" name="always_show_version"
-                               value="1"
-                            % if ($group->always_show_version) {
-                                checked="checked"
-                            % }
-                        >
-                    % }
-                    <span class="ms-2">
-                    <%= help_popover 'Always show version' => '<p>Always show the version with the build number on the group overview and index page, even if there is only one version tested.</p>' %>
-                    </span>
-                </div>
-            </div>
+            %= include 'admin/group/tri_state_checkbox', group => $group, is_parent => $is_parent, name => 'carry_over_bugrefs', label => 'Bug reference carry over', default => OpenQA::JobGroupDefaults::CARRY_OVER_BUGREFS, help_text => '<p>By default all attached bug references will be copied to jobs of the next build if the test failed with exactly the same error.</p>'
+            %= include 'admin/group/tri_state_checkbox', group => $group, is_parent => $is_parent, name => 'always_show_version', label => 'Always show version', default => OpenQA::JobGroupDefaults::ALWAYS_SHOW_VERSION, help_text => '<p>Always show the version with the build number on the group overview and index page, even if there is only one version tested.</p>'
             % my $ignored_info = job_group_ignored_info($group, $is_parent);
             % my $ignored_by_config = $ignored_info->{ignored_by_config};
             % my $ignored_title = $ignored_info->{ignored_title};
@@ -328,43 +291,6 @@
                     <p class="properties-status"></p>
                 </div>
             </div>
-            <script>
-                function setupTriStateCheckbox(hiddenId, cbId, btnId, parentValue) {
-                    var hidden = document.getElementById(hiddenId);
-                    var cb = document.getElementById(cbId);
-                    var btn = document.getElementById(btnId);
-                    if (!hidden || !cb || !btn) return;
-
-                    function updateUI() {
-                        if (hidden.value === "") {
-                            cb.indeterminate = true;
-                            cb.checked = parentValue;
-                            btn.disabled = true;
-                        } else {
-                            cb.indeterminate = false;
-                            cb.checked = hidden.value === "1";
-                            btn.disabled = false;
-                        }
-                    }
-                    updateUI();
-
-                    cb.addEventListener("change", function() {
-                        hidden.value = this.checked ? "1" : "0";
-                        btn.disabled = false;
-                        cb.indeterminate = false;
-                    });
-
-                    btn.addEventListener("click", function() {
-                        hidden.value = "";
-                        updateUI();
-                    });
-                }
-
-                document.addEventListener("DOMContentLoaded", function() {
-                    var parent_asv = <%= ($group->can("parent") && $group->parent && $group->parent->always_show_version) ? "true" : "false" %>;
-                    setupTriStateCheckbox("editor-always-show-version", "editor-always-show-version-cb", "btn-inherit-always-show-version", parent_asv);
-                });
-            </script>
             % if (!is_admin) {
                 </fieldset>
             % }

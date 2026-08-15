@@ -860,13 +860,17 @@ subtest 'OpenQA::BuildResults::compute_build_results coverage' => sub {
 subtest 'always_show_version toggle overview display' => sub {
     delete $t->app->config->{misc_limits}->{job_groups_overview_max_jobs};
     my $group = $job_groups->find(1001);
+    $group->update({parent_id => undef, always_show_version => 0});
 
-    $group->update({always_show_version => 0});
     $t->get_ok('/group_overview/1001?time_limit_days=99999')->status_is(200)->content_like(qr{BuildCOVERAGE_BUILD})
+      ->content_unlike(qr{13\.1-BuildCOVERAGE_BUILD});
+    $t->get_ok('/dashboard_build_results?time_limit_days=99999')->status_is(200)
       ->content_unlike(qr{13\.1-BuildCOVERAGE_BUILD});
 
     $group->update({always_show_version => 1});
     $t->get_ok('/group_overview/1001?time_limit_days=99999')->status_is(200)
+      ->content_like(qr{13\.1-BuildCOVERAGE_BUILD});
+    $t->get_ok('/dashboard_build_results?time_limit_days=99999')->status_is(200)
       ->content_like(qr{13\.1-BuildCOVERAGE_BUILD});
 
     $group->update({always_show_version => undef});

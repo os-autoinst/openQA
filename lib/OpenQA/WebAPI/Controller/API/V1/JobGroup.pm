@@ -95,7 +95,7 @@ sub load_properties ($self) {
         if ($param eq 'parent_id') {
             $properties{$param} = ($value eq 'none') ? undef : $value;
         }
-        elsif ($param eq 'size_limit_gb' || $param eq 'always_show_version') {
+        elsif ($param eq 'size_limit_gb' || $param eq 'always_show_version' || $param eq 'carry_over_bugrefs') {
             $properties{$param} = ($value eq '') ? undef : $value;
         }
         else {
@@ -168,7 +168,7 @@ sub _validate_common_properties ($self) {
     $validation->optional('size_limit_gb')->like(qr/^(|[0-9]+)\z/);
     $validation->optional('build_version_sort')->num(0, 2);
     $validation->optional('default_priority')->num(0);
-    $validation->optional('carry_over_bugrefs')->num(0, 1);
+    $validation->optional('carry_over_bugrefs')->in(0, 1, '');
     $validation->optional('ignore_on_dashboard')->num(0, 1);
     $validation->optional('always_show_version')->in(0, 1, '');
     $validation->optional('description');

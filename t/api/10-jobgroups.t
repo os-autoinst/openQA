@@ -611,47 +611,49 @@ subtest 'helper for removing test suite defaults' => sub {
     is $group->{scenarios}->{x86_64}->{product}, $scenarios, 'scenarios are assigned to group';
 };
 
-subtest 'always_show_version toggle and inheritance' => sub {
-    my $parent_id = $t->post_ok(
-        '/api/v1/parent_groups',
-        form => {
-            name => 'Always show version parent',
-            always_show_version => 1,
-        })->status_is(200)->tx->res->json->{id};
+for my $prop (qw(always_show_version carry_over_bugrefs)) {
+    subtest "$prop toggle and inheritance" => sub {
+        my $parent_id = $t->post_ok(
+            '/api/v1/parent_groups',
+            form => {
+                name => "Test parent for $prop",
+                $prop => 1,
+            })->status_is(200)->tx->res->json->{id};
 
-    $t->get_ok("/api/v1/parent_groups/$parent_id")->status_is(200);
-    $t->json_is('/0/always_show_version' => 1);
+        $t->get_ok("/api/v1/parent_groups/$parent_id")->status_is(200);
+        $t->json_is("/0/$prop" => 1);
 
-    my $child_id = $t->post_ok(
-        '/api/v1/job_groups',
-        form => {
-            name => 'Inheriting child group',
-            parent_id => $parent_id,
-        })->status_is(200)->tx->res->json->{id};
+        my $child_id = $t->post_ok(
+            '/api/v1/job_groups',
+            form => {
+                name => "Test child for $prop",
+                parent_id => $parent_id,
+            })->status_is(200)->tx->res->json->{id};
 
-    $t->get_ok("/api/v1/job_groups/$child_id")->status_is(200);
-    $t->json_is('/0/always_show_version' => 1);
+        $t->get_ok("/api/v1/job_groups/$child_id")->status_is(200);
+        $t->json_is("/0/$prop" => 1);
 
-    my $child_row = $schema->resultset('JobGroups')->find($child_id);
-    is $child_row->get_column('always_show_version'), undef, 'always_show_version column is NULL/undef in database';
-    is $child_row->always_show_version, 1, 'always_show_version correctly inherited from parent';
+        my $child_row = $schema->resultset('JobGroups')->find($child_id);
+        is $child_row->get_column($prop), undef, "$prop column is NULL/undef in database";
+        is $child_row->$prop, 1, "$prop correctly inherited from parent";
 
-    $t->put_ok(
-        "/api/v1/job_groups/$child_id",
-        form => {
-            name => 'Inheriting child group',
-            parent_id => $parent_id,
-            always_show_version => '',
-        })->status_is(200);
+        $t->put_ok(
+            "/api/v1/job_groups/$child_id",
+            form => {
+                name => "Test child for $prop",
+                parent_id => $parent_id,
+                $prop => '',
+            })->status_is(200);
 
-    $t->get_ok("/api/v1/job_groups/$child_id")->status_is(200);
-    $t->json_is('/0/always_show_version' => 1);
+        $t->get_ok("/api/v1/job_groups/$child_id")->status_is(200);
+        $t->json_is("/0/$prop" => 1);
 
-    $child_row = $schema->resultset('JobGroups')->find($child_id);
-    is $child_row->get_column('always_show_version'), undef, 'always_show_version reset to undef';
+        $child_row = $schema->resultset('JobGroups')->find($child_id);
+        is $child_row->get_column($prop), undef, "$prop reset to undef";
 
-    $t->delete_ok("/api/v1/job_groups/$child_id")->status_is(200);
-    $t->delete_ok("/api/v1/parent_groups/$parent_id")->status_is(200);
-};
+        $t->delete_ok("/api/v1/job_groups/$child_id")->status_is(200);
+        $t->delete_ok("/api/v1/parent_groups/$parent_id")->status_is(200);
+    };
+}
 
 done_testing();

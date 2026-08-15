@@ -56,11 +56,12 @@ function fetchHtmlEntry(url, targetElement) {
     });
 }
 
+const IGNORED_INPUT_TYPES = new Set(['number', 'hidden', 'checkbox', 'radio']);
+
 function countEmptyInputs(form) {
-  return Array.from(form.querySelectorAll('input')).reduce(
-    (count, e) => count + (e.type !== 'number' && !e.value.trim().length),
-    0
-  );
+  return Array.from(form.querySelectorAll('input')).filter(
+    e => !IGNORED_INPUT_TYPES.has(e.type) && !e.value.trim().length
+  ).length;
 }
 
 function validateJobGroupForm(form) {
@@ -440,4 +441,44 @@ function deleteGroup(elem, isParent) {
     });
 
   return false;
+}
+
+function setupTriStateCheckbox(hiddenId, cbId, btnId, parentValue) {
+  const hidden = document.getElementById(hiddenId);
+  const cb = document.getElementById(cbId);
+  const btn = document.getElementById(btnId);
+  if (!hidden || !cb || !btn) return;
+
+  function updateUI() {
+    if (hidden.value === '') {
+      cb.indeterminate = true;
+      cb.checked = parentValue;
+      btn.disabled = true;
+    } else {
+      cb.indeterminate = false;
+      cb.checked = hidden.value === '1';
+      btn.disabled = false;
+    }
+  }
+  updateUI();
+
+  cb.addEventListener('change', function () {
+    hidden.value = this.checked ? '1' : '0';
+    btn.disabled = false;
+    cb.indeterminate = false;
+  });
+
+  btn.addEventListener('click', function () {
+    hidden.value = '';
+    updateUI();
+  });
+}
+
+function setupTriStateCheckboxes(container = document) {
+  container.querySelectorAll('.tri-state-checkbox').forEach(cb => {
+    const hiddenId = cb.dataset.hiddenId;
+    const btnId = cb.dataset.inheritBtnId;
+    const fallbackValue = cb.dataset.fallbackValue === '1';
+    setupTriStateCheckbox(hiddenId, cb.id, btnId, fallbackValue);
+  });
 }
