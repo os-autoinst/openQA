@@ -200,6 +200,32 @@ sub release ($self, $user) {
     return $self;
 }
 
+sub extend ($self, $user, $duration) {
+    die reservation_error(invalid => 'Worker is not reserved') unless $self->is_reserved;
+    my $is_admin = $user->is_admin;
+    die reservation_error(
+        forbidden => 'Insufficient permissions to extend reservation owned by ' . $self->_reserved_by_name)
+      unless $is_admin || $self->_reservation_properties->{RESERVED_BY_ID} == $user->id;
+
+    my $seconds = parse_duration($duration);
+    die reservation_error(invalid => "Invalid duration format '$duration'") unless defined $seconds;
+
+    my $properties = $self->_reservation_properties;
+    my $current_expires = $properties->{RESERVED_T_EXPIRES};
+    die reservation_error(invalid => 'Cannot extend an indefinite reservation') if $current_expires == 0;
+
+    my $new_expires = $current_expires + $seconds;
+
+    my $config = OpenQA::App->singleton->config->{worker_reservation};
+    my $limit = $is_admin ? $config->{admin_max_duration} : $config->{max_duration};
+    my $total_duration = $new_expires - $properties->{RESERVED_T_CREATED};
+    die reservation_error(invalid => "Duration of ${total_duration}s exceeds the maximum of ${limit}s")
+      if $limit > 0 && $total_duration > $limit;
+
+    $self->set_property(RESERVED_T_EXPIRES => $new_expires);
+    return $self;
+}
+
 sub dead ($self) {
     return 1 unless my $t_seen = $self->t_seen;
     my $dt = DateTime->now(time_zone => 'UTC');

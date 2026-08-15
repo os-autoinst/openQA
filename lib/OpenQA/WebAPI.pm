@@ -386,6 +386,8 @@ sub startup ($self) {
     $api_public_r->any('/workers/<workerid:num>')->get('/')->name('apiv1_worker')->to('worker#show');
     $api_ro->delete('/workers/<worker_id:num>')->name('apiv1_worker_delete')->to('worker#delete');
     $api_ro->post('/workers/<workerid>/reservation')->name('apiv1_worker_reserve')->to('worker#reserve');
+    $api_ro->post('/workers/<workerid>/reservation/extend')->name('apiv1_worker_extend_reservation')
+      ->to('worker#extend');
     $api_ro->delete('/workers/<workerid>/reservation')->name('apiv1_worker_release')->to('worker#release');
     $api_ro->post('/worker_hosts/<#host>/reservation')->name('apiv1_worker_host_reserve')->to('worker#reserve_host');
     $api_ro->delete('/worker_hosts/<#host>/reservation')->name('apiv1_worker_host_release')->to('worker#release_host');

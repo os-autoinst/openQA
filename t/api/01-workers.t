@@ -403,6 +403,15 @@ subtest 'worker reservation API' => sub {
       'release is logged in the audit table with the expected fields';
 
     $t->post_ok($reservation_url, form => {comment => 'op again', duration => '1h'})->status_is(200);
+
+    $t_non_op->post_ok($reservation_url . '/extend', form => {by => '1h'})
+      ->status_is(403, 'extend attempt by non-operator users is refused by the route guard');
+    $t_other_op->post_ok($reservation_url . '/extend', form => {by => '1h'})
+      ->status_is(403, 'extend attempt by operator other than the owner is refused with 403');
+    $t_admin->post_ok($reservation_url . '/extend', form => {by => '1h'})
+      ->status_is(200, 'extend attempt by admin is allowed with 200')
+      ->json_like('/reservation/t_expires' => qr/^\d{4}(-\d\d){2}T(\d\d:){2}\d\dZ$/);
+
     $t_admin->post_ok($reservation_url, form => {comment => 'admin override', duration => '2h', force => 1})
       ->status_is(200, 'admin force override on an existing reservation is allowed with 200')
       ->json_is('/reservation/comment' => 'admin override')->json_is('/reservation/user' => $admin->username);

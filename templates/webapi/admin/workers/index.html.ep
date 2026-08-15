@@ -81,6 +81,9 @@
                             % if (is_operator) {
                                 % if ($worker->{reservation}) {
                                     <button class="btn btn-sm btn-outline-danger" title="Release reservation" data-worker-id="<%= $worker->{id} %>" onclick="releaseWorker(this)">Release</button>
+                                    % if ($worker->{reservation}->{t_expires}) {
+                                        <button class="btn btn-sm btn-outline-success" title="Extend reservation" data-worker-id="<%= $worker->{id} %>" data-worker-name="<%= $workername %>" onclick="openExtendModal(this)">Extend</button>
+                                    % }
                                 % } else {
                                     <button class="btn btn-sm btn-outline-success" title="Reserve worker" data-worker-id="<%= $worker->{id} %>" data-worker-name="<%= $workername %>" data-worker-host="<%= $worker->{host} %>" onclick="openReserveModal(this)">Reserve</button>
                                 % }

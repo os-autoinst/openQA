@@ -50,6 +50,9 @@
                 </p>
                 % if (is_operator) {
                     <button class="btn btn-danger" data-worker-id="<%= $worker->{id} %>" onclick="releaseWorker(this)">Release reservation</button>
+                    % if ($reservation->{t_expires}) {
+                        <button class="btn btn-success" data-worker-id="<%= $worker->{id} %>" data-worker-name="<%= $worker->{name} %>" onclick="openExtendModal(this)">Extend Reservation</button>
+                    % }
                 % }
             % } else {
                 <p>This worker is not reserved.</p>

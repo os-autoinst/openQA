@@ -441,4 +441,34 @@ sub release_host ($self) {
     $self->render(json => {message => "Worker host '$host' reservation released successfully."});
 }
 
+=over 4
+
+=item extend()
+
+Extends an existing worker reservation by a given duration.
+
+=back
+
+=cut
+
+sub extend ($self) {
+    return undef unless my $worker = $self->_reservation_worker;
+    my $user = $self->current_user;
+    my $by = $self->param('by') // $self->param('duration');
+    return undef unless $self->_apply_reservation(sub { $worker->extend($user, $by) });
+
+    my $reservation = $worker->reservation;
+    $self->emit_event(
+        'openqa_worker_extend_reservation',
+        {
+            id => $worker->id,
+            name => $worker->name,
+            user => $user->username,
+            by => $by,
+            expires => $reservation->{t_expires},
+        });
+    $self->render(json =>
+          {message => 'Worker ' . $worker->name . ' reservation extended successfully.', reservation => $reservation});
+}
+
 1;

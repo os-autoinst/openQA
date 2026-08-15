@@ -216,6 +216,19 @@ subtest 'worker reservation model' => sub {
     is $worker->reservation, undef, 'expired reservation is not reported despite left over properties';
     is_deeply $workers->active_reservations, {}, 'bulk lookup ignores expired reservations';
 
+    $worker->delete_properties([RESERVATION_PROPERTIES]);
+    throws_ok { $worker->extend($operator, '1h') } qr/is not reserved/, 'cannot extend unreserved worker';
+
+    $worker->reserve($operator, 'operator reservation', '1h');
+    throws_ok { $worker->extend($other_operator, '1h') } qr/Insufficient permissions/,
+      'cannot extend others reservation';
+
+    my $initial_expires = $worker->reservation->{t_expires};
+    $worker->extend($operator, '1h');
+    my $new_expires = $worker->reservation->{t_expires};
+    ok $new_expires gt $initial_expires, 'reservation is successfully extended';
+    $worker->delete_properties([RESERVATION_PROPERTIES]);
+
     $worker->reserve($admin, 'indefinite reservation', '0');
     ok $worker->is_reserved, 'a duration of 0 reserves the worker indefinitely';
     is $worker->reservation->{t_expires}, undef, 'indefinite reservation has no expiry timestamp';
