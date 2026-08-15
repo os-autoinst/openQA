@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright 2018-2021 SUSE LLC
+# Copyright SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 # note: Tests the only the UI-layer of the developer mode. So no

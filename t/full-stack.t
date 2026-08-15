@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Copyright 2016-2021 SUSE LLC
+# Copyright SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 # possible reasons why this tests might fail if you run it locally:

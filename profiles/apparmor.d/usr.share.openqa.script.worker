@@ -1,7 +1,7 @@
 # Last Modified: Fri Jun 12 11:54:18 2026
 include <tunables/global>
 
-# Copyright 2015 SUSE LLC
+# Copyright SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 

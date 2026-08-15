@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 # Copyright 2016 Red Hat
-# Copyright 2019-2021 SUSE LLC
+# Copyright SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
