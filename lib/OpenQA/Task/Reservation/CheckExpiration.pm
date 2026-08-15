@@ -21,7 +21,22 @@ sub _check_expiration ($job) {
     my $config = $app->config->{worker_reservation} // {};
     my $threshold = $config->{expiration_warning_threshold} // 1800;    # default to 30 mins (1800 seconds)
 
+    my $system_user = $app->schema->resultset('Users')->find({username => 'system'});
     my @workers = $app->schema->resultset('Workers')->all;
+
+    # Release any expired reservations to trigger post-reservation reset hooks
+    my @released_expired;
+    for my $worker (@workers) {
+        my $properties = $worker->_reservation_properties;
+        my $owner_id = $properties->{RESERVED_BY_ID};
+        my $expires = $properties->{RESERVED_T_EXPIRES};
+        if ($owner_id && $expires && $expires <= $now) {
+            if (eval { $worker->release($system_user); 1 }) {
+                push @released_expired, $worker->id;
+            }
+        }
+    }
+
     my @expiring;
     for my $worker (@workers) {
         next unless $worker->is_reserved;
@@ -51,7 +66,7 @@ sub _check_expiration ($job) {
             data => {workers => \@expiring});
     }
 
-    $job->finish({notified => scalar @expiring});
+    $job->finish({notified => scalar @expiring, released_expired => scalar @released_expired});
 }
 
 1;

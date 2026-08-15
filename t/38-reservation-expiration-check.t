@@ -43,4 +43,37 @@ subtest 'check reservation expiration warning task' => sub {
       'audit event payload includes comment of expiring reservation';
 };
 
+subtest 'post-reservation reset hook' => sub {
+    my $worker = $workers->first;
+    my $operator = $users->find(99903);
+
+    $t->app->config->{worker_reservation}->{worker_reset_hook} = '/bin/true';
+
+    $worker->delete_properties([RESERVATION_PROPERTIES]);
+    $worker->update({error => undef});
+    $worker->reserve($operator, 'operator reservation', '1h');
+    $worker->release($operator);
+    is $worker->discard_changes->error, undef, 'successful execution of reset hook leaves worker active and not broken';
+
+    $t->app->config->{worker_reservation}->{worker_reset_hook} = '/bin/false';
+
+    $worker->reserve($operator, 'operator reservation', '1h');
+    $worker->release($operator);
+    like $worker->discard_changes->error, qr/failed with exit code:/,
+      'failed execution of reset hook marks worker as broken';
+
+    $t->app->config->{worker_reservation}->{worker_reset_hook} = '/bin/true';
+    $worker->update({error => undef});
+    $worker->reserve($operator, 'operator reservation', '1h');
+    $worker->set_property(RESERVED_T_EXPIRES => time - 10);
+
+    my $minion = $t->app->minion;
+    my $id = $minion->enqueue('check_reservation_expiration');
+    perform_minion_jobs($minion);
+
+    my $job_info = $minion->job($id)->info;
+    is $job_info->{result}->{released_expired}, 1, 'CheckExpiration background task auto-releases expired reservation';
+    ok !$worker->discard_changes->is_reserved, 'worker is no longer reserved after background auto-release';
+};
+
 done_testing();

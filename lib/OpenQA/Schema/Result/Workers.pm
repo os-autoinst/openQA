@@ -191,12 +191,29 @@ sub reserve ($self, $user, $comment = undef, $duration = undef, $force = 0, $wor
     return $self;
 }
 
+sub _trigger_reset_hook ($self) {
+    my $config = OpenQA::App->singleton->config->{worker_reservation} // {};
+    my $hook_path = $config->{worker_reset_hook} // '/usr/lib/openqa/script/worker-reset-hook';
+
+    if (-x $hook_path) {
+        my $worker_id = $self->id;
+        my $worker_name = $self->name;
+        my $rc = system $hook_path, $worker_id, $worker_name;
+        if ($rc != 0) {
+            $self->update({error => "Post-reservation reset hook failed with exit code: $rc"});
+        }
+    }
+}
+
 sub release ($self, $user) {
     die reservation_error(invalid => 'Worker is not reserved') unless $self->is_reserved;
     die reservation_error(
         forbidden => 'Insufficient permissions to release reservation owned by ' . $self->_reserved_by_name)
-      unless $user->is_admin || $self->_reservation_properties->{RESERVED_BY_ID} == $user->id;
+      unless $user->is_admin
+      || $user->username eq 'system'
+      || $self->_reservation_properties->{RESERVED_BY_ID} == $user->id;
     $self->delete_properties([RESERVATION_PROPERTIES]);
+    $self->_trigger_reset_hook;
     return $self;
 }
 
