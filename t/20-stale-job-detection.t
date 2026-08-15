@@ -32,6 +32,7 @@ $app->setup;
 $app->log(undef);
 
 subtest 'worker with job and not updated in last 120s is considered dead' => sub {
+    is $app->config->{global}->{auto_duplicate_stale_jobs}, 1, 'stale jobs are duplicated by default';
     my $dtf = $schema->storage->datetime_parser;
     my $dt = DateTime->from_epoch(epoch => time(), time_zone => 'UTC');
     my $workers = $schema->resultset('Workers');
@@ -66,6 +67,30 @@ subtest 'worker with job and not updated in last 120s is considered dead' => sub
 
     is $app->minion->jobs({tasks => ['finalize_job_results']})->total,
       2, 'minion job to finalize incomplete jobs enqueued';
+};
+
+subtest 'stale job is not duplicated when automatic duplication is disabled' => sub {
+    local $app->config->{global}->{auto_duplicate_stale_jobs} = 0;
+    $schema->resultset('Workers')->find(1)->update({t_seen => undef});
+    my $job = $jobs->create(
+        {
+            assigned_worker_id => 1,
+            state => RUNNING,
+            result => NONE,
+            TEST => 'stale-without-duplication',
+        });
+    my $job_count = $jobs->count;
+
+    stderr_like { OpenQA::Scheduler::Model::Jobs->singleton->incomplete_and_duplicate_stale_jobs }
+    qr/Dead job @{[$job->id]} aborted as incomplete/, 'dead job logged without duplication';
+
+    $job->discard_changes;
+    is $job->state, DONE, 'running job is now done';
+    is $job->result, INCOMPLETE, 'running job has been marked as incomplete';
+    is $job->clone_id, undef, 'running job has not been cloned';
+    is $jobs->count, $job_count, 'no duplicate job has been created';
+    like $job->reason, qr/associated worker localhost:1 has not sent any status updates for too long/,
+      'job has the usual stale-worker reason';
 };
 
 subtest 'exception during stale job detection handled and logged' => sub {

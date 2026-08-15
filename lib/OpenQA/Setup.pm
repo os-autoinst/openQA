@@ -140,6 +140,7 @@ sub default_config () {
             job_investigate_git_log_limit => 200,
             job_investigate_git_timeout => 20,
             worker_timeout => DEFAULT_WORKER_TIMEOUT,
+            auto_duplicate_stale_jobs => 1,
             search_results_limit => 50000,
             auto_clone_regex =>
 '^(cache failure: |terminated prematurely: |api failure: Failed to register .* 503|backend died: .*VNC.*(timeout|timed out|refused)|QEMU terminated: Failed to allocate KVM HPT of order 25.* Cannot allocate memory)',
