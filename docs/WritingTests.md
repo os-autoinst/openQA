@@ -2337,7 +2337,7 @@ GitHub.
     needs at least the scope "repo".
 
 2.  Add the previously created token to the
-    [web UI configuration file](GettingStarted.md#configuration):
+    [web UI configuration file](GettingStarted.md#webui-configuration):
 
 [secrets]
 github_token = \$token

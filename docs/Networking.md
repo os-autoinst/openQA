@@ -180,7 +180,7 @@ Ensure to make gre_tunnel_preup.sh executable.
 ##### Configure openQA workers
 
 Allow worker instances to run multi-machine jobs by modifying
-[the worker configuration](GettingStarted.md#configuration):
+[the worker configuration](GettingStarted.md#webui-configuration):
 
 ```sh
 [global]
@@ -330,7 +330,7 @@ Bridge "br0"
 
 > **NOTE:** 
 > If the balance of the tap devices is wrong in
-> [the worker configuration](GettingStarted.md#configuration), the tag
+> [the worker configuration](GettingStarted.md#worker-configuration), the tag
 > cannot be assigned and the communication will be broken.
 
 To list the rules which are effectively configured in the underlying netfilter

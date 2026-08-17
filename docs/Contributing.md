@@ -905,7 +905,7 @@ openQA comes with two authentication modules providing authentication methods:
 OpenID and Fake (see [User authentication](Installing.md#authentication)).
 
 All authentication modules reside in `lib/OpenQA/Auth` directory. During openQA start, the `[auth]/method` section of
-[the web UI configuration](GettingStarted.md#configuration) is read and
+[the web UI configuration](GettingStarted.md#webui-configuration) is read and
 according to its value (or default OpenID) openQA tries to require
 `OpenQA::WebAPI::Auth::$method`. If successful, the module for the given method
 is imported or openQA ends with error.

@@ -3,7 +3,7 @@
 
 You can alter the appearance of the openQA web UI to some extent through
 the "branding" mechanism. The `branding` configuration setting in the `global`
-section of [the web UI configuration](GettingStarted.md#configuration)
+section of [the web UI configuration](GettingStarted.md#webui-configuration)
 specifies the branding to use. It defaults to 'openSUSE', and openQA also
 includes the "plain" branding, which is - as its name suggests - plain and
 generic.

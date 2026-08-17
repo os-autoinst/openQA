@@ -293,16 +293,17 @@ to use.
 The different components of openQA read their configuration from the following
 files:
 
-- `openqa.ini`, `openqa.ini.d/*.ini`: These files are the "web UI" config.
+- <a id="webui-configuration"></a>`openqa.ini`, `openqa.ini.d/*.ini`: These files are the "web UI" config.
   Services providing the web interface and related services such as the
   scheduler are configured via these files.
 
-- `database.ini`, `database.ini.d/*.ini`: These files are also used by services
+- <a id="database-configuration"></a>`database.ini`, `database.ini.d/*.ini`: These files are also used by services
   providing the web interface and related services such as the scheduler. It is
   used to configure how those services connect to the database.
 
-- `workers.ini`, `workers.ini.d/*.ini`: These files are used to configure the
-  openQA worker including its additional cache service.
+- <a id="worker-configuration"></a>`workers.ini`, `workers.ini.d/*.ini`: These
+  files are used to configure the openQA worker including its additional cache
+  service.
 
 - `client.conf`, `client.conf.d/*.conf`: These files contain API credentials and are used by the openQA worker and other tooling such as `openqa-cli` and  `openqa-clone-job` to authenticate with the web interface. One API key/secret
   can be configured per web UI host.
@@ -429,7 +430,7 @@ check out those repositories automatically and no manual setup is needed.
 
 Otherwise you will need to clone tests and needles manually. For this,
 clone a subdirectory under `/var/lib/openqa/tests` for each test distribution you need, e.g. `/var/lib/openqa/tests/opensuse` for openSUSE tests. The repositories will be kept up-to-date if `git_auto_update` is enabled in
-[the web UI configuration](GettingStarted.md#configuration) (which is the
+[the web UI configuration](GettingStarted.md#webui-configuration) (which is the
 default). The updating is triggered when new tests are scheduled. For a periodic
 update (to avoid getting too far behind) you can enable the systemd unit
 `openqa-enqueue-git-auto-update.timer`.
