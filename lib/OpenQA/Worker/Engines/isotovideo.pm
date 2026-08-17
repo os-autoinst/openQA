@@ -2,7 +2,10 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Worker::Engines::isotovideo;
+
 use Mojo::Base -signatures;
+
+our $CA_DIRS = [qw(/etc/ssl/certs /etc/pki /usr/share/pki /var/lib/ca-certificates)];
 use OpenQA::Constants qw(WORKER_SR_DONE WORKER_EC_CACHE_FAILURE WORKER_EC_ASSET_FAILURE WORKER_SR_DIED);
 use OpenQA::JobSettings;
 use OpenQA::Log qw(log_error log_info log_debug log_warning get_channel_handle format_settings);
@@ -541,6 +544,11 @@ sub _construct_isotovideo_cmd ($job_settings, $isotovideo) {
         path($podman_dir)->make_path;
         my $podman_tmp_dir = getcwd() . '/podman_tmp';
         path($podman_tmp_dir . '/run')->make_path;
+        my @local_dirs = grep { -d } (prjdir() . '/share', prjdir() . '/tests');
+        @local_dirs = (prjdir() . '/share') unless @local_dirs;
+        my @local_mounts = map { ('-v', "$_:$_:ro") } @local_dirs;
+        my @ca_mounts = map { ('-v', "$_:$_:ro") } grep { -d } @$CA_DIRS;
+
         my @cmd = (
             'env',
             "HOME=$podman_tmp_dir",
@@ -558,6 +566,9 @@ sub _construct_isotovideo_cmd ($job_settings, $isotovideo) {
             '--device', '/dev/kvm',
             '-v', getcwd() . ':/pool',
             '-w', '/pool',
+            @local_mounts,
+            @ca_mounts,
+
             $image,
             'sh', '-c', "git clone --branch=$branch --depth=1 $repo && make -C os-autoinst && os-autoinst/isotovideo -d"
         );

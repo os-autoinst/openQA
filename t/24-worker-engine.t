@@ -586,6 +586,8 @@ subtest 'using cgroupv2' => sub {
 };
 
 subtest '_construct_isotovideo_cmd' => sub {
+    local $OpenQA::Worker::Engines::isotovideo::CA_DIRS = [];
+
     my $isotovideo = '/usr/bin/isotovideo';
 
     subtest 'default command' => sub {
@@ -603,7 +605,7 @@ subtest '_construct_isotovideo_cmd' => sub {
     subtest 'containerized with OS_AUTOINST_GIT_REPO' => sub {
         my $settings = {OS_AUTOINST_GIT_REPO => 'https://github.com/foo/os-autoinst.git'};
         my @cmd = OpenQA::Worker::Engines::isotovideo::_construct_isotovideo_cmd($settings, $isotovideo);
-        is scalar(@cmd), 27, 'returns a list of execution arguments';
+        is scalar(@cmd), 29, 'returns a list of execution arguments';
         my $podman_dir = prjdir() . '/cache/podman';
         my $podman_tmp_dir = getcwd() . '/podman_tmp';
         is $cmd[0], 'env', 'uses env';
@@ -629,10 +631,13 @@ subtest '_construct_isotovideo_cmd' => sub {
         is $cmd[20], getcwd() . ':/pool', 'mounts getcwd() to pool';
         is $cmd[21], '-w', 'sets working dir flag';
         is $cmd[22], '/pool', 'sets working dir';
-        is $cmd[23], 'registry.opensuse.org/devel/openqa/containers/os-autoinst_dev:latest', 'uses default image';
-        is $cmd[24], 'sh', 'executes sh';
-        is $cmd[25], '-c', 'runs shell command';
-        like $cmd[26], qr/git clone --branch=master --depth=1 https:\/\/github.com\/foo\/os-autoinst\.git/,
+        is $cmd[23], '-v', 'mounts share volume';
+        my $share = prjdir() . '/share';
+        is $cmd[24], "$share:$share:ro", 'mounts share dir ro';
+        is $cmd[25], 'registry.opensuse.org/devel/openqa/containers/os-autoinst_dev:latest', 'uses default image';
+        is $cmd[26], 'sh', 'executes sh';
+        is $cmd[27], '-c', 'runs shell command';
+        like $cmd[28], qr/git clone --branch=master --depth=1 https:\/\/github.com\/foo\/os-autoinst\.git/,
           'clones master branch by default';
     };
 
@@ -643,9 +648,9 @@ subtest '_construct_isotovideo_cmd' => sub {
             OS_AUTOINST_CONTAINER_IMAGE => 'my_custom_image:latest'
         };
         my @cmd = OpenQA::Worker::Engines::isotovideo::_construct_isotovideo_cmd($settings, $isotovideo);
-        is scalar(@cmd), 27, 'returns a list of execution arguments';
-        is $cmd[23], 'my_custom_image:latest', 'uses custom image';
-        like $cmd[26], qr/git clone --branch=my_feature --depth=1 https:\/\/github.com\/foo\/os-autoinst\.git/,
+        is scalar(@cmd), 29, 'returns a list of execution arguments';
+        is $cmd[25], 'my_custom_image:latest', 'uses custom image';
+        like $cmd[28], qr/git clone --branch=my_feature --depth=1 https:\/\/github.com\/foo\/os-autoinst\.git/,
           'clones custom branch';
     };
 
@@ -655,6 +660,20 @@ subtest '_construct_isotovideo_cmd' => sub {
             OpenQA::Worker::Engines::isotovideo::_construct_isotovideo_cmd($settings, $isotovideo);
         }
         qr/OS_AUTOINST_CONTAINER_IMAGE requires OS_AUTOINST_GIT_REPO/, 'dies with helpful error message';
+    };
+
+    subtest 'containerized with mounted CA certificates' => sub {
+        my $settings = {OS_AUTOINST_GIT_REPO => 'https://github.com/foo/os-autoinst.git'};
+        my $tmp_dir = path(Mojo::File->new($ENV{OPENQA_BASEDIR} || '.')->child('tmp', 'ca-certs')->to_string);
+        $tmp_dir->make_path;
+        local $OpenQA::Worker::Engines::isotovideo::CA_DIRS = [$tmp_dir->to_string, '/nonexistent/dir'];
+
+        my @cmd = OpenQA::Worker::Engines::isotovideo::_construct_isotovideo_cmd($settings, $isotovideo);
+
+        my $ca_mount = $tmp_dir->to_string;
+        is scalar(grep { $_ eq "$ca_mount:$ca_mount:ro" } @cmd), 1, 'mounts existing CA directory';
+        is scalar(grep { $_ eq '/nonexistent/dir:/nonexistent/dir:ro' } @cmd), 0, 'ignores non-existent CA directory';
+        is scalar(@cmd), 31, 'adds exactly 2 elements for the single CA mount';
     };
 };
 
