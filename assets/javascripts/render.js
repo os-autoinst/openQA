@@ -126,7 +126,9 @@ function renderModuleRow(module, snippets) {
     style: 'position: relative'
   });
   const showPreviewForLink = function () {
-    setCurrentPreview($(this).parent()); // show the preview when clicking on step links
+    if (typeof jQuery !== 'undefined') {
+      setCurrentPreview($(this.parentElement)); // show the preview when clicking on step links
+    }
     return false;
   };
 

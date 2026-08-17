@@ -36,18 +36,7 @@ function postAndRedrawElement(btn, id, delay = 0, confirmMessage = '') {
     return;
   }
   fetchWithCSRF(btn.dataset.posturl, {method: 'POST'})
-    .then(response => {
-      return response
-        .json()
-        .then(json => {
-          // Attach the parsed JSON to the response object for further use
-          return {response, json};
-        })
-        .catch(() => {
-          // If parsing fails, handle it as a non-JSON response
-          throw `Server returned ${response.status}: ${response.statusText}`;
-        });
-    })
+    .then(handleJSONResponseOrThrow)
     .then(({response, json}) => {
       if (!response.ok || json.error)
         throw `Server returned ${response.status}: ${response.statusText}\n${json.error || ''}`;
@@ -67,18 +56,7 @@ function postAndRedrawElement(btn, id, delay = 0, confirmMessage = '') {
 
 function postAndRedirect(btn, redir = '') {
   fetchWithCSRF(btn.dataset.posturl, {method: 'POST'})
-    .then(response => {
-      return response
-        .json()
-        .then(json => {
-          // Attach the parsed JSON to the response object for further use
-          return {response, json};
-        })
-        .catch(() => {
-          // If parsing fails, handle it as a non-JSON response
-          throw `Server returned ${response.status}: ${response.statusText}`;
-        });
-    })
+    .then(handleJSONResponseOrThrow)
     .then(({response, json}) => {
       if (!response.ok || json.error)
         throw `Server returned ${response.status}: ${response.statusText}\n${json.error || ''}`;

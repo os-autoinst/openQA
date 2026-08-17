@@ -48,18 +48,7 @@ function deleteComment(deleteButton) {
     return;
   }
   fetchWithCSRF(deleteButton.dataset.deleteUrl, {method: 'DELETE'})
-    .then(response => {
-      return response
-        .json()
-        .then(json => {
-          // Attach the parsed JSON to the response object for further use
-          return {response, json};
-        })
-        .catch(() => {
-          // If parsing fails, handle it as a non-JSON response
-          throw `Server returned ${response.status}: ${response.statusText}`;
-        });
-    })
+    .then(handleJSONResponseOrThrow)
     .then(({response, json}) => {
       if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}\n${json.error || ''}`;
       if (json.error) throw json.error;
@@ -85,18 +74,7 @@ function updateComment(form) {
   markdownElement.style.display = '';
   markdownElement.innerHTML = '<em>Loading…</em>';
   fetchWithCSRF(url, {method: 'PUT', body: new FormData(form)})
-    .then(response => {
-      return response
-        .json()
-        .then(json => {
-          // Attach the parsed JSON to the response object for further use
-          return {response, json};
-        })
-        .catch(() => {
-          // If parsing fails, handle it as a non-JSON response
-          throw `Server returned ${response.status}: ${response.statusText}`;
-        });
-    })
+    .then(handleJSONResponseOrThrow)
     .then(({response, json}) => {
       if (!response.ok || json.error)
         throw `Server returned ${response.status}: ${response.statusText}\n${json.error || ''}`;
@@ -131,18 +109,7 @@ function addComment(form, insertAtBottom) {
   }
   const url = form.action;
   fetch(url, {method: 'POST', body: new FormData(form)})
-    .then(response => {
-      return response
-        .json()
-        .then(json => {
-          // Attach the parsed JSON to the response object for further use
-          return {response, json};
-        })
-        .catch(() => {
-          // If parsing fails, handle it as a non-JSON response
-          throw `Server returned ${response.status}: ${response.statusText}`;
-        });
-    })
+    .then(handleJSONResponseOrThrow)
     .then(({response, json}) => {
       if (!response.ok || json.error)
         throw `Server returned ${response.status}: ${response.statusText}\n${json.error || ''}`;
