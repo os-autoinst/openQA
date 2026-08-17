@@ -603,34 +603,36 @@ subtest '_construct_isotovideo_cmd' => sub {
     subtest 'containerized with OS_AUTOINST_GIT_REPO' => sub {
         my $settings = {OS_AUTOINST_GIT_REPO => 'https://github.com/foo/os-autoinst.git'};
         my @cmd = OpenQA::Worker::Engines::isotovideo::_construct_isotovideo_cmd($settings, $isotovideo);
-        is scalar(@cmd), 26, 'returns a list of execution arguments';
+        is scalar(@cmd), 27, 'returns a list of execution arguments';
         my $podman_dir = prjdir() . '/cache/podman';
+        my $podman_tmp_dir = getcwd() . '/podman_tmp';
         is $cmd[0], 'env', 'uses env';
-        is $cmd[1], "HOME=$podman_dir", 'sets correct home directory under openqa cache';
-        is $cmd[2], 'podman', 'runs podman';
-        is $cmd[3], '--root', 'uses --root';
-        is $cmd[4], "$podman_dir/data/containers/storage", 'sets correct root directory';
-        is $cmd[5], '--runroot', 'uses --runroot';
-        is $cmd[6], "$podman_dir/run/containers", 'sets correct run root directory';
-        is $cmd[7], '--storage-opt', 'sets storage-opt';
-        is $cmd[8], 'ignore_chown_errors=true', 'ignores chown errors';
-        is $cmd[9], '--cgroup-manager=cgroupfs', 'uses cgroupfs manager';
-        is $cmd[10], '--events-backend=file', 'uses file events backend';
-        is $cmd[11], 'run', 'runs the container';
-        is $cmd[12], '--init', 'runs with --init for signal handling';
-        is $cmd[13], '--rm', 'runs with --rm for auto-cleanup';
-        is $cmd[14], '--entrypoint', 'specifies entrypoint';
-        is $cmd[15], '', 'clears entrypoint';
-        is $cmd[16], '--device', 'adds device';
-        is $cmd[17], '/dev/kvm', 'passes kvm';
-        is $cmd[18], '-v', 'mounts a volume';
-        is $cmd[19], getcwd() . ':/pool', 'mounts getcwd() to pool';
-        is $cmd[20], '-w', 'sets working dir flag';
-        is $cmd[21], '/pool', 'sets working dir';
-        is $cmd[22], 'registry.opensuse.org/devel/openqa/containers/os-autoinst_dev:latest', 'uses default image';
-        is $cmd[23], 'sh', 'executes sh';
-        is $cmd[24], '-c', 'runs shell command';
-        like $cmd[25], qr/git clone --branch=master --depth=1 https:\/\/github.com\/foo\/os-autoinst\.git/,
+        is $cmd[1], "HOME=$podman_tmp_dir", 'sets correct home directory under openqa cache';
+        is $cmd[2], "XDG_RUNTIME_DIR=$podman_tmp_dir/run", 'sets XDG_RUNTIME_DIR environment variable';
+        is $cmd[3], 'podman', 'runs podman';
+        is $cmd[4], '--root', 'uses --root';
+        is $cmd[5], "$podman_dir/data/containers/storage", 'sets correct root directory';
+        is $cmd[6], '--runroot', 'uses --runroot';
+        is $cmd[7], "$podman_tmp_dir/run/containers", 'sets correct run root directory';
+        is $cmd[8], '--storage-opt', 'sets storage-opt';
+        is $cmd[9], 'ignore_chown_errors=true', 'ignores chown errors';
+        is $cmd[10], '--cgroup-manager=cgroupfs', 'uses cgroupfs manager';
+        is $cmd[11], '--events-backend=file', 'uses file events backend';
+        is $cmd[12], 'run', 'runs the container';
+        is $cmd[13], '--init', 'runs with --init for signal handling';
+        is $cmd[14], '--rm', 'runs with --rm for auto-cleanup';
+        is $cmd[15], '--entrypoint', 'specifies entrypoint';
+        is $cmd[16], '', 'clears entrypoint';
+        is $cmd[17], '--device', 'adds device';
+        is $cmd[18], '/dev/kvm', 'passes kvm';
+        is $cmd[19], '-v', 'mounts a volume';
+        is $cmd[20], getcwd() . ':/pool', 'mounts getcwd() to pool';
+        is $cmd[21], '-w', 'sets working dir flag';
+        is $cmd[22], '/pool', 'sets working dir';
+        is $cmd[23], 'registry.opensuse.org/devel/openqa/containers/os-autoinst_dev:latest', 'uses default image';
+        is $cmd[24], 'sh', 'executes sh';
+        is $cmd[25], '-c', 'runs shell command';
+        like $cmd[26], qr/git clone --branch=master --depth=1 https:\/\/github.com\/foo\/os-autoinst\.git/,
           'clones master branch by default';
     };
 
@@ -641,9 +643,9 @@ subtest '_construct_isotovideo_cmd' => sub {
             OS_AUTOINST_CONTAINER_IMAGE => 'my_custom_image:latest'
         };
         my @cmd = OpenQA::Worker::Engines::isotovideo::_construct_isotovideo_cmd($settings, $isotovideo);
-        is scalar(@cmd), 26, 'returns a list of execution arguments';
-        is $cmd[22], 'my_custom_image:latest', 'uses custom image';
-        like $cmd[25], qr/git clone --branch=my_feature --depth=1 https:\/\/github.com\/foo\/os-autoinst\.git/,
+        is scalar(@cmd), 27, 'returns a list of execution arguments';
+        is $cmd[23], 'my_custom_image:latest', 'uses custom image';
+        like $cmd[26], qr/git clone --branch=my_feature --depth=1 https:\/\/github.com\/foo\/os-autoinst\.git/,
           'clones custom branch';
     };
 
