@@ -414,10 +414,13 @@ assets can need a big amount of disk space.
 ### Customize configuration directory
 
 When running openQA from a Git checkout it will find configuration files from
-that checkout under `etc/openqa` and not use any system provided config files under e.g. `/etc/openqa`.
+that checkout under `etc/openqa` and not use any system provided config files
+under e.g. `/etc/openqa`.
 
 It can be necessary during development to change the configuration.
-For example you have to edit `etc/openqa/database.ini` to use another database. It can also be useful to set the authentication method to `Fake` and increase the log level `etc/openqa/openqa.ini`.
+For example you have to edit `etc/openqa/database.ini` to use another database.
+It can also be useful to set the authentication method to `Fake` and increase
+the log level `etc/openqa/openqa.ini`.
 
 To avoid these changes getting in your Git workflow, copy them to a new
 directory and set the environment variable `OPENQA_CONFIG`:
@@ -428,7 +431,8 @@ export OPENQA_CONFIG=$PWD/etc/mine
 ```
 
 > **NOTE:**
-> `OPENQA_CONFIG` needs to point to the **directory** containing `openqa.ini`, > `database.ini`, `client.conf` and `workers.ini` (and **not** a specific file).
+> `OPENQA_CONFIG` needs to point to the **directory** containing `openqa.ini`,
+> `database.ini`, `client.conf` and `workers.ini` (and **not** a specific file).
 
 ### Setting up the PostgreSQL database
 
