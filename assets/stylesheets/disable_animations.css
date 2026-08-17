@@ -1,9 +1,9 @@
 /* ensure smooth scrolling (enabled by Bootstrap) is disabled during tests */
 :root {
-    scroll-behavior: auto !important;
+  scroll-behavior: auto !important;
 }
 /* avoid all kinds of animations, e.g. the transition used in Bootstrap popovers */
 * {
-    animation: none !important;
-    transition: none !important;
+  animation: none !important;
+  transition: none !important;
 }

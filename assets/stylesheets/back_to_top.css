@@ -1,12 +1,12 @@
 .back-to-top {
-    bottom: 20px;
-    border-radius: 50rem;
-    cursor: pointer;
-    display: none;
-    position: fixed;
-    right: 20px;
-    z-index: 1000;
-    width: 2.2rem;
-    height: 2.2rem;
-    padding: 0;
+  bottom: 20px;
+  border-radius: 50rem;
+  cursor: pointer;
+  display: none;
+  position: fixed;
+  right: 20px;
+  z-index: 1000;
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0;
 }
