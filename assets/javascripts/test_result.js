@@ -1,8 +1,6 @@
 // jshint multistr: true
 // jshint esversion: 6
 
-let details_mode = 'default';
-
 const testGitInfoRe = /TEST_GIT_HASH=([a-fA-F0-9]+) TEST_GIT_URL=([^\p{Cc}]+)/u;
 
 const testStatus = {
@@ -119,7 +117,8 @@ function previewSuccess(stepPreviewContainer, data, force) {
   // insert and initialize preview data
   pin.html(data);
   pout.insertAfter(stepPreviewContainer);
-  if (details_mode === 'log') {
+  const linksTd = stepPreviewContainer.closest('td').get(0);
+  if (linksTd.previousElementSibling.getAttribute('mode') === 'log') {
     const caretSpace = 15; // .fa-caret-up is positioned bottom: -25px
     pout.css('top', stepPreviewContainer.position().top + stepPreviewContainer.outerHeight() + caretSpace);
   } else {
@@ -238,7 +237,8 @@ function setCurrentPreview(stepPreviewContainer, force) {
     stepPreviewContainer.addClass('current_preview');
     setPageHashAccordingToCurrentTab(link.attr('href'));
     const text = unescape(link.data('text'));
-    if (details_mode === 'log') {
+    const linksTd = stepPreviewContainer.closest('td').get(0);
+    if (linksTd.previousElementSibling.getAttribute('mode') === 'log') {
       hidePreviewContainer();
       const log_container = stepPreviewContainer.get(0).nextElementSibling;
       log_container.querySelector('div').innerHTML = text;
@@ -267,13 +267,13 @@ function setCurrentPreview(stepPreviewContainer, force) {
 function showTextBoxes(el) {
   setCurrentPreview(null);
   const E = createElement;
-  const currentTd = el.closest('td');
-  const nextTd = currentTd.nextElementSibling;
-  const divs = nextTd.querySelectorAll('div.links_a');
+  const resultTd = el.closest('td');
+  const linksTd = resultTd.nextElementSibling;
+  const divs = linksTd.querySelectorAll('div.links_a');
   divs.forEach(div => {
     const cl = div.getAttribute('class');
 
-    if (details_mode === 'log') {
+    if (resultTd.getAttribute('mode') === 'log') {
       div.classList.remove('logview');
     } else {
       const link = div.querySelector('a');
@@ -289,16 +289,16 @@ function showTextBoxes(el) {
   });
   el.firstChild.classList.toggle('fa-expand');
   el.firstChild.classList.toggle('fa-compress');
-  if (details_mode === 'log') {
-    details_mode = 'default';
+  if (resultTd.getAttribute('mode') === 'log') {
+    resultTd.setAttribute('mode', 'default');
     el.setAttribute('title', 'Expand row');
     el.setAttribute('aria-lebel', 'Expand row');
-    const logdivs = nextTd.querySelectorAll('div.log_container_out');
+    const logdivs = linksTd.querySelectorAll('div.log_container_out');
     logdivs.forEach(div => {
       div.remove();
     });
   } else {
-    details_mode = 'log';
+    resultTd.setAttribute('mode', 'log');
     el.setAttribute('title', 'Collapse row');
     el.setAttribute('aria-lebel', 'Collapse row');
   }
