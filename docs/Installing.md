@@ -811,6 +811,11 @@ public cloud. The only requirement is access to the web UI host over
 HTTP/HTTPS. For running tests based on virtual machines KVM support is
 recommended.
 
+If you have a powerful machine you can run many worker services in parallel
+relying on automatic load-based throttling and configurable locking to avoid
+running into stability issues. Check out the [throttling section](#throttling)
+for details.
+
 The openQA worker is distributed as a separate package which be installed on
 multiple machines while still using only one web UI.
 
@@ -822,6 +827,10 @@ zypper in openQA-worker
 # Fedora
 dnf install openqa-worker
 ```
+
+Once you got workers running they should show up in the admin section of openQA
+in the workers section as 'idle'. When you get so far, you have your own
+instance of openQA up and running and all that is left is to set up some tests.
 
 ### Local LLM Server
 
@@ -1092,23 +1101,17 @@ to access files of the host) use the following setting:
 HOST = http://openqa.example.com
 ```
 
-The load of the system can affect test execution and cause failures due to
-delays of command execution and
+### Throttling
+
+The load of the system can affect test stability and causing VM boot problems
+and failures due to delays of command execution and
 [thrashing](https://en.wikipedia.org/wiki/Thrashing_(computer_science)). If the
-average over a period of 15 minutes exceeds the specified value the worker will
-not accept new jobs.
-
-workers.ini
-
-``` ini
-[global]
-# Set to 0 to disable.
-#CRITICAL_LOAD_AVG_THRESHOLD = 40
-```
-
-Once you got workers running they should show up in the admin section of openQA
-in the workers section as 'idle'. When you get so far, you have your own
-instance of openQA up and running and all that is left is to set up some tests.
+average over a period of 15 minutes exceeds the specified value, the worker will
+not accept new jobs. This can be controlled via the setting
+`CRITICAL_LOAD_AVG_THRESHOLD`. For this to be more effective,
+also check out the setting `LOCK_NAME`. Both settings can be found in the
+[the worker configuration](GettingStarted.md#configuration) where they are
+explained in greater detail.
 
 ### Further systemd units for the worker
 
