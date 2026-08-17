@@ -76,12 +76,13 @@ location ~ /tests/[0-9]+/(livelog|liveterminal)$ {
     proxy_buffering off;
 }
 
-location ~ ^/tests/[0-9]+/details_ajax$ {
-    # Apply rate limiting to details_ajax
-    limit_req zone=details_ajax_limit burst=10 nodelay;
-    limit_req_status 429;
-    add_header Retry-After 5 always;
-
-    # Backend settings are inherited from the server block
-    proxy_pass "http://webui";
-}
+# Optional rate limiting of certain routes, e.g.:
+#location ~ ^/tests/[0-9]+/details_ajax$ {
+#    # Apply rate limiting to details_ajax (needs zone definition, see `openqa.conf.template`)
+#    limit_req zone=details_ajax_limit burst=10 nodelay;
+#    limit_req_status 429;
+#    add_header Retry-After 5 always;
+#
+#    # Backend settings are inherited from the server block
+#    proxy_pass "http://webui";
+#}
