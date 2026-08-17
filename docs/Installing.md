@@ -1092,15 +1092,13 @@ to access files of the host) use the following setting:
 HOST = http://openqa.example.com
 ```
 
-The load of the system can affect test execution and cause failures due to delays of command execution and [thrashing](https://en.wikipedia.org/wiki/Thrashing_(computer_science)). If the average over a period of 15 minutes exceeds the specified value the worker will not accept new jobs.
-
-
-
-
+The load of the system can affect test execution and cause failures due to
+delays of command execution and
+[thrashing](https://en.wikipedia.org/wiki/Thrashing_(computer_science)). If the
+average over a period of 15 minutes exceeds the specified value the worker will
+not accept new jobs.
 
 workers.ini
-
-
 
 ``` ini
 [global]
@@ -1108,11 +1106,9 @@ workers.ini
 #CRITICAL_LOAD_AVG_THRESHOLD = 40
 ```
 
-
-
-Once you got workers running they should show up in the admin section of openQA in
-the workers section as 'idle'. When you get so far, you have your own instance
-of openQA up and running and all that is left is to set up some tests.
+Once you got workers running they should show up in the admin section of openQA
+in the workers section as 'idle'. When you get so far, you have your own
+instance of openQA up and running and all that is left is to set up some tests.
 
 ### Further systemd units for the worker
 
