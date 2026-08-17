@@ -539,12 +539,15 @@ sub _construct_isotovideo_cmd ($job_settings, $isotovideo) {
 
         my $podman_dir = prjdir() . '/cache/podman';
         path($podman_dir)->make_path;
+        my $podman_tmp_dir = getcwd() . '/podman_tmp';
+        path($podman_tmp_dir . '/run')->make_path;
         my @cmd = (
             'env',
-            "HOME=$podman_dir",
+            "HOME=$podman_tmp_dir",
+            "XDG_RUNTIME_DIR=$podman_tmp_dir/run",
             'podman',
             '--root', "$podman_dir/data/containers/storage",
-            '--runroot', "$podman_dir/run/containers",
+            '--runroot', "$podman_tmp_dir/run/containers",
             '--storage-opt', 'ignore_chown_errors=true',
             '--cgroup-manager=cgroupfs',
             '--events-backend=file',
