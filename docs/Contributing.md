@@ -514,7 +514,7 @@ You do **not** need to setup an additional web server because the daemons
 already provide one. The port under which a service is available is logged on
 startup (the main web UI port is 9625 by default). Local workers need to be
 configured to connect to the main web UI port (add
-`HOST = [http://localhost:9526+](http://localhost:9526+) to `workers.ini`).
+`HOST = http://localhost:9526` to `workers.ini`).
 
 Note that you can also start services using a temporary database using the unit
 test database setup and data directory:
