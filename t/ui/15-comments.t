@@ -92,12 +92,12 @@ sub write_comment ($text, $desc) {
 
 # switches to comments tab (required when editing comments in test results)
 # expects the current number of comments as argument (currently the easiest way to find the tab button)
-sub switch_to_comments_tab ($current_comment_count) {
+sub switch_to_comments_tab ($current_comment_count = undef) {
     $driver->find_element_by_link_text("Comments ($current_comment_count)")->click();
 }
 
 # checks comment heading and text for recently added comment
-sub check_comment ($supposed_text, $edited) {
+sub check_comment ($supposed_text, $edited = undef) {
     ok javascript_console_has_no_warnings_or_errors(), 'no unexpected js warnings';
 
     # check number of elements
@@ -108,7 +108,7 @@ sub check_comment ($supposed_text, $edited) {
 
     # check heading
     my $first_heading_text = $comment_headings[0]->get_text();
-    my $time_re = qr/(?:just now|\d+ seconds? ago)/;
+    my $time_re = qr/(?:just now|\d+ seconds? ago|\d+ minutes? ago)/;
     if ($edited) {
         like $first_heading_text, qr/^\Q$user_name\E wrote $time_re \(last edited $time_re\)$/, 'heading text';
     }
@@ -127,7 +127,7 @@ sub check_comment ($supposed_text, $edited) {
 }
 
 # tests adding, editing and removing comments
-sub test_comment_editing ($in_test_results) {
+sub test_comment_editing ($in_test_results = undef) {
     my $context = $in_test_results ? 'job' : 'group';
     my @comments = $driver->find_elements('div.media-comment', 'css');
     is scalar @comments, 0, 'no comments present so far';
