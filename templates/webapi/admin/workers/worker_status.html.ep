@@ -2,9 +2,10 @@
 % my $reservation_details = '';
 % if ($reservation) {
 %     my $user = b($reservation->{user})->xml_escape;
+%     my $class = $reservation->{worker_class} ? '<br>Class: ' . b($reservation->{worker_class})->xml_escape : '';
 %     my $comment = b($reservation->{comment})->xml_escape;
 %     my $expires = b($reservation->{t_expires} // 'never')->xml_escape;
-%     $reservation_details = "Reserved by: $user<br>Comment: $comment<br>Expires: $expires";
+%     $reservation_details = "Reserved by: $user$class<br>Comment: $comment<br>Expires: $expires";
 % }
 % if($worker->{status} eq 'running') {
     <%= $reservation ? 'Working (Reserved)' : 'Working' %>
@@ -13,7 +14,7 @@
     % my $res_info = $reservation_details ? "<br>$reservation_details" : '';
     <%= help_popover('Worker status' => "Job: $job_link$step_info$res_info") %>
 % } elsif ($worker->{status} eq 'reserved') {
-    Reserved
+    Reserved <%= $reservation->{worker_class} ? '(class ' . escape_html($reservation->{worker_class}) . ')' : '' %>
     <%= help_popover('Worker status' => $reservation_details) %>
 % } elsif ($worker->{status} eq 'dead' && $worker->{job}) {
     Dead
