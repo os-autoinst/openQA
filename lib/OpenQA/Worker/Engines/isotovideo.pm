@@ -542,9 +542,13 @@ sub _construct_isotovideo_cmd ($job_settings, $isotovideo) {
 
         my $podman_dir = prjdir() . '/cache/podman';
         path($podman_dir)->make_path;
+        my $podman_runroot = "$podman_dir/run";
+        path($podman_runroot)->make_path;
         my $podman_tmp_dir = getcwd() . '/podman_tmp';
-        path($podman_tmp_dir . '/run')->make_path;
-        my @local_dirs = grep { -d } (prjdir() . '/share', prjdir() . '/tests');
+        path($podman_tmp_dir)->make_path;
+        my $cache_root = prjdir() . '/cache';
+        my @cache_dirs = grep { basename($_) ne 'podman' } glob "$cache_root/*";
+        my @local_dirs = grep { -d } (prjdir() . '/share', prjdir() . '/tests', @cache_dirs);
         @local_dirs = (prjdir() . '/share') unless @local_dirs;
         my @local_mounts = map { ('-v', "$_:$_:ro") } @local_dirs;
         my @ca_mounts = map { ('-v', "$_:$_:ro") } grep { -d } @$CA_DIRS;
@@ -552,10 +556,10 @@ sub _construct_isotovideo_cmd ($job_settings, $isotovideo) {
         my @cmd = (
             'env',
             "HOME=$podman_tmp_dir",
-            "XDG_RUNTIME_DIR=$podman_tmp_dir/run",
+            "XDG_RUNTIME_DIR=$podman_runroot",
             'podman',
             '--root', "$podman_dir/data/containers/storage",
-            '--runroot', "$podman_tmp_dir/run/containers",
+            '--runroot', "$podman_runroot/containers",
             '--storage-opt', 'ignore_chown_errors=true',
             '--cgroup-manager=cgroupfs',
             '--events-backend=file',

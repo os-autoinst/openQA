@@ -607,15 +607,16 @@ subtest '_construct_isotovideo_cmd' => sub {
         my @cmd = OpenQA::Worker::Engines::isotovideo::_construct_isotovideo_cmd($settings, $isotovideo);
         is scalar(@cmd), 29, 'returns a list of execution arguments';
         my $podman_dir = prjdir() . '/cache/podman';
+        my $podman_runroot = "$podman_dir/run";
         my $podman_tmp_dir = getcwd() . '/podman_tmp';
         is $cmd[0], 'env', 'uses env';
         is $cmd[1], "HOME=$podman_tmp_dir", 'sets correct home directory under openqa cache';
-        is $cmd[2], "XDG_RUNTIME_DIR=$podman_tmp_dir/run", 'sets XDG_RUNTIME_DIR environment variable';
+        is $cmd[2], "XDG_RUNTIME_DIR=$podman_runroot", 'sets XDG_RUNTIME_DIR environment variable';
         is $cmd[3], 'podman', 'runs podman';
         is $cmd[4], '--root', 'uses --root';
         is $cmd[5], "$podman_dir/data/containers/storage", 'sets correct root directory';
         is $cmd[6], '--runroot', 'uses --runroot';
-        is $cmd[7], "$podman_tmp_dir/run/containers", 'sets correct run root directory';
+        is $cmd[7], "$podman_runroot/containers", 'sets correct run root directory';
         is $cmd[8], '--storage-opt', 'sets storage-opt';
         is $cmd[9], 'ignore_chown_errors=true', 'ignores chown errors';
         is $cmd[10], '--cgroup-manager=cgroupfs', 'uses cgroupfs manager';
