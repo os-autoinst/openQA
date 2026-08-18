@@ -1185,9 +1185,7 @@ tests specifically, also take note of the following remarks:
 In short, writing multi-machine tests adds a few more layers of complexity:
 
 1.  Documenting the dependencies and order between individual tests
-
 2.  Synchronization between individual tests
-
 3.  Actual technical realization (i.e.
     [custom networking](Networking.md#networking))
 
@@ -2426,7 +2424,6 @@ created or updated.
 1.  Open <https://github.com/$orga/$project/settings/hooks/new>. You need to
     substitute the placeholders `$orga` and `$project` with the corresponding
     value of the repository you want to add CI checks to.
-
 2.  Add <https://$user:$apikey:$apisecret@$openqa_host/api/v1/webhooks/product?DISTRI=example&VERSION=0&FLAVOR=DVD&ARCH=x86_64&TEST=simple_boot>
     as "Payload URL". You need to substitute the placeholders with valid API
     credentials and hostname for your openQA instance. If you don't have
@@ -2434,18 +2431,12 @@ created or updated.
     Make sure the casing of the user name is correct. The scheduling
     parameters need to be adjusted to produce the wanted set of jobs from
     your scenario definitions YAML file.
-
 3.  Select "application/json" as "Content type".
-
 4.  Add `$user:$apikey:$apisecret` as secret replacing placeholders again.
     You need to use the same credentials as in step 2.
-
 5.  Keep SSL enabled. (Be sure your openQA instance is reachable via HTTPS.)
-
 6.  Select "Let me select individual events." and then "Pull requests".
-
 7.  Ensure "Active" is checked and confirm.
-
 8.  GitHub should now have been delivering a "ping" event. Check out whether
     it could be delivered. If you have gotten a 200 response then everything
     is setup correctly. Otherwise, check out the response of the delivery to

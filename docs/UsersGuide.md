@@ -32,13 +32,9 @@ revision of your operating system that needs to be tested. If you are starting
 from scratch, you should probably go through the following order:
 
 1.  Define machines in 'Machines' menu
-
 2.  Define medium types (products) you have in 'Medium types' menu
-
 3.  Specify various collections of tests you want to run in the 'Test suites' menu
-
 4.  Define job groups in 'Job groups' menu for groups of tests
-
 5.  Select individual 'Job groups' and decide what combinations make sense and
     need to be tested
 
@@ -60,13 +56,9 @@ this example we could have the following test scenarios considering that the
 "x86_64" flavor is not compatible with the `32bit` machine:
 
 - openSUSE-DVD-x86_64-kde-64bit
-
 - openSUSE-DVD-x86_64-kde-64bit_USBBoot
-
 - openSUSE-NET-i586-kde-64bit
-
 - openSUSE-NET-i586-kde-64bit_USBBoot
-
 - openSUSE-NET-i586-kde-32bit
 
 For every test scenario we need to configure a different instance of the test
@@ -81,20 +73,13 @@ worker' connected that can fulfill those specifications.
 
 - **Name.** User defined string - only needed for operator to identify the machine
   configuration.
-
-<!-- -->
-
 - **Backend.** What backend should be used for this machine. Recommended value is
   `qemu` as it is the most tested one, but other options (such as `kvm2usb` or `vbox`)
   are also possible.
-
-<!-- -->
-
 - **Variables** Most machine variables influence os-autoinst's behavior in terms
   of how the test machine is set up. A few important examples:
   - `QEMUCPU` can be 'qemu32' or 'qemu64' and specifies the architecture of the
     virtual CPU.
-
   - `QEMUCPUS` is an integer that specifies the number of cores you wish for.
   - `LAPTOP` if set to 1, QEMU will create a laptop profile.
   - `USBBOOT` when set to 1, the image will be loaded through an
@@ -113,14 +98,11 @@ Some example variables used by openSUSE are:
 - `ISO_MAXSIZE` contains the maximum size of the product. There is a test that
   checks that the current size of the product is less or equal than this
   variable.
-
 - `DVD` if it is set to 1, this indicates that the medium is a DVD.
 - `LIVECD` if it is set to 1, this indicates that the medium is a live image
   (can be a CD or USB)
-
 - `GNOME` this variable, if it is set to 1, indicates that it is a GNOME only
   distribution.
-
 - `PROMO` marks the promotional product.
 - `RESCUECD` is set to 1 for rescue CD images.
 
@@ -198,22 +180,18 @@ Some sample variables used by openSUSE are:
 - `DESKTOP` possible values are 'kde' 'gnome' 'lxde' 'xfce' or
   'textmode'. Used to indicate the desktop selected by the user during
   the test.
-
 - `DOCRUN` used for documentation tests.
 - `DUALBOOT` dual boot testing, needs HDD_1 and HDDVERSION.
 - `ENCRYPT` encrypt the home directory via YaST.
 - `HDDVERSION` used together with HDD_1 to set the operating system
   previously installed on the hard disk.
-
 - `INSTALLONLY` only basic installation.
 - `INSTLANG` installation language. Actually used only in documentation
   tests.
-
 - `LIVETEST` the test is on a live medium, do not install the distribution.
 - `LVM` select LVM volume manager.
 - `NICEVIDEO` used for rendering a result video for use in show rooms,
   skipping ugly and boring tests.
-
 - `NOAUTOLOGIN` unmark autologin in YaST
 - `NUMDISKS` total number of disks in QEMU.
 - `REBOOTAFTERINSTALL` if set to 1, will reboot after the installation.
@@ -254,20 +232,11 @@ by different means:
 
 - A simple web UI wizard which is automatically shown for job groups when a
   new medium is added to the job group.
-
-<!-- -->
-
 - An intuitive table within the web UI for adding additional test scenarios to
   existing media including the possibility to configure the priority values.
-
-<!-- -->
-
 - The scripts `openqa-load-templates` and `openqa-dump-templates` to quickly
   dump and load the configuration from custom plain-text dump format files
   using the REST API.
-
-<!-- -->
-
 - Using declarative schedule definitions in the YAML format using REST API
   routes or an online-editor within the web UI including a syntax checker.
 
@@ -403,11 +372,8 @@ reason is stated:
 #### Meaning of the different colors
 
 - No icon is shown if at least one failure still need to be reviewed.
-
 - The green tick icon shows up when there is no work to be done.
-
 - The black certificate icon is shown if all review work has been done.
-
 - The grey comment icon is shown if all failures have at least one comment.
 
 (To simplify, checking for false-negatives is not considered here.)
@@ -619,9 +585,7 @@ Should always refer to most recent job for the specified scenario.
 Examples:
 
 - `tests/latest?distri=opensuse&version=13.1&flavor=DVD&arch=x86_64&test=kde&machine=64bit`
-
 - `tests/latest?flavor=DVD&arch=x86_64&test=kde`
-
 - `tests/latest?test=foobar` - this searches for the most recent job using test_suite `foobar' covering all distri, version, flavor, arch,
   machines. To be more specific, add the other query entries.
 
@@ -797,7 +761,6 @@ For more information, see
 The developer mode allows to:
 
 - Create or update needles from `assert_screen` mismatches ("re-needling")
-
 - Pause the test execution (at a certain module) for manual investigation of the SUT
 
 It can be accessed via the "Live View" tab of a running test. Only registered
@@ -812,17 +775,13 @@ In case the developer mode in not working on your instance, try to follow the
 
 1.  In case a new needles should be created, add the corresponding `assert_screen` calls
     to your test.
-
 2.  Start the test with the `assert_screen` calls which are supposed to fail. 3. Select "`assert_screen` timeout" under "Pause on screen mismatch" and confirm.
-
 3.  Wait until the test has paused. There is a button to skip the current timeout to speed
     this up.
-
 4.  A button for accessing the needle editor should occur. It may take a few seconds till
     it occurs because the screenshots created so far need to be uploaded from the worker to
     the web UI. Of course it is also possible to go back to the "Details" tab to create a new
     needle from any previous screenshot/match available.
-
 5.  After creating the new needle, click the resume button to test whether it worked.
 
 Steps 4. to 6. can be repeated for further needles without restarting the test.
@@ -1172,12 +1131,10 @@ by adding additional query parameters, e.g.:
 - `ids`/`state`/`result`: Return only jobs with matching ID/state/result.
   Multiple IDs/states/results can be specified by repeating the parameter or
   by passing comma-separated values.
-
 - `distri`/`version`/`build`/`test`/`arch`/`machine`
   /`worker_class`/`iso`/`hdd_1`: Return only jobs where the job settings match
   the specified values like in the example above. Note that it is not possible
   to filter by arbitrary job settings although this list might not be complete.
-
 - `groupid`/`group`: Return only jobs within the job group with the
   specified ID/name like in the example above. These parameters are mutually
   exclusive, `groupid` has precedence.
@@ -1185,10 +1142,8 @@ by adding additional query parameters, e.g.:
 - `limit`/`page`: Limit the number of returned jobs and allow pagination, e.g. `page=2&limit=10` would only show results 11-20.
 - `modules`/`modules_result`: Return only jobs which have a test module with the
   specified name/result.
-
 - `before`/`after`: Return only jobs with a job ID less/greater than the
   specified job ID.
-
 - `scope=current`: Returns only jobs which have not been cloned yet.
 - `scope=relevant`: Returns only jobs which have not been obsoleted yet and
   which have not been cloned yet. Clones which are still pending do **not** count.
@@ -1663,7 +1618,6 @@ Further remarks:
   section of [the web UI configuration](GettingStarted.md#webui-configuration).
   Jobs outside of any group use the limits configured in the `[no_group_limits]`
   section of the web UI configuration.
-
 - The [Auditing](Installing.md#auditing) section explains the cleanup of
   the audit log.
 
@@ -1686,9 +1640,7 @@ a job was archived.
 This means a job is "in the archive" if:
 
 1.  it is important.
-
 2.  its age is between the retention of regular jobs and important jobs.
-
 3.  thresholds for space-aware cleanup do not prevent the cleanup of job results
     from happening at all (because if the cleanup is skipped, also archiving is
     skipped).
@@ -1711,11 +1663,8 @@ thresholds.
 The deletion happens in the following order:
 
 1.  Videos of unimportant jobs
-
 2.  Results of unimportant jobs
-
 3.  Videos of important jobs
-
 4.  Results of important jobs
 
 Within each group the oldest jobs are deleted first.
@@ -1757,10 +1706,8 @@ If the size limit for assets of a group is exceeded, openQA will remove
 assets which belong to that group:
 
 - Assets belonging to old jobs are preferred.
-
 - Assets belonging to jobs which are still scheduled or running are not
   considered.
-
 - Assets which have been accounted to another group that has still space
   left are not considered.
 
@@ -1823,15 +1770,10 @@ run tasks. Both can be used separately or in combination.
 The relevant Minion tasks are:
 
 - limit_assets
-
 - limit_audit_events
-
 - limit_bugs
-
 - limit_results_and_logs
-
 - limit_scheduled_products
-
 - limit_screenshots
 
 These are no-ops if a task is already running so they can safely be enqueued
@@ -1857,15 +1799,10 @@ The message topic follows the format `SCOPE.APPLICATION.OBJECT.ACTION`, for exam
 Here are the events triggered and published by openQA:
 
 1.  `openqa.job.create` when a job is created
-
 2.  `openqa.job.delete` when a job is deleted
-
 3.  `openqa.job.cancel` when a job is cancelled
-
 4.  `openqa.job.restart` when a job is restarted or duplicated
-
 5.  `openqa.job.update_result` when a job result is updated
-
 6.  `openqa.job.done` when a job finishes
 
 Job event bodies include the job settings (e.g. `BUILD`, `TEST`, `ARCH`,
@@ -1896,9 +1833,7 @@ and `bugurl` (only present when a bug reference exists). Example of a `*.openqa.
 Event for comments are also published:
 
 1.  `openqa.comment.create`
-
 2.  `openqa.comment.update`
-
 3.  `openqa.comment.delete`
 
 Comment event bodies include: `id`, `job_id`, `group_id`, `parent_group_id`,
@@ -1960,26 +1895,20 @@ and have a traceable documentation of the actions taken.
   Other combinations of queries are possible, e.g.
   <https://openqa.opensuse.org/tests/overview?build=my-build&todo=1> to show
   all test results that need review for build "my-build"
-
 - <https://github.com/os-autoinst/openqa_review> can be used to produce multiple
   different generated reports, e.g. all tests that need review, tests that are
   linked to closed bugs, etc.
-
 - Use
   [auto-review](https://github.com/os-autoinst/os-autoinst-scripts/blob/master/README.md#auto-review---automatically-detect-known-issues-in-openqa-jobs-label-openqa-jobs-with-ticket-references-and-optionally-retrigger)
   to handle flaky issues and even automatically retrigger according tests
-
 - In case of known sporadic issues that can not be fixed quickly consider
   [automatic retries of jobs](WritingTests.md#automatic-retries-of-jobs).
-
 - In case of known non-sporadic test issues that can not be fixed quickly
   consider
   [overwriting the result of jobs](UsersGuide.md#overwrite-result-of-job).
-
 - To quickly label and - as desired - restart multiple jobs consider using the
   command line application `openqa-label-all`. Call `openqa-label-all --help`
   to see all options.
-
 - For the SUSE maintenance test workflows a "branding" specific approach is
   provided: In case of needing to urgently release individual maintenance
   updates before test failures can be resolved consider instructing qem-bot,

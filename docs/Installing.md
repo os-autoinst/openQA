@@ -927,11 +927,8 @@ section.
 If your tests and needles are stored in Git, openQA can perform various operations:
 
 - Automatically commit needles created in the web UI editor back to the repository
-
 - Automatically update the repository when scheduling tests
-
 - Update the server's tests and needles from Git repos specified in a job's `CASEDIR` and `NEEDLES_DIR` variables
-
 - Attempt to have the web UI display the correct needles each job was executed with via
   temporary Git checkouts, based on its variables
 
@@ -949,7 +946,6 @@ checkout_needles_sha = yes|no
 
 - `git_auto_commit` controls whether needles saved in the web UI editor are automatically committed. For backwards compatibility, setting `scm` in the `[global]` section to 'git' also enables this feature, if `git_auto_commit` is not set exactly to 'no' (its default
   value is the empty string '').
-
 - `git_auto_update` controls automatic test/needle updating when scheduling tests.
 - `git_auto_clone` controls the automatic cloning of repos referenced by `CASEDIR` and `NEEDLES_DIR`, at job schedule time.
   Check out the
@@ -1263,13 +1259,9 @@ Configuring `SHARE_DIRECTORY` is not a hard requirement. Workers will try
 following directories prior registering with openQA instance:
 
 1.  `SHARE_DIRECTORY`
-
 2.  `/var/lib/openqa/$instance_host`
-
 3.  `/var/lib/openqa/share`
-
 4.  `/var/lib/openqa`
-
 5.  fail if none of above is available
 
 Once a worker registers to an openQA instance, scheduled jobs (of matching
@@ -1622,8 +1614,6 @@ need to be stopped during the (short) migration.
 1.  Locate the `data`-directory. Its path is configured in `/etc/sysconfig/postgresql` and should be `/var/lib/pgsql/data` by default. The
     paths in the next steps assume the default.
 
-<!-- -->
-
 2.  To ease migrations, it is recommended making the `data`-directory a symlink
     to a versioned directory. So the file system layout would look for example like
     this:
@@ -1637,8 +1627,6 @@ need to be stopped during the (short) migration.
 
     The next steps assume such a layout.
 
-<!-- -->
-
 3.  Install same set of postgresql\* packages as are installed for the old
     version:
 
@@ -1647,16 +1635,12 @@ need to be stopped during the (short) migration.
     sudo zypper in postgresql$newver-server postgresql$newver-contrib
     ```
 
-<!-- -->
-
 4.  Change to a directory where the user postgres will be able to write logs to,
     e.g.:
 
     ```sh
     cd /tmp
     ```
-
-<!-- -->
 
 5.  Prepare the migration:
 
@@ -1678,8 +1662,6 @@ need to be stopped during the (short) migration.
     > `--locale=en_US.UTF-8 --lc-collate=C --lc-ctype=en_US.UTF-8 --lc-messages=C`
     > `--lc-monetary=C --lc-numeric=C --lc-time=C`
 
-<!-- -->
-
 6.  Take over any relevant changes from the old config to the new one, e.g.:
 
     ```sh
@@ -1692,8 +1674,6 @@ need to be stopped during the (short) migration.
     > There shouldn't be a diff in the locale settings, otherwise `pg_upgrade`
     > will complain.
 
-<!-- -->
-
 7.  Shutdown postgres server and related services as appropriate for your setup,
     e.g.:
 
@@ -1701,8 +1681,6 @@ need to be stopped during the (short) migration.
     sudo systemctl stop openqa-{webui,websockets,scheduler,livehandler,gru}
     sudo systemctl stop postgresql
     ```
-
-<!-- -->
 
 8.  Perform the migration:
 
@@ -1724,15 +1702,11 @@ need to be stopped during the (short) migration.
     > This step only takes a few seconds for multiple production DBs because the
     > `--link` option is used.
 
-<!-- -->
-
 9.  Change symlink (shown in step 2) to use the new data directory:
 
     ```sh
     sudo ln --force --no-dereference --relative --symbolic /var/lib/pgsql/data.$newver /var/lib/pgsql/data
     ```
-
-<!-- -->
 
 10. Start services again as appropriate for your setup, e.g.:
 
@@ -1745,23 +1719,17 @@ need to be stopped during the (short) migration.
     > There is no need to take care of starting the new version of the PostgreSQL service.
     > The start script checks the version of the data directory and starts the correct version.
 
-<!-- -->
-
 11. Check whether usual role and database are present and running on the new version:
 
     ```sh
     sudo -u geekotest psql -c 'select version();' openqa
     ```
 
-<!-- -->
-
 12. Remove old postgres packages if not needed anymore:
 
     ```sh
     sudo zypper rm postgresql$oldver-server postgresql$oldver-contrib postgresql$oldver
     ```
-
-<!-- -->
 
 13. Delete the old data directory if not needed anymore:
 
@@ -1780,12 +1748,9 @@ These statistics help to identify the most time-consuming queries.
 
 1.  Configure the PostgreSQL extension `pg_stat_statements`, see example on
     [the official documentation](https://www.postgresql.org/docs/current/pgstatstatements.html).
-
 2.  Ensure the extension library is installed which might be provided by a
     separate package (e.g. `postgresql14-contrib` for PostgreSQL 14 on openSUSE).
-
 3.  Restart PostgreSQL.
-
 4.  Enable the extension via `CREATE EXTENSION pg_stat_statements`.
 
 #### Make use of these statistics
@@ -2135,15 +2100,10 @@ Check the log files in `/var/lib/openqa/testresults`
 ### KVM does not work
 
 - make sure you have a machine with kvm support
-
 - make sure `kvm_intel` or `kvm_amd` modules are loaded
-
 - make sure you do have virtualization enabled in BIOS
-
 - make sure the '\_openqa-worker' user can access `/dev/kvm`
-
 - make sure you are not already running other hypervisors such as VirtualBox
-
 - when running inside a vm make sure nested virtualization is enabled (pass nested=1 to your kvm module)
 
 ### OpenID login times out

@@ -288,12 +288,9 @@ network to bisect problematic hosts/connections (via `ovs-vsctl add-port …` an
 Boot sequence with wicked (version 0.6.23 and newer):
 
 1.  openvswitch (as above)
-
 2.  wicked - creates the bridge `br1` and tap devices, adds tap devices to the
     bridge,
-
 3.  firewalld (or SuSEfirewall2 in older setups)
-
 4.  os-autoinst-openvswitch - installs openflow rules, handles vlan assignment
 
 The configuration and operation can be checked with the following commands:
@@ -357,11 +354,8 @@ iptables --list --verbose # list all rules with package counts
 Check the flow of packets over the network:
 
 - packets from tapX to br1 create additional rules in table=1
-
 - packets from br1 to tapX increase packet counts in table=1
-
 - empty output indicates a problem with os-autoinst-openvswitch service
-
 - zero packet count or missing rules in table=1 indicate problem with tap
   devices
 

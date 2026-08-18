@@ -30,22 +30,15 @@ repositories can be found.
 
 - os-autoinst: <https://github.com/os-autoinst/os-autoinst>
   - the "backend" (thing that executes tests and starts/controls the SUT e.g. using QEMU)
-
 - openQA: <https://github.com/os-autoinst/openQA>
   - mainly the web UI and accompanying daemons like the scheduler
-
   - the worker (thing that starts the backend and uploads results to the web UI)
-
   - documentation
-
   - miscellaneous support scripts
-
 - test distribution: e.g. <https://github.com/os-autoinst/os-autoinst-distri-opensuse> for openSUSE
   - the actual tests, in case of `os-autoinst-distri-opensuse` conducted on <http://openqa.opensuse.org>
-
 - needles: e.g. <https://github.com/os-autoinst/os-autoinst-needles-opensuse> for openSUSE
   - reference images if not already included in the test distribution
-
 - empty example test distribution: <https://github.com/os-autoinst/os-autoinst-distri-example>
   - meant to be used to start writing tests (and creating the corresponding needles) from scratch for a new operating system
 
@@ -64,22 +57,16 @@ are the right way to contribute improvements and fixes.
 make tidy
 ```
 
-to ensure your Perl, JavaScript and Python code changes are consistent with the
+To ensure your Perl, JavaScript and Python code changes are consistent with the
 style rules.
 
 - All tests are passed. This is ensured by a CI system. You can also run local
   tests in your development environment to verify everything works as
   expected, see [Conducting tests](Contributing.md#conducting-tests))
-
-<!-- -->
-
 - For git commit messages use the rules stated on
   [How to Write a Git Commit Message](http://chris.beams.io/posts/git-commit/)
   as a reference. One especially useful make target for developers is `make`
   `setup-hooks` which installs git pre-commit hooks to check commit styles.
-
-<!-- -->
-
 - Every pull request is reviewed in a peer review to give feedback on possible
   implications and how we can help each other to improve
 
@@ -94,30 +81,18 @@ requests for consideration or create an issue with a code change proposal.
 
 - Sort the use statements in this order from top to bottom:
   - `strict`, `warnings` or other modules that provide static checks
-
   - All external modules and from "lib" folder
-
     \*\*\* `use FindBin; use lib "$FindBin/lib";` or similar to resolve internal modules
-
   - Internal test modules which provide early checks before other modules
-
   - Other internal test modules
-
-<!-- -->
 
 - When using [signatures](https://perldoc.perl.org/perlsub#Signatures) try to follow these rules:
   - Activate the feature with modules we already use if possible, e.g. `use Mojo Base 'Something', -signatures;`
-
   - Use positional parameters whenever possible, e.g. `sub foo ($first, $second) {`
-
   - Use default values when appropriate, e.g. `sub foo ($first, $second = 'some value') {`
-
   - Use slurpy parameters when appropriate (hash and array), e.g. `sub foo ($first, @more) {`
-
   - Use nameless parameters when appropriate (very uncommon), e.g. `sub foo ($first, $, $third) {`
-
   - Do **not** get too creative with computational default values, e.g. `sub foo ($first, $second = rand($first)) {`
-
   - Do **not** combine sub attributes with signatures (requires Perl 5.28+), e.g. `sub foo :lvalue ($first) {`
 
 ## Getting involved into development
@@ -234,19 +209,14 @@ Development tools
 Here we differentiate between these types of dependencies:
 
 - Runtime: run openQA
-
 - Test: run the test suite of openQA itself
-
 - For developers: style checks, code coverage etc.
 
 You can get those dependencies in several ways:
 
 - Packaged in openSUSE and other distributions
-
 - Manually install from source
-
 - Perl modules via CPAN client
-
 - Use a prebuilt container
 
 We manage our dependencies via a central `dependencies.yaml` file per repository. We generate the `.spec` files for `rpm` as well as a `cpanfile`
@@ -431,25 +401,19 @@ Setting up a PostgreSQL database for openQA takes the following steps:
 
 1.  Install PostgreSQL - under openSUSE the following package are required:
     `postgresql-server postgresql-init`
-
 2.  Start the server: `systemctl start postgresql`
-
 3.  The next two steps need to be done as the user **postgres**:
     `sudo su - postgres`
-
 4.  Create user: `createuser your_username` where `your_username` must be
     the same as the UNIX user you start your local openQA instance with. For a
     development instance that is normally your regular user.
-
 5.  Create database: `createdb -O your_username openqa-local` where
     `openqa-local` is the name you want to use for the database
-
 6.  Configure openQA to use PostgreSQL as described in the section
     [Database](Installing.md#database) of the installation guide.
     User name and password are not required. Of course you need to change the
     `database.ini` file under your custom config directory (as you have probably
     done that in the previous section).
-
 7.  openQA will default-initialize the new database on the next startup.
 
 The script `openqa-setup-db` can be used to conduct step 4 and 5. You must still
@@ -526,17 +490,14 @@ Also find more details in
 - It is also useful to start openQA with morbo which allows applying changes
   without restarting the server:
   `morbo -m development -w assets -w lib -w templates -l http://localhost:9526 script/openqa daemon`
-
 - In case you have problems with broken rendering of the web page it can help
   to delete the asset cache and let the webserver regenerate it on first
   startup. For this delete the subdirectories `.sass-cache/`, `assets/cache/`
   and `assets/assetpack.db`. Make sure to look for error messages on startup
   of the webserver and to force the refresh of the web page in your browser.
-
 - If you get errors like "ERROR: Failed to build gem native extension." make
   sure you have all listed dependencies including the "sass" application
   installed.
-
 - For a concrete example some developers use under openSUSE Tumbleweed have a
   look at the
   [openQA-helper repository](https://github.com/Martchus/openQA-helper).
@@ -828,22 +789,13 @@ any statements) you can just drop the migration again.
     Note that it is recommended to notify the other developers before doing so,
     to synchronize in case there are more developers wanting to increase the
     version number at the same time.
-
-<!-- -->
-
 2.  Then you need to generate the deployment files for new installations,
     this is done by running `./script/initdb --prepare_init`.
-
-<!-- -->
-
 3.  Afterwards you need to generate the deployment files for existing installations,
     this is done by running `./script/upgradedb --prepare_upgrade`. After doing so, the directories `dbicdh/$ENGINE/deploy/<new version>` and `dbicdh/$ENGINE/upgrade/<prev version>-<new version>` for PostgreSQL
     should have been created with some SQL files inside containing the statements to
     initialize the schema and to upgrade from one version
     to the next in the corresponding database engine.
-
-<!-- -->
-
 4.  Custom migration scripts to upgrade from previous versions can be added under
     `dbicdh/_common/upgrade`. Create a `<prev_version>-<new_version>` directory and
     put some files there with DBIx commands for the migration. For examples just
@@ -1209,13 +1161,9 @@ node_modules/jshint/bin/jshint path/to/javascript.js
 ## Profiling the web UI
 
 1.  Install NYTProf, under openSUSE Tumbleweed: `zypper in perl-Devel-NYTProf perl-Mojolicious-Plugin-NYTProf`
-
 2.  Put `profiling_enabled = 1` in `openqa.ini`.
-
 3.  Optionally import production data like described in the official contributors documentation.
-
 4.  Restart the web UI, browse some pages. Profiling is done in the background.
-
 5.  Access profiling data via `/nytprof` route.
 
 ### Note

@@ -8,11 +8,9 @@
   will not be listed in old tests. However, when opening the needle
   editor, a warning about the new needle will be shown and it can be
   selected as base.
-
 - If an existing needle is updated with a new image or different
   areas, the old test will display the new needle which might be
   confusing.
-
 - If a needle is deleted, old tests may display an error when viewing
   them in the web UI.
 
@@ -20,9 +18,7 @@
 
 - If you come across messages displaying `ERROR: 403 - Forbidden`, make
   sure that the correct API key is present in client.conf file.
-
 - If you are using a hostname other than `localhost`, pass **--host foo** to the script.
-
 - If you are using fake authentication method, and the message says also "api key expired"
   you can simply logout and log in again in the webUI and the expiration will be automatically
   updated
@@ -113,7 +109,6 @@ This is basically a checklist to go through in case the developer mode is broken
         your instance before the developer mode has been introduced, make sure that the Apache module
         `rewrite` is enabled (via `a2enmod rewrite`). Also be sure the vhost configuration looks
         like the one found in the openQA Git repository (especially the part for the reverse proxies).
-
     2.  Check whether `openqa-livehandler.service` is running. It is supposed to be run on
         the same machine as the web UI and should actually be started automatically as a dependency of
         `openqa-webui.service`.
@@ -129,7 +124,6 @@ This is basically a checklist to go through in case the developer mode is broken
         <a href="GettingStarted.md#configuration" class="cross-reference">the worker configuration</a>.
         The worker should then tell the web UI that it is reachable via
         `correcthost` resulting in a correct URL for the os-autoinst command server. Be sure the setting appears after the `[global]` section header.
-
     2.  It might also be the case that the firewall is blocking the HTTP/websocket connection on the required
         port. The required port is `QEMUPORT` plus 1. By default, `QEMUPORT` is set to `$worker_instance_number * 10 + 20002` by the worker. So to cover
         worker slots from 1 to 10 one would by default require the ports 20013, 20023, … and 20103.
