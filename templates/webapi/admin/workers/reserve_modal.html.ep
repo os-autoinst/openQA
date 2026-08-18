@@ -1,0 +1,38 @@
+<div class="modal fade" id="reserveModal" tabindex="-1" aria-labelledby="reserveModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="reserveModalLabel">Reserve Worker</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="reserveForm" onsubmit="submitReserve(event)">
+        <input type="hidden" id="reserveWorkerId">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="reserveWorkerName" class="form-label">Worker</label>
+            <input type="text" class="form-control" id="reserveWorkerName" readonly>
+          </div>
+          <div class="mb-3">
+            <label for="reserveComment" class="form-label">Comment (Required)</label>
+            <input type="text" class="form-control" id="reserveComment" required>
+          </div>
+          <div class="mb-3">
+            <label for="reserveDuration" class="form-label">Duration (e.g. 5h, 2d, 3600; 0 for indefinite)</label>
+            <input type="text" class="form-control" id="reserveDuration"
+                   data-default-duration="<%= $reservation_default_duration %>">
+          </div>
+          % if (is_admin) {
+            <div class="form-check mb-3">
+              <input class="form-check-input" type="checkbox" id="reserveForce" value="1">
+              <label class="form-check-label" for="reserveForce">Force (Admin override)</label>
+            </div>
+          % }
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Reserve</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

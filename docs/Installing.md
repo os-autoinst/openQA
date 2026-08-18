@@ -1540,7 +1540,7 @@ automatically every day. It is also possible to trigger the cleanup manually by 
   - asset_register asset_delete
 
 - Workers:
-  - worker_register command_enqueue
+  - worker_register worker_delete worker_reserve worker_release command_enqueue
 
 - Jobs:
   - iso_create iso_delete iso_cancel

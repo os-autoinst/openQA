@@ -3,13 +3,14 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Constants 'DEFAULT_WORKER_TIMEOUT';
-use OpenQA::Test::TimeLimit '18';
+use OpenQA::Test::TimeLimit '24';
 use OpenQA::Test::Case;
 use OpenQA::Test::Utils qw(assume_all_assets_exist embed_server_for_testing);
 use Date::Format 'time2str';
@@ -49,6 +50,8 @@ $workers->update({t_seen => $online_timestamp});
 my $offline_timestamp = time2str('%Y-%m-%d %H:%M:%S', time - DEFAULT_WORKER_TIMEOUT - 1, 'UTC');
 $workers->create({id => $online_worker_id, host => 'online_test', instance => 1, t_seen => $online_timestamp});
 $workers->create({id => $offline_worker_id, host => 'offline_test', instance => 1, t_seen => $offline_timestamp});
+
+sub delete_button_selector ($worker_id) { "tr#worker_$worker_id .action [post_delete_url]" }
 
 driver_missing unless my $driver = call_driver;
 
@@ -111,12 +114,16 @@ subtest 'worker overview' => sub {
     $driver->find_element_by_xpath("//select[\@id='workers_online']/option[1]")->click();
 
     # check delete link only shown on offline worker
-    is $driver->find_element('tr#worker_1 .action')->get_text(), '', 'localhost:1 do not show delete button';
-    is $driver->find_element('tr#worker_2 .action')->get_text(), '', 'remotehost:1 do not show delete button';
-    is $driver->find_element("tr#worker_$broken_worker_id .action")->get_text(), '', 'foo do not show delete button';
-    is $driver->find_element("tr#worker_$online_worker_id .action")->get_text(),
-      '', 'online_test do not show delete button';
-    is $driver->find_element("tr#worker_$offline_worker_id .action .btn")->is_displayed(),
+    my %not_deletable = (
+        'localhost:1' => 1,
+        'remotehost:1' => 2,
+        foo => $broken_worker_id,
+        online_test => $online_worker_id
+    );
+    is scalar @{$driver->find_elements(delete_button_selector($not_deletable{$_}), 'css')}, 0,
+      "$_ does not show delete button"
+      for sort keys %not_deletable;
+    is $driver->find_element(delete_button_selector($offline_worker_id))->is_displayed(),
       1, 'offline worker show delete button';
 
     # check worker 1
@@ -151,7 +158,7 @@ subtest 'worker overview' => sub {
 
 # test delete offline worker function
 subtest 'delete offline worker' => sub {
-    $driver->find_element("tr#worker_$offline_worker_id .btn")->click();
+    $driver->find_element(delete_button_selector($offline_worker_id))->click();
     my $e = wait_for_element(selector => 'div#flash-messages .alert span', description => 'delete message displayed');
     is $e->get_text(), 'Delete worker offline_test:1 successfully.', 'delete offline worker successfully';
     is scalar @{$driver->find_elements('table#workers tbody tr')}, 4, 'worker deleted not shown';
@@ -191,6 +198,25 @@ is_deeply
     '0', '1 hour ago',
   ],
   'the first job has been restarted';
+
+subtest 'reserve and release a worker' => sub {
+    $driver->get('/admin/workers/1');
+    $driver->find_element('#reservation button.btn-success')->click();
+    wait_for_element(selector => '#reserveModal.show', description => 'reservation modal is displayed');
+    is $driver->find_element('#reserveWorkerName')->get_value, 'localhost:1', 'modal is prefilled with the worker';
+    is $driver->find_element('#reserveDuration')->get_value, '5h', 'modal defaults to the configured duration';
+    $driver->find_element('#reserveComment')->send_keys('maintenance <script>');
+    $driver->find_element('#reserveForm button[type=submit]')->click();
+
+    wait_for_element(selector => '#reservation button.btn-danger', description => 'release button is displayed');
+    like $driver->find_element('#reservation')->get_text, qr/Reserved by: Demo.*Comment: maintenance <script>/s,
+      'reservation details are shown escaped';
+    is $workers->find(1)->reservation->{comment}, 'maintenance <script>', 'reservation is persisted';
+
+    $driver->find_element('#reservation button.btn-danger')->click();
+    wait_for_element(selector => '#reservation button.btn-success', description => 'reserve button is displayed again');
+    is $workers->find(1)->reservation, undef, 'reservation is released again';
+};
 
 kill_driver();
 done_testing();

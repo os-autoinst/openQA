@@ -38,9 +38,9 @@ description: |2
 options:
   - apibase=s       --API base, defaults to /api/v1
   - apikey=s        --API key. Use is discouraged due to risk of leaking
-                      credentials. Prefer config file or env variables.
+    credentials. Prefer config file or env variables.
   - apisecret=s     --API secret. Use is discouraged due to risk of leaking
-                      credentials. Prefer config file or env variables.
+    credentials. Prefer config file or env variables.
   - host=s          --Target host, defaults to http://localhost
   - help|h          --Get more information on a specific command
   - osd             --Set target host to http://openqa.suse.de
@@ -56,7 +56,6 @@ options:
   - verbose|v       --Print HTTP response headers
 
 subcommands:
-
   api:
     summary: Issue an arbitrary request to the API
     description: |2
@@ -167,6 +166,16 @@ subcommands:
       - asset-size-limit|l=i   --Asset size limit in bytes
       - with-thumbnails|t      --Download thumbnails as well
 
+  reservation:
+    summary: Manage worker reservations
+    description: |
+      Usage: openqa-cli reservation [OPTIONS] WORKER_ID
+    options:
+      - comment|c=s            --Comment describing the reason for reservation
+      - duration|d=s           --Duration of the reservation (e.g. 5h, 30m, 2d, 0 for indefinite)
+      - force|f                --Force reservation even if worker is already reserved
+      - release|r              --Release an existing reservation
+
   schedule:
     summary: Schedules a set of jobs (via "isos post" creating a schedule product)
     description: |
@@ -177,10 +186,8 @@ subcommands:
         monitor|m         --Wait until all jobs are done/cancelled and return
                             non-zero exit code if at least on job has not
                             passed/softfailed
-      - &follow
-        follow|f          --Use the newest clone of each monitored job
-      - &poll_intervall
-        poll-interval|i=i --Specifies the poll interval used with --monitor
+      - &follow follow|f          --Use the newest clone of each monitored job
+      - &poll_intervall poll-interval|i=i --Specifies the poll interval used with --monitor
 
   monitor:
     summary: Monitors a set of jobs
