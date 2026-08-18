@@ -1170,11 +1170,15 @@ consistent look, and make the UI menu available everywhere.
 
 For UI plugins there are two named authentication routes defined:
 
-1.  `ensure_operator`: under `/admin/`, only allows logged in users with `operator` privileges 2. `ensure_admin`: under `/admin/`, only allows logged in users with `admin` privileges
+1. `ensure_operator`: under `/admin/`, only allows logged in users with `operator` privileges
+2. `ensure_admin`: under `/admin/`, only allows logged in users with `admin` privileges
 
 And for HTTP API plugins there are four named authentication routes defined:
 
-1.  `api_public`: under `/api/v1/`, allows access to everyone 2. `api_ensure_user`: under `/api/v1/`, only allows authenticated users 3. `api_ensure_operator`: under `/api/v1/`, only allows authenticated users with `operator` privileges 4. `api_ensure_admin`: under `/api/v1/`, only allows authenticated nusers with `admin` privileges
+1. `api_public`: under `/api/v1/`, allows access to everyone
+2. `api_ensure_user`: under `/api/v1/`, only allows authenticated users
+3. `api_ensure_operator`: under `/api/v1/`, only allows authenticated users with `operator` privileges
+4. `api_ensure_admin`: under `/api/v1/`, only allows authenticated nusers with `admin` privileges
 
 To generate a minimal installable plugin with a CPAN distribution directory
 structure you can use the Mojolicious tools. It can be packaged just like any
