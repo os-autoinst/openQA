@@ -1614,7 +1614,8 @@ Once `select_console` returns you should be logged into a TTY as root.
 
 > **NOTE:**
 > for [os-autoinst-distri-opensuse](https://github.com/os-autoinst/os-autoinst-distri-opensuse)
-> tests instead of using `select_console('root-virtio-terminal')` directly is the > preferred way to use wrapper `select_serial_terminal()`, which handles all
+> tests instead of using `select_console('root-virtio-terminal')` directly is the
+> preferred way to use wrapper `select_serial_terminal()`, which handles all
 > backends:
 
 ```perl
@@ -2311,7 +2312,9 @@ script for further information and an example configuration.
 > read from the main repository in this example. This is the conservative
 > approach. To allow scheduling jobs based on the PR version of the scenario
 > definitions file one could use e.g.
-> `SCENARIO_DEFINITIONS_YAML_FILE=https://raw.githubusercontent.com/$GH_REPO/$GH_REF/.github/workflows/openqa.yml` > instead of `- uses: actions/checkout@v3` and > `--param-file SCENARIO_DEFINITIONS_YAML=scenario-definitions.yaml`.
+> `SCENARIO_DEFINITIONS_YAML_FILE=https://raw.githubusercontent.com/$GH_REPO/$GH_REF/.github/workflows/openqa.yml`
+> instead of `- uses: actions/checkout@v3` and
+> `--param-file SCENARIO_DEFINITIONS_YAML=scenario-definitions.yaml`.
 
 ### Use webhooks and status reporting APIs of GitHub
 

@@ -120,7 +120,8 @@ multi-machine worker instance.
 ##### Configure NAT with firewalld
 
 > **NOTE:**
-> `os-autoinst-setup-multi-machine` can set this up for you, but using > plain NFT instead of firewalld (which `os-autoinst-setup-multi-machine` can
+> `os-autoinst-setup-multi-machine` can set this up for you, but using
+> plain NFT instead of firewalld (which `os-autoinst-setup-multi-machine` can
 > setup as well) is recommended due to firewalld's suboptimal performance with
 > many tap interfaces present.
 
@@ -340,7 +341,9 @@ To list the rules which are effectively configured in the underlying netfilter
 netfilter is used.
 
 > **NOTE:**
-> Whether firewalld is using `nftables` or `iptables` is determined by the > setting `FirewallBackend` in `/etc/firewalld/firewalld.conf`. SuSEfirewall2 is > always using `iptables`.
+> Whether firewalld is using `nftables` or `iptables` is determined by the
+> setting `FirewallBackend` in `/etc/firewalld/firewalld.conf`. SuSEfirewall2 is
+> always using `iptables`.
 
 ```sh
 nft list tables           # list all tables
