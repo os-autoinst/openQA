@@ -365,9 +365,15 @@ subtest 'worker reservation API' => sub {
       ->status_is(400, 'reserve attempt with an unparsable duration is refused with 400')
       ->json_like('/error' => qr/Invalid duration format/);
 
-    $t->post_ok($reservation_url, form => {comment => 'op reservation', duration => '2h'})
+    $t->post_ok($reservation_url,
+        form => {comment => 'op reservation', duration => '2h', worker_class => 'invalid tag'})
+      ->status_is(400, 'reserve attempt with invalid worker_class is refused with 400')
+      ->json_like('/error' => qr/Invalid specific worker class/);
+
+    $t->post_ok($reservation_url, form => {comment => 'op reservation', duration => '2h', worker_class => 'poo123'})
       ->status_is(200, 'reserve attempt by operator users is allowed with 200')
-      ->json_is('/reservation/comment' => 'op reservation')->json_is('/reservation/user' => $operator->username);
+      ->json_is('/reservation/comment' => 'op reservation')->json_is('/reservation/user' => $operator->username)
+      ->json_is('/reservation/worker_class' => 'poo123');
     is_deeply OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'worker_reserve'),
       {
         id => 2,
@@ -375,8 +381,17 @@ subtest 'worker reservation API' => sub {
         user => $operator->username,
         comment => 'op reservation',
         expires => $worker->reservation->{t_expires},
+        worker_class => 'poo123',
       },
-      'reservation is logged in the audit table with the expected fields';
+      'reservation is logged in the audit table with the expected fields including worker_class';
+
+    $t->get_ok('/api/v1/workers/2')->status_is(200)
+      ->json_is('/worker/reservation/worker_class' => 'poo123', 'worker_class is exposed in subsequent GET');
+
+    $t->delete_ok($reservation_url)->status_is(200);
+
+    $t->post_ok($reservation_url, form => {comment => 'op reservation', duration => '2h'})->status_is(200)
+      ->json_hasnt('/reservation/worker_class', 'reservation without tag reports worker_class as absent');
 
     $t->post_ok($reservation_url, form => {comment => 'another', duration => '1h'})
       ->status_is(409, 'reserve attempt on an already reserved worker is refused with 409');

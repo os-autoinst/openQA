@@ -54,7 +54,7 @@ function loadWorkerTable() {
   });
 }
 
-function requestWorkerChange(url, options, failureMessage, onSuccess) {
+function requestWorkerChange(url, options, failureMessage, onSuccess, onError = null) {
   fetchWithCSRF(url, options)
     .then(response => response.json())
     .then(response => {
@@ -63,6 +63,7 @@ function requestWorkerChange(url, options, failureMessage, onSuccess) {
     })
     .catch(error => {
       addFlash('danger', failureMessage + error);
+      if (onError) onError(error);
     });
 }
 
@@ -75,6 +76,8 @@ function openReserveModal(reserveBtn) {
   $('#reserveWorkerId').val(reserveBtn.dataset.workerId);
   $('#reserveWorkerName').val(reserveBtn.dataset.workerName);
   $('#reserveComment').val('');
+  $('#reserveWorkerClass').val('');
+  $('#reserveModalFlash').empty();
   duration.val(duration.data('default-duration'));
   $('#reserveForce').prop('checked', false);
   new bootstrap.Modal(document.getElementById('reserveModal')).show();
@@ -85,11 +88,25 @@ function submitReserve(event) {
   const body = new URLSearchParams({
     comment: $('#reserveComment').val(),
     duration: $('#reserveDuration').val(),
+    worker_class: $('#reserveWorkerClass').val(),
     force: $('#reserveForce').is(':checked') ? 1 : 0
   });
   const options = {method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body};
-  requestWorkerChange(reservationUrl($('#reserveWorkerId').val()), options, "The worker couldn't be reserved: ", () =>
-    window.location.reload()
+
+  // Clear any existing flash messages in the modal
+  $('#reserveModalFlash').empty();
+
+  requestWorkerChange(
+    reservationUrl($('#reserveWorkerId').val()),
+    options,
+    "The worker couldn't be reserved: ",
+    () => window.location.reload(),
+    error => {
+      // Clear global flash message added by requestWorkerChange
+      $('#flash-messages').empty();
+      // Show error within the modal instead
+      addFlash('danger', "The worker couldn't be reserved: " + error, document.getElementById('reserveModalFlash'));
+    }
   );
 }
 

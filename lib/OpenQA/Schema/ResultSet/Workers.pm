@@ -4,26 +4,32 @@
 package OpenQA::Schema::ResultSet::Workers;
 use Mojo::Base 'DBIx::Class::ResultSet', -signatures;
 
-use OpenQA::WorkerReservation qw(RESERVATION_PROPERTIES reservation_active);
+use OpenQA::WorkerReservation qw(RESERVATION_PROPERTIES reservation_active reservation_info);
 
-# maps the id of every worker holding a non-expired reservation to 1, using a single query so that
-# callers filtering many workers do not have to query the properties of each of them individually
-sub reserved_worker_ids ($self) {
+# maps the id of every worker holding a non-expired reservation to a hash with reservation properties,
+# using a single query so that callers filtering many workers do not have to query the properties of each of them individually
+sub active_reservations ($self) {
     my $properties = $self->result_source->schema->resultset('WorkerProperties')
       ->search({key => {-in => [RESERVATION_PROPERTIES]}}, {columns => [qw(worker_id key value)]});
-    my (%owner, %expires);
+    my %worker_props;
     while (my $property = $properties->next) {
-        my $key = $property->key;
-        $owner{$property->worker_id} = $property->value if $key eq 'RESERVED_BY_ID';
-        $expires{$property->worker_id} = $property->value if $key eq 'RESERVED_T_EXPIRES';
+        $worker_props{$property->worker_id}->{$property->key} = $property->value;
     }
-    return {map { $_ => 1 } grep { reservation_active($owner{$_}, $expires{$_}) } keys %owner};
+
+    my %reservations;
+    for my $worker_id (keys %worker_props) {
+        my $props = $worker_props{$worker_id};
+        if (reservation_active($props->{RESERVED_BY_ID}, $props->{RESERVED_T_EXPIRES})) {
+            $reservations{$worker_id} = reservation_info($props);
+        }
+    }
+    return \%reservations;
 }
 
 sub stats ($self) {
     my $total = $self->count;
     my @online = grep { !$_->dead } $self->all;
-    my $reserved = $self->reserved_worker_ids;
+    my $reserved = $self->active_reservations;
     my $is_free = sub ($worker) { !$worker->job_id && !defined $worker->error };
 
     return {

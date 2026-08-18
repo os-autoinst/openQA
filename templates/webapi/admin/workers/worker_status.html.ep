@@ -1,5 +1,6 @@
 % my $reservation = $worker->{reservation};
 % my $reservation_details = $reservation ? '<br>Reserved by: ' . escape_html($reservation->{user})
+%     . ($reservation->{worker_class} ? '<br>Class: ' . escape_html($reservation->{worker_class}) : '')
 %     . '<br>Comment: ' . escape_html($reservation->{comment})
 %     . '<br>Expires: ' . ($reservation->{t_expires} ? escape_html($reservation->{t_expires}) : 'never') : '';
 % if($worker->{status} eq 'running') {
@@ -12,7 +13,7 @@
         )
     %>
 % } elsif ($worker->{status} eq 'reserved') {
-    Reserved
+    Reserved <%= $reservation->{worker_class} ? '(class ' . escape_html($reservation->{worker_class}) . ')' : '' %>
     <%= help_popover('Worker status' => $reservation_details =~ s/^<br>//r) %>
 % } elsif ($worker->{status} eq 'dead' && $worker->{job}) {
     Dead

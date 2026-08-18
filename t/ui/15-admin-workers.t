@@ -10,7 +10,7 @@ use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Constants 'DEFAULT_WORKER_TIMEOUT';
-use OpenQA::Test::TimeLimit '24';
+use OpenQA::Test::TimeLimit '40';
 use OpenQA::Test::Case;
 use OpenQA::Test::Utils qw(assume_all_assets_exist embed_server_for_testing);
 use Date::Format 'time2str';
@@ -205,11 +205,20 @@ subtest 'reserve and release a worker' => sub {
     wait_for_element(selector => '#reserveModal.show', description => 'reservation modal is displayed');
     is $driver->find_element('#reserveWorkerName')->get_value, 'localhost:1', 'modal is prefilled with the worker';
     is $driver->find_element('#reserveDuration')->get_value, '5h', 'modal defaults to the configured duration';
+
+    $driver->find_element('#reserveWorkerClass')->send_keys('invalid,tag');
     $driver->find_element('#reserveComment')->send_keys('maintenance <script>');
     $driver->find_element('#reserveForm button[type=submit]')->click();
 
+    is $driver->find_element('#reserveWorkerClass')->get_value, 'invalid,tag', 'value is invalid,tag';
+
+    $driver->find_element('#reserveWorkerClass')->clear();
+    $driver->find_element('#reserveWorkerClass')->send_keys('poo123');
+    $driver->find_element('#reserveForm button[type=submit]')->click();
+
     wait_for_element(selector => '#reservation button.btn-danger', description => 'release button is displayed');
-    like $driver->find_element('#reservation')->get_text, qr/Reserved by: Demo.*Comment: maintenance <script>/s,
+    like $driver->find_element('#reservation')->get_text,
+      qr/Reserved by: Demo.*Specific class: poo123.*Comment: maintenance <script>/s,
       'reservation details are shown escaped';
     is $workers->find(1)->reservation->{comment}, 'maintenance <script>', 'reservation is persisted';
 

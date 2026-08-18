@@ -30,6 +30,9 @@
         <div class="card-body" id="reservation">
             % if (my $reservation = $worker->{reservation}) {
                 <p><strong>Reserved by:</strong> <%= $reservation->{user} %></p>
+                % if ($reservation->{worker_class}) {
+                <p><strong>Specific class:</strong> <%= $reservation->{worker_class} %></p>
+                % }
                 <p><strong>Comment:</strong> <%= $reservation->{comment} %></p>
                 <p><strong>Reserved at:</strong> <%= $reservation->{t_created} %></p>
                 <p><strong>Expires:</strong> <%= $reservation->{t_expires} // 'Never (Indefinite)' %></p>

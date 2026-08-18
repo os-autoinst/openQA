@@ -14,7 +14,7 @@ use OpenQA::Constants qw(WORKER_API_COMMANDS DB_TIMESTAMP_ACCURACY VNC_PORT);
 use OpenQA::Jobs::Constants;
 use OpenQA::Utils 'parse_duration';
 use OpenQA::WorkerReservation
-  qw(RESERVATION_PROPERTIES RESERVATION_TIMESTAMP_FORMAT reservation_active reservation_error);
+  qw(RESERVATION_PROPERTIES RESERVATION_TIMESTAMP_FORMAT reservation_active reservation_error reservation_info reservation_class_valid);
 use Mojo::JSON qw(encode_json decode_json);
 use List::Util qw(any);
 use Time::Seconds;
@@ -133,17 +133,10 @@ sub _username_for ($self, $user_id) {
 
 sub _reserved_by_name ($self) { $self->_username_for($self->_reservation_properties->{RESERVED_BY_ID}) }
 
-sub _iso_timestamp ($epoch) {
-    $epoch ? DateTime->from_epoch(epoch => $epoch, time_zone => 'UTC')->strftime(RESERVATION_TIMESTAMP_FORMAT) : undef;
-}
-
 sub _reservation_info ($self, $properties) {
-    {
-        user => $self->_username_for($properties->{RESERVED_BY_ID}),
-        comment => $properties->{RESERVED_COMMENT},
-        t_created => _iso_timestamp($properties->{RESERVED_T_CREATED}),
-        t_expires => _iso_timestamp($properties->{RESERVED_T_EXPIRES}),
-    };
+    my $info = reservation_info($properties);
+    $info->{user} = $self->_username_for(delete $info->{user_id});
+    return $info;
 }
 
 # the active reservation in the form exposed via the API, undef if the worker is not reserved;
@@ -167,13 +160,16 @@ sub _reservation_duration ($duration, $is_admin) {
     return $seconds;
 }
 
-sub reserve ($self, $user, $comment = undef, $duration = undef, $force = 0) {
+sub reserve ($self, $user, $comment = undef, $duration = undef, $force = 0, $worker_class = undef) {
     my $is_admin = $user->is_admin;
     die reservation_error(forbidden => 'Insufficient permissions to reserve a worker')
       unless $is_admin || $user->is_operator;
     die reservation_error(invalid => 'A comment is required for worker reservation')
       if OpenQA::App->singleton->config->{worker_reservation}->{comment_required}
       && (!defined $comment || $comment =~ /^\s*$/);
+    die reservation_error(invalid => "Invalid specific worker class '$worker_class'")
+      if defined $worker_class && length $worker_class && !reservation_class_valid($worker_class);
+    $worker_class = undef if defined $worker_class && $worker_class eq '';
     my $seconds = _reservation_duration($duration, $is_admin);
 
     # the conflict check and all property writes must be atomic, a partially written reservation
@@ -187,6 +183,7 @@ sub reserve ($self, $user, $comment = undef, $duration = undef, $force = 0) {
             $self->set_property(RESERVED_COMMENT => $comment);
             $self->set_property(RESERVED_T_CREATED => $now);
             $self->set_property(RESERVED_T_EXPIRES => $seconds == 0 ? 0 : $now + $seconds);
+            $self->set_property(RESERVED_WORKER_CLASS => $worker_class);
         });
     return $self;
 }
@@ -220,6 +217,17 @@ sub check_class ($self, $class) {
         }
     }
     return defined $self->{_worker_class_hash}->{$class};
+}
+
+sub accepts_classes ($self, $needed, $reservation_class = undef) {
+    if (defined $reservation_class) {
+        return 0 unless any { $_ eq $reservation_class } @$needed;
+    }
+    for my $c (@$needed) {
+        next if defined $reservation_class && $c eq $reservation_class;
+        return 0 unless $self->check_class($c);
+    }
+    return 1;
 }
 
 sub currentstep ($self) {
