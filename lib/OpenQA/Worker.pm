@@ -885,6 +885,28 @@ sub _check_system_utilization (
     return undef;
 }
 
+sub _calculate_load_delay (
+    $self,
+    $threshold = $self->settings->global_settings->{CRITICAL_LOAD_AVG_THRESHOLD},
+    $load = load_avg())
+{
+    return 0 if !$threshold || @$load < 3;
+    my $global_settings = $self->settings->global_settings;
+    my $low_limit = $global_settings->{WORKER_LOAD_LOW_LIMIT};
+    if ($load->[0] >= $low_limit && $load->[0] < $threshold) {
+        my $factor = $global_settings->{WORKER_LOAD_FACTOR};
+        my $jitter = $global_settings->{WORKER_LOAD_JITTER};
+        my $delay = $factor * $load->[0] + ($jitter > 0 ? rand $jitter : 0);
+        if ($delay > 0) {
+            my $format
+              = 'Load is %.2f (between %d and %d). Delaying job acceptance for %.2f seconds to prevent load storms.';
+            log_debug sprintf $format, $load->[0], $low_limit, $threshold, $delay;
+            return $delay;
+        }
+    }
+    return 0;
+}
+
 sub _setup_pool_directory ($self) {
     # skip if we have already locked the pool directory
     return undef if defined $self->{_pool_directory_lock_fd};
