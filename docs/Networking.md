@@ -114,8 +114,8 @@ multi-machine worker instance.
 > The bridge device will also call a script at
 > `/etc/wicked/scripts/gre_tunnel_preup.sh` on _PRE_UP_.
 > This script needs **manual** touch if you want to set up multiple
-> multi-machine worker hosts. Refer to the [GRE tunnels](#gre-tunnels) section below
-> for further information.
+> multi-machine worker hosts. Refer to the [GRE tunnels](#gre-tunnels) section
+> below for further information.
 
 ##### Configure NAT with firewalld
 
@@ -328,8 +328,8 @@ Bridge "br0"
 ```
 
 > **NOTE:**
-> Notice the tag numbers are assigned to tap1 and tap2. They should have
-> the same number.
+> Notice the tag numbers are assigned to tap1 and tap2. They should have the
+> same number.
 
 > **NOTE:**
 > If the balance of the tap devices is wrong in
@@ -392,7 +392,9 @@ systemctl enable --now openvswitch
 | B    | 192.0.2.2/24    | 192.168.43.1/24 | 192.0.2.1 |
 
 > **NOTE:**
-> instead of having two /24 networks, it is also possible to assign addresses from one bigger network (which have the benefit of not needing explicit route assignment).
+> instead of having two /24 networks, it is also possible to assign addresses
+> from one bigger network (which have the benefit of not needing explicit route
+> assignment).
 
 #### Simple scenario
 

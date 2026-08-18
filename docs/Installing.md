@@ -1665,8 +1665,8 @@ need to be stopped during the (short) migration.
     ```
 
     > **IMPORTANT:**
-    > There shouldn't be a diff in the locale settings, otherwise
-    > `pg_upgrade` will complain.
+    > There shouldn't be a diff in the locale settings, otherwise `pg_upgrade`
+    > will complain.
 
 <!-- -->
 
@@ -1697,8 +1697,8 @@ need to be stopped during the (short) migration.
     > for details.
 
     > **NOTE:**
-    > This step only takes a few seconds for multiple production DBs because the `--link`
-    > option is used.
+    > This step only takes a few seconds for multiple production DBs because the
+    > `--link` option is used.
 
 <!-- -->
 
