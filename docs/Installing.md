@@ -1614,7 +1614,7 @@ need to be stopped during the (short) migration.
 1.  Locate the `data`-directory. Its path is configured in `/etc/sysconfig/postgresql` and should be `/var/lib/pgsql/data` by default. The
     paths in the next steps assume the default.
 
-2.  To ease migrations, it is recommended making the `data`-directory a symlink
+2.  To ease migrations, it is recommended to make the `data`-directory a symlink
     to a versioned directory. So the file system layout would look for example like
     this:
 

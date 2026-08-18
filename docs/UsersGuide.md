@@ -6,7 +6,7 @@
 
 This document provides additional information for use of the web interface or
 the REST API as well as administration information.
-For administrators it is recommend to have read the
+For administrators it is recommended to have read the
 [Installation Guide](Installing.md#installing) first to understand the structure
 of components as well as the configuration of an installed instance.
 
@@ -730,8 +730,8 @@ Jenkins.
 
 > **NOTE:**
 > For an approach to add bug references based on a search expression found
-> in the job reason for incomplete jobs or job logs consider to
-> [Enable custom hook scripts on "job done" based on result](Installing.md#enable_custom_hook_scripts_on_job_done_based_on_result).
+> in the job reason for incomplete jobs or job logs consider
+> [Enabling custom hook scripts on "job done" based on result](Installing.md#enable_custom_hook_scripts_on_job_done_based_on_result).
 
 > **NOTE:**
 > To keep the carry-over of independent submissions (e.g. pull-requests) apart
@@ -1563,7 +1563,7 @@ administrator menu in the web UI. Only one cleanup job can run at the same time
 unless `concurrent` is set to `1` in the `[cleanup]` settings of
 [the web UI configuration](GettingStarted.md#webui-configuration). Many other
 cleanup-related settings can be found within the web UI configuration as well,
-e.g. the `[…_limits]` sections contain various tweaks and allow to change certain
+e.g. the `[…_limits]` sections contain various tweaks and allow changing certain
 defaults. Check out the sub section
 [Timers and triggers](UsersGuide.md#timers-and-triggers) to learn more
 about how those jobs are triggered.
