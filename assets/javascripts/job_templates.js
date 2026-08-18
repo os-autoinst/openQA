@@ -284,28 +284,8 @@ function submitProperties(form) {
 
   return false;
 }
-window.setupJobTemplates = setupJobTemplates;
-window.loadJobTemplates = loadJobTemplates;
-window.highlightChosen = highlightChosen;
-window.templateRemoved = templateRemoved;
-window.addFailed = addFailed;
-window.addSucceeded = addSucceeded;
-window.finalizeTest = finalizeTest;
-window.formatPriority = formatPriority;
-window.templateAdded = templateAdded;
-window.priorityChanged = priorityChanged;
-window.chosenChanged = chosenChanged;
-window.testChanged = testChanged;
-window.findPresentTests = findPresentTests;
-window.filterTestSelection = filterTestSelection;
-window.makePrioCell = makePrioCell;
-window.buildMediumGroup = buildMediumGroup;
-window.addArchSpacer = addArchSpacer;
-window.findHeaderWithAllArchitectures = findHeaderWithAllArchitectures;
-window.fillEmptySpace = fillEmptySpace;
-window.alignCols = alignCols;
 window.toggleEdit = toggleEdit;
-window.toggleTemplateEditor = toggleTemplateEditor;
+window.setupTemplateEditor = setupTemplateEditor;
 window.prepareTemplateEditor = prepareTemplateEditor;
 window.submitTemplateEditor = submitTemplateEditor;
 window.showSubmitResults = showSubmitResults;
