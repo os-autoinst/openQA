@@ -241,6 +241,7 @@ padding: 20px;
       <li><a href="#get_test_data" id="toc-get_test_data">get_test_data</a></li>
       <li><a href="#validate_script_output" id="toc-validate_script_output">validate_script_output</a></li>
       <li><a href="#become_root" id="toc-become_root">become_root</a></li>
+      <li><a href="#become_user" id="toc-become_user">become_user</a></li>
       <li><a href="#ensure_installed" id="toc-ensure_installed">ensure_installed</a></li>
       <li><a href="#hashed_string" id="toc-hashed_string">hashed_string</a></li>
       </ul></li>
@@ -700,6 +701,14 @@ validate_script_output &quot;cat /etc/hosts&quot;, sub { $_ !~ m/987.*somehost/ 
 <h2 id="become_root">become_root</h2>
 <pre><code>become_root;</code></pre>
 <p>Open a root shell.</p>
+<p><em>The implementation is distribution specific and not always
+available.</em></p>
+<h2 id="become_user">become_user</h2>
+<pre><code>become_user($user);</code></pre>
+<p>Switch the current shell session&#39;s user to <code>$user</code> (e.g.
+via <code>su - $user</code>) and properly handle openQA serial marker
+synchronization hook invalidation so subsequent commands run cleanly
+under the new user.</p>
 <p><em>The implementation is distribution specific and not always
 available.</em></p>
 <h2 id="ensure_installed">ensure_installed</h2>
