@@ -1,4 +1,5 @@
 <a id="pitfalls"></a>
+
 # Pitfalls
 
 ## Needle editing
@@ -63,6 +64,7 @@ settings. Alternatively, you may disable optimizing images altogether via the
 setting `OPTIMIZE_IMAGES=0`.
 
 <a id="db-migration"></a>
+
 ## DB migration from SQlite to postgreSQL
 
 As a first step to start using postgreSQL, please, configure postgreSQL database
@@ -90,6 +92,7 @@ In case you need to migrate job groups, test suites, use openqa-dump-templates a
 openqa-load-templates scripts accordingly.
 
 <a id="debugdevelmode"></a>
+
 ## Steps to debug developer mode setup
 
 This is basically a checklist to go through in case the developer mode is broken in your setup

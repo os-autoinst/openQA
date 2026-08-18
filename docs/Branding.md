@@ -1,4 +1,5 @@
 <a id="branding"></a>
+
 # Branding
 
 You can alter the appearance of the openQA web UI to some extent through
@@ -15,9 +16,6 @@ You can copy the files from `branding/openSUSE` or `branding/plain` to
 use as starting points, and adjust as necessary.
 
 ## Web UI template
-
-
-
 
 openQA uses the [Mojolicious](https://mojolicious.org/) framework's templating
 system; the branding files are included into the openQA templates at

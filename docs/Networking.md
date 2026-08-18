@@ -1,4 +1,5 @@
 <a id="networking"></a>
+
 # Networking
 
 For tests using the QEMU backend the networking type used is controlled by the
@@ -16,9 +17,8 @@ be ensured externally where needed as means for machines to be able to access
 each other.
 
 <a id="qemu-user-networking"></a>
+
 ## QEMU User Networking
-
-
 
 With QEMU [user networking](http://wiki.qemu.org/Documentation/Networking#User_Networking_.28SLIRP.29) each jobs gets its own isolated network with
 TCP and UDP routed to the outside. DHCP is provided by QEMU. The MAC address of
@@ -26,6 +26,7 @@ the machine can be controlled with the `NICMAC` variable. If not set, it is
 `52:54:00:12:34:56`.
 
 <a id="tap-based-network"></a>
+
 ## TAP Based Network
 
 os-autoinst can connect QEMU to TAP devices of the host system to
@@ -61,12 +62,12 @@ versions) for NAT and _wicked_ or _NetworkManager_ as network manager. Keep in
 mind that a firewall is not strictly necessary for operation. The operation
 without firewall is not covered in all necessary details in this documentation.
 
-> **NOTE:** 
+> **NOTE:**
 > Another way to setup the environment with _iptables_ and _firewalld_ is
 > described on the
 > [Fedora wiki](https://fedoraproject.org/wiki/OpenQA_advanced_network_guide).
 
-> **NOTE:** 
+> **NOTE:**
 > Alternatively
 > [salt-states-openqa](https://github.com/os-autoinst/salt-states-openqa) contains
 > necessities to establish such a setup and configure it for all workers with the
@@ -87,7 +88,7 @@ instances=30 bash -x $(which os-autoinst-setup-multi-machine)
 The script will install and configure Open vSwitch as well as
 a service called _os-autoinst-openvswitch.service_.
 
-> **NOTE:** 
+> **NOTE:**
 > _os-autoinst-openvswitch.service_ is a support service that sets the
 > vlan number of Open vSwitch ports based on `NICVLAN` variable - this separates the groups of tests from each other. The `NICVLAN` variable is dynamically
 > assigned by the openQA scheduler.
@@ -109,7 +110,7 @@ masquerading rules.
 The script will add the bridge device and the tap devices for every
 multi-machine worker instance.
 
-> **NOTE:** 
+> **NOTE:**
 > The bridge device will also call a script at
 > `/etc/wicked/scripts/gre_tunnel_preup.sh` on _PRE_UP_.
 > This script needs **manual** touch if you want to set up multiple
@@ -118,7 +119,7 @@ multi-machine worker instance.
 
 ##### Configure NAT with firewalld
 
-> **NOTE:** 
+> **NOTE:**
 > `os-autoinst-setup-multi-machine` can set this up for you, but using > plain NFT instead of firewalld (which `os-autoinst-setup-multi-machine` can
 > setup as well) is recommended due to firewalld's suboptimal performance with
 > many tap interfaces present.
@@ -136,6 +137,7 @@ firewall-cmd --list-all-zones
 #### What is left to do after running os-autoinst-setup-multi-machine
 
 <a id="gre-tunnels"></a>
+
 ##### GRE tunnels
 
 By default all multi-machine workers have to be on a single physical machine.
@@ -170,7 +172,7 @@ PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh"
 
 Ensure to make gre_tunnel_preup.sh executable.
 
-> **NOTE:** 
+> **NOTE:**
 > When using GRE tunnels keep in mind that virtual machines inside the ovs
 > bridges have to use MTU=1458 for their physical interfaces (eth0, eth1). If
 > you are using support_server/setup.pm the MTU will be set automatically to
@@ -187,7 +189,7 @@ Allow worker instances to run multi-machine jobs by modifying
 WORKER_CLASS = qemu_x86_64,tap
 ```
 
-> **NOTE:** 
+> **NOTE:**
 > The number of tap devices should correspond to the number of the running
 > worker instances. For example, if you have set up 3 worker instances, the same
 > number of tap devices should be configured.
@@ -242,14 +244,14 @@ assign a unique MAC address (e.g. by adjusting the last two figures in the
 example; this will not conflict with MAC addresses used by os-autoinst) and use
 a tap device not used at the same time by a SUT-VM.
 
-> **NOTE:** 
+> **NOTE:**
 > Different from the qemu user mode network setup there is no DHCP or
 > router advertisement on the multi machine network. IP addresses, routes and DNS
 > needs to be set up by test scripts. By default IP ranges are similar to the
 > ones used by qemu usermode networking - except for the IPv6 default route which
 > is via `fec0::2` for MM networks instead of `fe80::2` for usermode networks.
 
-> **NOTE:** 
+> **NOTE:**
 > There is no default/builtin DNS server on MM networks - if you need DNS,
 > use an upstream dns server on the local network of the worker host or the internet.
 
@@ -324,11 +326,11 @@ Bridge "br0"
   ovs_version: "2.11.1"
 ```
 
-> **NOTE:** 
+> **NOTE:**
 > Notice the tag numbers are assigned to tap1 and tap2. They should have
 > the same number.
 
-> **NOTE:** 
+> **NOTE:**
 > If the balance of the tap devices is wrong in
 > [the worker configuration](GettingStarted.md#worker-configuration), the tag
 > cannot be assigned and the communication will be broken.
@@ -337,7 +339,7 @@ To list the rules which are effectively configured in the underlying netfilter
 (`nftables` or `iptables`) use one of the following commands depending on which
 netfilter is used.
 
-> **NOTE:** 
+> **NOTE:**
 > Whether firewalld is using `nftables` or `iptables` is determined by the > setting `FirewallBackend` in `/etc/firewalld/firewalld.conf`. SuSEfirewall2 is > always using `iptables`.
 
 ```sh
@@ -363,7 +365,7 @@ Check the flow of packets over the network:
 As long as the SUT has access to external network, there should be a non-zero
 packet count in the forward chain between the br1 and external interface.
 
-> **NOTE:** 
+> **NOTE:**
 > To list the package count when `nftables` is used one needed to use
 > [counters](https://wiki.nftables.org/wiki-nftables/index.php/Counters) (which can
 > be [added to existing rules](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/configuring_and_managing_networking/getting-started-with-nftables_configuring-and-managing-networking#adding-a-counter-to-an-existing-rule_debugging-nftables-rules)).
@@ -386,7 +388,7 @@ systemctl enable --now openvswitch
 | A    | 192.0.2.1/24    | 192.168.42.1/24 | 192.0.2.2 |
 | B    | 192.0.2.2/24    | 192.168.43.1/24 | 192.0.2.1 |
 
-> **NOTE:** 
+> **NOTE:**
 > instead of having two /24 networks, it is also possible to assign addresses from one bigger network (which have the benefit of not needing explicit route assignment).
 
 #### Simple scenario

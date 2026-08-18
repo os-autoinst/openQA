@@ -1,4 +1,5 @@
 <a id="usersguide"></a>
+
 # Users Guide
 
 ## Introduction
@@ -100,6 +101,7 @@ worker' connected that can fulfill those specifications.
     emulated USB stick.
 
 <a id="medium_types_products"></a>
+
 ### Medium Types (products)
 
 A medium type (product) in openQA is a simple description without any concrete
@@ -123,16 +125,17 @@ Some example variables used by openSUSE are:
 - `RESCUECD` is set to 1 for rescue CD images.
 
 #### Using Wildcards in Medium Versions
+
 You can use the `*` character within a medium version to enable a fallback
 lookup using globbing. This is particularly helpful for the following scenarios:
 
-- *Consolidating generic medium types:* Instead of creating a unique medium
+- _Consolidating generic medium types:_ Instead of creating a unique medium
   type for every single version, you can use `*` as a catch-all version.
-    - Tip: Avoid defining a concrete version (e.g., `16.1`) and a wildcard
-      version (`*`) within one schedule definition unless you have matching job
-      templates for both, as this can trigger a scheduling error
-      (`no templates found for product...`).
-- *Handling isolated tests for individual submissions (e.g. pull-requests):*
+  - Tip: Avoid defining a concrete version (e.g., `16.1`) and a wildcard
+    version (`*`) within one schedule definition unless you have matching job
+    templates for both, as this can trigger a scheduling error
+    (`no templates found for product...`).
+- _Handling isolated tests for individual submissions (e.g. pull-requests):_
   When testing such submissions, schedule the products with e.g.,
   `VERSION=16.1:PR-1234`. This will avoid cluttering the "Next & Previous" table
   and prevent unintended carry-overs. Then specify a partial-match as the medium
@@ -145,6 +148,7 @@ lookup using globbing. This is particularly helpful for the following scenarios:
   [history isolation keys](#history-isolation-keys) mechanism instead.
 
 <a id="history-isolation-keys"></a>
+
 #### Separating the history of independent submissions
 
 Features that operate on the history of a scenario (bug reference
@@ -355,8 +359,6 @@ Test suites can be described using API commands or the admin table for any opera
 <figcaption>Entering a test suite description in the admin table using the web interface:</figcaption>
 </figure>
 
-
-
 If a description is defined, the name of the test suite on the tests overview page shows up as a link. Clicking the link will show the description in a popup. The same syntax as for comments can be used, that is Markdown with custom extensions such as shortened links to ticket systems.
 
 <a id="test_suite_description_shown"></a>
@@ -365,8 +367,6 @@ If a description is defined, the name of the test suite on the tests overview pa
 <img src="images/test_suite_description_shown.png" alt="test suite description popup" />
 <figcaption>popover in test overview with content as configured in the test suites database:</figcaption>
 </figure>
-
-
 
 ### /tests/overview - Customizable test overview page
 
@@ -383,8 +383,6 @@ see [the following example](#overview_multiple_groups).
 <img src="images/tests-overview_multiple_groups.png" alt="test overview page showing multiple groups" />
 <figcaption>The openQA test overview page showing multiple groups at once. The URL query parameters specify the groupid parameter two times to resolve both the "opensuse" and "opensuse test" group.</figcaption>
 </figure>
-
-
 
 Specifying multiple groups with no build will yield the result for the latest
 build of each group. This can be useful to have a static URL for bookmarking.
@@ -439,8 +437,6 @@ carryover.
 <figcaption>Bug icon for job with bug reference on test result overview</figcaption>
 </figure>
 
-
-
 All bug references are stored within the internal database of openQA.
 The status can be updated using the `/bugs` API route with external tools.
 One can set the bug status this way which will then be shown in the web UI,
@@ -452,8 +448,6 @@ see the figure below.
 <img src="images/labels_closed_tickets.png" alt="Example for visualization of closed issues" />
 <figcaption>Example for visualization of closed issues: The upside down icons in red visualize closed issues.</figcaption>
 </figure>
-
-
 
 > **NOTE:**
 > Also GitHub pull requests and issues can be linked. Use the generic format
@@ -474,8 +468,6 @@ will be shown next to it in various places as shown in the figure below.
 <img src="images/label_icon.png" alt="Label icon on test result overview" />
 <figcaption>Label icon for job with a label on test result overview</figcaption>
 </figure>
-
-
 
 > **NOTE:**
 > A label containing a bug reference will still be treated as a label,
@@ -749,6 +741,7 @@ autologin-timeout=0
 ```
 
 <a id="carry-over"></a>
+
 ### Carry over of bug references from previous jobs in same scenario
 
 Many test failures within the same scenario might be due to the same reason.
@@ -820,17 +813,17 @@ In case the developer mode in not working on your instance, try to follow the
 1.  In case a new needles should be created, add the corresponding `assert_screen` calls
     to your test.
 
-2.  Start the test with the `assert_screen` calls which are supposed to fail. 3.  Select "`assert_screen` timeout" under "Pause on screen mismatch" and confirm.
+2.  Start the test with the `assert_screen` calls which are supposed to fail. 3. Select "`assert_screen` timeout" under "Pause on screen mismatch" and confirm.
 
-4.  Wait until the test has paused. There is a button to skip the current timeout to speed
+3.  Wait until the test has paused. There is a button to skip the current timeout to speed
     this up.
 
-5.  A button for accessing the needle editor should occur. It may take a few seconds till
+4.  A button for accessing the needle editor should occur. It may take a few seconds till
     it occurs because the screenshots created so far need to be uploaded from the worker to
     the web UI. Of course it is also possible to go back to the "Details" tab to create a new
     needle from any previous screenshot/match available.
 
-6.  After creating the new needle, click the resume button to test whether it worked.
+5.  After creating the new needle, click the resume button to test whether it worked.
 
 Steps 4. to 6. can be repeated for further needles without restarting the test.
 
@@ -1145,6 +1138,7 @@ If you need the literal string `<<` (for example as a value in the job
 settings), you have to quote it.
 
 <a id="rest_api"></a>
+
 ## Use of the REST API
 
 openQA includes a _client_ script which - depending on the distribution - is
@@ -1187,8 +1181,8 @@ by adding additional query parameters, e.g.:
 - `groupid`/`group`: Return only jobs within the job group with the
   specified ID/name like in the example above. These parameters are mutually
   exclusive, `groupid` has precedence.
-- `latest=1`: De-duplicates, so that for the same `DISTRI`, `VERSION`, `BUILD`,  `TEST`, `FLAVOR`, `ARCH` and `MACHINE` only the latest job is returned.
-- `limit`/`page`: Limit the number of returned jobs and allow pagination, e.g.  `page=2&limit=10` would only show results 11-20.
+- `latest=1`: De-duplicates, so that for the same `DISTRI`, `VERSION`, `BUILD`, `TEST`, `FLAVOR`, `ARCH` and `MACHINE` only the latest job is returned.
+- `limit`/`page`: Limit the number of returned jobs and allow pagination, e.g. `page=2&limit=10` would only show results 11-20.
 - `modules`/`modules_result`: Return only jobs which have a test module with the
   specified name/result.
 
@@ -1206,7 +1200,7 @@ by adding additional query parameters, e.g.:
 - When specifying the same parameter multiple times, only the last occurrence
   is taken into account.
 
-- All values are matched exactly, so e.g. `group=openSUSE+Leap+15` returns only jobs within the group `openSUSE Leap 15` but not jobs from the group  `openSUSE Leap 15 ARM`. This applies to parameters for filtering job settings
+- All values are matched exactly, so e.g. `group=openSUSE+Leap+15` returns only jobs within the group `openSUSE Leap 15` but not jobs from the group `openSUSE Leap 15 ARM`. This applies to parameters for filtering job settings
   as well.
 
 ### Finding tests by querying particular job settings
@@ -1245,6 +1239,7 @@ openqa-cli api jobs result=none job_setting=ISSUES[]={foo,bar} limit=50
 ```
 
 <a id="triggering_tests"></a>
+
 ### Triggering tests
 
 Tests can be triggered over multiple ways, using `openqa-clone-job`,
@@ -1267,6 +1262,7 @@ settings on a job must be supplied in the API request. The "openQA client" has
 examples for this.
 
 <a id="further_examples_for_advanced_dependency_handling"></a>
+
 ##### Further examples for advanced dependency handling
 
 It is possible to spawn a single set of jobs using just one API call, e.g.:
@@ -1289,6 +1285,7 @@ To use colons within a settings key, just add a trailing `:`, e.g.:
     openqa-cli api -X POST jobs TEST=test KEY:WITH:COLONS:=example
 
 <a id="spawning_multiple_jobs_based_on_templates_isos_post"></a>
+
 #### Spawning multiple jobs based on templates - isos post
 
 The most common way of spawning jobs on production instances is using the
@@ -1384,6 +1381,7 @@ This is recommended on big instances but means that the results (and
 possible errors) need to be polled via `openqa-cli api isos/$scheduled_product_id`.
 
 <a id="statistical_investigation"></a>
+
 ##### Statistical investigation
 
 In case issues appear sporadically and are therefore hard to reproduce it can
@@ -1540,13 +1538,7 @@ for use by a child job which needs to inherit those changes.
 You can also use special suffixes to the basic parameter forms to access some special handling for
 assets.
 
-
-
-
-
 The following suffixes exist:
-
-
 
 \_URL
 Before starting these jobs, try to download these assets into the relevant asset directory
@@ -1561,8 +1553,6 @@ Specify a compressed asset to be downloaded that will be uncompressed by openQA.
 For e.g. `ISO_1_DECOMPRESS_URL=http://host/foo2.iso.xz` will download the file `foo2.iso.xz`, uncompress it to `foo2.iso`, store it in `/var/lib/openqa/share/factory/iso` and set
 `ISO_1=foo2.iso`. Again, you can also set `ISO_1` to change the name the file will be downloaded
 and uncompressed as.
-
-
 
 ### Specifying assets created by a job
 
@@ -1746,6 +1736,7 @@ as there is enough headroom on the relevant file systems.
 > specifically are still experimental.
 
 <a id="asset_cleanup"></a>
+
 ### Cleanup strategy for assets
 
 To find out whether an asset should be removed, openQA determines by which
@@ -1865,8 +1856,8 @@ The message topic follows the format `SCOPE.APPLICATION.OBJECT.ACTION`, for exam
 
 Here are the events triggered and published by openQA:
 
-1.  `openqa.job.create` when a job is created 2.  `openqa.job.delete` when a job is deleted 3.  `openqa.job.cancel` when a job is cancelled 4.  `openqa.job.restart` when a job is restarted or duplicated 5.  `openqa.job.update_result` when a job result is updated 6.  `openqa.job.done` when a job finishes Job event bodies include the job settings (e.g. `BUILD`, `TEST`, `ARCH`,
-`MACHINE`, `FLAVOR`, asset fields like `ISO` or `HDD_1`) plus `id`, `group_id`, and `remaining` (number of pending jobs for the same build). Finished jobs additionally include `result`, `reason`, `newbuild`, `failedmodules`, `bugref`, and `bugurl` (only present when a bug reference exists). Example of a `*.openqa.job.done` message body (at the time of writing):
+1.  `openqa.job.create` when a job is created 2. `openqa.job.delete` when a job is deleted 3. `openqa.job.cancel` when a job is cancelled 4. `openqa.job.restart` when a job is restarted or duplicated 5. `openqa.job.update_result` when a job result is updated 6. `openqa.job.done` when a job finishes Job event bodies include the job settings (e.g. `BUILD`, `TEST`, `ARCH`,
+    `MACHINE`, `FLAVOR`, asset fields like `ISO` or `HDD_1`) plus `id`, `group_id`, and `remaining` (number of pending jobs for the same build). Finished jobs additionally include `result`, `reason`, `newbuild`, `failedmodules`, `bugref`, and `bugurl` (only present when a bug reference exists). Example of a `*.openqa.job.done` message body (at the time of writing):
 
 ```json
 {
