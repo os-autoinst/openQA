@@ -16,8 +16,9 @@ supported by upstream.
 
 You can either build the images locally or use Fedora images from Docker Hub.
 
-For the `docker-compose` setup it is required to build the images locally. However, it is done via `docker-compose` and explained later so this section
-can be skipped.
+For the `docker-compose` setup it is required to build the images locally.
+However, it is done via `docker-compose` and explained later so this section can
+be skipped.
 
 ### Download Fedora-based images from the Docker Hub
 
@@ -35,11 +36,14 @@ can be skipped.
 
 ### Data storage and directory structure
 
-Our intent was to create universal `webui` and `worker` containers and move all data storage and configurations to a third container, called `openqa_data`.
+Our intent was to create universal `webui` and `worker` containers and move all
+data storage and configurations to a third container, called `openqa_data`.
 `openqa_data` is a so called
 [Data Volume Container](https://docs.docker.com/storage/volumes#creating-and-mounting-a-data-volume-container)
 and is used for the database and to store results and configuration. During
-development and in production, you could update `webui` and `worker` images but as long as `openqa_data` is intact, you do not lose any data. To make development easier and to reduce the final size of the `openqa_data`
+development and in production, you could update `webui` and `worker` images but
+as long as `openqa_data` is intact, you do not lose any data. To make
+development easier and to reduce the final size of the `openqa_data`
 container, this guide describes how to override `tests` and `factory`
 directories with directories from your host system. This is not necessary but
 recommended. This guide is written with this setup in mind.
@@ -88,15 +92,15 @@ You can change the `-p` parameters if you do not want the openQA instance to occ
 problems if you wish to set up workers on other hosts (see below). You do need
 root privileges to bind ports 80 and 443 in this way.
 
-It is now necessary to create and store the client keys for openQA. In the
-next two steps, you will set an OpenID provider (if necessary), create the API
-keys in the openQA's web interface, and store the configuration in the Data
+It is now necessary to create and store the client keys for openQA. In the next
+two steps, you will set an OpenID provider (if necessary), create the API keys
+in the openQA's web interface, and store the configuration in the Data
 Container.
 
 #### Generate and configure API credentials
 
-Go to <https://localhost/api_keys>, generate key and secret. Then run the following
-command substituting `KEY` and `SECRET` with the generated values:
+Go to <https://localhost/api_keys>, generate key and secret. Then run the
+following command substituting `KEY` and `SECRET` with the generated values:
 
     exec -it openqa_data /scripts/client-conf set -l KEY SECRET
 
@@ -141,12 +145,13 @@ And set permissions, so any user can read/write the data:
 
 This step is unfortunately necessary with Docker because Docker
 [can not mount a volume with
-specific user ownership](https://github.com/docker/docker/issues/7198) in container, so ownership of mounted folders (uid
-and gid) is the same as on your host system (presumably 1000:1000 which maps
-into nonexistent user in all of the containers).
+specific user ownership](https://github.com/docker/docker/issues/7198) in
+container, so ownership of mounted folders (uid and gid) is the same as on your
+host system (presumably 1000:1000 which maps into nonexistent user in all of the
+containers).
 
-If you wish to keep the tests (for example) separate from the shared
-directory, for any reason (we do, in our development scenario) refer to the
+If you wish to keep the tests (for example) separate from the shared directory,
+for any reason (we do, in our development scenario) refer to the
 [Developing tests with Container setup] section at the end of this document.
 
 Populate the openQA database:
@@ -157,9 +162,10 @@ Create all necessary disk images:
 
     cd data/factory/hdd && createhdds.sh VERSION
 
-where `VERSION` is the current stable Fedora version (its images will be created for upgrade tests) and createhdds.sh is in `openqa_fedora_tools`
-repository in `/tools` directory. Note that you have to have
-`libguestfs-tools` and `libguestfs-xfs` installed.
+where `VERSION` is the current stable Fedora version (its images will be created
+for upgrade tests) and createhdds.sh is in `openqa_fedora_tools` repository in
+`/tools` directory. Note that you have to have `libguestfs-tools` and
+`libguestfs-xfs` installed.
 
 ## Setup openQA with openSUSE-based images and docker-compose
 
@@ -177,17 +183,23 @@ If TLS is required, edit the certificates mentioned in the nginx section of
 `container/webui/docker-compose.yaml` to point it to your certificate. By
 default, a self-signed test certificate is used.
 
-Edit `container/webui/conf/openqa.ini` to configure the web UI as needed, e.g. change `[auth] method = Fake` or `[logging] level = debug`. If the web UI will be exposed/accessed via a certain domain, set `base_url` in the `[global]`
+Edit `container/webui/conf/openqa.ini` to configure the web UI as needed, e.g.
+change `[auth] method = Fake` or `[logging] level = debug`. If the web UI will
+be exposed/accessed via a certain domain, set `base_url` in the `[global]`
 section accordingly so redirections for authentication work.
 
-Edit `container/worker/conf/workers.ini` to configure the workers as needed. Edit `container/webui/nginx.conf` to customize the NGINX configuration.
+Edit `container/worker/conf/workers.ini` to configure the workers as needed.
+Edit `container/webui/nginx.conf` to customize the NGINX configuration.
 
 To set the number of web UI replicas set the environment variable
-`OPENQA_WEBUI_REPLICAS` to the desired number. If this is not set, then the default value is 2. Additionally, you can edit `container/webui/.env` to set the
+`OPENQA_WEBUI_REPLICAS` to the desired number. If this is not set, then the
+default value is 2. Additionally, you can edit `container/webui/.env` to set the
 default value for this variable. This does not affect the websocket server,
 livehandler and gru.
 
-All the data which normally ends up under `/var/lib/openqa` in the default setup will be stored under `container/webui/workdir/data`. The database will be stored under `container/webui/workdir/db`.
+All the data which normally ends up under `/var/lib/openqa` in the default setup
+will be stored under `container/webui/workdir/data`. The database will be stored
+under `container/webui/workdir/db`.
 
 ### Build images
 
@@ -207,8 +219,8 @@ To start the containers, just run:
     cd container/webui
     docker-compose up
 
-To rebuild the images, add `--build`. It is also possible to run it in the background by adding `-d`. To stop it
-again, run:
+To rebuild the images, add `--build`. It is also possible to run it in the
+background by adding `-d`. To stop it again, run:
 
     docker-compose down
 
@@ -244,7 +256,8 @@ The same `docker-compose` commands as shown for the web UI can be used for
 further actions. The worker should also show up in the web UI's workers table.
 
 It is also possible to use a container runtime environment directly as shown
-by the script `container/worker/launch_workers_pool.sh` which allows spawning a bunch of workers with consecutive numbers for the `--instance` parameter:
+by the script `container/worker/launch_workers_pool.sh` which allows spawning a
+bunch of workers with consecutive numbers for the `--instance` parameter:
 
 It will launch the desired number of workers in individual containers using
 consecutive numbers for the `--instance` parameter:
@@ -261,13 +274,15 @@ You have to put your tests under `data/tests` directory and ISOs under
 The test distribution might have additional dependencies which need to be
 installed into the worker container before tests can run. To install those
 dependencies automatically on the container startup one can add a script called
-`install_deps.sh` in the root of the test distribution which would install the dependencies, e.g. via a `zypper` call.
+`install_deps.sh` in the root of the test distribution which would install the
+dependencies, e.g. via a `zypper` call.
 
 ## Running jobs
 
 After performing the "setup" tasks above - do not forget about tests and ISOs.
 
-Then you can use `openqa-cli` as usual with the containerized web UI. It is also possible to use `openqa-clone-job`, e.g.:
+Then you can use `openqa-cli` as usual with the containerized web UI. It is also
+possible to use `openqa-clone-job`, e.g.:
 
     cd container/webui
     docker-compose exec webui openqa-clone-job \
@@ -293,9 +308,9 @@ You may want to add workers on other hosts, so you do not need one powerful
 host to run the UI and all the workers.
 
 Let's assume you are setting up a new 'worker host' and it can see the web UI
-host system with the hostname `openqa_webui`. You must somehow share the `data` directory from the web UI host to each host
-on which you want to run workers. For instance, to use sshfs on the new
-worker host, run:
+host system with the hostname `openqa_webui`. You must somehow share the `data`
+directory from the web UI host to each host on which you want to run workers.
+For instance, to use sshfs on the new worker host, run:
 
     sshfs -o context=unconfined_u:object_r:svirt_sandbox_file_t:s0 openqa_webui:/path/to/data /path/to/data
 
