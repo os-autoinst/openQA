@@ -97,7 +97,7 @@ diag 'Validating schema, too' if $opt->validate_schema;
 for my $file (@files) {
     my $data;
     if ($file eq '-') {
-        my $yaml = do { local $/; <STDIN> };
+        my $yaml = do { local $/; <ARGV> };
         $data = load_yaml(string => $yaml);
     }
     else {
