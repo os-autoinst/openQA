@@ -31,9 +31,10 @@ has dynamic_limit => sub { OpenQA::Scheduler::DynamicLimit->new };
 
 sub determine_online_workers ($shuffle = 0) {
     my $workers = OpenQA::Schema->singleton->resultset('Workers');
-    # reserved workers stay online but are taken out of the scheduling rotation
-    my $reserved = $workers->reserved_worker_ids;
-    my @online_workers = grep { !$_->dead && !$reserved->{$_->id} } $workers->search(
+    # reserved workers without a tag are taken out of the scheduling rotation
+    my $reserved = $workers->active_reservations;
+    my @online_workers
+      = grep { !$_->dead && (!$reserved->{$_->id} || defined $reserved->{$_->id}->{worker_class}) } $workers->search(
         {
             error => undef,
             'properties.key' => 'WEBSOCKET_API_VERSION',
@@ -79,13 +80,15 @@ sub _allocate_jobs ($self, $online_workers = undef, $free_workers = undef) {
         return ({}, {});
     }
     my $max_allocate = $limit >= 0 ? min(MAX_JOB_ALLOCATION, $limit - $running) : MAX_JOB_ALLOCATION;
+    my $active_reservations = OpenQA::Schema->singleton->resultset('Workers')->active_reservations;
 
     # update the matching workers to the current free
     my %rejected;
     for my $id (keys %$scheduled_jobs) {
         my $jobinfo = $scheduled_jobs->{$id};
         my $has_matching_online = 0;
-        $jobinfo->{matching_workers} = _matching_workers($jobinfo, $online_workers, \%rejected, \$has_matching_online);
+        $jobinfo->{matching_workers}
+          = _matching_workers($jobinfo, $online_workers, \%rejected, \$has_matching_online, $active_reservations);
         if (!@{$jobinfo->{matching_workers}}) {
             my @needed = sort @{$jobinfo->{worker_classes}};
             $jobinfo->{current_reason}
@@ -387,12 +390,21 @@ sub _update_job_reasons_in_db ($self, $schema, $scheduled_jobs) {
 
 sub singleton ($class = undef) { state $jobs ||= ($class // __PACKAGE__)->new }
 
-sub _matching_workers ($jobinfo, $online_workers, $rejected = {}, $has_matching_online_ref = undef) {
+sub _matching_workers (
+    $jobinfo, $online_workers,
+    $rejected = {},
+    $has_matching_online_ref = undef,
+    $active_reservations = {})
+{
     my @free_matching;
     my @needed = sort @{$jobinfo->{worker_classes}};
     for my $worker (@$online_workers) {
-        next unless all { $worker->check_class($_) } @needed;
-        $$has_matching_online_ref = 1 if $has_matching_online_ref;
+        my $reservation_class
+          = $active_reservations->{$worker->id} ? $active_reservations->{$worker->id}->{worker_class} : undef;
+        my $matches_effective = $worker->accepts_classes(\@needed, $reservation_class);
+        my $matches_base = $worker->accepts_classes(\@needed, undef);
+        $$has_matching_online_ref = 1 if $has_matching_online_ref && ($matches_effective || $matches_base);
+        next unless $matches_effective;
         push @free_matching, $worker unless $worker->job_id;
     }
     $rejected->{join ',', @needed}++ unless @free_matching;

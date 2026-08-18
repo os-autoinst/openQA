@@ -59,7 +59,7 @@ sub list ($self) {
     my $reserved_param = $validation->param('reserved');
     my $condition
       = defined $reserved_param
-      ? {id => {($reserved_param ? '-in' : '-not_in') => [keys %{$workers->reserved_worker_ids}]}}
+      ? {id => {($reserved_param ? '-in' : '-not_in') => [keys %{$workers->active_reservations}]}}
       : {};
     my @paged = $workers->search($condition, {rows => $limit + 1, offset => $offset, order_by => 'id'})->all;
     pop @paged if my $has_more = @paged > $limit;
@@ -282,6 +282,7 @@ sub _apply_reservation ($self, $action) {
 =item reserve()
 
 Reserves a worker instance with a comment and a specified duration.
+Optionally accepts a C<worker_class> for verification jobs.
 
 =back
 
@@ -291,20 +292,21 @@ sub reserve ($self) {
     return undef unless my $worker = $self->_reservation_worker;
     my $user = $self->current_user;
     my $comment = $self->param('comment');
+    my $worker_class = $self->param('worker_class');
     return undef
       unless $self->_apply_reservation(
-        sub { $worker->reserve($user, $comment, $self->param('duration'), $self->param('force')) });
+        sub { $worker->reserve($user, $comment, $self->param('duration'), $self->param('force'), $worker_class) });
 
     my $reservation = $worker->reservation;
-    $self->emit_event(
-        'openqa_worker_reserve',
-        {
-            id => $worker->id,
-            name => $worker->name,
-            user => $user->username,
-            comment => $comment,
-            expires => $reservation->{t_expires},
-        });
+    my $audit_payload = {
+        id => $worker->id,
+        name => $worker->name,
+        user => $user->username,
+        comment => $comment,
+        expires => $reservation->{t_expires},
+    };
+    $audit_payload->{worker_class} = $worker_class if defined $worker_class && length $worker_class;
+    $self->emit_event('openqa_worker_reserve', $audit_payload);
     $self->render(
         json => {message => 'Worker ' . $worker->name . ' reserved successfully.', reservation => $reservation});
 }

@@ -149,6 +149,11 @@ subtest 'worker reservation model' => sub {
         [[$operator, 'valid comment', 'soon'], qr/Invalid duration format 'soon'/, 'an unparsable duration'],
         [[$operator, 'valid comment', '10d'], qr/exceeds the maximum of 432000s/, 'a duration beyond the operator max'],
         [[$operator, 'valid comment', '0'], qr/only allowed for admins/, 'an indefinite duration as operator'],
+        [
+            [$operator, 'valid comment', '1h', 0, 'invalid tag!'],
+            qr/Invalid specific worker class/,
+            'an invalid specific class tag'
+        ],
     );
     throws_ok { $worker->reserve(@{$_->[0]}) } $_->[1], "refuse reservation with $_->[2]" for @rejected;
     ok !$worker->is_reserved, 'worker is not reserved after all rejected attempts';
@@ -161,7 +166,7 @@ subtest 'worker reservation model' => sub {
     is $worker->reservation->{comment}, 'operator reservation', 'reservation comment matches what was passed';
     like $worker->reservation->{t_created}, qr/^\d{4}(-\d\d){2}T(\d\d:){2}\d\dZ$/, 'reserved at ISO 8601 timestamp';
     is $workers->stats->{reserved_workers}, 1, 'statistics count exactly one reserved worker';
-    is_deeply [keys %{$workers->reserved_worker_ids}], [$worker->id], 'bulk lookup reports the reserved worker';
+    is_deeply [keys %{$workers->active_reservations}], [$worker->id], 'bulk lookup reports the reserved worker';
     ok !exists $worker->info->{properties}->{RESERVED_BY_ID}, 'raw reservation properties are not exposed via info';
 
     my @precedence = (['running', job_id => 99937], ['broken', error => 'some error'], ['dead', t_seen => undef]);
@@ -195,7 +200,7 @@ subtest 'worker reservation model' => sub {
     ok !$worker->is_reserved, 'reservation is inactive once the expiry has passed';
     is $worker->status, 'idle', 'expired reservation status goes back to idle';
     is $worker->reservation, undef, 'expired reservation is not reported despite left over properties';
-    is_deeply $workers->reserved_worker_ids, {}, 'bulk lookup ignores expired reservations';
+    is_deeply $workers->active_reservations, {}, 'bulk lookup ignores expired reservations';
 
     $worker->reserve($admin, 'indefinite reservation', '0');
     ok $worker->is_reserved, 'a duration of 0 reserves the worker indefinitely';
@@ -204,6 +209,63 @@ subtest 'worker reservation model' => sub {
     $worker->set_property(RESERVED_BY_ID => 999999);
     is $worker->reservation->{user}, 'unknown', 'reservation of a no longer existing user is reported as unknown';
     $worker->delete_properties([RESERVATION_PROPERTIES]);
+};
+
+subtest 'worker reservation class matching' => sub {
+    my $worker = $workers->first;
+    $worker->update({job_id => undef, error => undef, t_seen => DateTime->now(time_zone => 'UTC')});
+    $worker->delete_properties([RESERVATION_PROPERTIES]);
+    $worker->set_property(WORKER_CLASS => 'qemu_x86_64,tap');
+    my $admin = $db->resultset('Users')->find(99901);
+
+    # Set up some test cases for matching
+    my @cases = (
+        {
+            name => 'untagged reservation normal matches',
+            reserve_class => undef,
+            requests => [
+                {needed => ['qemu_x86_64'], expected => 1},
+                {needed => ['qemu_x86_64', 'tap'], expected => 1},
+                {needed => ['missing'], expected => 0},
+            ]
+        },
+        {
+            name => 'tagged with matching request accepts',
+            reserve_class => 'poo123',
+            requests => [{needed => ['poo123'], expected => 1}, {needed => ['qemu_x86_64', 'poo123'], expected => 1},]
+        },
+        {
+            name => 'tagged with non-matching request rejects',
+            reserve_class => 'poo123',
+            requests => [{needed => ['qemu_x86_64'], expected => 0}, {needed => ['poo999'], expected => 0},]
+        },
+        {
+            name => 'tag combined with a capability class that is missing rejects',
+            reserve_class => 'poo123',
+            requests => [{needed => ['missing_cap', 'poo123'], expected => 0},]
+        },
+    );
+
+    for my $case (@cases) {
+        if (defined $case->{reserve_class}) {
+            $worker->reserve($admin, 'test', '1h', 0, $case->{reserve_class});
+            is $workers->stats->{reserved_workers}, 1, "tagged worker counts as reserved in stats for: $case->{name}";
+        }
+        else {
+            $worker->reserve($admin, 'test', '1h', 0);
+            is $workers->stats->{reserved_workers}, 1, "untagged worker counts as reserved in stats for: $case->{name}";
+        }
+
+        my $reservation = $workers->active_reservations->{$worker->id};
+        for my $req (@{$case->{requests}}) {
+            my $needed = $req->{needed};
+            my $result = $worker->accepts_classes($needed, $reservation ? $reservation->{worker_class} : undef);
+            is !!$result, !!$req->{expected},
+              "matching expected $req->{expected} for needed [@$needed] in case: $case->{name}";
+        }
+
+        $worker->release($admin);
+    }
 };
 
 subtest 'unlimited admin reservations are capped once admin_max_duration is configured' => sub {

@@ -60,7 +60,7 @@ function loadWorkerTable() {
   });
 }
 
-function requestWorkerChange(url, options, failureMessage, onSuccess) {
+function requestWorkerChange(url, options, failureMessage, onSuccess, onError = null) {
   fetchWithCSRF(url, options)
     .then(response => response.json())
     .then(response => {
@@ -69,6 +69,7 @@ function requestWorkerChange(url, options, failureMessage, onSuccess) {
     })
     .catch(error => {
       addFlash('danger', failureMessage + error);
+      if (onError) onError(error);
     });
 }
 
@@ -81,6 +82,10 @@ function openReserveModal(reserveBtn) {
   document.getElementById('reserveWorkerId').value = reserveBtn.dataset.workerId;
   document.getElementById('reserveWorkerName').value = reserveBtn.dataset.workerName;
   document.getElementById('reserveWorkerComment').value = '';
+  const workerClass = document.getElementById('reserveWorkerClass');
+  if (workerClass) workerClass.value = '';
+  const modalFlash = document.getElementById('reserveModalFlash');
+  if (modalFlash) modalFlash.replaceChildren();
   duration.value = duration.dataset.defaultDuration;
   const force = document.getElementById('reserveWorkerForce');
   if (force) force.checked = false;
@@ -90,17 +95,31 @@ function openReserveModal(reserveBtn) {
 function submitReserve(event) {
   event.preventDefault();
   const force = document.getElementById('reserveWorkerForce');
+  const workerClass = document.getElementById('reserveWorkerClass');
   const body = new URLSearchParams({
     comment: document.getElementById('reserveWorkerComment').value,
     duration: document.getElementById('reserveWorkerDuration').value,
+    worker_class: workerClass ? workerClass.value : '',
     force: force && force.checked ? 1 : 0
   });
   const options = {method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body};
+
+  // Clear any existing flash messages in the modal
+  const modalFlash = document.getElementById('reserveModalFlash');
+  if (modalFlash) modalFlash.replaceChildren();
+
   requestWorkerChange(
     reservationUrl(document.getElementById('reserveWorkerId').value),
     options,
     "The worker couldn't be reserved: ",
-    () => window.location.reload()
+    () => window.location.reload(),
+    error => {
+      // Clear global flash message added by requestWorkerChange
+      const globalFlash = document.getElementById('flash-messages');
+      if (globalFlash) globalFlash.replaceChildren();
+      // Show error within the modal instead
+      addFlash('danger', "The worker couldn't be reserved: " + error, document.getElementById('reserveModalFlash'));
+    }
   );
 }
 

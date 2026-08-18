@@ -24,6 +24,7 @@ sub command ($self, @args) {
         my %params;
         $params{comment} = $options{comment} if defined $options{comment};
         $params{duration} = $options{duration} if defined $options{duration};
+        $params{worker_class} = $options{class} if defined $options{class};
         $params{force} = 1 if $options{force};
 
         $tx = $client->build_tx(POST => $url, form => \%params);
