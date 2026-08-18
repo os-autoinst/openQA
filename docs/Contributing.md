@@ -162,47 +162,20 @@ tests. As usual, tests are located under the `t/` directory.
 
 Meaning and purpose of the most important folders within openQA are:
 
-public
-Static assets published to users over the web UI or API
-
-t
-Self-tests of openQA
-
-assets
-3rd party JavaScript and CSS files
-
-docs
-Documentation, including this document
-
-etc
-Configuration files including template branding specializations
-
-lib
-Main perl module library folder
-
-script
-Main applications and startup files
-
-.circleci
-circleCI definitions
-
-dbicdh
-Database schema startup and migration files
-
-container
-Container definitions
-
-profiles
-Apparmor profiles
-
-systemd
-systemd service definitions
-
-templates
-HTML templates delivered by web UI
-
-tools
-Development tools
+- `public`: Static assets published to users over the web UI or API
+- `t`: Self-tests of openQA
+- `assets`: 3rd party JavaScript and CSS files
+- `docs`: Documentation, including this document
+- `etc`: Configuration files including template branding specializations
+- `lib`: Main perl module library folder
+- `script`: Main applications and startup files
+- `.circleci`: CircleCI definitions
+- `dbicdh`: Database schema startup and migration files
+- `container`: Container definitions
+- `profiles`: Apparmor profiles
+- `systemd`: systemd service definitions
+- `templates`: HTML templates delivered by web UI
+- `tools`: Development tools
 
 ## Dependencies
 
