@@ -498,7 +498,7 @@ protect the web UI from being overwhelmed by too many simultaneous Ajax requests
 This is configured in:
 
 - `openqa.conf.template` via the `limit_req_zone` directive, defining a shared
-memory zone `details_ajax_limit`.
+  memory zone `details_ajax_limit`.
 - `openqa-endpoints.inc` via the matching location block applying `limit_req`.
 
 ##### Load balancer and reverse proxy consideration
@@ -795,8 +795,8 @@ usually started via the systemd unit `openqa-webui.service`) supports
 -software-upgrades) with the help of
 [the `SO_REUSEPORT` socket option](https://lwn.net/Articles/542629). A
 zero-downtime restart is triggered by sending `SIGHUP` to the script/service
-(which can be done by reloading  `openqa-webui.service` when using systemd which
-is also what the official rpm  packaging does on upgrades).
+(which can be done by reloading `openqa-webui.service` when using systemd which
+is also what the official rpm packaging does on upgrades).
 
 The use of `SO_REUSEPORT` can cause unintended connection failures which can be
 circumvented via `sysctl net.ipv4.tcp_migrate_req=1`, see [the according article
@@ -1206,7 +1206,7 @@ json encoded info about the event. See
 [amqp_infra](https://github.com/openSUSE/suse_msg/blob/master/amqp_infra.md) for
 more info about the server and the message topic format or take a look at
 [Consuming AMQP events from openQA](UsersGuide.md#consuming-amqp-events-from-openqa)
-to find detailed  instructions how to configure the AMQP server.
+to find detailed instructions how to configure the AMQP server.
 
 To let openQA send messages to an AMQP message bus, first make sure that the
 `perl-Mojo-RabbitMQ-Client` RPM is installed. Then you will need to configure
@@ -1840,7 +1840,7 @@ can of course be owned by root:
 - `factory` (symlink to `share/factory`)
 
 It is always best to use the canonical locations, not the compatibility symlinks
-- so run scripts from `/usr/share/openqa/script`, not `/var/lib/openqa/script`.
+\- so run scripts from `/usr/share/openqa/script`, not `/var/lib/openqa/script`.
 
 You only need the asset directories for the asset types you will actually use,
 e.g. if none of your tests refer to openQA-stored repositories, you will need no

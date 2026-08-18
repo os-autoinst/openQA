@@ -6,7 +6,7 @@
 
 This document provides additional information for use of the web interface or
 the REST API as well as administration information.
-For administrators it is recommended to have read the
+For administrators it is recommended to read the
 [Installation Guide](Installing.md#installing) first to understand the structure
 of components as well as the configuration of an installed instance.
 

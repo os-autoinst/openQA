@@ -60,10 +60,10 @@ sub run {
 
 **Note:** The line `use Mojo::Base ...` automatically enables modern Perl
 conventions/features which is highly recommended. Check out the
-[Mojo::Base  description](https://docs.mojolicious.org/Mojo/Base#DESCRIPTION)
-for details.  Alternatively, you may set the test variable
-`ENABLE_MODERN_PERL_FEATURES=1`  (e.g. in `main.pm` before invoking `loadtest`).
-This only applies to test  modules, though. In other Perl modules and `main.pm`
+[Mojo::Base description](https://docs.mojolicious.org/Mojo/Base#DESCRIPTION)
+for details. Alternatively, you may set the test variable
+`ENABLE_MODERN_PERL_FEATURES=1` (e.g. in `main.pm` before invoking `loadtest`).
+This only applies to test modules, though. In other Perl modules and `main.pm`
 modern Perl features still need to be enabled manually.
 
 And here is an example in Python:
