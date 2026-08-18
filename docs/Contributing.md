@@ -49,17 +49,14 @@ are the right way to contribute improvements and fixes.
 
 <a id="rules_for_commits"></a>
 
-- Every commit is checked in [CI](https://circleci.com/dashboard) as soon as
-  you create a pull request, but you **should** run the tidy scripts locally, i.e.
+- Every commit is checked in [CI](https://circleci.com/dashboard) as soon as you
+  create a pull request, but you **should** run the tidy scripts locally, i.e.
   before every commit call:
-
-```sh
-make tidy
-```
-
-To ensure your Perl, JavaScript and Python code changes are consistent with the
-style rules.
-
+  ```sh
+  make tidy
+  ```
+  This ensures your Perl, JavaScript and Python code changes are consistent with
+  the style rules.
 - All tests are passed. This is ensured by a CI system. You can also run local
   tests in your development environment to verify everything works as
   expected, see [Conducting tests](Contributing.md#conducting-tests))
@@ -78,22 +75,20 @@ requests for consideration or create an issue with a code change proposal.
 <a id="code_style_suggestions"></a>
 
 - In Perl files:
-
-- Sort the use statements in this order from top to bottom:
-  - `strict`, `warnings` or other modules that provide static checks
-  - All external modules and from "lib" folder
-    \*\*\* `use FindBin; use lib "$FindBin/lib";` or similar to resolve internal modules
-  - Internal test modules which provide early checks before other modules
-  - Other internal test modules
-
-- When using [signatures](https://perldoc.perl.org/perlsub#Signatures) try to follow these rules:
-  - Activate the feature with modules we already use if possible, e.g. `use Mojo Base 'Something', -signatures;`
-  - Use positional parameters whenever possible, e.g. `sub foo ($first, $second) {`
-  - Use default values when appropriate, e.g. `sub foo ($first, $second = 'some value') {`
-  - Use slurpy parameters when appropriate (hash and array), e.g. `sub foo ($first, @more) {`
-  - Use nameless parameters when appropriate (very uncommon), e.g. `sub foo ($first, $, $third) {`
-  - Do **not** get too creative with computational default values, e.g. `sub foo ($first, $second = rand($first)) {`
-  - Do **not** combine sub attributes with signatures (requires Perl 5.28+), e.g. `sub foo :lvalue ($first) {`
+  - Sort the use statements in this order from top to bottom:
+    - `strict`, `warnings` or other modules that provide static checks
+    - All external modules and from "lib" folder
+    - `use FindBin; use lib "$FindBin/lib";` or similar to resolve internal modules
+    - Internal test modules which provide early checks before other modules
+    - Other internal test modules
+  - When using [signatures](https://perldoc.perl.org/perlsub#Signatures) try to follow these rules:
+    - Activate the feature with modules we already use if possible, e.g. `use Mojo Base 'Something', -signatures;`
+    - Use positional parameters whenever possible, e.g. `sub foo ($first, $second) {`
+    - Use default values when appropriate, e.g. `sub foo ($first, $second = 'some value') {`
+    - Use slurpy parameters when appropriate (hash and array), e.g. `sub foo ($first, @more) {`
+    - Use nameless parameters when appropriate (very uncommon), e.g. `sub foo ($first, $, $third) {`
+    - Do **not** get too creative with computational default values, e.g. `sub foo ($first, $second = rand($first)) {`
+    - Do **not** combine sub attributes with signatures (requires Perl 5.28+), e.g. `sub foo :lvalue ($first) {`
 
 ## Getting involved into development
 
