@@ -94,7 +94,8 @@ sub cache_minion_worker {
             require OpenQA::CacheService;    # uncoverable statement
             local $ENV{MOJO_MODE} = 'test';    # uncoverable statement
             note('Starting cache minion worker');    # uncoverable statement
-            OpenQA::CacheService::run(qw(run --dequeue-timeout 1));    # uncoverable statement
+            my $dequeue_timeout = $ENV{OPENQA_MINION_DEQUEUE_TIMEOUT} // 1;    # uncoverable statement
+            OpenQA::CacheService::run('run', '--dequeue-timeout', $dequeue_timeout);    # uncoverable statement
             note('Cache minion worker stopped');    # uncoverable statement
             Devel::Cover::report() if Devel::Cover->can('report');    # uncoverable statement
             _exit(0);    # uncoverable statement
