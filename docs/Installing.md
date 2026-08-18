@@ -532,7 +532,7 @@ APACHE_SERVER_FLAGS="SSL"
 
 If you don't have a TLS/SSL certificate for your host you must turn HTTPS off.
 You can do that in
-[the web UI configuration](GettingStarted.md#configuration):
+[the web UI configuration](GettingStarted.md#webui-configuration):
 
 ``` ini
 [openid]
@@ -546,7 +546,7 @@ openQA requires PostgreSQL 14 or newer. By default, a database with name
 `openqa` and `geekotest` user as owner is used. An automatic setup of a freshly
 installed PostgreSQL instance can be done using [this script](https://github.com/os-autoinst/openQA/blob/master/script/setup-db).
 The database connection can be configured in
-[the database configuration file](GettingStarted.md#configuration).
+[the database configuration file](GettingStarted.md#database-configuration).
 (normally the `[production]` section is relevant). More info about the `dsn`
 value format can be found in the <https://metacpan.org/pod/DBD>::Pg#DBI-Class-Methods[DBD::Pg documentation].
 
@@ -572,7 +572,7 @@ openQA supports four different authentication methods: OpenID (default),
 OAuth2, Fake (for development) and None (no authentication).
 
 Use the `auth` section in
-[the web UI configuration](GettingStarted.md#configuration) to configure
+[the web UI configuration](GettingStarted.md#webui-configuration) to configure
 the method:
 
 ``` ini
@@ -600,7 +600,7 @@ reported when clocks are too far apart.
 
 By default openQA uses OpenID with opensuse.org as OpenID provider.
 OpenID method has its own `openid` section in
-[the web UI configuration](GettingStarted.md#configuration):
+[the web UI configuration](GettingStarted.md#webui-configuration):
 
 ``` ini
 [auth]
@@ -811,6 +811,11 @@ public cloud. The only requirement is access to the web UI host over
 HTTP/HTTPS. For running tests based on virtual machines KVM support is
 recommended.
 
+If you have a powerful machine you can run many worker services in parallel
+relying on automatic load-based throttling and configurable locking to avoid
+running into stability issues. Check out the [throttling section](#throttling)
+for details.
+
 The openQA worker is distributed as a separate package which be installed on
 multiple machines while still using only one web UI.
 
@@ -822,6 +827,10 @@ zypper in openQA-worker
 # Fedora
 dnf install openqa-worker
 ```
+
+Once you got workers running they should show up in the admin section of openQA
+in the workers section as 'idle'. When you get so far, you have your own
+instance of openQA up and running and all that is left is to set up some tests.
 
 ### Local LLM Server
 
@@ -899,7 +908,7 @@ fetch the tests cases and possibly take a look at [Test Developer Guide](Writing
 The automated cleanup is enabled and configured by default. Cleanup tasks are
 scheduled via systemd timer units and run via `openqa-gru.service`. The configuration
 is done in
-[the web UI configuration file](GettingStarted.md#configuration) and
+[the web UI configuration file](GettingStarted.md#webui-configuration) and
 various places within the web UI. If you want to tweak the cleanup to your
 needs, have a look at the
 [Cleanup of assets, results and other data](UsersGuide.md#cleanup)
@@ -955,7 +964,7 @@ You can do so by setting your configuration in the repository
 ```
 
 To enable automatic pushing of the repo as well, you need to add the following
-to [the web UI configuration](GettingStarted.md#configuration):
+to [the web UI configuration](GettingStarted.md#webui-configuration):
 
 ``` ini
 [scm git]
@@ -1013,7 +1022,7 @@ example bugzilla), this job is automatically labeled as linked and treated as
 important.
 
 List of recognized referrers is space separated list configured in
-[the web UI configuration file](GettingStarted.md#configuration):
+[the web UI configuration file](GettingStarted.md#webui-configuration):
 
 ``` ini
 [global]
@@ -1083,7 +1092,7 @@ The running jobs heading in the web UI reflects the current dynamic limit when i
 
 Default behavior for all workers is to use the QEMU backend and connect to
 http://localhost. If you want to change some of those options, you can do so
-in [the worker configuration](GettingStarted.md#configuration). For
+in [the worker configuration](GettingStarted.md#worker-configuration). For
 example to point the workers to the FQDN of your host (needed if test cases need
 to access files of the host) use the following setting:
 
@@ -1092,27 +1101,17 @@ to access files of the host) use the following setting:
 HOST = http://openqa.example.com
 ```
 
-The load of the system can affect test execution and cause failures due to delays of command execution and [thrashing](https://en.wikipedia.org/wiki/Thrashing_(computer_science)). If the average over a period of 15 minutes exceeds the specified value the worker will not accept new jobs.
+### Throttling
 
-
-
-
-
-workers.ini
-
-
-
-``` ini
-[global]
-# Set to 0 to disable.
-#CRITICAL_LOAD_AVG_THRESHOLD = 40
-```
-
-
-
-Once you got workers running they should show up in the admin section of openQA in
-the workers section as 'idle'. When you get so far, you have your own instance
-of openQA up and running and all that is left is to set up some tests.
+The load of the system can affect test stability and causing VM boot problems
+and failures due to delays of command execution and
+[thrashing](https://en.wikipedia.org/wiki/Thrashing_(computer_science)). If the
+average over a period of 15 minutes exceeds the specified value, the worker will
+not accept new jobs. This can be controlled via the setting
+`CRITICAL_LOAD_AVG_THRESHOLD`. For this to be more effective,
+also check out the setting `LOCK_NAME`. Both settings can be found in the
+[the worker configuration](GettingStarted.md#worker-configuration) where they
+are explained in greater detail.
 
 ### Further systemd units for the worker
 
@@ -1210,7 +1209,7 @@ detailed instructions how to configure the AMQP server.
 To let openQA send messages to an AMQP message bus,
 first make sure that the `perl-Mojo-RabbitMQ-Client` RPM is installed.
 Then you will need to configure AMQP in
-[the web UI configuration file](GettingStarted.md#configuration):
+[the web UI configuration file](GettingStarted.md#webui-configuration):
 
 ``` ini
 # Enable the AMQP plugin
@@ -1240,7 +1239,7 @@ Requirements:
 
 - Shared storage from all instances must be properly mounted
 
-In [the worker configuration](GettingStarted.md#configuration), enter
+In [the worker configuration](GettingStarted.md#worker-configuration), enter
 space-separated instance hosts and optionally configure where the shared storage
 is mounted. Example:
 
@@ -1280,7 +1279,7 @@ remote instances.
 If your network is slow or you experience long time to load needles you might
 want to consider enabling caching on your remote workers. To enable caching,
 `CACHEDIRECTORY` must be set in
-[the worker configuration](GettingStarted.md#configuration). There are
+[the worker configuration](GettingStarted.md#worker-configuration). There are
 also further settings one can optionally configure. Example:
 
 ``` ini
@@ -1301,7 +1300,7 @@ openQA through the repositories, said directory will be created for you.
 The shown configuration causes workers to download the assets from the web UI
 and use them locally. The `TESTPOOLSERVER` setting causes also tests and needles to be downloaded via `rsync` from the specified location. You can find
 further examples in the comments in
-[the worker configuration](GettingStarted.md#configuration).
+[the worker configuration](GettingStarted.md#worker-configuration).
 
 It is suggested to have the cache and pool directories on the same filesystem
 to ensure assets used by tests are available as long as needed. This is
@@ -1351,7 +1350,7 @@ openqa-worker-cacheservice service) and share it with workers using
 some network filesystem (see [Configuring remote workers](Installing.md#configuring_remote_workers)
 section above).
 Such setups can use `SYNC_ASSETS_HOOK` in
-[the web UI configuration](GettingStarted.md#configuration) to ensure the
+[the web UI configuration](GettingStarted.md#webui-configuration) to ensure the
 cache is up to date before starting the job (or resuming test in developer
 mode). The setting takes a shell command that is executed just before
 evaluating assets. It is up to the system administrator to decide what it
@@ -1493,7 +1492,7 @@ workers are tracked under user whose API keys are workers using.
 Audit log is directly accessible from `Admin menu`.
 
 Auditing, by default enabled, can be disabled by global configuration option in
-[the web UI configuration file](GettingStarted.md#configuration):
+[the web UI configuration file](GettingStarted.md#webui-configuration):
 
 ``` ini
 [global]
@@ -1501,7 +1500,7 @@ audit_enabled = 0
 ```
 
 The `audit` section of
-[the web UI configuration](GettingStarted.md#configuration) allows to
+[the web UI configuration](GettingStarted.md#webui-configuration) allows to
 exclude some events from logging using a space separated blocklist:
 
 ``` ini
@@ -1510,7 +1509,7 @@ blocklist = job_grab job_done
 ```
 
 The `audit/storage_duration` section of
-[the web UI configuration](GettingStarted.md#configuration) allows to set
+[the web UI configuration](GettingStarted.md#webui-configuration) allows to set
 the retention policy for different audit event types:
 
 ``` ini
@@ -2031,7 +2030,7 @@ zypper -n in wireguard-tools
 systemctl enable --now wg-quick@openqa
 ```
 
-Then update [the worker configuration](GettingStarted.md#configuration)
+Then update [the worker configuration](GettingStarted.md#worker-configuration)
 on the workers like this:
 
 ``` ini

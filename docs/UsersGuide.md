@@ -769,7 +769,7 @@ Jenkins.
 > The lookup-depth is limited. The search for candidates will also stop
 > early if too many different kinds of failures were seen. Check out the
 > descriptions of the relevant settings in the `carry_over` section of
-> [the web UI configuration](GettingStarted.md#configuration) for details.
+> [the web UI configuration](GettingStarted.md#webui-configuration) for details.
 
 > **NOTE:**
 > For an approach to add bug references based on a search expression found
@@ -1551,7 +1551,7 @@ The following suffixes exist:
 \_URL
 Before starting these jobs, try to download these assets into the relevant asset directory
 of the openQA web-UI from trusted domains specified in
-[the web UI configuration file](GettingStarted.md#configuration).
+[the web UI configuration file](GettingStarted.md#webui-configuration).
 For example `ISO_1_URL=http://trusted.com/foo.iso` would, if `trusted.com` is set as a trusted domain, cause openQA to download the file `foo.iso` to
 `/var/lib/openqa/share/factory/iso` and set `ISO_1=foo.iso`. If you set both
 `ISO_1` and `ISO_1_URL`, the file pointed to by `ISO_1_URL` will be downloaded and renamed to the name set as `ISO_1`.
@@ -1616,7 +1616,7 @@ All cleanup jobs run within the Minion job queue, normally provided by
 `openqa-gru.service`. The dashboard for Minion jobs is accessible via the
 administrator menu in the web UI. Only one cleanup job can run at the same time
 unless `concurrent` is set to `1` in the `[cleanup]` settings of
-[the web UI configuration](GettingStarted.md#configuration). Many other
+[the web UI configuration](GettingStarted.md#webui-configuration). Many other
 cleanup-related settings can be found within the web UI configuration as well,
 e.g. the `[…_limits]` sections contain various tweaks and allow to change certain
 defaults. Check out the sub section
@@ -1670,7 +1670,7 @@ Further remarks:
   how to mark a job as important on job group level. Jobs can also be marked as
   important by adding a "link label" (e.g.
   `label:linked Job mentioned on https://…`) in a job comment. - New groups use the limits configured in the `[default_group_limits]`
-  section of [the web UI configuration](GettingStarted.md#configuration).
+  section of [the web UI configuration](GettingStarted.md#webui-configuration).
   Jobs outside of any group use the limits configured in the `[no_group_limits]`
   section of the web UI configuration.
 

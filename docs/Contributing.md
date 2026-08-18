@@ -414,10 +414,13 @@ assets can need a big amount of disk space.
 ### Customize configuration directory
 
 When running openQA from a Git checkout it will find configuration files from
-that checkout under `etc/openqa` and not use any system provided config files under e.g. `/etc/openqa`.
+that checkout under `etc/openqa` and not use any system provided config files
+under e.g. `/etc/openqa`.
 
 It can be necessary during development to change the configuration.
-For example you have to edit `etc/openqa/database.ini` to use another database. It can also be useful to set the authentication method to `Fake` and increase the log level `etc/openqa/openqa.ini`.
+For example you have to edit `etc/openqa/database.ini` to use another database.
+It can also be useful to set the authentication method to `Fake` and increase
+the log level `etc/openqa/openqa.ini`.
 
 To avoid these changes getting in your Git workflow, copy them to a new
 directory and set the environment variable `OPENQA_CONFIG`:
@@ -428,7 +431,8 @@ export OPENQA_CONFIG=$PWD/etc/mine
 ```
 
 > **NOTE:**
-> `OPENQA_CONFIG` needs to point to the **directory** containing `openqa.ini`, > `database.ini`, `client.conf` and `workers.ini` (and **not** a specific file).
+> `OPENQA_CONFIG` needs to point to the **directory** containing `openqa.ini`,
+> `database.ini`, `client.conf` and `workers.ini` (and **not** a specific file).
 
 ### Setting up the PostgreSQL database
 
@@ -439,13 +443,15 @@ Setting up a PostgreSQL database for openQA takes the following steps:
 
 2.  Start the server: `systemctl start postgresql`
 
-3.  The next two steps need to be done as the user **postgres**: `sudo su - postgres`
+3.  The next two steps need to be done as the user **postgres**:
+    `sudo su - postgres`
 
 4.  Create user: `createuser your_username` where `your_username` must be
     the same as the UNIX user you start your local openQA instance with. For a
     development instance that is normally your regular user.
 
-5.  Create database: `createdb -O your_username openqa-local` where  `openqa-local` is the name you want to use for the database
+5.  Create database: `createdb -O your_username openqa-local` where
+    `openqa-local` is the name you want to use for the database
 
 6.  Configure openQA to use PostgreSQL as described in the section
     [Database](Installing.md#database) of the installation guide.
@@ -455,7 +461,8 @@ Setting up a PostgreSQL database for openQA takes the following steps:
 
 7.  openQA will default-initialize the new database on the next startup.
 
-The script `openqa-setup-db` can be used to conduct step 4 and 5. You must still specify the user and database name and run it as user `postgres`:
+The script `openqa-setup-db` can be used to conduct step 4 and 5. You must still
+specify the user and database name and run it as user `postgres`:
 
 ```sh
 sudo sudo -u postgres openqa-setup-db your_username openqa-local
@@ -493,7 +500,8 @@ e.g. `script/openqa-scheduler daemon`.
 
 You can also have a look at the systemd unit files. Although it likely makes
 not much sense to use them directly you can have a look at them to see how the
-different daemons are started. They are found in the `systemd` directory of the openQA repository. You can substitute `/usr/share/openqa/` with the path
+different daemons are started. They are found in the `systemd` directory of the
+openQA repository. You can substitute `/usr/share/openqa/` with the path
 of your openQA Git checkout.
 
 Of course you can ignore the user specified in these unit files and instead
@@ -505,7 +513,8 @@ is not the case by default so it makes sense to
 You do **not** need to setup an additional web server because the daemons
 already provide one. The port under which a service is available is logged on
 startup (the main web UI port is 9625 by default). Local workers need to be
-configured to connect to the main web UI port (add `HOST = [http://localhost:9526+](http://localhost:9526+) to `workers.ini`).
+configured to connect to the main web UI port (add
+`HOST = http://localhost:9526` to `workers.ini`).
 
 Note that you can also start services using a temporary database using the unit
 test database setup and data directory:
@@ -905,7 +914,7 @@ openQA comes with two authentication modules providing authentication methods:
 OpenID and Fake (see [User authentication](Installing.md#authentication)).
 
 All authentication modules reside in `lib/OpenQA/Auth` directory. During openQA start, the `[auth]/method` section of
-[the web UI configuration](GettingStarted.md#configuration) is read and
+[the web UI configuration](GettingStarted.md#webui-configuration) is read and
 according to its value (or default OpenID) openQA tries to require
 `OpenQA::WebAPI::Auth::$method`. If successful, the module for the given method
 is imported or openQA ends with error.
