@@ -1856,8 +1856,23 @@ The message topic follows the format `SCOPE.APPLICATION.OBJECT.ACTION`, for exam
 
 Here are the events triggered and published by openQA:
 
-1.  `openqa.job.create` when a job is created 2. `openqa.job.delete` when a job is deleted 3. `openqa.job.cancel` when a job is cancelled 4. `openqa.job.restart` when a job is restarted or duplicated 5. `openqa.job.update_result` when a job result is updated 6. `openqa.job.done` when a job finishes Job event bodies include the job settings (e.g. `BUILD`, `TEST`, `ARCH`,
-    `MACHINE`, `FLAVOR`, asset fields like `ISO` or `HDD_1`) plus `id`, `group_id`, and `remaining` (number of pending jobs for the same build). Finished jobs additionally include `result`, `reason`, `newbuild`, `failedmodules`, `bugref`, and `bugurl` (only present when a bug reference exists). Example of a `*.openqa.job.done` message body (at the time of writing):
+1.  `openqa.job.create` when a job is created
+
+2.  `openqa.job.delete` when a job is deleted
+
+3.  `openqa.job.cancel` when a job is cancelled
+
+4.  `openqa.job.restart` when a job is restarted or duplicated
+
+5.  `openqa.job.update_result` when a job result is updated
+
+6.  `openqa.job.done` when a job finishes
+
+Job event bodies include the job settings (e.g. `BUILD`, `TEST`, `ARCH`,
+`MACHINE`, `FLAVOR`, asset fields like `ISO` or `HDD_1`) plus `id`, `group_id`,
+and `remaining` (number of pending jobs for the same build). Finished jobs
+additionally include `result`, `reason`, `newbuild`, `failedmodules`, `bugref`,
+and `bugurl` (only present when a bug reference exists). Example of a `*.openqa.job.done` message body (at the time of writing):
 
 ```json
 {
