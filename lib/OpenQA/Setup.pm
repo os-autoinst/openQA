@@ -328,6 +328,9 @@ sub default_config () {
         },
         archiving => {
             archive_preserved_important_jobs => 0,
+            archive_important_jobs_min_free_percentage => 0,
+            archive_keep_free_percentage => 5,
+            archive_max_duration => 300,
         },
         job_details_archive => {
             job_details_archive_cache_dir => undef,
