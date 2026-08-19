@@ -13,6 +13,7 @@ use DBIx::Class::Timestamps 'now';
 use List::Util qw(min);
 use Feature::Compat::Try;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
+use OpenQA::WorkerReservation 'reservation_error_status';
 
 =pod
 
@@ -46,6 +47,7 @@ sub list ($self) {
     my $validation = $self->validation;
     $validation->optional('limit')->num;
     $validation->optional('offset')->num;
+    $validation->optional('reserved')->num;
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
     my $limits = OpenQA::App->singleton->config->{misc_limits};
@@ -53,19 +55,17 @@ sub list ($self) {
       = min($limits->{admin_table_max_limit}, $validation->param('limit') // $limits->{admin_table_default_limit});
     my $offset = $validation->param('offset') // 0;
 
-    my @all = $self->schema->resultset('Workers')->search({}, {rows => $limit + 1, offset => $offset})->all;
-
-    # Pagination
-    pop @all if my $has_more = @all > $limit;
+    my $workers = $self->schema->resultset('Workers');
+    my $reserved_param = $validation->param('reserved');
+    my $condition
+      = defined $reserved_param
+      ? {id => {($reserved_param ? '-in' : '-not_in') => [keys %{$workers->active_reservations}]}}
+      : {};
+    my @paged = $workers->search($condition, {rows => $limit + 1, offset => $offset, order_by => 'id'})->all;
+    pop @paged if my $has_more = @paged > $limit;
     $self->pagination_links_header($limit, $offset, $has_more);
 
-    my $ret = [];
-    for my $worker (@all) {
-        next unless $worker->id;
-        push @$ret, $worker->info;
-    }
-
-    $self->render(json => {workers => $ret});
+    $self->render(json => {workers => [map { $_->info } grep { $_->id } @paged]});
 }
 
 =over 4
@@ -245,6 +245,9 @@ sub delete ($self) {
     if (!$worker) {
         return $self->render(json => {error => 'Worker not found.'}, status => 404);
     }
+    if ($worker->is_reserved && !($self->param('force') && $self->current_user->is_admin)) {
+        return $self->render(json => {error => 'Cannot delete a reserved worker.'}, status => 400);
+    }
     if ($worker->status ne 'dead' || $worker->unfinished_jobs->count) {
         $message = 'Worker ' . $worker->name . ' status is not offline.';
         return $self->render(json => {error => $message}, status => 400);
@@ -255,6 +258,76 @@ sub delete ($self) {
     $message = 'Delete worker ' . $worker->name . ' successfully.';
     $self->emit_event('openqa_worker_delete', {id => $worker->id, name => $worker->name});
     $self->render(json => {message => $message});
+}
+
+# returns the addressed worker or renders a 404, the routes are already restricted to operators
+sub _reservation_worker ($self) {
+    my $worker = $self->schema->resultset('Workers')->find($self->param('workerid'));
+    $self->render(json => {error => 'Worker not found.'}, status => 404) unless $worker;
+    return $worker;
+}
+
+# runs $action, renders the error of a failed reservation operation and returns whether it succeeded
+sub _apply_reservation ($self, $action) {
+    try { $action->() }
+    catch ($e) {
+        $self->render(json => {error => "$e"}, status => reservation_error_status($e));
+        return 0;
+    }
+    return 1;
+}
+
+=over 4
+
+=item reserve()
+
+Reserves a worker instance with a comment and a specified duration.
+Optionally accepts a C<worker_class> for verification jobs.
+
+=back
+
+=cut
+
+sub reserve ($self) {
+    return undef unless my $worker = $self->_reservation_worker;
+    my $user = $self->current_user;
+    my $comment = $self->param('comment');
+    my $worker_class = $self->param('worker_class');
+    return undef
+      unless $self->_apply_reservation(
+        sub { $worker->reserve($user, $comment, $self->param('duration'), $self->param('force'), $worker_class) });
+
+    my $reservation = $worker->reservation;
+    my $audit_payload = {
+        id => $worker->id,
+        name => $worker->name,
+        user => $user->username,
+        comment => $comment,
+        expires => $reservation->{t_expires},
+    };
+    $audit_payload->{worker_class} = $worker_class if defined $worker_class && length $worker_class;
+    $self->emit_event('openqa_worker_reserve', $audit_payload);
+    $self->render(
+        json => {message => 'Worker ' . $worker->name . ' reserved successfully.', reservation => $reservation});
+}
+
+=over 4
+
+=item release()
+
+Releases an existing worker reservation.
+
+=back
+
+=cut
+
+sub release ($self) {
+    return undef unless my $worker = $self->_reservation_worker;
+    my $user = $self->current_user;
+    return undef unless $self->_apply_reservation(sub { $worker->release($user) });
+
+    $self->emit_event('openqa_worker_release', {id => $worker->id, name => $worker->name, user => $user->username});
+    $self->render(json => {message => 'Worker ' . $worker->name . ' reservation released successfully.'});
 }
 
 1;

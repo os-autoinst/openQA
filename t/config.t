@@ -232,6 +232,33 @@ subtest 'Validation of worker timeout' => sub {
     };
 };
 
+subtest 'Validation of worker reservation config' => sub {
+    my $defaults = OpenQA::Setup::WORKER_RESERVATION_DURATION_DEFAULTS;
+    my %config = (worker_reservation => {%$defaults, comment_required => 1});
+    my $app = Mojolicious->new(config => \%config, log => $quiet_log);
+    my $reservation = $config{worker_reservation};
+
+    OpenQA::Setup::_validate_worker_reservation_config($app);
+    is_deeply $reservation, {%$defaults, comment_required => 1}, 'valid config is left untouched';
+
+    $reservation->{default_duration} = '30m';
+    $reservation->{comment_required} = 0;
+    OpenQA::Setup::_validate_worker_reservation_config($app);
+    is $reservation->{default_duration}, ONE_MINUTE * 30, 'duration with unit suffix is converted to seconds';
+    is $reservation->{comment_required}, 0, 'disabled comment requirement is accepted';
+
+    for my $key (sort keys %$defaults) {
+        $reservation->{$key} = 'invalid';
+        combined_like { OpenQA::Setup::_validate_worker_reservation_config($app) } qr/Invalid.*$key/,
+          "warning logged for invalid $key";
+        is $reservation->{$key}, $defaults->{$key}, "invalid $key falls back to the default";
+    }
+    $reservation->{comment_required} = 'yes';
+    combined_like { OpenQA::Setup::_validate_worker_reservation_config($app) } qr/Invalid.*comment_required/,
+      'warning logged for invalid comment_required';
+    is $reservation->{comment_required}, 1, 'invalid comment_required falls back to being required';
+};
+
 subtest 'Validation of file_security_policy' => sub {
     my %config;
     my $app = Mojolicious->new(config => \%config, log => $quiet_log);

@@ -672,7 +672,8 @@ a comma-separated list of worker class values. The values are combined from
 multiple places where defined. Typically machines and test suite
 configurations set the worker class. Jobs with this variable set are assigned
 only to workers, which have all corresponding worker class values in their
-configuration (and-combination).
+configuration (and-combination). A [reserved worker](UsersGuide.md#reserving_workers)
+with a specific class only accepts jobs explicitly requesting that class.
 
 For example, the following configuration ensures, that jobs with
 `WORKER_CLASS=desktop` can be assigned _only_ to worker instances 1 and 2. Jobs with `WORKER_CLASS=desktop,foo` can only be assigned to worker instance 2 which has both the values `desktop` _and_ `foo`:

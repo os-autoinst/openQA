@@ -95,6 +95,10 @@ use constant ONE_SECOND_IN_MICROSECONDS => 1_000_000;
 use constant RANDOM_STRING_DEFAULT_LENGTH => 16;
 use constant DEFAULT_OPENQA_BASE_PORT => 9526;
 
+use constant DURATION_UNITS => {d => ONE_DAY, h => ONE_HOUR, m => ONE_MINUTE, s => 1};
+# ~317 years, high enough for any real duration and low enough to stay within integer precision
+use constant MAX_DURATION_IN_SECONDS => 10_000_000_000;
+
 our @EXPORT =    ## no critic (Modules::ProhibitAutomaticExportation)
   qw(
   UNCONSTRAINED_BUGREF_REGEX
@@ -146,6 +150,7 @@ our @EXPORT =    ## no critic (Modules::ProhibitAutomaticExportation)
   service_port
   raw_service_port
   change_sec_to_word
+  parse_duration
   find_video_files
   fix_top_level_help
   looks_like_url_with_scheme
@@ -884,20 +889,23 @@ sub base_host ($url) { Mojo::URL->new($url)->host || $url }
 sub change_sec_to_word ($second = undef) {
     return undef unless $second;
     return undef if ($second !~ /^[[:digit:]]+$/);
-    my %time_numbers = (
-        d => ONE_DAY,
-        h => ONE_HOUR,
-        m => ONE_MINUTE,
-        s => 1
-    );
+    my $units = DURATION_UNITS;
     my $time_word = '';
     for my $key (qw(d h m s)) {
-        $time_word .= int($second / $time_numbers{$key}) . $key . ' '
-          if (int($second / $time_numbers{$key}));
-        $second = int($second % $time_numbers{$key});
+        $time_word .= int($second / $units->{$key}) . $key . ' '
+          if (int($second / $units->{$key}));
+        $second = int($second % $units->{$key});
     }
     $time_word =~ s/\s$//g;
     return $time_word;
+}
+
+# converts a duration like '5h', '2d' or a plain number of seconds into seconds, undef if unparsable
+sub parse_duration ($str) {
+    return undef unless defined $str;
+    return undef unless my ($num, $unit) = $str =~ /^(\d+)([smhd]?)$/i;
+    my $seconds = $num * ($unit ? DURATION_UNITS->{lc $unit} : 1);
+    return $seconds > MAX_DURATION_IN_SECONDS ? undef : $seconds;
 }
 
 sub find_video_files ($dir) { path($dir)->list_tree->grep(VIDEO_FILE_NAME_REGEX) }

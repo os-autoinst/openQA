@@ -1137,6 +1137,65 @@ special.
 If you need the literal string `<<` (for example as a value in the job
 settings), you have to quote it.
 
+<a id="reserving_workers"></a>
+
+## Reserving workers
+
+Operators can reserve individual worker instances to take them out of the
+scheduling rotation, for example for maintenance or manual testing. Reserving a
+worker does not interrupt the job it is currently running, it only prevents new
+jobs from being assigned. A reservation expires automatically after its
+duration, releasing the worker again.
+
+Reservations are managed in the workers table of the admin area or via the more
+convenient `reservation` subcommand of `openqa-cli`:
+
+```bash
+openqa-cli reservation --comment="Manual testing" --duration=5h <id>
+openqa-cli reservation --release <id>
+```
+
+Alternatively, reservations can be managed via the REST API directly:
+
+```bash
+openqa-cli api -X POST workers/<id>/reservation comment="Manual testing" duration=5h
+openqa-cli api -X DELETE workers/<id>/reservation
+```
+
+The duration accepts a plain number of seconds or a value with a unit suffix
+such as `30m`, `5h` or `2d`. Only admins may use `0` for an indefinite
+reservation, override a reservation held by somebody else via `force=1` or
+release a reservation owned by somebody else.
+
+The comment requirement, the default duration and the maximum durations for
+operators and admins are configured in the `[worker_reservation]` section of
+`/etc/openqa/openqa.ini`.
+
+### Keeping a reserved worker usable for specific tasks
+
+By default, a reserved worker is completely excluded from scheduling. If you need
+to run specific jobs on it (e.g. to test a worker configuration change),
+you can assign it a specific class when reserving it:
+
+```bash
+openqa-cli reservation --class poo167749 --comment "poo#167749 verification" \
+  --duration 1d <worker_id>
+openqa-clone-job --within-instance openqa.example.com 12345 WORKER_CLASS=poo167749
+openqa-cli reservation --release <worker_id>
+```
+
+The effective class set of the worker becomes its normal capability classes (like
+`qemu_x86_64`) plus the specific class, meaning that the specific class is appended
+to the existing comma-separated list of worker classes. However, contrary to normal
+operation, the worker will only match jobs that explicitly request this specific class.
+This mechanism replaces editing `WORKER_CLASS` in `workers.ini` because it is instant,
+requires no worker restart, is not reverted by configuration management, and the state
+is visible in the web UI.
+
+A worker reserved this way still counts as reserved rather than idle in the overall
+statistics. Reservations are tracked per web UI, so a worker connected to multiple
+web UIs is only tagged on the one where the reservation was made.
+
 <a id="rest_api"></a>
 
 ## Use of the REST API

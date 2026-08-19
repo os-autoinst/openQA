@@ -848,4 +848,71 @@ subtest 'parallel pinning' => sub {
     } or diag $explain_slots->();
 };
 
+subtest 'scheduler handles worker reservations' => sub {
+    my $operator
+      = $schema->resultset('Users')->create({username => 'percival', is_operator => 1, feature_version => 0});
+    my $worker = $workers->first;
+    my ($original_t_seen, $original_error) = ($worker->t_seen, $worker->error);
+    my $guard = scope_guard sub { $worker->update({t_seen => $original_t_seen, error => $original_error}) };
+    $worker->update({t_seen => DateTime->now(time_zone => 'UTC'), error => undef});
+    $worker->set_property(WEBSOCKET_API_VERSION => WEBSOCKET_API_VERSION);
+    $worker->set_property(WORKER_CLASS => 'qemu_x86_64');
+
+    my $is_online = sub {
+        scalar grep { $_->id == $worker->id } @{OpenQA::Scheduler::Model::Jobs::determine_online_workers(0)};
+    };
+
+    $worker->reserve($operator, 'scheduled reservation', '1h');
+    ok !$is_online->(), 'reserved worker without tag is not returned as an online candidate by the scheduler';
+    $worker->release($operator);
+    $worker->reserve($operator, 'scheduled reservation with tag', '1h', 0, 'poo167749');
+    ok $is_online->(), 'reserved worker with verification tag is returned as an online candidate by the scheduler';
+    my $scheduler = OpenQA::Scheduler::Model::Jobs->new;
+    my $job_prod = $schema->resultset('Jobs')
+      ->create_from_settings({%settings, WORKER_CLASS => 'qemu_x86_64', TEST => 'test_prod'});
+    $job_prod->update({state => 'scheduled', priority => 50});
+    my $job_verif = $schema->resultset('Jobs')
+      ->create_from_settings({%settings, WORKER_CLASS => 'qemu_x86_64,poo167749', TEST => 'test_verif'});
+    $job_verif->update({state => 'scheduled', priority => 50});
+    my $cleanup = scope_guard sub { $job_prod->delete; $job_verif->delete; };
+    $scheduler->determine_scheduled_jobs;
+    my ($allocated_workers, $allocated_jobs) = $scheduler->_allocate_jobs;
+    is $allocated_jobs->{$job_prod->id}, undef, 'job requesting only production class is not assigned to tagged worker';
+    is $scheduler->scheduled_jobs->{$job_prod->id}->{current_reason}, 'no free workers for class qemu_x86_64',
+      'truthful rejection reason for job lacking the tag';
+    is $allocated_jobs->{$job_verif->id}->{worker}, $worker->id,
+      'job requesting the tag is assigned to the reserved worker';
+    $worker->update({job_id => undef});
+    $worker->release($operator);
+    ok $is_online->(), 'released worker is returned again as an online candidate by the scheduler';
+    $scheduler->determine_scheduled_jobs;
+    ($allocated_workers, $allocated_jobs) = $scheduler->_allocate_jobs;
+    is $allocated_jobs->{$job_prod->id}->{worker}, $worker->id, 'releasing restores normal matching for production job';
+    $worker->update({job_id => undef});
+};
+
+subtest 'parallel cluster does not split across tagged and untagged workers' => sub {
+    my $ws5 = $workers->create({host => 'host99', instance => 1}) or return fail 'unable to create worker5';
+    my $ws6 = $workers->create({host => 'host99', instance => 2}) or return fail 'unable to create worker6';
+    my $cleanup = scope_guard sub { $ws5->delete; $ws6->delete; };
+    my $active_reservations = {$ws6->id => {worker_class => 'poo167749'}};
+    my $job1 = {id => 1, worker_classes => ['qemu_x86_64'], one_host_only => 1};
+    my $job2 = {id => 2, worker_classes => ['qemu_x86_64'], one_host_only => 1};
+    $ws5->set_property(WORKER_CLASS => 'qemu_x86_64');
+    $ws6->set_property(WORKER_CLASS => 'qemu_x86_64');
+    my $has_matching1 = 0;
+    my $has_matching2 = 0;
+    $job1->{matching_workers}
+      = OpenQA::Scheduler::Model::Jobs::_matching_workers($job1, [$ws5, $ws6], {}, \$has_matching1,
+        $active_reservations);
+    $job2->{matching_workers}
+      = OpenQA::Scheduler::Model::Jobs::_matching_workers($job2, [$ws5, $ws6], {}, \$has_matching2,
+        $active_reservations);
+    is_deeply [map { $_->id } @{$job1->{matching_workers}}], [$ws5->id], 'job without tag only matches untagged worker';
+    is_deeply [map { $_->id } @{$job2->{matching_workers}}], [$ws5->id], 'job without tag only matches untagged worker';
+    my @cluster = ($job1, $job2);
+    my $picked_slots = OpenQA::Scheduler::WorkerSlotPicker->new(\@cluster)->pick_slots_with_common_worker_host;
+    is_deeply $picked_slots, [], 'cluster requiring 2 slots cannot run because host3 only has 1 untagged slot';
+};
+
 done_testing;
