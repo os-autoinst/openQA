@@ -1,4 +1,4 @@
-# Copyright 2015-2019 SUSE LLC
+# Copyright SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Schema::Result::Needles;

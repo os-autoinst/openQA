@@ -1,6 +1,6 @@
 #!/bin/bash -e
 # shellcheck disable=SC2103
-# Copyright 2016-2019 SUSE LLC
+# Copyright SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 # The script runs in three major modes:

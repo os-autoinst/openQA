@@ -1,4 +1,4 @@
-# Copyright 2016-2020 SUSE LLC
+# Copyright SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Plugin::AMQP;

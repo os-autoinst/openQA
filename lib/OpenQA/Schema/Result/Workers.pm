@@ -1,4 +1,4 @@
-# Copyright 2015 SUSE LLC
+# Copyright SUSE LLC
 #               2016-2020 SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 

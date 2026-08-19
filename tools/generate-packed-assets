@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-# Copyright 2016-2019 SUSE LLC
+# Copyright SUSE LLC
 # Copyright 2016 Red Hat
 # SPDX-License-Identifier: GPL-2.0-or-later
 

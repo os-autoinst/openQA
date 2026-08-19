@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# Copyright 2021 SUSE LLC
+# Copyright SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
@@ -34,5 +34,7 @@ is
 qx{git grep -Pr "(?<!->)(?<!sub )(?<!\\#.{,254})\\b(ok|is|isnt|like|unlike|cmp_ok|can_ok|isa_ok|subtest|diag|note|explain|pass|fail|new_ok|is_deeply)\\s*\\(" {t,xt}/ | grep -vE "(t|xt)/(lib|testresults)/"},
   '',
   'Consistent Test::More call format (no parentheses)';
+
+is qx{git grep -I -l -E 'Copyright [0-9]{4}(-?[0-9]{4})? SUSE LLC' ':!external/'}, '', "No files using 'Copyright <year> SUSE LLC'";
 
 done_testing;

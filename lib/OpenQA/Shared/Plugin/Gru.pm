@@ -1,4 +1,4 @@
-# Copyright 2015-2021 SUSE LLC
+# Copyright SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 # a lot of this is inspired (and even in parts copied) from Minion (Artistic-2.0)
