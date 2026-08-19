@@ -13,6 +13,7 @@ our @EXPORT =    ## no critic (Modules::ProhibitAutomaticExportation)
   open_new_tab mock_js_functions element_visible element_hidden
   element_not_present javascript_console_has_no_warnings_or_errors
   wait_until wait_until_element_gone wait_for_element wait_for_data_table
+  wait_for_url
   element_prop element_prop_by_selector map_elements);
 
 use Carp;
@@ -368,6 +369,12 @@ sub wait_for_data_table ($table, $expected_row_count) {
     "$expected_row_count rows present", {timeout => OpenQA::Test::TimeLimit::scale_timeout(10)};
     is scalar @entries, $expected_row_count, 'DataTable shows expected number of rows';
     return \@entries;
+}
+
+sub wait_for_url ($regex, $desc = undef) {
+    $desc //= "URL updated with $regex";
+    wait_for { $_DRIVER->get_current_url =~ $regex } $desc;
+    like $_DRIVER->get_current_url, $regex, $desc;
 }
 
 sub kill_driver () {

@@ -11,7 +11,7 @@ use Test::Warnings ':report_warnings';
 use OpenQA::Constants 'DEFAULT_WORKER_TIMEOUT';
 use OpenQA::Test::TimeLimit '18';
 use OpenQA::Test::Case;
-use OpenQA::Test::Utils qw(assume_all_assets_exist embed_server_for_testing);
+use OpenQA::Test::Utils qw(assume_all_assets_exist embed_server_for_testing wait_for);
 use Date::Format 'time2str';
 use OpenQA::WebSockets::Client;
 use OpenQA::SeleniumTest;
@@ -191,6 +191,35 @@ is_deeply
     '0', '1 hour ago',
   ],
   'the first job has been restarted';
+
+subtest 'table persistence' => sub {
+    subtest 'load worker page with a specific status filter' => sub {
+        $driver->get('/admin/workers?status=Working');
+        wait_for { $driver->find_element('#workers_online')->get_value eq 'Working' } 'status selection updated';
+        is $driver->find_element('#workers_online')->get_value, 'Working', 'working status selected from URL';
+    };
+    subtest 'change select filter and check URL updates' => sub {
+        $driver->find_element_by_xpath("//select[\@id='workers_online']/option[\@value='Idle']")->click;
+        wait_for { $driver->get_current_url !~ qr/status=/ } 'URL updated with status removed for default';
+        unlike $driver->get_current_url, qr/status=/, 'URL updated with status removed for default';
+        $driver->find_element_by_xpath("//select[\@id='workers_online']/option[\@value='Offline']")->click;
+        wait_for_url qr/status=Offline/;
+    };
+    subtest 'enter search query and check URL updates' => sub {
+        $driver->find_element('.dt-search input')->send_keys('foo');
+        wait_for_url qr/q=foo/;
+    };
+    subtest 'sort by host (second column) and check URL updates' => sub {
+        $driver->find_element('#workers thead th:nth-child(2)')->click;
+        wait_for_url qr/sort=1/;
+    };
+    subtest 'reload page with further query parameters to verify persistence restores correctly' => sub {
+        $driver->get('/admin/workers?sort=1&order=desc&q=foo');
+        wait_for { $driver->find_element('.dt-search input')->get_value eq 'foo' } 'table updated';
+        is $driver->find_element('.dt-search input')->get_value, 'foo', 'search value "foo" restored';
+        is $driver->find_element('.dt-ordering-desc')->get_text, 'Host', 'sorting in descending order by host';
+    };
+};
 
 kill_driver();
 done_testing();

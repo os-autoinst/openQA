@@ -21,7 +21,7 @@ function setupWorkerNeedles() {
 }
 
 function loadWorkerTable() {
-  $('#workers').DataTable({
+  const table = $('#workers').DataTable({
     initComplete: function () {
       this.api()
         .columns()
@@ -56,6 +56,12 @@ function loadWorkerTable() {
   // prevent sorting when worker status selection clicked
   $('#workers_online').on('click', function (event) {
     event.stopPropagation();
+  });
+
+  setupTablePersistence(table, {
+    customFilters: {
+      status: {column: 4, element: '#workers_online', defaultValue: 'Idle'}
+    }
   });
 }
 
