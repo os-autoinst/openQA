@@ -1678,24 +1678,53 @@ Archiving of important jobs can be enabled:
 #archive_preserved_important_jobs = 0
 ```
 
-When archiving is enabled important job results are moved to the archive
-directory once they reach the expiration for regular job logs. This
-happens as part of the normal cleanup. In the web UI an icon indicates that
-a job was archived.
+When archiving is enabled, important job results can be moved to the archive
+directory in two different ways:
+
+1.  **Retention-based archiving (on log expiration):** Important job results
+    are moved once they exceed the retention period for regular job logs. This
+    happens as part of the normal cleanup.
+2.  **Space-driven upfront archiving (under storage pressure):** Important job
+    results whose retention has not yet expired are moved upfront to free up
+    space when the results file system runs full. This is triggered during
+    cleanup when the free space on the results file system falls below the
+    percentage configured by `archive_important_jobs_min_free_percentage`.
+
+In the web UI, an icon indicates that a job was archived.
 
 This means a job is "in the archive" if:
 
 1.  it is important.
 
-2.  its age is between the retention of regular jobs and important jobs.
+2.  its age is between the retention of regular jobs and important jobs (or it
+    was archived upfront under storage pressure).
 
 3.  thresholds for space-aware cleanup do not prevent the cleanup of job results
     from happening at all (because if the cleanup is skipped, also archiving is
     skipped).
 
+Upfront archiving under storage pressure can be tuned using the settings
+`archive_important_jobs_min_free_percentage`, `archive_keep_free_percentage`,
+and `archive_max_duration` under the `[archiving]` section in the configuration.
+
+The upfront archiving process runs sequentially starting from the oldest
+eligible job, and checks the configured boundaries before moving each job's
+results. It stops immediately if:
+
+- The free space on the results file system reaches the target threshold
+  (`archive_important_jobs_min_free_percentage`).
+- The free space on the archive file system drops below the safety floor
+  (`archive_keep_free_percentage`).
+- The time budget for archiving is exhausted (`archive_max_duration`).
+- No further eligible important unarchived jobs are left in final states.
+
 > **NOTE:**
-> Archiving does **not** prevent cleanup. If an archived important job exceeds
-> the retention for important jobs it is still subject to cleanup.
+>
+> - Upfront archiving only frees up results storage space if the results directory
+>   and the archive directory are mounted on separate file systems (devices).
+> - Archiving does **not** prevent cleanup. If an archived important job exceeds
+>   the retention for important jobs, it is still subject to deletion during the
+>   standard cleanup.
 
 ### Space-aware cleanup
 
