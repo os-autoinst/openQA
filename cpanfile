@@ -46,6 +46,7 @@ requires 'Getopt::Long';
 requires 'Getopt::Long::Descriptive';
 requires 'HTTP::Status';
 requires 'IO::Handle';
+requires 'IO::Interactive';
 requires 'IO::Socket::SSL', '>= 2.009';
 requires 'IPC::Run';
 requires 'JSON::Validator';
