@@ -726,39 +726,54 @@ WORKER_CLASS = planet-earth,continent-antarctica,location-my_station
 By default the openQA workers run the "isotovideo" application from PATH on the
 worker host, that is in most cases
 [isotovideo](https://github.com/os-autoinst/os-autoinst/blob/master/isotovideo).
-A custom worker engine command can be set with the test variable `ISOTOVIDEO`.
-For example to run isotovideo from a custom container image one could use the
-test variable setting
-`ISOTOVIDEO=podman run --pull=always --rm -it registry.example.org/my/container/isotovideo /usr/bin/isotovideo -d`
 
-Alternatively, you can run the worker engine inside a rootless Podman
-container by setting `OS_AUTOINST_GIT_REPO` to a Git repository URL.
-openQA will construct a Podman command to clone, build, and execute
-`os-autoinst` from that repository.
-The following optional test variables are supported:
+You can run the worker engine inside a rootless Podman container by setting
+`OS_AUTOINST_GIT_REPO` to a Git repository URL. openQA will automatically
+construct a Podman command to clone, build, and execute `os-autoinst` from
+that repository.
 
+The preferred and most flexible way to configure this is to explicitly specify
+the Git repositories for your test distribution and needles using `CASEDIR`
+and `NEEDLES_DIR` so that a proper git directory is supplied (especially useful
+for non-legacy tests). Here is a copy-pastable snippet using `openqa-clone-job`:
+
+```sh
+openqa-clone-job --skip-chained-deps --within-instance <target_job_url> \
+  OS_AUTOINST_GIT_REPO=https://github.com/<your_username>/os-autoinst.git \
+  OS_AUTOINST_GIT_BRANCH=<your_test_branch> \
+  OS_AUTOINST_CONTAINER_IMAGE=registry.opensuse.org/devel/openqa/containers/osado-dev-container:latest \
+  CASEDIR=https://github.com/os-autoinst/os-autoinst-distri-opensuse.git \
+  NEEDLES_DIR=https://github.com/os-autoinst/os-autoinst-needles-opensuse.git
+```
+
+The variables used in this snippet configure the following:
+
+- `OS_AUTOINST_GIT_REPO`: The repository containing the custom `os-autoinst` engine.
 - `OS_AUTOINST_GIT_BRANCH`: The branch to clone (defaults to `master`).
 - `OS_AUTOINST_CONTAINER_IMAGE`: A custom container image to use (defaults to
   `registry.opensuse.org/devel/openqa/containers/os-autoinst_dev:latest`).
   `OS_AUTOINST_CONTAINER_IMAGE` requires `OS_AUTOINST_GIT_REPO` to be set.
-  For openSUSE test-distribution testing, you can use
-  `registry.opensuse.org/devel/openqa/containers/osado-dev-container:latest`
-  which pre-installs necessary test dependencies like
-  `os-autoinst-distri-opensuse-deps`.
+  For openSUSE test-distribution testing, you can use the `osado-dev-container`
+  which pre-installs necessary dependencies like `os-autoinst-distri-opensuse-deps`.
+- `CASEDIR` / `NEEDLES_DIR`: Point these to your public Git repositories so the
+  container can clone and locate the required test scripts and needles.
 
-When running inside a rootless container using these variables, the container
-starts as a clean environment. Consequently, default local worker test
-directories (such as `/var/lib/openqa/share/tests/opensuse`) are not mounted.
-To ensure the container can find and execute your test suite, you must
-configure the following:
+#### Testing with internal repositories
 
-- `CASEDIR`: Set this to the public Git repository of your test distribution
-  (e.g. `https://github.com/os-autoinst/os-autoinst-distri-opensuse.git`) so
-  the container can clone and locate the test scripts.
-- `NEEDLES_DIR`: Since needles are typically managed in a separate repository,
-  you must point this to the corresponding needles Git repository (e.g.
-  `https://github.com/os-autoinst/os-autoinst-needles-opensuse.git`) so the
-  container can clone and initialize the required needles.
+For internal or private Git repositories, cloning directly inside the container
+could fail due to missing SSL certificates. To simplify this, openQA automatically
+detects if standard host system CA certificate directories (such as `/etc/ssl/certs`,
+`/etc/pki`, `/usr/share/pki`, and `/var/lib/ca-certificates`) exist on the host.
+If present, they are automatically volume-mounted read-only into the rootless
+container. This allows the container's git command to securely verify internal git
+servers without requiring any manual certificate or custom `ISOTOVIDEO` commands.
+
+Alternatively, you can rely on the built-in fallback for legacy tests: the host
+openQA worker's standard `share` and `tests` directories, as well as any instance
+test caches (e.g. `/var/lib/openqa/cache/<instance_domain>`), are automatically
+volume-mounted read-only into the rootless container. If you omit `CASEDIR` and
+`NEEDLES_DIR`, the containerized engine will seamlessly find and access the local
+or cached test distributions and needles already present on the worker.
 
 _Note_: Running `os-autoinst` in a rootless container requires that the
 `_openqa-worker` user has subuid/subgid ranges assigned in `/etc/subuid`

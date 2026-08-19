@@ -2,7 +2,10 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Worker::Engines::isotovideo;
+
 use Mojo::Base -signatures;
+
+our $CA_DIRS = [qw(/etc/ssl/certs /etc/pki /usr/share/pki /var/lib/ca-certificates)];
 use OpenQA::Constants qw(WORKER_SR_DONE WORKER_EC_CACHE_FAILURE WORKER_EC_ASSET_FAILURE WORKER_SR_DIED);
 use OpenQA::JobSettings;
 use OpenQA::Log qw(log_error log_info log_debug log_warning get_channel_handle format_settings);
@@ -539,15 +542,24 @@ sub _construct_isotovideo_cmd ($job_settings, $isotovideo) {
 
         my $podman_dir = prjdir() . '/cache/podman';
         path($podman_dir)->make_path;
+        my $podman_runroot = "$podman_dir/run";
+        path($podman_runroot)->make_path;
         my $podman_tmp_dir = getcwd() . '/podman_tmp';
-        path($podman_tmp_dir . '/run')->make_path;
+        path($podman_tmp_dir)->make_path;
+        my $cache_root = prjdir() . '/cache';
+        my @cache_dirs = grep { basename($_) ne 'podman' } glob "$cache_root/*";
+        my @local_dirs = grep { -d } (prjdir() . '/share', prjdir() . '/tests', @cache_dirs);
+        @local_dirs = (prjdir() . '/share') unless @local_dirs;
+        my @local_mounts = map { ('-v', "$_:$_:ro") } @local_dirs;
+        my @ca_mounts = map { ('-v', "$_:$_:ro") } grep { -d } @$CA_DIRS;
+
         my @cmd = (
             'env',
             "HOME=$podman_tmp_dir",
-            "XDG_RUNTIME_DIR=$podman_tmp_dir/run",
+            "XDG_RUNTIME_DIR=$podman_runroot",
             'podman',
             '--root', "$podman_dir/data/containers/storage",
-            '--runroot', "$podman_tmp_dir/run/containers",
+            '--runroot', "$podman_runroot/containers",
             '--storage-opt', 'ignore_chown_errors=true',
             '--cgroup-manager=cgroupfs',
             '--events-backend=file',
@@ -558,6 +570,9 @@ sub _construct_isotovideo_cmd ($job_settings, $isotovideo) {
             '--device', '/dev/kvm',
             '-v', getcwd() . ':/pool',
             '-w', '/pool',
+            @local_mounts,
+            @ca_mounts,
+
             $image,
             'sh', '-c', "git clone --branch=$branch --depth=1 $repo && make -C os-autoinst && os-autoinst/isotovideo -d"
         );
