@@ -21,6 +21,9 @@ has 'webui_host_specific_settings';
 
 use constant QEMU_PORT_OFFSET => 20_002;
 use constant DEFAULT_CRITICAL_LOAD_AVG_THRESHOLD => 40;
+use constant DEFAULT_WORKER_LOAD_LOW_LIMIT => 4;
+use constant DEFAULT_WORKER_LOAD_FACTOR => 0;
+use constant DEFAULT_WORKER_LOAD_JITTER => 0;
 
 sub new ($class, $instance_number = undef, $cli_options = {}) {
     my $config_paths = lookup_config_files(undef, 'workers.ini', 1);
@@ -35,7 +38,7 @@ sub new ($class, $instance_number = undef, $cli_options = {}) {
     _read_section($cfg, "class:$_", \%global_settings, 1) for split /,/, $global_settings{WORKER_CLASS} // '';
 
     # read global settings from environment variables
-    for my $var (qw(LOG_DIR TERMINATE_AFTER_JOBS_DONE)) {
+    for my $var (qw(LOG_DIR TERMINATE_AFTER_JOBS_DONE WORKER_LOAD_LOW_LIMIT WORKER_LOAD_FACTOR WORKER_LOAD_JITTER)) {
         $global_settings{$var} = $ENV{"OPENQA_WORKER_$var"} if ($ENV{"OPENQA_WORKER_$var"} // '') ne '';
     }
 
@@ -51,6 +54,9 @@ sub new ($class, $instance_number = undef, $cli_options = {}) {
     # Select sensible system CPU load15 threshold to prevent system overload
     # based on experiences with system stability so far
     $global_settings{CRITICAL_LOAD_AVG_THRESHOLD} //= DEFAULT_CRITICAL_LOAD_AVG_THRESHOLD;
+    $global_settings{WORKER_LOAD_LOW_LIMIT} //= DEFAULT_WORKER_LOAD_LOW_LIMIT;
+    $global_settings{WORKER_LOAD_FACTOR} //= DEFAULT_WORKER_LOAD_FACTOR;
+    $global_settings{WORKER_LOAD_JITTER} //= DEFAULT_WORKER_LOAD_JITTER;
 
     # set some environment variables
     # TODO: This should be sent to the scheduler to be included in the worker's table.

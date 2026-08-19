@@ -139,6 +139,19 @@ sub accept ($self) {
     my $info = $self->info;
     die 'attempt to accept job without ID and job info' unless $id && defined $info && ref $info eq 'HASH';
     die 'attempt to accept job which is not newly initialized' unless $self->is_supposed_to_start;
+
+    my $worker = $self->worker;
+    my $delay = $worker->_calculate_load_delay;
+    if ($delay > 0 && !$self->{_delay_applied}) {
+        $self->{_delay_applied} = 1;
+        $self->_set_status(accepting => {}) if $self->status ne 'accepting';
+        Mojo::IOLoop->timer(
+            $delay => sub {
+                $self->accept if $self->is_supposed_to_start;
+            });
+        return 1;
+    }
+
     $self->_set_status(accepting => {}) if $self->status ne 'accepting';
 
     # clear last API error (which happened before this job) and is therefore unrelated
