@@ -1162,13 +1162,20 @@ HOST = http://openqa.example.com
 
 The load of the system can affect test stability and causing VM boot problems
 and failures due to delays of command execution and
-[thrashing](<https://en.wikipedia.org/wiki/Thrashing_(computer_science)>). If the
-average over a period of 15 minutes exceeds the specified value, the worker will
-not accept new jobs. This can be controlled via the setting
-`CRITICAL_LOAD_AVG_THRESHOLD`. For this to be more effective,
-also check out the setting `LOCK_NAME`. Both settings can be found in the
-[the worker configuration](GettingStarted.md#worker-configuration) where they
-are explained in greater detail.
+[thrashing](<https://en.wikipedia.org/wiki/Thrashing_(computer_science)>).
+To prevent "load storms" (synchronized boot avalanches), workers check the
+system load average before picking up jobs. If the load is very high, they
+temporarily reject jobs. If the load is moderately high, they introduce a
+load-proportionate sleep delay to stagger job acceptance. The specific load
+thresholds, factor, and jitter are configurable in `workers.ini` (e.g.,
+`CRITICAL_LOAD_AVG_THRESHOLD`, `WORKER_LOAD_LOW_LIMIT`). For this to be more
+effective, also check out the setting `LOCK_NAME`. Both settings can be found
+in [the worker configuration](GettingStarted.md#worker-configuration) where
+they are explained in greater detail.
+
+Once you got workers running they should show up in the admin section of openQA in
+the workers section as 'idle'. When you get so far, you have your own instance
+of openQA up and running and all that is left is to set up some tests.
 
 ### Further systemd units for the worker
 
