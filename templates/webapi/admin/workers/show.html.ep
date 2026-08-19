@@ -25,6 +25,26 @@
         </div>
     </div>
 
+    <div class="card my-3">
+        <div class="card-header">Reservation</div>
+        <div class="card-body" id="reservation">
+            % if (my $reservation = $worker->{reservation}) {
+                <p><strong>Reserved by:</strong> <%= $reservation->{user} %></p>
+                <p><strong>Comment:</strong> <%= $reservation->{comment} %></p>
+                <p><strong>Reserved at:</strong> <%= $reservation->{t_created} %></p>
+                <p><strong>Expires:</strong> <%= $reservation->{t_expires} // 'Never (indefinite)' %></p>
+                % if (is_operator) {
+                    <button class="btn btn-danger" data-worker-id="<%= $worker->{id} %>" onclick="releaseWorker(this)">Release reservation</button>
+                % }
+            % } else {
+                <p>This worker is not reserved.</p>
+                % if (is_operator) {
+                    <button class="btn btn-success" data-worker-id="<%= $worker->{id} %>" data-worker-name="<%= $worker->{name} %>" onclick="openReserveModal(this)">Reserve worker</button>
+                % }
+            % }
+        </div>
+    </div>
+
     % if (is_operator) {
         <h3>Properties</h3>
         <table class="table table-striped">
@@ -55,3 +75,5 @@
 </div>
 
 </div>
+
+%= include 'admin/workers/reserve_modal' if is_operator

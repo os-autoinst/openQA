@@ -5,6 +5,7 @@ package OpenQA::WebAPI::Plugin::Helpers;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use Mojo::ByteStream;
+use Mojo::Util 'xml_escape';
 use OpenQA::Constants qw(JOBS_OVERVIEW_SEARCH_CRITERIA);
 use OpenQA::Schema;
 use OpenQA::Utils qw(bugurl human_readable_size render_escaped_refs href_to_bugref);
@@ -22,6 +23,8 @@ use Feature::Compat::Try;
 
 sub register ($self, $app, $config) {
     $app->helper(label_from_const => sub ($c, $val) { ucfirst $val =~ tr/_/ /r });
+    # for escaping untrusted values when composing HTML passed to helpers like help_popover
+    $app->helper(escape_html => sub ($c, $val) { xml_escape($val // '') });
     $app->helper(
         format_time => sub ($c, $timedate, $format = undef) {
             return unless $timedate;

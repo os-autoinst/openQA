@@ -1,0 +1,39 @@
+<div class="modal fade" id="reserveWorkerModal" tabindex="-1" aria-labelledby="reserveWorkerModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="reserveWorkerModalLabel">Reserve worker</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="reserveWorkerForm" onsubmit="submitReserve(event)">
+        <input type="hidden" id="reserveWorkerId">
+        <div class="modal-body">
+          <p>A reservation prevents new jobs from being assigned to this worker, taking it out of the scheduling rotation without interrupting any currently running job.</p>
+          <div class="mb-3">
+            <label for="reserveWorkerName" class="form-label">Worker</label>
+            <input type="text" class="form-control" id="reserveWorkerName" readonly>
+          </div>
+          <div class="mb-3">
+            <label for="reserveWorkerComment" class="form-label">Comment (required)</label>
+            <input type="text" class="form-control" id="reserveWorkerComment" required>
+          </div>
+          <div class="mb-3">
+            <label for="reserveWorkerDuration" class="form-label">Duration (e.g. 5h, 2d, 3600; 0 for indefinite)</label>
+            <input type="text" class="form-control" id="reserveWorkerDuration"
+                   data-default-duration="<%= $reservation_default_duration %>">
+          </div>
+          % if (is_admin) {
+            <div class="form-check mb-3">
+              <input class="form-check-input" type="checkbox" id="reserveWorkerForce" value="1">
+              <label class="form-check-label" for="reserveWorkerForce">Force (admin override)</label>
+            </div>
+          % }
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Reserve</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

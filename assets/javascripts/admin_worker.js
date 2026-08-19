@@ -20,6 +20,14 @@ function setupWorkerNeedles() {
   $('#previous_jobs_filter').hide();
 }
 
+// a reserved worker running a job is labelled "Working (Reserved)" and matches both filters on purpose
+const WORKER_STATUS_FILTERS = ['Idle', 'Offline', 'Working', 'Unavailable', 'Reserved'];
+const DEFAULT_WORKER_STATUS_FILTER = 'Idle';
+
+function filterWorkerStatus(column, status) {
+  column.search(status ? '\\b' + status + '\\b' : '', true, false).draw();
+}
+
 function loadWorkerTable() {
   $('#workers').DataTable({
     initComplete: function () {
@@ -27,29 +35,16 @@ function loadWorkerTable() {
         .columns()
         .every(function () {
           const column = this;
-          const colheader = this.header();
-          const title = $(colheader).text().trim();
-          if (title !== 'Status') {
-            return false;
-          }
-
-          const select = $('<select id="workers_online"><option value="">All</option></select>')
+          if ($(this.header()).text().trim() !== 'Status') return;
+          const options = WORKER_STATUS_FILTERS.map(s => `<option value="${s}">${s}</option>`).join('');
+          $(`<select id="workers_online"><option value="">All</option>${options}</select>`)
             .appendTo($(column.header()).empty())
             .on('change', function () {
-              const val = $.fn.dataTable.util.escapeRegex($(this).val());
-              column
-                // .search( val ? '^'+val+'$' : '', true, false )
-                .search(val ? val : '', true, false)
-                .draw();
-            });
-
-          select.append('<option value="Idle">Idle</option>');
-          select.append('<option value="Offline">Offline</option>');
-          select.append('<option value="Working">Working</option>');
-          select.append('<option value="Unavailable">Unavailable</option>');
-          select.val('Idle');
+              filterWorkerStatus(column, $(this).val());
+            })
+            .val(DEFAULT_WORKER_STATUS_FILTER);
+          filterWorkerStatus(column, DEFAULT_WORKER_STATUS_FILTER);
         });
-      this.api().column(4).search('Idle').draw();
     }
   });
 
@@ -59,19 +54,67 @@ function loadWorkerTable() {
   });
 }
 
-function deleteWorker(deleteBtn) {
-  const post_url = $(deleteBtn).attr('post_delete_url');
-  fetchWithCSRF(post_url, {method: 'DELETE'})
-    .then(response => {
-      return response.json();
-    })
+function requestWorkerChange(url, options, failureMessage, onSuccess) {
+  fetchWithCSRF(url, options)
+    .then(response => response.json())
     .then(response => {
       if (response.error) throw response.error;
-      const table = $('#workers').DataTable();
-      table.row($(deleteBtn).parents('tr')).remove().draw();
-      addFlash('info', response.message);
+      onSuccess(response);
     })
     .catch(error => {
-      addFlash('danger', "The worker couldn't be deleted: " + error);
+      addFlash('danger', failureMessage + error);
     });
+}
+
+function reservationUrl(workerId) {
+  return '/api/v1/workers/' + workerId + '/reservation';
+}
+
+function openReserveModal(reserveBtn) {
+  const duration = document.getElementById('reserveWorkerDuration');
+  document.getElementById('reserveWorkerId').value = reserveBtn.dataset.workerId;
+  document.getElementById('reserveWorkerName').value = reserveBtn.dataset.workerName;
+  document.getElementById('reserveWorkerComment').value = '';
+  duration.value = duration.dataset.defaultDuration;
+  const force = document.getElementById('reserveWorkerForce');
+  if (force) force.checked = false;
+  new bootstrap.Modal(document.getElementById('reserveWorkerModal')).show();
+}
+
+function submitReserve(event) {
+  event.preventDefault();
+  const force = document.getElementById('reserveWorkerForce');
+  const body = new URLSearchParams({
+    comment: document.getElementById('reserveWorkerComment').value,
+    duration: document.getElementById('reserveWorkerDuration').value,
+    force: force && force.checked ? 1 : 0
+  });
+  const options = {method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body};
+  requestWorkerChange(
+    reservationUrl(document.getElementById('reserveWorkerId').value),
+    options,
+    "The worker couldn't be reserved: ",
+    () => window.location.reload()
+  );
+}
+
+function releaseWorker(releaseBtn) {
+  requestWorkerChange(
+    reservationUrl(releaseBtn.dataset.workerId),
+    {method: 'DELETE'},
+    "The worker reservation couldn't be released: ",
+    () => window.location.reload()
+  );
+}
+
+function deleteWorker(deleteBtn) {
+  requestWorkerChange(
+    $(deleteBtn).attr('post_delete_url'),
+    {method: 'DELETE'},
+    "The worker couldn't be deleted: ",
+    response => {
+      $('#workers').DataTable().row($(deleteBtn).parents('tr')).remove().draw();
+      addFlash('info', response.message);
+    }
+  );
 }
