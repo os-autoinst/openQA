@@ -577,6 +577,64 @@ subtest 'archiving and labeling jobs to be considered important' => sub {
             $job->discard_changes;
             ok $job->archived, 'job archived';
         };
+
+        subtest
+'important jobs (e.g. BUILD=imp) are archived upfront when results storage has low space (15%) and archive storage is healthy (10%)'
+          => sub {
+            my $g_mock = Test::MockModule->new('OpenQA::Schema::Result::JobGroups');
+            $g_mock->redefine(important_builds => sub { [[], ['imp']] });
+
+            my $parent_job = $jobs->find(99938);
+            my $job = $jobs->create(
+                {
+                    id => 199935,
+                    TEST => 'test-upfront-archiving',
+                    BUILD => 'imp',
+                    result_dir => '00199935-test-upfront-archiving',
+                    group_id => $parent_job->group_id,
+                    state => DONE,
+                    result => PASSED,
+                    t_created => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 3, 'UTC'),
+                    logs_present => 1,
+                    archived => 0,
+                });
+            $job->discard_changes;
+            $job->group->update({keep_results_in_days => 10, keep_important_results_in_days => 20});
+            my $filename = create_temp_job_log_file($job->result_dir);
+            $job->comments->create({text => 'label:linked from test.domain', user_id => $user->id});
+
+            my $orig_archive_important = $app->config->{archiving}->{archive_preserved_important_jobs};
+            my $orig_min_free = $app->config->{archiving}->{archive_important_jobs_min_free_percentage};
+            my $orig_keep_free = $app->config->{archiving}->{archive_keep_free_percentage};
+            my $orig_max_dur = $app->config->{archiving}->{archive_max_duration};
+
+            $app->config->{archiving}->{archive_preserved_important_jobs} = 1;
+            $app->config->{archiving}->{archive_important_jobs_min_free_percentage} = 20;
+            $app->config->{archiving}->{archive_keep_free_percentage} = 5;
+            $app->config->{archiving}->{archive_max_duration} = 300;
+
+            my $df_mock = Test::MockModule->new('Filesys::Df', no_auto => 1);
+            my $df_call_count = 0;
+            $df_mock->redefine(
+                df => sub ($dir, @) {
+                    if ($dir =~ /testresults/) {
+                        return {bavail => ($df_call_count++ == 0 ? 15 : 25), blocks => 100};
+                    }
+                    else {
+                        return {bavail => 10, blocks => 100};
+                    }
+                });
+
+            run_gru_job($app, 'limit_results_and_logs');
+            $job->discard_changes;
+            is $job->archived, 1, 'job was archived upfront because results storage was full';
+            ok -e path($job->result_dir, path($filename)->basename), 'results exist under archive path';
+
+            $app->config->{archiving}->{archive_preserved_important_jobs} = $orig_archive_important;
+            $app->config->{archiving}->{archive_important_jobs_min_free_percentage} = $orig_min_free;
+            $app->config->{archiving}->{archive_keep_free_percentage} = $orig_keep_free;
+            $app->config->{archiving}->{archive_max_duration} = $orig_max_dur;
+          };
     };
 };
 

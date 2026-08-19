@@ -62,9 +62,11 @@ sub _limit ($job, $args = undef) {
         dir => resultdir,
       );
 
+    my $schema = $app->schema;
+    _archive_important_jobs_upfront($job, $archiving_cfg, $min_free, $keep_free, $max_dur);
+
     # create temporary job group outside of DB to collect
     # jobs without job_group_id
-    my $schema = $app->schema;
     $schema->resultset('JobGroups')->new({})->limit_results_and_logs;
 
     my $cache_file_path = prjdir() . '/webui/cache/cleanup-status.json';
@@ -272,14 +274,10 @@ sub _delete_results ($dry, $jobs, $max_job_id, $not_important_cond, $important_c
 }
 
 sub _build_important_conditions ($schema, $job = undef) {
-    my $job_groups = $schema->resultset('JobGroups');
-    my %important_builds_with_version;
-    my %important_builds_without_version;
-    for my $job_group ($job_groups->all) {
-        my ($important_builds_with_version, $important_builds_without_version) = @{$job_group->important_builds};
-        $important_builds_with_version{$_} = 1 for @$important_builds_with_version;
-        $important_builds_without_version{$_} = 1 for @$important_builds_without_version;
-    }
+    my @groups = $schema->resultset('JobGroups')->all;
+    my %important_builds_with_version = map { $_ => 1 } map { @{$_->important_builds->[0]} } @groups;
+    my %important_builds_without_version = map { $_ => 1 } map { @{$_->important_builds->[1]} } @groups;
+
     my @important_builds_with_version = keys %important_builds_with_version;
     my @important_builds_without_version = keys %important_builds_without_version;
     my @important_cond = (
@@ -294,6 +292,74 @@ sub _build_important_conditions ($schema, $job = undef) {
         $job->note(important_builds_without_version => \@important_builds_without_version);
     }
     return (\@not_important_cond, \@important_cond);
+}
+
+sub _archive_important_jobs_upfront ($job, $archiving_cfg, $min_free, $keep_free, $max_dur) {
+    return if !$archiving_cfg->{archive_preserved_important_jobs} || $min_free <= 0;
+    my $app = $job->app;
+    my $res_dev = (stat resultdir())[0];
+    my $ar_dev = (stat archivedir())[0];
+    if (!$ENV{HARNESS_ACTIVE} && $app->mode !~ /^test/ && defined $res_dev && defined $ar_dev && $res_dev == $ar_dev) {
+        $job->note(archived_jobs => 0);
+        $job->note(archiving_stopped => 'resultdir and archivedir are on the same device');
+        return;
+    }
+
+    my $start_time = time;
+    my $schema = $app->schema;
+    my $jobs_rs = $schema->resultset('Jobs');
+    my ($not_important_cond, $important_cond) = _build_important_conditions($schema);
+    my $archive_jobs_count = 0;
+    my $archiving_stopped_reason = '';
+    my @skipped_ids;
+
+    while (1) {
+        if ($max_dur > 0 && (time - $start_time) >= $max_dur) {
+            $archiving_stopped_reason = 'time budget exceeded';
+            last;
+        }
+        my ($available_res, $total_res) = check_df(resultdir());
+        my $free_res_percentage = $available_res / $total_res * 100;
+        if ($free_res_percentage >= $min_free) {
+            $archiving_stopped_reason = 'results threshold reached';
+            last;
+        }
+        my ($available_ar, $total_ar) = check_df(archivedir());
+        my $free_ar_percentage = $available_ar / $total_ar * 100;
+        if ($free_ar_percentage <= $keep_free) {
+            $archiving_stopped_reason = 'archive floor reached';
+            last;
+        }
+        my $candidate = $jobs_rs->search(
+            {
+                @$important_cond,
+                archived => 0,
+                state => {-in => [FINAL_STATES]},
+                (@skipped_ids ? (id => {-not_in => \@skipped_ids}) : ()),
+            },
+            {order_by => {-asc => 'id'}, rows => 1})->first;
+        if (!$candidate) {
+            $archiving_stopped_reason = 'no candidates left';
+            last;
+        }
+        my $job_id = $candidate->id;
+        my $guard = $app->minion->guard("process_job_results_for_$job_id", ONE_DAY);
+        if (!$guard) {
+            push @skipped_ids, $job_id;
+            next;
+        }
+        log_info "Archiving important job $job_id";
+        try {
+            $candidate->archive();
+            $archive_jobs_count++;
+        }
+        catch ($e) {
+            log_warning "Failed to archive job $job_id: $e";
+            push @skipped_ids, $job_id;
+        }
+    }
+    $job->note(archived_jobs => $archive_jobs_count);
+    $job->note(archiving_stopped => $archiving_stopped_reason);
 }
 
 sub _ensure_results_below_threshold ($job, @) {
@@ -345,12 +411,12 @@ sub _ensure_results_below_threshold ($job, @) {
     my $jobs = $schema->resultset('Jobs');
     my ($ok_ar, @message_ar)
       = defined $min_free_percentage_ar
-      ? _delete_results($dry, $jobs, $max_job_id, \@not_important_cond, \@important_cond, \$margin_bytes_ar,
+      ? _delete_results($dry, $jobs, $max_job_id, $not_important_cond, $important_cond, \$margin_bytes_ar,
         \$margin_bytes, 1)
       : (1);
     my ($ok, @message)
-      = _delete_results($dry, $jobs, $max_job_id, \@not_important_cond, \@important_cond, \$margin_bytes,
-        \$margin_bytes, 0);
+      = _delete_results($dry, $jobs, $max_job_id, $not_important_cond, $important_cond, \$margin_bytes, \$margin_bytes,
+        0);
     my $method = $ok && $ok_ar ? 'finish' : 'fail';
     $job->$method(join "\n", @message, @message_ar);
 }
