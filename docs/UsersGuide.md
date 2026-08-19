@@ -1094,8 +1094,16 @@ worker does not interrupt the job it is currently running, it only prevents new
 jobs from being assigned. A reservation expires automatically after its
 duration, releasing the worker again.
 
-Reservations are managed in the workers table of the admin area or via the REST
-API:
+Reservations are managed in the workers table of the admin area or via the more
+convenient `reservation` subcommand of `openqa-cli`:
+
+```bash
+openqa-cli api --pretty -X GET workers  # get worker ID
+openqa-cli reservation --comment="Manual testing" --duration=5h <id>
+openqa-cli reservation --release <id>
+```
+
+Alternatively, reservations can be managed via the REST API directly:
 
 ```bash
 openqa-cli api -X POST workers/<id>/reservation comment="Manual testing" duration=5h

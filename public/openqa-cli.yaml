@@ -167,6 +167,16 @@ subcommands:
       - asset-size-limit|l=i   --Asset size limit in bytes
       - with-thumbnails|t      --Download thumbnails as well
 
+  reservation:
+    summary: Manage worker reservations
+    description: |
+      Usage: openqa-cli reservation [OPTIONS] WORKER_ID
+    options:
+      - comment|c=s            --Comment describing the reason for reservation
+      - duration|d=s           --Duration of the reservation (e.g. 5h, 30m, 2d, 0 for indefinite)
+      - force|f                --Force reservation even if worker is already reserved
+      - release|r              --Release an existing reservation
+
   schedule:
     summary: Schedules a set of jobs (via "isos post" creating a schedule product)
     description: |
