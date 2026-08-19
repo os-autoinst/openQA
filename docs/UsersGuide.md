@@ -1702,13 +1702,22 @@ This means a job is "in the archive" if:
 The cleanup of logs/results uses time-based retentions and hence is independent
 of actually available space on any assigned storage volumes. To ensure enough
 free space on the file systems storing results one can use the configuration
-settings `…_min_free_disk_space_percentage` to control automatic cleanup
+settings `…_cleanup_min_free_percentage` to control automatic cleanup
 behavior. These percentages extend the cleanup of logs/results so that they are
 deleted until the specified percentage of file system space is free. This
 extended deletion happens independently of configured time-based retention
 thresholds.
 
-The deletion happens in the following order:
+To help distinguish between the different storage-aware thresholds in openQA,
+three distinct configuration families exist:
+
+| Threshold Family           | Section         | Description & Purpose                                                                                              | Example Configuration Keys                                                                                                               |
+| -------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| **Scheduler Suspension**   | `[scheduler]`   | Suspends job scheduling and assignments when free storage space drops too low to prevent full storage depletion.   | `results_min_free_storage_space_percentage`<br>`archive_min_free_storage_space_percentage`<br>`assets_min_free_storage_space_percentage` |
+| **Cleanup Lower Bound**    | `[misc_limits]` | Deletes older logs and results (independently of time retentions) until the specified free percentage is restored. | `result_cleanup_min_free_percentage`<br>`archive_cleanup_min_free_percentage`                                                            |
+| **Cleanup Skip Threshold** | `[misc_limits]` | Skips or aborts the cleanup job early if there is already sufficient free headroom, saving system I/O resources.   | `result_cleanup_max_free_percentage`<br>`asset_cleanup_max_free_percentage`                                                              |
+
+The deletion during the space-aware cleanup lower bound happens in the following order:
 
 1.  Videos of unimportant jobs
 
@@ -1732,7 +1741,7 @@ as there is enough headroom on the relevant file systems.
 > **NOTE:**
 > The space-aware cleanup relies on `df` reporting a valid file system space
 > usage. The algorithms also assume that screenshots and test results are stored
-> on the same file system. The `…_min_free_disk_space_percentage` settings
+> on the same file system. The `…_cleanup_min_free_percentage` settings
 > specifically are still experimental.
 
 <a id="asset_cleanup"></a>
