@@ -259,6 +259,31 @@ sub _delete_results ($dry, $jobs, $max_job_id, $not_important_cond, $important_c
     return (0, "Unable to cleanup enough results from $from");
 }
 
+sub _build_important_conditions ($schema, $job = undef) {
+    my $job_groups = $schema->resultset('JobGroups');
+    my %important_builds_with_version;
+    my %important_builds_without_version;
+    for my $job_group ($job_groups->all) {
+        my ($important_builds_with_version, $important_builds_without_version) = @{$job_group->important_builds};
+        $important_builds_with_version{$_} = 1 for @$important_builds_with_version;
+        $important_builds_without_version{$_} = 1 for @$important_builds_without_version;
+    }
+    my @important_builds_with_version = keys %important_builds_with_version;
+    my @important_builds_without_version = keys %important_builds_without_version;
+    my @important_cond = (
+        -or => [
+            TAG_ID_COLUMN, => {-in => \@important_builds_with_version},
+            BUILD => {-in => \@important_builds_without_version}]);
+    my @not_important_cond = (
+        TAG_ID_COLUMN, => {-not_in => \@important_builds_with_version},
+        BUILD => {-not_in => \@important_builds_without_version});
+    if ($job) {
+        $job->note(important_builds_with_version => \@important_builds_with_version);
+        $job->note(important_builds_without_version => \@important_builds_without_version);
+    }
+    return (\@not_important_cond, \@important_cond);
+}
+
 sub _ensure_results_below_threshold ($job, @) {
     my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($job);
     # prevent multiple limit_* tasks to run in parallel
@@ -302,25 +327,7 @@ sub _ensure_results_below_threshold ($job, @) {
     return $job->finish('Done, no jobs present') unless $max_job_id;
 
     # determine important builds (for each group)
-    my $job_groups = $schema->resultset('JobGroups');
-    my %important_builds_with_version;
-    my %important_builds_without_version;
-    for my $job_group ($job_groups->all) {
-        my ($important_builds_with_version, $important_builds_without_version) = @{$job_group->important_builds};
-        $important_builds_with_version{$_} = 1 for @$important_builds_with_version;
-        $important_builds_without_version{$_} = 1 for @$important_builds_without_version;
-    }
-    my @important_builds_with_version = keys %important_builds_with_version;
-    my @important_builds_without_version = keys %important_builds_without_version;
-    my @important_cond = (
-        -or => [
-            TAG_ID_COLUMN, => {-in => \@important_builds_with_version},
-            BUILD => {-in => \@important_builds_without_version}]);
-    my @not_important_cond = (
-        TAG_ID_COLUMN, => {-not_in => \@important_builds_with_version},
-        BUILD => {-not_in => \@important_builds_without_version});
-    $job->note(important_builds_with_version => \@important_builds_with_version);
-    $job->note(important_builds_without_version => \@important_builds_without_version);
+    my ($not_important_cond, $important_cond) = _build_important_conditions($schema, $job);
 
     # delete results as far as necessary on the results dir and the archive dir
     my $jobs = $schema->resultset('Jobs');
