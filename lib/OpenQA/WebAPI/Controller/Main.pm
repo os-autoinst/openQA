@@ -218,6 +218,7 @@ sub _group_overview ($self, $resultset, $template) {
         is_parent => $is_parent_group,
         rendered_description => $group->rendered_description,
         limit_exceeded => $limit_exceeded ? $max_jobs_limit : 0,
+        always_show_version => $group->always_show_version,
     };
     if (!$is_parent_group && (my $parent = $group->parent)) {
         $group_hash->{parent_id} = $parent->id;

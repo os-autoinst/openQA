@@ -96,6 +96,10 @@ __PACKAGE__->add_columns(
         data_type => 'boolean',
         default_value => 0,
         is_nullable => 0,
+    },
+    always_show_version => {
+        data_type => 'boolean',
+        is_nullable => 1,
     });
 
 __PACKAGE__->add_unique_constraint([qw(name parent_id)]);
@@ -164,6 +168,11 @@ around default_priority => sub ($orig, $self) {
 around carry_over_bugrefs => sub ($orig, $self) {
     return $self->get_column('carry_over_bugrefs')
       // ($self->parent ? $self->parent->carry_over_bugrefs : OpenQA::JobGroupDefaults::CARRY_OVER_BUGREFS);
+};
+
+around always_show_version => sub ($orig, $self) {
+    return $self->get_column('always_show_version')
+      // ($self->parent ? $self->parent->always_show_version : OpenQA::JobGroupDefaults::ALWAYS_SHOW_VERSION);
 };
 
 sub rendered_description ($self) {

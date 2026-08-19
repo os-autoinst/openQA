@@ -96,6 +96,7 @@ subtest 'list job groups' => sub() {
             keep_logs_in_days => 30,
             keep_results_in_days => 365,
             ignore_on_dashboard => 0,
+            always_show_version => 0,
             name => 'opensuse',
             parent_id => undef,
             size_limit_gb => 100,
@@ -116,6 +117,7 @@ subtest 'list job groups' => sub() {
             keep_logs_in_days => 30,
             keep_results_in_days => 365,
             ignore_on_dashboard => 0,
+            always_show_version => 0,
             name => 'opensuse test',
             parent_id => undef,
             size_limit_gb => 100,
@@ -173,6 +175,7 @@ subtest 'create parent group' => sub() {
             description => undef,
             exclusively_kept_asset_size => undef,
             ignore_on_dashboard => 0,
+            always_show_version => 0,
             id => $new_id,
             name => 'Cool parent group',
             size_limit_gb => 200,
@@ -241,6 +244,7 @@ subtest 'create job group' => sub() {
             keep_jobs_in_days => 730,
             keep_logs_in_days => 30,
             keep_results_in_days => 365,
+            always_show_version => 0,
             name => 'Cool group',
             parent_id => undef,
             size_limit_gb => 200,
@@ -434,6 +438,7 @@ subtest 'prevent create/update duplicate job group on top level' => sub() {
             keep_jobs_in_days => 730,
             keep_logs_in_days => 30,
             keep_results_in_days => 365,
+            always_show_version => 0,
             name => 'Cool group',
             parent_id => undef,
             size_limit_gb => 300,
@@ -605,5 +610,50 @@ subtest 'helper for removing test suite defaults' => sub {
     is_deeply $scenarios, ['foo'], 'scenario is added';
     is $group->{scenarios}->{x86_64}->{product}, $scenarios, 'scenarios are assigned to group';
 };
+
+for my $prop (qw(always_show_version carry_over_bugrefs)) {
+    subtest "$prop toggle and inheritance" => sub {
+        my $parent_id = $t->post_ok(
+            '/api/v1/parent_groups',
+            form => {
+                name => "Test parent for $prop",
+                $prop => 1,
+            })->status_is(200)->tx->res->json->{id};
+
+        $t->get_ok("/api/v1/parent_groups/$parent_id")->status_is(200);
+        $t->json_is("/0/$prop" => 1);
+
+        my $child_id = $t->post_ok(
+            '/api/v1/job_groups',
+            form => {
+                name => "Test child for $prop",
+                parent_id => $parent_id,
+            })->status_is(200)->tx->res->json->{id};
+
+        $t->get_ok("/api/v1/job_groups/$child_id")->status_is(200);
+        $t->json_is("/0/$prop" => 1);
+
+        my $child_row = $schema->resultset('JobGroups')->find($child_id);
+        is $child_row->get_column($prop), undef, "$prop column is NULL/undef in database";
+        is $child_row->$prop, 1, "$prop correctly inherited from parent";
+
+        $t->put_ok(
+            "/api/v1/job_groups/$child_id",
+            form => {
+                name => "Test child for $prop",
+                parent_id => $parent_id,
+                $prop => '',
+            })->status_is(200);
+
+        $t->get_ok("/api/v1/job_groups/$child_id")->status_is(200);
+        $t->json_is("/0/$prop" => 1);
+
+        $child_row = $schema->resultset('JobGroups')->find($child_id);
+        is $child_row->get_column($prop), undef, "$prop reset to undef";
+
+        $t->delete_ok("/api/v1/job_groups/$child_id")->status_is(200);
+        $t->delete_ok("/api/v1/parent_groups/$parent_id")->status_is(200);
+    };
+}
 
 done_testing();

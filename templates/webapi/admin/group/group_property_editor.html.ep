@@ -1,7 +1,9 @@
 % use OpenQA::Utils 'human_readable_size';
 % use OpenQA::Constants qw(BUILD_SORT_BY_NAME BUILD_SORT_BY_NEWEST_JOB BUILD_SORT_BY_OLDEST_JOB);
+% use OpenQA::JobGroupDefaults ();
 % content_for 'ready_function' => begin
     validateJobGroupForm(document.getElementById('group_properties_form'));
+    setupTriStateCheckboxes(document.getElementById('group_properties_form'));
 % end
 <div id="properties" class="card"
     % if (!$is_parent) {
@@ -34,25 +36,8 @@
                     <textarea class="form-control" id="editor-description" name="description" ><%= $group->description %></textarea>
                 </div>
             </div>
-            <div class="mb-3 row">
-                <label for="editor-carry-over-bugrefs" class="form-label col-sm-2 control-label" data-bs-toggle="tooltip" title="Carry over bug references">Bug reference carry over</label>
-                <div class="col-sm-10">
-                    <input type="hidden" name="carry_over_bugrefs" value="0">
-                    <input type="checkbox"
-                           id="editor-carry-over-bugrefs" name="carry_over_bugrefs"
-                           value="1"
-                        % if ($group->carry_over_bugrefs) {
-                            checked="checked"
-                        % }
-                    >
-                    <%= help_popover 'Bug reference carry over' =>
-                        '<p>
-                            Whether job comments containing bug references should be carried over automatically from previously failed jobs. Only previous jobs are considered
-                            which failed with an identical list of failed and softfailed test modules.
-                        </p>';
-                    %>
-                </div>
-            </div>
+            %= include 'admin/group/tri_state_checkbox', group => $group, is_parent => $is_parent, name => 'carry_over_bugrefs', label => 'Bug reference carry over', default => OpenQA::JobGroupDefaults::CARRY_OVER_BUGREFS, help_text => '<p>By default all attached bug references will be copied to jobs of the next build if the test failed with exactly the same error.</p>'
+            %= include 'admin/group/tri_state_checkbox', group => $group, is_parent => $is_parent, name => 'always_show_version', label => 'Always show version', default => OpenQA::JobGroupDefaults::ALWAYS_SHOW_VERSION, help_text => '<p>Always show the version with the build number on the group overview and index page, even if there is only one version tested.</p>'
             % my $ignored_info = job_group_ignored_info($group, $is_parent);
             % my $ignored_by_config = $ignored_info->{ignored_by_config};
             % my $ignored_title = $ignored_info->{ignored_title};
