@@ -34,6 +34,18 @@ sub _limit ($job, $args = undef) {
 
     # prevent multiple limit_results_and_logs tasks and limit_screenshots_task/archive_job_results to run in parallel
     my $app = $job->app;
+    my $archiving_cfg = $app->config->{archiving};
+    my $min_free = $archiving_cfg->{archive_important_jobs_min_free_percentage};
+    my $keep_free = $archiving_cfg->{archive_keep_free_percentage};
+    my $max_dur = $archiving_cfg->{archive_max_duration};
+
+    return $job->fail(_format_percentage_error(archive_important_jobs_min_free_percentage => $min_free))
+      unless _is_valid_percentage($min_free);
+    return $job->fail(_format_percentage_error(archive_keep_free_percentage => $keep_free))
+      unless _is_valid_percentage($keep_free);
+    return $job->fail("Configured archive_max_duration ($max_dur) is not a non-negative number")
+      if !looks_like_number($max_dur) || $max_dur < 0;
+
     return $job->retry({delay => ONE_MINUTE})
       unless my $process_job_results_guard = $app->minion->guard('process_job_results_task', ONE_DAY);
     return $job->finish('Previous limit_results_and_logs job is still active')

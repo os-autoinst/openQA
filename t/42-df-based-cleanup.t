@@ -50,6 +50,23 @@ subtest 'abort early in case of misconfiguration' => sub {
     like $job->{result}, qr|.*result_cleanup_min_free_percentage.*foo.*not.*|, 'result cleanup skipped early';
 };
 
+subtest 'abort limit results and logs task early in case of misconfigured upfront archiving' => sub {
+    my %invalid_settings = (
+        archive_important_jobs_min_free_percentage => 'foo',
+        archive_keep_free_percentage => 101,
+        archive_max_duration => 'unlimited',
+    );
+    for my $setting (sort keys %invalid_settings) {
+        my $value = $invalid_settings{$setting};
+        local $app->config->{archiving}->{$setting} = $value;
+        my $job;
+        combined_like { $job = run_gru_job($app, limit_results_and_logs => []) }
+        qr/Gru job error: Configured \Q$setting\E .* is not/, "error about invalid $setting is logged";
+        is $job->{state}, 'failed', "limit results and logs task fails for invalid $setting";
+        like $job->{result}, qr/\Q$setting\E \(\Q$value\E\) is not/, "failure names $setting and its invalid value";
+    }
+};
+
 # provide fake data for df
 my $df_mock = Test::MockModule->new('Filesys::Df', no_auto => 1);
 my %df_main_storage = (bavail => 11, blocks => 100);
