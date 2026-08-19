@@ -32,6 +32,7 @@ use Mojo::File 'path';
 use Mojo::URL;
 use Mojo::Util 'decode';
 use OpenQA::Needles qw(needle_temp_dir locate_needle);
+use OpenQA::Needles::Validation qw(validate_needle_name load_needle_validation_config);
 use OpenQA::Utils qw(ensure_timestamp_appended find_bug_number needledir testcasedir
   run_cmd_with_log run_cmd_with_log_return_error config_autocommit_enabled);
 use OpenQA::Jobs::Constants;
@@ -250,6 +251,9 @@ sub edit ($self) {
     $screenshot->{tags} = $screenshot->{area} = $screenshot->{matches} = [];
     unshift @needles, $screenshot;
 
+    my $instance_config = $self->app->config->{needles} // {};
+    my $val_config = load_needle_validation_config($needle_dir, $instance_config);
+
     $self->stash(
         {
             needles => \@needles,
@@ -257,6 +261,7 @@ sub edit ($self) {
             default_needle => $default_needle,
             error_messages => \@error_messages,
             autocommit_enabled => config_autocommit_enabled($app->config),
+            needle_validation_config => $val_config,
         });
     $self->render('step/edit');
 }
@@ -418,6 +423,31 @@ sub save_needle_ajax ($self) {
     my $needledir = needledir($job->DISTRI, $job->VERSION);
     my $needlename = $validation->param('needlename');
 
+    # Validate needle if enabled
+    my $instance_config = $self->app->config->{needles} // {};
+    my $val_config = load_needle_validation_config($needledir, $instance_config);
+    my $val_mode = $val_config->{validation} // 'disabled';
+
+    if ($val_mode ne 'disabled') {
+        my $json_hash = {};
+        try {
+            $json_hash = decode_json($validation->param('json'));
+        }
+        catch ($e) {
+            # Let it fall through, the task will report JSON parse errors properly
+        }
+
+        my $errors = validate_needle_name($needlename, $json_hash, $val_config->{validation_rules});
+        if (@$errors) {
+            if ($val_mode eq 'block') {
+                return $self->render(json => {error => join "\n", @$errors}, status => 400);
+            }
+            elsif ($val_mode eq 'warn') {
+                $self->stash(validation_warnings => $errors);
+            }
+        }
+    }
+
     $self->gru->enqueue_and_keep_track(
         task_name => 'save_needle',
         task_description => 'saving needles',
@@ -456,6 +486,10 @@ sub save_needle_ajax ($self) {
 
             # add the URL to restart if that should be proposed to the user
             $result->{restart} = $self->url_for('apiv1_restart', jobid => $job_id) if ($result->{propose_restart});
+
+            if (my $warnings = $self->stash('validation_warnings')) {
+                $result->{validation_warnings} = $warnings;
+            }
 
             $self->render(json => $result);
         })->catch(sub (@args) { $self->reply->gru_result(@args) });    # uncoverable statement
