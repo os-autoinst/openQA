@@ -9,7 +9,7 @@ use OpenQA::Log qw(log_debug log_info log_warning);
 use OpenQA::ScreenshotDeletion;
 use OpenQA::Utils qw(:DEFAULT prjdir resultdir archivedir check_df);
 use OpenQA::Task::Utils
-  qw(acquire_limit_lock_or_retry finish_job_if_disk_usage_below_percentage is_disk_usage_below_percentage);
+  qw(acquire_limit_lock_or_retry finish_job_if_storage_usage_below_percentage is_storage_usage_below_percentage);
 use OpenQA::Task::SignalGuard;
 use Scalar::Util 'looks_like_number';
 use List::Util 'min';
@@ -44,7 +44,7 @@ sub _limit ($job, $args = undef) {
     return undef unless my $limit_guard = acquire_limit_lock_or_retry($job);
 
     return undef
-      if finish_job_if_disk_usage_below_percentage(
+      if finish_job_if_storage_usage_below_percentage(
         job => $job,
         setting => 'result_cleanup_max_free_percentage',
         dir => resultdir,
@@ -86,7 +86,7 @@ sub _limit ($job, $args = undef) {
     my $last_processed_id;
     for my $group (@all_groups) {
         if (
-            my $msg = is_disk_usage_below_percentage(
+            my $msg = is_storage_usage_below_percentage(
                 job => $job,
                 setting => 'result_cleanup_max_free_percentage',
                 dir => resultdir
@@ -150,7 +150,7 @@ sub _limit ($job, $args = undef) {
     }
     $job->note(screenshot_cleanup => \@screenshot_cleanup_info);
     $gru->enqueue(ensure_results_below_threshold => {}, {parents => \@parent_minion_job_ids})
-      if $config->{results_min_free_disk_space_percentage} or $config->{archive_min_free_disk_space_percentage};
+      if $config->{result_cleanup_min_free_percentage} or $config->{archive_cleanup_min_free_percentage};
 }
 
 sub _limit_screenshots ($job, $args) {
@@ -192,7 +192,7 @@ sub _limit_screenshots ($job, $args) {
     }
 }
 
-sub _check_remaining_disk_usage ($job, $resultdir, $min_free_percentage) {
+sub _check_remaining_storage_usage ($job, $resultdir, $min_free_percentage) {
     return 0 unless defined $min_free_percentage;
     my ($available_bytes, $total_bytes) = check_df($resultdir);
     my $free_percentage = $available_bytes / $total_bytes * 100;
@@ -268,13 +268,13 @@ sub _ensure_results_below_threshold ($job, @) {
 
     # load configured free percentage
     my $limits = $job->app->config->{misc_limits};
-    my $min_free_percentage = $limits->{results_min_free_disk_space_percentage} // 'none';
-    my $min_free_percentage_ar = $limits->{archive_min_free_disk_space_percentage};
-    my $dry = $limits->{dry_min_free_disk_space_cleanup};
-    return $job->finish('No minimum free disk space percentage configured') if $min_free_percentage eq 'none';
-    return $job->fail(_format_percentage_error(results_min_free_disk_space_percentage => $min_free_percentage))
+    my $min_free_percentage = $limits->{result_cleanup_min_free_percentage} // 'none';
+    my $min_free_percentage_ar = $limits->{archive_cleanup_min_free_percentage};
+    my $dry = $limits->{cleanup_min_free_dry_run};
+    return $job->finish('No minimum free storage space percentage configured') if $min_free_percentage eq 'none';
+    return $job->fail(_format_percentage_error(result_cleanup_min_free_percentage => $min_free_percentage))
       unless _is_valid_percentage($min_free_percentage);
-    return $job->fail(_format_percentage_error(archive_min_free_disk_space_percentage => $min_free_percentage_ar))
+    return $job->fail(_format_percentage_error(archive_cleanup_min_free_percentage => $min_free_percentage_ar))
       if defined $min_free_percentage_ar && !_is_valid_percentage($min_free_percentage_ar);
 
     # check free percentage
@@ -283,8 +283,8 @@ sub _ensure_results_below_threshold ($job, @) {
     #         instead.
     my $resultdir = resultdir;
     my $archivedir = archivedir;
-    my $margin_bytes = _check_remaining_disk_usage($job, $resultdir, $min_free_percentage);
-    my $margin_bytes_ar = _check_remaining_disk_usage($job, $archivedir, $min_free_percentage_ar);
+    my $margin_bytes = _check_remaining_storage_usage($job, $resultdir, $min_free_percentage);
+    my $margin_bytes_ar = _check_remaining_storage_usage($job, $archivedir, $min_free_percentage_ar);
     $job->note(resultdir => $resultdir);
     $job->note(archivedir => $archivedir);
     return $job->finish('Done, nothing to do') if $margin_bytes >= 0 && $margin_bytes_ar >= 0;

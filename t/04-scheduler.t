@@ -330,7 +330,7 @@ subtest 'job grab (failed to send job to worker)' => sub {
     is_deeply $allocated, [], 'no workers/jobs allocated';
 };
 
-subtest 'skip jobs because of results_min_free_disk_space_percentage limits)' => sub {
+subtest 'skip jobs because of results_min_free_storage_space_percentage limits)' => sub {
     $job->update({state => DONE});
     $job2->update({state => DONE});
     undef $ws_send_error;
