@@ -126,6 +126,107 @@ function updateQueryParams(params) {
   history.replaceState({}, document.title, `?${search.join('&')}${hash}`);
 }
 
+function setupTablePersistence(table, options = {}) {
+  // define function to determine sort order
+  const initialSortOrder = {};
+  const applySortOrder = params => {
+    const order = table.order();
+    if (order && order.length > 0) {
+      const sortCol = String(order[0][0]);
+      const sortDir = order[0][1];
+      if (sortCol !== initialSortOrder.sort?.[0] || sortDir !== initialSortOrder.order?.[0]) {
+        params.sort = [sortCol];
+        params.order = [sortDir];
+      }
+    }
+  };
+
+  // apply initial parameters
+  const queryParams = parseQueryParams();
+  const initialPageLen = table.page.len();
+  if (queryParams.q) {
+    table.search(queryParams.q[0]);
+  }
+  applySortOrder(initialSortOrder);
+  if (queryParams.sort) {
+    const sortCol = parseInt(queryParams.sort[0], 10);
+    const sortDir = (queryParams.order && queryParams.order[0]) || 'asc';
+    if (!isNaN(sortCol)) {
+      table.order([[sortCol, sortDir]]);
+    }
+  }
+  if (queryParams.limit) {
+    const limitVal = parseInt(queryParams.limit[0], 10);
+    if (!isNaN(limitVal)) {
+      table.page.len(limitVal);
+    }
+  }
+  if (queryParams.start) {
+    const startVal = parseInt(queryParams.start[0], 10);
+    if (!isNaN(startVal)) {
+      table.page(Math.floor(startVal / table.page.len()));
+    }
+  }
+  if (options.customFilters) {
+    Object.entries(options.customFilters).forEach(([paramKey, config]) => {
+      const element = document.querySelector(config.element);
+      if (!element) {
+        return;
+      }
+      const value = queryParams[paramKey]?.[0] ?? config.defaultValue;
+      if (value === undefined) {
+        return;
+      }
+      element.value = value;
+      if (config.column !== undefined) {
+        table.column(config.column).search(value);
+      }
+    });
+  }
+
+  // perform the initial draw to apply all loaded settings
+  table.draw(false);
+
+  // set up event listener for subsequent changes (updates URL query parameters on draw)
+  table.on('draw.dt', () => {
+    const currentParams = parseQueryParams();
+
+    // clear managed parameters to re-populate them with current table state
+    const managedKeys = ['q', 'sort', 'order', 'limit', 'start'];
+    if (options.customFilters) {
+      managedKeys.push(...Object.keys(options.customFilters));
+    }
+    managedKeys.forEach(key => delete currentParams[key]);
+
+    // add params for each table property that deviates from the default
+    const params = {...currentParams};
+    const searchVal = table.search();
+    if (searchVal) {
+      params.q = [searchVal];
+    }
+    applySortOrder(params);
+    const pageInfo = table.page.info();
+    if (pageInfo) {
+      if (pageInfo.length !== initialPageLen) {
+        params.limit = [String(pageInfo.length)];
+      }
+      if (pageInfo.start > 0) {
+        params.start = [String(pageInfo.start)];
+      }
+    }
+    if (options.customFilters) {
+      Object.entries(options.customFilters).forEach(([paramKey, config]) => {
+        const value = document.querySelector(config.element)?.value;
+        if (value !== undefined && value !== null && value !== config.defaultValue) {
+          params[paramKey] = [value];
+        }
+      });
+    }
+
+    updateQueryParams(params);
+  });
+}
+
 function renderDataSize(sizeInByte) {
   let unitFactor = 1073741824; // one GiB
   let sizeWithUnit = 0;
