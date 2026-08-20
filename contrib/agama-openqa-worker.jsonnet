@@ -1,11 +1,22 @@
 local agama = import 'hw.libsonnet';
 
+// --- DISK DETECTION ---
 local disks = agama.selectByClass(agama.lshw, 'disk');
 local disks_with_size = std.filter(function(d) std.objectHas(d, 'size'), disks);
 local min_os_disk_size = 12 * 1024 * 1024 * 1024; 
 local eligible_os_disks = std.filter(function(d) d.size >= min_os_disk_size, disks_with_size);
 local sorted_eligible_disks = std.sort(eligible_os_disks, function(x) x.size);
 local os_disk = if std.length(sorted_eligible_disks) > 0 then sorted_eligible_disks[0].logicalname else null;
+
+// --- NETWORK DETECTION ---
+local network_devices = agama.selectByClass(agama.lshw, 'network');
+// Filter to ensure we only grab interfaces with a logical name and ignore loopbacks
+local valid_interfaces = std.filter(function(n) std.objectHas(n, 'logicalname') && n.logicalname != "lo", network_devices);
+local net_ifaces = std.map(function(n) n.logicalname, valid_interfaces);
+
+local has_multiple_ifaces = std.length(net_ifaces) >= 2;
+local primary_iface = if has_multiple_ifaces then net_ifaces[0] else null;
+local secondary_iface = if has_multiple_ifaces then net_ifaces[1] else null;
 
 // Extract just the logical names of the extra disks
 local extra_disks = std.map(
@@ -72,6 +83,33 @@ local mdraids =
   },
   software: {
       patterns: ['kvm_server', 'kvm_tools'],
-      packages: ['openssh', 'sudo', 'salt-minion', 'chrony']
+      packages: ['openssh', 'sudo', 'salt-minion', 'chrony'],
+      extraRepositories: [
+        {
+            alias: "devel_openQA",
+            url: "http://download.opensuse.org/repositories/devel:/openQA/$releasever/"
+        },
+        {
+            alias: "devel_openQA_Modules",
+            url: "http://download.opensuse.org/repositories/devel:/openQA:/Leap:/$releasever/$releasever/"
+        }
+      ]
   }
-}
+} + (
+  // Inject the bond configuration only if at least two interfaces exist
+  if has_multiple_ifaces then {
+    network: {
+      connections: [
+        {
+          id: "Bond0",
+          interface: "bond0",
+          bond: {
+            ports: [primary_iface, secondary_iface],
+            mode: "active-backup",
+            options: "primary=" + primary_iface + " miimon=100"
+          }
+        }
+      ]
+    }
+  } else {}
+)
