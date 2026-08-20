@@ -349,6 +349,15 @@ subtest 'jobs for job settings' => sub {
       ->json_is({jobs => [99926]});
 };
 
+subtest 'query number of restarts' => sub {
+    $t->get_ok('/api/v1/jobs/99944?ancestors=1&descendants=1')->status_is(200);
+    $t->json_is('/job/ancestors', 0)->json_is('/job/descendants', 2);
+    $t->get_ok('/api/v1/jobs/99945?ancestors=1&descendants=1')->status_is(200);
+    $t->json_is('/job/ancestors', 1)->json_is('/job/descendants', 1);
+    $t->get_ok('/api/v1/jobs/99946?ancestors=1&descendants=1')->status_is(200);
+    $t->json_is('/job/ancestors', 2)->json_is('/job/descendants', 0);
+};
+
 $schema->txn_begin;
 
 subtest 'restart jobs, error handling' => sub {
