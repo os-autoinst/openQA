@@ -547,10 +547,11 @@ sub _construct_isotovideo_cmd ($job_settings, $isotovideo) {
         my $podman_tmp_dir = getcwd() . '/podman_tmp';
         path($podman_tmp_dir)->make_path;
         my $cache_root = prjdir() . '/cache';
-        my @cache_dirs = grep { basename($_) ne 'podman' } glob "$cache_root/*";
-        my @local_dirs = grep { -d } (prjdir() . '/share', prjdir() . '/tests', @cache_dirs);
+        my @cache_dirs = grep { basename($_) ne 'podman' && -d } glob "$cache_root/*";
+        my @local_dirs = grep { -d } (prjdir() . '/share', prjdir() . '/tests');
         @local_dirs = (prjdir() . '/share') unless @local_dirs;
         my @local_mounts = map { ('-v', "$_:$_:ro") } @local_dirs;
+        push @local_mounts, map { ('-v', "$_:$_:rw") } @cache_dirs;
         my @ca_mounts = map { ('-v', "$_:$_:ro") } grep { -d } @$CA_DIRS;
 
         my @cmd = (
