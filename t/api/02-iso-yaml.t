@@ -17,9 +17,14 @@ use Mojo::File 'path';
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '03-users.pl');
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
-my $schema = $t->app->schema;
+my $app = $t->app;
+my $cfg = $app->config;
+my $schema = $app->schema;
 my $jobs = $schema->resultset('Jobs');
 my %iso = (ISO => 'foo.iso', DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0091');
+my $limits = $cfg->{misc_limits};
+$limits->{prio_throttling_patterns} = '';
+$limits->{prio_throttling_data} = {};
 
 subtest 'schedule from yaml file: error cases' => sub {
     my $file = 'does-not-exist.yaml';

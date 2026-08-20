@@ -20,13 +20,18 @@ use OpenQA::Schema::Result::ScheduledProducts;
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 04-products.pl');
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
-my $schema = $t->app->schema;
+my $app = $t->app;
+my $cfg = $app->config;
+my $schema = $app->schema;
 my $job_templates = $schema->resultset('JobTemplates');
 my $products = $schema->resultset('Products');
 my $test_suites = $schema->resultset('TestSuites');
 my $jobs = $schema->resultset('Jobs');
 my $scheduled_products = $schema->resultset('ScheduledProducts');
 my $gru_tasks = $schema->resultset('GruTasks');
+my $limits = $cfg->{misc_limits};
+$limits->{prio_throttling_patterns} = '';
+$limits->{prio_throttling_data} = {};
 assume_all_assets_exist;
 
 sub lj {

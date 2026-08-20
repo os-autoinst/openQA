@@ -117,7 +117,11 @@ my $webapi = OpenQA::Test::Utils::create_webapi($mojo_port, sub { });
 # we possibly want to adjust without going into the details of this test
 my $app = $t->app;
 my $minion = $app->minion;
-$app->config->{default_group_limits}->{asset_size_limit} = 100;
+my $cfg = $app->config;
+my $limits = $cfg->{misc_limits};
+$cfg->{default_group_limits}->{asset_size_limit} = 100;
+$limits->{prio_throttling_patterns} = '';
+$limits->{prio_throttling_data} = {};
 
 # Non-Gru task
 # uncoverable statement
