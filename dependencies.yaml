@@ -8,8 +8,8 @@
 #######################################################
 ---
 targets:
-  cpanfile: [ assetpack,        client, common, cover, devel, devel_no_selenium, main, test, style_check, worker, mcp ]
-  spec:     [ assetpack, build, client, common, cover, devel, devel_no_selenium, main, test, style_check, worker, mcp ]
+  cpanfile: [        client, common, cover, devel, devel_no_selenium, main, test, style_check, worker, mcp ]
+  spec:     [ build, client, common, cover, devel, devel_no_selenium, main, test, style_check, worker, mcp ]
   cpanfile-targets:
     # target: cpanfile target type (default main)
     devel: develop
@@ -18,18 +18,10 @@ targets:
     cover: cover
     test: test
 
-assetpack_requires:
-  perl(CSS::Minifier::XS): '>= 0.01'
-  perl(JavaScript::Minifier::XS): '>= 0.11'
-  perl(Mojolicious):
-  perl(Mojolicious::Plugin::AssetPack): '>= 1.36'
-  perl(YAML::PP): '>= 0.026'
 
 build_requires:
-  perl(CSS::Sass):
   python3-argparse-manpage:
   npm:
-  '%assetpack_requires':
 
 common_requires:
   perl: '>= 5.20.0'
@@ -97,7 +89,6 @@ devel_requires:
   chromedriver:
 
 main_requires:
-  '%assetpack_requires':
   git-core:
   hostname:  # for script/configure-web-proxy
   bsdtar:  # for extraction feature of OpenQA::Downloader

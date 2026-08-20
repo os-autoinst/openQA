@@ -483,8 +483,8 @@ This section should give you a general idea how to start daemons manually for
 development after you setup a PostgreSQL database as mentioned in the previous
 section.
 
-You have to install/update web-related dependencies first, using
-`make node_modules`. To start the web server for development, use
+You have to install/update web-related dependencies and build frontend assets first, using
+`make node_modules` (this also executes the Vite build process). To start the web server for development, use
 `scripts/openqa daemon`. The other daemons (mentioned in the
 [architecture diagram](images/architecture.svg)) are started in the same way,
 e.g. `script/openqa-scheduler daemon`.
@@ -528,10 +528,10 @@ Also find more details in
   `morbo -m development -w assets -w lib -w templates -l http://localhost:9526 script/openqa daemon`
 
 - In case you have problems with broken rendering of the web page it can help
-  to delete the asset cache and let the webserver regenerate it on first
-  startup. For this delete the subdirectories `.sass-cache/`, `assets/cache/`
-  and `assets/assetpack.db`. Make sure to look for error messages on startup
-  of the webserver and to force the refresh of the web page in your browser.
+  to delete the asset cache and let the webserver regenerate it.
+  For this delete the subdirectory `public/dist/` and run `npm run build` or
+  use the Vite dev server (`npm run dev`). Make sure to force the refresh of
+  the web page in your browser.
 
 - If you get errors like "ERROR: Failed to build gem native extension." make
   sure you have all listed dependencies including the "sass" application
@@ -772,7 +772,7 @@ For running unit tests, see [Conducting tests](Contributing.md#testing).
 ### JavaScript and CSS
 
 Install third-party JavaScript and CSS files via their corresponding npm
-packages and add the paths of those files to `assets/assetpack.def`.
+packages and import them from the entry files in `assets/entry/` or configure them in `vite.config.ts`.
 
 If a dependency is not available on npm you may consider adding those files
 under `assets/3rdparty`. Additionally, add the license(s) for the newly added

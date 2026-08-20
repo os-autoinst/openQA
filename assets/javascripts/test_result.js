@@ -3,7 +3,7 @@
 
 const testGitInfoRe = /TEST_GIT_HASH=([a-fA-F0-9]+) TEST_GIT_URL=([^\p{Cc}]+)/u;
 
-const testStatus = {
+const testStatus = (window.testStatus = {
   state: null,
   result: null,
   modlist_initialized: 0,
@@ -12,9 +12,9 @@ const testStatus = {
   workerid: null,
   status_url: null,
   img_reload_time: 0
-};
+});
 
-const tabConfiguration = {
+const tabConfiguration = (window.tabConfiguration = {
   details: {
     descriptiveName: 'test modules',
     conditionForShowingNavItem: function () {
@@ -74,7 +74,7 @@ const tabConfiguration = {
     renderContents: renderCommentsTab
   },
   next_previous: {}
-};
+});
 
 const DISPLAY_LOG_LIMIT = 5;
 const DISPLAY_LINE_LIMIT = 10;
@@ -1416,3 +1416,49 @@ function rescheduleProductForJob(link) {
 }
 
 module = {};
+window.checkPreviewVisible = checkPreviewVisible;
+window.previewSuccess = previewSuccess;
+window.toggleTextPreview = toggleTextPreview;
+window.hidePreviewContainer = hidePreviewContainer;
+window.setCurrentPreview = setCurrentPreview;
+window.selectPreview = selectPreview;
+window.nextPreview = nextPreview;
+window.prevPreview = prevPreview;
+window.prevNeedle = prevNeedle;
+window.nextNeedle = nextNeedle;
+window.handleKeyDownOnTestDetails = handleKeyDownOnTestDetails;
+window.setPageHashAccordingToCurrentTab = setPageHashAccordingToCurrentTab;
+window.setupTabHandling = setupTabHandling;
+window.tabNameForNavElement = tabNameForNavElement;
+window.configureTabNavElement = configureTabNavElement;
+window.showTabNavElement = showTabNavElement;
+window.showRelevantTabNavElements = showRelevantTabNavElements;
+window.activateTabAccordingToHashChange = activateTabAccordingToHashChange;
+window.renderTabContent = renderTabContent;
+window.loadTabPanelElement = loadTabPanelElement;
+window.activateTab = activateTab;
+window.deactivateTab = deactivateTab;
+window.setInfoPanelClassName = setInfoPanelClassName;
+window.setupResult = setupResult;
+window.delay = delay;
+window.filterLogLines = filterLogLines;
+window.filterEmbeddedLogFiles = filterEmbeddedLogFiles;
+window.createSourceLinks = createSourceLinks;
+window.showLogLines = showLogLines;
+window.loadEmbeddedLogFiles = loadEmbeddedLogFiles;
+window.displaySearchInfo = displaySearchInfo;
+window.setCurrentPreviewFromStepLinkIfPossible = setCurrentPreviewFromStepLinkIfPossible;
+window.githashToLink = githashToLink;
+window.setupTestDetailsFilter = setupTestDetailsFilter;
+window.setupTestDetailsWindowEventHandlers = setupTestDetailsWindowEventHandlers;
+window.renderTestModules = renderTestModules;
+window.renderExternalTab = renderExternalTab;
+window.renderLiveTab = renderLiveTab;
+window.renderCommentsTab = renderCommentsTab;
+window.renderInvestigationTab = renderInvestigationTab;
+window.toggleSign = toggleSign;
+window.getInvestigationDataAttr = getInvestigationDataAttr;
+window.renderSettingsTab = renderSettingsTab;
+window.renderDependencyTab = renderDependencyTab;
+window.renderDependencyGraph = renderDependencyGraph;
+window.rescheduleProductForJob = rescheduleProductForJob;

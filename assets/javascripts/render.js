@@ -357,3 +357,12 @@ function renderMessages(messages) {
       )
     : createElement('span', [messages], {}, {preWrap: true});
 }
+window.createElement = createElement;
+window.renderTemplate = renderTemplate;
+window.moduleResultCSS = moduleResultCSS;
+window.createLogLink = createLogLink;
+window.renderModuleRow = renderModuleRow;
+window.batchProcess = batchProcess;
+window.renderJobLink = renderJobLink;
+window.renderMessages = renderMessages;
+window.renderModuleTable = renderModuleTable;

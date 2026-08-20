@@ -6,7 +6,6 @@
 
 requires 'Archive::Zip';
 requires 'BSD::Resource';
-requires 'CSS::Minifier::XS', '>= 0.01';
 requires 'Capture::Tiny';
 requires 'Carp';
 requires 'Carp::Always', '>= 0.14.02';
@@ -49,7 +48,6 @@ requires 'IO::Handle';
 requires 'IO::Socket::SSL', '>= 2.009';
 requires 'IPC::Run';
 requires 'JSON::Validator';
-requires 'JavaScript::Minifier::XS', '>= 0.11';
 requires 'LWP::Protocol::https';
 requires 'LWP::UserAgent';
 requires 'MCP', '>= 0.80.0';
@@ -70,7 +68,6 @@ requires 'Mojo::Util';
 requires 'Mojolicious', '>= 9.34';
 requires 'Mojolicious::Commands';
 requires 'Mojolicious::Plugin';
-requires 'Mojolicious::Plugin::AssetPack', '>= 1.36';
 requires 'Mojolicious::Plugin::OAuth2';
 requires 'Mojolicious::Static';
 requires 'Net::OpenID::Consumer';

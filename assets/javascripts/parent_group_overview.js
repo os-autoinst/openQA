@@ -80,3 +80,4 @@ function setupParentGroupOverviewAssets(group_id) {
     });
   });
 }
+window.setupParentGroupOverviewAssets = setupParentGroupOverviewAssets;

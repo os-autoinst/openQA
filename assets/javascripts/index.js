@@ -126,3 +126,6 @@ function autoRefreshRestart() {
 
   if (window.autoreload > 0) window.autoreloadIntervalId = setInterval(loadBuildResults, window.autoreload * 1000);
 }
+window.setupIndexPage = setupIndexPage;
+window.loadBuildResults = loadBuildResults;
+window.autoRefreshRestart = autoRefreshRestart;

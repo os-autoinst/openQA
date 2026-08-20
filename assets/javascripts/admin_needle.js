@@ -249,3 +249,4 @@ function setupAdminNeedles() {
   $('#custom_last_match').toggle($('#last_match_filter').val() === 'custom');
   $('#custom_last_seen').toggle($('#last_seen_filter').val() === 'custom');
 }
+window.setupAdminNeedles = setupAdminNeedles;

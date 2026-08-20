@@ -1,5 +1,5 @@
 let user_is_admin;
-let editor;
+let editor = window.editor;
 
 function toggleEdit() {
   $('#properties').toggle(250);
@@ -19,7 +19,7 @@ function setupTemplateEditor() {
   form.find('.buttons').hide();
   form.find('.progress-indication').show();
   if (editor === undefined) {
-    editor = ace.edit('editor-template', {
+    editor = window.editor = ace.edit('editor-template', {
       mode: 'ace/mode/yaml',
       maxLines: Infinity,
       tabSize: 2,
@@ -284,3 +284,11 @@ function submitProperties(form) {
 
   return false;
 }
+window.toggleEdit = toggleEdit;
+window.setupTemplateEditor = setupTemplateEditor;
+window.prepareTemplateEditor = prepareTemplateEditor;
+window.submitTemplateEditor = submitTemplateEditor;
+window.showSubmitResults = showSubmitResults;
+window.updateValidation = updateValidation;
+window.showAdvancedFieldsIfJsonRefersToThem = showAdvancedFieldsIfJsonRefersToThem;
+window.submitProperties = submitProperties;

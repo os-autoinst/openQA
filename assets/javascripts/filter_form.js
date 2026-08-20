@@ -207,3 +207,5 @@ function parseFilterArguments(paramHandler) {
   }
   return filterLabels;
 }
+window.setupFilterForm = setupFilterForm;
+window.parseFilterArguments = parseFilterArguments;

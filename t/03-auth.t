@@ -28,6 +28,7 @@ my $assets_mock = Test::MockModule->new('OpenQA::Assets');
 $assets_mock->redefine(
     setup => sub ($server) {
         $server->helper(asset => sub { '/dummy' });
+        $server->helper(vite => sub { '/dummy' });
     });
 
 my $tempdir = tempdir("$FindBin::Script-XXXX", TMPDIR => 1);
