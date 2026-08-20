@@ -455,7 +455,7 @@ sub show ($self) {
     my $unredacted = $self->param('unredacted') && $self->is_operator;
     return unless my $job = $self->find_job_or_render_not_found($job_id, $follow ? {prefetch => 'settings'} : {});
     $job = $job->latest_job if $follow;
-    $job = $job->to_hash(
+    my $job_data = $job->to_hash(
         assets => 1,
         check_assets => $check_assets,
         deps => 1,
@@ -463,8 +463,11 @@ sub show ($self) {
         parent_group => 1,
         unredacted => $unredacted,
     );
-    $job->{followed_id} = $job_id if ($job_id != $job->{id});
-    $self->render(json => {job => $job});
+    $job_data->{followed_id} = $job_id if $job_id != $job_data->{id};
+    for my $param (qw(ancestors descendants)) {
+        $job_data->{$param} = $job->$param if $self->param($param);
+    }
+    $self->render(json => {job => $job_data});
 }
 
 =over 4
