@@ -280,6 +280,25 @@ sub assert_initial_ui_state {
     $driver->get($job_page_url);
     $driver->find_element_by_link_text('Live View')->click();
 
+    # wait for WebSocket to connect and show 'paused' status in the header
+    my $card_header_text = $driver->find_element('#developer-panel .card-header')->get_text();
+    my $waited_s = 0;
+    while (!($card_header_text =~ /paused/)) {
+        die 'developer panel did not become paused after 10 seconds' if $waited_s > 10;
+        my $isConnected = $driver->execute_script('return developerMode.isConnected;');
+        my $isConnecting = $driver->execute_script('return developerMode.isConnecting();');
+        my $isPaused = $driver->execute_script('return developerMode.isPaused;');
+        my $display = $driver->execute_script("return document.getElementById('developer-status-info').style.display;");
+        my $computedDisplay = $driver->execute_script(
+            "return window.getComputedStyle(document.getElementById('developer-status-info')).display;");
+        my $infoText = $driver->execute_script("return document.getElementById('developer-status-info').textContent;");
+        print
+"DEBUG card_header_text: '$card_header_text', isConnected: '$isConnected', isConnecting: '$isConnecting', isPaused: '$isPaused', display: '$display', computedDisplay: '$computedDisplay', infoText: '$infoText'\n";
+        sleep 1;
+        $card_header_text = $driver->find_element('#developer-panel .card-header')->get_text();
+        $waited_s += 1;
+    }
+
     subtest 'initial state of UI controls' => sub {
         wait_for_session_info(qr/owned by Demo/, 'user displayed');
         element_visible('#developer-vnc-notice', qr/.*VNC.*\d{4}.*/);
