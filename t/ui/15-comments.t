@@ -422,6 +422,7 @@ EOM
 
 subtest 'commenting on parent group overview' => sub {
     $driver->get('/parent_group_overview/1');
+    wait_for_ajax;
     test_comment_editing(0);
 
     # add another comment to have an equal amount of comments in the parent group and in the job group
@@ -467,6 +468,7 @@ subtest 'editing when logged in as regular user' => sub {
     subtest 'group overview: ' . $_ => sub {
         my $group_url = $_;
         $driver->get($group_url);
+        wait_for_ajax;
         no_edit_no_remove_on_other_comments_expected;
         write_comment 'test by nobody', 'comment for group added by regular user';
         only_edit_for_own_comments_expected;
@@ -481,14 +483,17 @@ subtest 'editing when logged in as regular user' => sub {
         my %cond = (-or => [{group_id => $group_id}, {parent_group_id => $group_id}]);
         is $comments->search(\%cond)->count, 5, 'expected number of comments present in database at this point';
 
+        wait_for_ajax;
         # pagination present
         is scalar @{$driver->find_elements('.comments-pagination a')}, 1, 'one pagination button present';
         $driver->get($group_url . '?comments_limit=2');
+        wait_for_ajax;
         my @pagination_buttons = $driver->find_elements('.comments-pagination a', 'css');
         is scalar @pagination_buttons, 4, 'four pagination buttons present (one is >>)';
         is scalar @{$driver->find_elements('.comment-row')}, 2, 'only 2 comments present';
         $pagination_buttons[2]->click();
-        is scalar @{$driver->find_elements('.comment-row')}, 1, 'only 1 comment present on last page';
+        wait_for_ajax;
+        wait_until sub { scalar @{$driver->find_elements('.comment-row')} == 1 }, 'only 1 comment present on last page';
       }
       for (@group_overview_urls);
 };

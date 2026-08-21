@@ -160,32 +160,17 @@ sub _group_overview ($self, $resultset, $template) {
     my $group_id = $self->stash('groupid');
     return $self->reply->not_found unless my $group = $self->schema->resultset($resultset)->find($group_id);
 
-    my $page = $validation->param('comments_page') // 1;
-    my $page_limit = $validation->param('comments_limit') // 5;
-
     $self->inactivity_timeout(OPENQA_WEBUI_OVERVIEW_INACTIVITY_TIMEOUT);
-    # find comments
-    my $comments = $group->comments;
-    my $ordered_comments = $comments->search(
-        undef,
-        {
-            page => $page,
-            rows => $page_limit,
-            order_by => {-desc => 't_created'},
-        });
-    $self->stash('comments_pager', $ordered_comments->pager());
-    my @comments = $ordered_comments->all;
 
-    # find "pinned descriptions" (comments by operators with the word 'pinned-description' in it)
-    my $pinned_cond = {like => '%pinned-description%'};
-    my @pinned_comments = grep { $_->user->is_operator } $comments->search({text => $pinned_cond})->all;
-
-    # Avoid reloading all builds just for browsing comments
-    $limit_builds = 0 if $page > 1;
-    my $tags = $page > 1 ? {} : $group->tags;
+    my $tags = $group->tags;
 
     my $max_jobs_limit = $self->app->config->{misc_limits}->{job_groups_overview_max_jobs};
     my $ignored_groups = $self->app->ignored_groups;
+    my $build_results = [];
+    my $max_jobs = 0;
+    my $limit_exceeded = 0;
+    my $children = undef;
+
     my $cbr;
     try {
         $cbr
@@ -197,11 +182,12 @@ sub _group_overview ($self, $resultset, $template) {
         die $e unless $e =~ qr/^invalid regex: /;
         return $self->_respond_error_for_group_overview($e);
     }
-    my $build_results = $cbr->{build_results};
-    my $max_jobs = $cbr->{max_jobs};
-    my $limit_exceeded = $cbr->{limit_exceeded};
+    $build_results = $cbr->{build_results};
+    $max_jobs = $cbr->{max_jobs};
+    $limit_exceeded = $cbr->{limit_exceeded};
+    $children = $cbr->{children};
 
-    $self->stash(children => $cbr->{children});
+    $self->stash(children => $children);
     $self->stash(
         build_results => $build_results,
         max_jobs => $max_jobs,
@@ -211,6 +197,9 @@ sub _group_overview ($self, $resultset, $template) {
     my $is_parent_group = $group->can('children');
     my $comment_context = $is_parent_group ? 'parent_group' : 'group';
     my $comment_context_route_suffix = $comment_context . '_comment';
+    my $comments = $group->comments;
+    my @pinned_comments = $comments->pinned_descriptions->all;
+
     my $group_hash = {
         id => $group->id,
         name => $group->name,
@@ -231,7 +220,6 @@ sub _group_overview ($self, $resultset, $template) {
         limit_builds => $limit_builds,
         limit_builds_preset => \@limit_builds_preset,
         only_tagged => $only_tagged,
-        comments => \@comments,
         pinned_comments => \@pinned_comments,
         comment_context => $comment_context,
         comment_post_action => 'apiv1_post_' . $comment_context_route_suffix,
@@ -240,8 +228,17 @@ sub _group_overview ($self, $resultset, $template) {
     );
     $self->respond_to(
         json => sub ($self) {
-            @comments = map { $_->hash } @comments;
-            @pinned_comments = map { $_->hash } @pinned_comments;
+            my $page = $validation->param('comments_page') // 1;
+            my $page_limit = $validation->param('comments_limit') // 5;
+            my $ordered_comments = $group->comments->search(
+                undef,
+                {
+                    page => $page,
+                    rows => $page_limit,
+                    order_by => {-desc => 't_created'},
+                });
+            my @comments_hashes = map { $_->hash } $ordered_comments->all;
+            my @pinned_comments_hashes = map { $_->hash } @pinned_comments;
             $self->render(
                 json => {
                     group => $group_hash,
@@ -250,15 +247,63 @@ sub _group_overview ($self, $resultset, $template) {
                     limit_exceeded => $limit_exceeded ? $max_jobs_limit : 0,
                     description => $group->description,
                     children => $self->stash('children'),
-                    comments => \@comments,
-                    pinned_comments => \@pinned_comments
+                    comments => \@comments_hashes,
+                    pinned_comments => \@pinned_comments_hashes,
                 });
         },
-        html => {template => $template});
+        html => sub ($self) {
+            $self->render(template => $template);
+        });
+}
+
+sub _group_comments_ajax ($self, $resultset, $pagination_route) {
+    my $validation = $self->validation;
+    $validation->optional('comments_page')->num;
+    $validation->optional('comments_limit')->num;
+    return $self->reply->validation_error({format => $self->accepts('html')}) if $validation->has_error;
+
+    my $group_id = $self->stash('groupid');
+    return $self->reply->not_found unless my $group = $self->schema->resultset($resultset)->find($group_id);
+
+    my $page = $validation->param('comments_page') // 1;
+    my $page_limit = $validation->param('comments_limit') // 5;
+
+    $self->inactivity_timeout(OPENQA_WEBUI_OVERVIEW_INACTIVITY_TIMEOUT);
+    # find comments
+    my $comments = $group->comments;
+    my $ordered_comments = $comments->search(
+        undef,
+        {
+            page => $page,
+            rows => $page_limit,
+            order_by => {-desc => 't_created'},
+        });
+    $self->stash('comments_pager', $ordered_comments->pager());
+    my @comments = $ordered_comments->all;
+
+    my $is_parent_group = $group->can('children');
+    my $comment_context = $is_parent_group ? 'parent_group' : 'group';
+    my $comment_context_route_suffix = $comment_context . '_comment';
+
+    $self->stash(
+        group => {id => $group->id, name => $group->name},
+        comments => \@comments,
+        comment_context => $comment_context,
+        pagination_route => $pagination_route,
+        build_results => [],
+        is_ajax => 1,
+        comment_post_action => 'apiv1_post_' . $comment_context_route_suffix,
+        comment_put_action => 'apiv1_put_' . $comment_context_route_suffix,
+        comment_delete_action => 'apiv1_delete_' . $comment_context_route_suffix
+    );
+
+    $self->render(template => 'main/comment_area', layout => undef);
 }
 
 sub job_group_overview ($self) { $self->_group_overview('JobGroups', 'main/group_overview') }
+sub job_group_comments_ajax ($self) { $self->_group_comments_ajax('JobGroups', 'group_overview') }
 sub parent_group_overview ($self) { $self->_group_overview('JobGroupParents', 'main/parent_group_overview') }
+sub parent_group_comments_ajax ($self) { $self->_group_comments_ajax('JobGroupParents', 'parent_group_overview') }
 
 sub changelog ($self) {
     my $file = path($self->app->config->{global}->{changelog_file});

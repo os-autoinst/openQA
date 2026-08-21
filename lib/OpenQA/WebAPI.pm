@@ -210,8 +210,12 @@ sub startup ($self) {
     $r->get('/image/:md5_1/:md5_2/.thumbs/#md5_basename')->to('file#thumb_image');
     $r->get('/group_overview/<groupid:num>' => [format => ['json', 'html']])->name('group_overview')
       ->to('main#job_group_overview', format => undef);
+    $r->get('/group_overview/<groupid:num>/comments_ajax' => [format => ['html']])->name('job_group_comments_ajax')
+      ->to('main#job_group_comments_ajax', format => undef);
     $r->get('/parent_group_overview/<groupid:num>' => [format => ['json', 'html']])->name('parent_group_overview')
       ->to('main#parent_group_overview', format => undef);
+    $r->get('/parent_group_overview/<groupid:num>/comments_ajax' => [format => ['html']])
+      ->name('parent_group_comments_ajax')->to('main#parent_group_comments_ajax', format => undef);
 
     # Favicon
     $r->get('/favicon.ico' => sub ($c) { $c->render_static('favicon.ico') });

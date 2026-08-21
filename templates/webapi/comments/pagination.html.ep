@@ -5,12 +5,13 @@
           <ul class="pagination">
             % my $current_page_is_the_first = $comments_pager->current_page == $comments_pager->first_page;
             % my $current_page_is_the_last = $comments_pager->current_page == $comments_pager->last_page;
+            % my $route = stash('pagination_route');
 
             % if ($current_page_is_the_first) {
                 <li class="disabled"><span
             % }
             % else {
-                <li><a href="<%= url_with->query({comments_page => $comments_pager->current_page - 1}) %>"
+                <li><a href="<%= url_with($route // ())->query({comments_page => $comments_pager->current_page - 1}) %>" rel="nofollow"
             % }
               class="page-link" aria-label="Previous">
                 <span aria-hidden="true">&laquo;</span>
@@ -22,10 +23,20 @@
                 </a>
             % }
 
-            % for (my $i = $comments_pager->first_page; $i <= $comments_pager->last_page; $i++) {
-                %= tag 'li', class => ($i == $comments_pager->current_page ? 'active' : undef) => sub {
-                %    link_to $i => url_with->query({comments_page => $i}) => (class => 'page-link')
+            % my $first = $comments_pager->first_page;
+            % my $last = $comments_pager->last_page;
+            % my $current = $comments_pager->current_page;
+            % my $prev = 0;
+            % for (my $i = $first; $i <= $last; $i++) {
+            %     if ($i == $first || $i == $last || ($i >= $current - 2 && $i <= $current + 2)) {
+            %         if ($prev && $i > $prev + 1) {
+                          <li class="disabled"><span class="page-link">&hellip;</span></li>
+            %         }
+            %         $prev = $i;
+                %= tag 'li', class => ($i == $current ? 'active' : undef) => sub {
+                %    link_to $i => url_with($route // ())->query({comments_page => $i}) => (class => 'page-link', rel => 'nofollow')
                 % };
+            %     }
             % }
 
 
@@ -33,7 +44,7 @@
                 <li class="disabled"><span
             % }
             % else {
-                <li><a href="<%= url_with->query({comments_page => $comments_pager->current_page + 1}) %>"
+                <li><a href="<%= url_with($route // ())->query({comments_page => $comments_pager->current_page + 1}) %>" rel="nofollow"
             % }
                 class="page-link" aria-label="Next">
                   <span aria-hidden="true">&raquo;</span>
