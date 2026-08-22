@@ -43,7 +43,7 @@ sub test_auth_method_startup ($auth, @options) {
     $t->get_ok('/login' => {Referer => 'http://open.qa/tests/42'})->status_is(302, 'got redirected');
 }
 
-sub mojo_has_request_debug { $Mojolicious::VERSION <= 9.21 }
+sub mojo_has_request_debug () { $Mojolicious::VERSION <= 9.21 }
 
 combined_like { test_auth_method_startup('Fake')->status_is(302) } mojo_has_request_debug ? qr/302 Found/ : qr//,
   'Plugin loaded';
