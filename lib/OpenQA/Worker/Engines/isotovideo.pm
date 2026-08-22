@@ -386,8 +386,11 @@ sub _checkout_path ($url_or_path, $is_url) {
 
 sub _engine_workit_step_2 ($job, $job_settings, $vars, $shared_cache, $callback) {
     my $worker = $job->worker;
+    my $global_settings = $worker->settings->global_settings;
     my $pooldir = $worker->pool_directory;
     my $job_info = $job->info;
+
+    my $stop_timeout = $global_settings->{ISOTOVIDEO_KILL_TIMEOUT} // 30;
 
     $vars->{ASSETDIR} //= OpenQA::Utils::assetdir;
 
@@ -460,10 +463,10 @@ sub _engine_workit_step_2 ($job, $job_settings, $vars, $shared_cache, $callback)
     my $child = process(
         set_pipes => 0,    # disable additional pipes for process communication
         internal_pipes => 0,    # disable additional pipes for retrieving process return/errors
-        kill_whole_group => 1,    # terminate/kill whole process group
+        kill_whole_group => 0,    # signal isotovideo only, not the whole process group
         max_kill_attempts => 1,    # stop the process by sending SIGTERM one time …
         sleeptime_during_kill => .1,    # … and checking for termination every 100 ms …
-        total_sleeptime_during_kill => 30,    # … for 30 seconds …
+        total_sleeptime_during_kill => $stop_timeout,    # … for the configured grace period …
         kill_sleeptime => 0,    # … and wait not any longer …
         blocking_stop => 1,    # … before sending SIGKILL
         code => sub {
