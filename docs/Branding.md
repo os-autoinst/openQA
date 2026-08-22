@@ -1,5 +1,3 @@
-<a id="branding"></a>
-
 # Branding
 
 You can alter the appearance of the openQA web UI to some extent through

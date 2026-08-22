@@ -1,5 +1,3 @@
-<a id="contributing"></a>
-
 # Contributing
 
 ## Introduction
@@ -19,8 +17,6 @@ are available at the
 [official repository](https://github.com/os-autoinst/openQA).
 
 ## Development guidelines
-
-<a id="guidelines"></a>
 
 As mentioned, the central point of development is the
 [os-autoinst organization on GitHub](https://github.com/os-autoinst) where several
@@ -54,8 +50,6 @@ are the right way to contribute improvements and fixes.
 
 ### Rules for commits
 
-<a id="rules_for_commits"></a>
-
 - Every commit is checked in [CI](https://circleci.com/dashboard) as soon as
   you create a pull request, but you **should** run the tidy scripts locally, i.e.
   before every commit call:
@@ -88,8 +82,6 @@ requests for consideration or create an issue with a code change proposal.
 
 ### Code style suggestions
 
-<a id="code_style_suggestions"></a>
-
 - In Perl files:
 
 - Sort the use statements in this order from top to bottom:
@@ -121,8 +113,6 @@ requests for consideration or create an issue with a code change proposal.
   - Do **not** combine sub attributes with signatures (requires Perl 5.28+), e.g. `sub foo :lvalue ($first) {`
 
 ## Getting involved into development
-
-<a id="getting_involved"></a>
 
 Developers willing to get really involved into the development of openQA or
 people interested in following the always-changing roadmap should take a look
@@ -938,8 +928,6 @@ tests are executed in the same environment as on CircleCI. This allows to reprod
 specific to that environment.
 
 ### Run tests without container
-
-<a id="run_tests_without_container"></a>
 
 Be sure to install all required dependencies. The package `openQA-devel` will
 provide them.

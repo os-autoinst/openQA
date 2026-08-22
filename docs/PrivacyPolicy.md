@@ -1,5 +1,3 @@
-<a id="privacypolicy"></a>
-
 # Privacy Policy
 
 ## Introduction
