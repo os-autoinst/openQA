@@ -17,9 +17,7 @@ be easily extended to include more formats, such as RSpec or TAP.
 The requirements to use this functionality, are quite simple:
 
 - The test harness must produce a compatible format with supported [parsers](#parser-formats).
-
 - The test results can be uploaded via `testapi::parse_extra_log` within an openQA test.
-
 - The test results can also be uploaded via web [REST API](UsersGuide.md#rest_api).
 
 openQA will store these results in its own internal format for easier presentation,

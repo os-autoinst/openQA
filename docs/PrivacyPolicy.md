@@ -20,29 +20,21 @@ authentication provider, an account is automatically created. We collect the
 following information provided by that provider:
 
 - Username
-
 - Email address (optional)
-
 - Full name (optional)
-
 - Nickname (optional)
-
 - Role (operator, admin)
 
 ### Authentication Data
 
 - API keys and secrets (stored in hashed form)
-
 - Session data (login time, user ID)
 
 ### Activity Data
 
 - Comments you post on jobs or test results
-
 - Job settings and configurations you create
-
 - Audit events recording your actions
-
 - Developer session data when using the interactive debugging feature
 
 ## How We Use Your Data
@@ -50,15 +42,10 @@ following information provided by that provider:
 Your data is used for:
 
 - Providing the openQA testing service
-
 - Authenticating your session
-
 - Managing your permissions and API access
-
 - Recording test activities and results
-
 - Maintaining security through audit logging
-
 - No marketing or advertising purposes
 
 ## Data Protection
@@ -66,11 +53,8 @@ Your data is used for:
 We implement appropriate technical and organizational measures:
 
 - API secrets are stored using secure hashing
-
 - Access controls limit who can view your data
-
 - Audit logs track changes to accounts and data
-
 - When you delete your account, your personal data is anonymized while
   preserving historical records (see User Rights)
 
@@ -79,9 +63,7 @@ We implement appropriate technical and organizational measures:
 We do not share your personal data with third parties except:
 
 - When required by law or legal process
-
 - When necessary to protect our rights or safety
-
 - Aggregated, anonymized data that cannot identify you
 
 We do not sell your personal data.
@@ -105,13 +87,9 @@ through that provider.
 You can delete your account, which will:
 
 - Remove your personal information (email, fullname, nickname)
-
 - Anonymize your username (replaced with "deleted-user-[id]")
-
 - Delete your API keys
-
 - Clear your user reference from comments and audit events
-
 - Preserve historical test data without identifying you
 
 To exercise these rights, use the account deletion feature in your user
