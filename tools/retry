@@ -1,6 +1,10 @@
 #!/bin/sh -e
 # shellcheck disable=SC2048,SC2086
 
+# Abort immediately on SIGINT or SIGTERM to prevent infinite retries
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
 RETRY="${RETRY:-3}"
 STABILITY_TEST="${STABILITY_TEST:-0}"
 # Pass a hook command which is executed if a retry occurs
