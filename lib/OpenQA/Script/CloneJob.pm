@@ -439,11 +439,11 @@ sub _assign_existing_dependencies ($name, $deps, $settings, $jobs) {
 }
 
 sub post_jobs ($post_params, $url_handler, $options) {
-    my %composed_params = map {
-        my $job_id = $_;
+    my %composed_params;
+    for my $job_id (keys %$post_params) {
         my $params_for_job = $post_params->{$job_id};
-        map { my $key = "$_:$job_id"; $key => $params_for_job->{$_} } keys %$params_for_job
-    } keys %$post_params;
+        $composed_params{"$_:$job_id"} = $params_for_job->{$_} for keys %$params_for_job;
+    }
     $composed_params{is_clone_job} = 1;    # used to figure out if this is a clone operation
     my ($local, $local_url) = ($url_handler->{local}, $url_handler->{local_url}->clone);
     if ($options->{'export-command'}) {

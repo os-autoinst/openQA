@@ -228,7 +228,11 @@ subtest 'behavior in presence of unresponsive and unstable workers' => sub {
     mark_all_workers_as_dead($schema);
 
     # duplicate latest jobs ignoring failures
-    my @duplicated = map { my $dup = $_->auto_duplicate; ref $dup ? $dup : () } $schema->resultset('Jobs')->latest_jobs;
+    my @duplicated;
+    for my $job ($schema->resultset('Jobs')->latest_jobs) {
+        my $dup = $job->auto_duplicate;
+        push @duplicated, $dup if ref $dup;
+    }
     my $nr = $ENV{OPENQA_SCHEDULER_TEST_UNRESPONSIVE_COUNT} // 10;
     @workers = map { unresponsive_worker(@$worker_settings, $_) } (1 .. $nr);
     wait_for_worker($schema, $_) for 1 .. $nr;

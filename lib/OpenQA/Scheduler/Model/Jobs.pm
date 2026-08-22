@@ -263,8 +263,8 @@ sub schedule ($self) {
         my $first_job_id = $allocated->{job};
         my $cluster_info = $scheduled_jobs->{$first_job_id}->{cluster_jobs};
         my $jobs_resultset = $schema->resultset('Jobs');
-        my %sort_criteria = map {
-            my $job_id = $_;
+        my %sort_criteria;
+        for my $job_id (keys %$cluster_info) {
             my $sort_criteria;
             if (my $scheduled_job = $scheduled_jobs->{$job_id}) {
                 $sort_criteria = $scheduled_job->{test};
@@ -272,8 +272,8 @@ sub schedule ($self) {
             elsif (my $job = $jobs_resultset->find($job_id)) {
                 $sort_criteria = $job->TEST;
             }
-            ($job_id => ($sort_criteria || $job_id));
-        } keys %$cluster_info;
+            $sort_criteria{$job_id} = $sort_criteria || $job_id;
+        }
         my $sort_function = sub ($job_ids) {
             [sort { $sort_criteria{$a} cmp $sort_criteria{$b} } @$job_ids]
         };

@@ -989,7 +989,11 @@ subtest '_SKIP_CHAINED_DEPS prevents scheduling parent tests' => sub {
         %p = (scheduled_product_clone_id => $json_res->{scheduled_product_id}, TEST => 'child_test_3', FOO => 'bar');
         $json_res = schedule_iso($t, \%p)->json;
         my @expected_tests = map { "child_test_$_" } 3 .. 7;
-        %created_jobs = map { my $j = $jobs->find($_); $j->TEST => $j } @{$json_res->{ids}};
+        %created_jobs = ();
+        for my $id (@{$json_res->{ids}}) {
+            my $j = $jobs->find($id);
+            $created_jobs{$j->TEST} = $j;
+        }
         my @created_tests = sort keys %created_jobs;
         is $_->settings_hash->{FOO}, 'bar', 'directly specified parameter added as job setting of ' . $_->id
           for values %created_jobs;
