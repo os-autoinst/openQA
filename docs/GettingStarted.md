@@ -139,7 +139,12 @@ Types" in the web interface of openQA
 
 **scenario**
 : A composition of `<distri>-<version>-<flavor>-<arch>-<test_suite>@<machine>`,
-e.g. "openSUSE-Tumbleweed-DVD-x86_64-gnome@64bit", nicknamed _koala_
+e.g. "openSUSE-Tumbleweed-DVD-x86_64-gnome@64bit", nicknamed _koala_.
+This composition establishes the base identity of a test used for grouping jobs
+into a common history. Jobs sharing the same scenario can be further
+partitioned into independent histories (e.g. to separate pull requests or
+incident tests) using history isolation settings like `SUBMISSION_ID` so that
+unrelated test runs do not pollute each other's history.
 
 **build**
 : Different versions of a product as tested, can be considered a "sub-version"
