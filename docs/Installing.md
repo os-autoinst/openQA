@@ -1018,6 +1018,56 @@ Or put it in the `~/.gitconfig` file manually:
 
 You can apply the same kind of thing for any other Git hosting provider.
 
+### Needle validation
+
+To prevent saving invalid needles in the web editor (which could otherwise fail
+downstream needle repository CI checks), openQA can run automatic validation
+checks at save time.
+
+#### Global Configuration
+
+To enable needle validation globally, configure the `[needles]` section in your
+`openqa.ini`:
+
+```ini
+[needles]
+# Mode can be "disabled" (default), "warn" (only displays warnings on save), or "block" (prevents saving on rule violations)
+validation = block
+# Comma-separated list of validation rules to enable
+validation_rules = timestamp,workaround_bugref,single_click_area
+```
+
+The supported rules are:
+
+- `timestamp`: Verifies that the needle name ends with a valid timestamp suffix
+  (`-YYYYMMDD` or `-YYYYMMDD_n`, where year ≥ 2013).
+- `workaround_bugref`: Checks that workaround needles contain a valid bug
+  tracker reference in their filename (matching any trackers configured under
+  `%BUGREFS` in `lib/OpenQA/Utils.pm`).
+- `single_click_area`: Restricts needles to at most one area with `type=click`.
+
+#### Needle Repository Specific Rules
+
+Instead of using the global ruleset, individual needle repositories can
+declare their own localized validation rules. To set up repository-specific
+validation:
+
+Create a file named `.openqa-needle-validation.yaml` at the root of your
+`NEEDLES_DIR` directory with the following structure:
+
+```yaml
+validation: block
+validation_rules:
+  - workaround_bugref
+  - single_click_area
+```
+
+When openQA is saving a needle, it automatically loads and parses this
+`.openqa-needle-validation.yaml` file from the specific target needle
+repository, overriding the global `openqa.ini` settings. For security, path
+traversal checks are enforced to guarantee the configuration resides within
+the resolved repository directory.
+
 ### Referer settings to auto-mark important jobs
 
 Automatic cleanup of old results (see GRU jobs) can sometimes render important
