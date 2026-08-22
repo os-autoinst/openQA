@@ -185,7 +185,7 @@ worker_requires:
   psmisc:
 
 mcp_requires:
-  perl(MCP): '>= 0.80.0'
+  perl(MCP): '>= 0.150.0'
 
 test_requires:
   '%common_requires':
