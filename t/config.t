@@ -158,6 +158,45 @@ subtest 'Test configuration override from file' => sub {
       'default job_storage_duration extended to result_storage_duration (no group)';
 };
 
+subtest 'Test deprecated cleanup config keys' => sub {
+    my $t_dir = tempdir;
+    local $ENV{OPENQA_CONFIG} = $t_dir;
+    OpenQA::App->set_singleton(my $app = Mojolicious->new(log => $quiet_log));
+
+    my @data = (
+        "[misc_limits]\n",
+        "results_min_free_disk_space_percentage = 15\n",
+        "archive_min_free_disk_space_percentage = 25\n",
+        "dry_min_free_disk_space_cleanup = 1\n",
+    );
+    $t_dir->child('openqa.ini')->spew(join '', @data);
+
+    combined_like sub { OpenQA::Setup::read_config($app) },
+qr/Deprecated use of config key '\[misc_limits\]: results_min_free_disk_space_percentage'.*Deprecated use of config key '\[misc_limits\]: archive_min_free_disk_space_percentage'.*Deprecated use of config key '\[misc_limits\]: dry_min_free_disk_space_cleanup'/s,
+      'warns for deprecated keys';
+
+    is $app->config->{misc_limits}->{result_cleanup_min_free_percentage}, 15,
+      'results_min_free_disk_space_percentage mapped correctly';
+    is $app->config->{misc_limits}->{archive_cleanup_min_free_percentage}, 25,
+      'archive_min_free_disk_space_percentage mapped correctly';
+    is $app->config->{misc_limits}->{cleanup_min_free_dry_run}, 1, 'dry_min_free_disk_space_cleanup mapped correctly';
+
+    # Conflict test
+    my $t_dir2 = tempdir;
+    local $ENV{OPENQA_CONFIG} = $t_dir2;
+    my $app2 = Mojolicious->new(log => $quiet_log);
+    my @data2 = (
+        "[misc_limits]\n",
+        "results_min_free_disk_space_percentage = 15\n",
+        "result_cleanup_min_free_percentage = 33\n",
+    );
+    $t_dir2->child('openqa.ini')->spew(join '', @data2);
+    combined_like sub { OpenQA::Setup::read_config($app2) },
+qr/Conflict: both 'results_min_free_disk_space_percentage' \(deprecated\) and 'result_cleanup_min_free_percentage' are set/,
+      'warns on conflict';
+    is $app2->config->{misc_limits}->{result_cleanup_min_free_percentage}, 33, 'preferred the new key value';
+};
+
 subtest 'openqa.ini documentation check' => sub {
     my $defaults = OpenQA::Setup::default_config();
     my $ini_path = path($FindBin::Bin)->child('..', 'etc', 'openqa', 'openqa.ini');
@@ -186,7 +225,10 @@ subtest 'openqa.ini documentation check' => sub {
               =~ /^(scm|parallel_children_collapsable_results_sel|file_domain|prio_throttling_data|access_control_allow_origin_header|changelog_file|file_subdomain|search_results_limit)$/;
             next if $section eq 'hypnotoad';
             next if $section eq 'job_settings_ui' && $key eq 'default_data_dir';
-            next if $section eq 'misc_limits' && $key =~ /^(prio_throttling_data|prio_group_data|mcp_max_result_size)$/;
+            next
+              if $section eq 'misc_limits'
+              && $key
+              =~ /^(prio_throttling_data|prio_group_data|mcp_max_result_size|results_min_free_disk_space_percentage|archive_min_free_disk_space_percentage|dry_min_free_disk_space_cleanup)$/;
             next if $section eq 'rate_limits' && $key eq 'search';
             next if $section eq 'secrets';
             next if $section eq 'audit' && $key eq 'blacklist';
