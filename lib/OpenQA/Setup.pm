@@ -285,6 +285,9 @@ sub default_config () {
             asset_cleanup_max_free_percentage => 100,
             screenshot_cleanup_batch_size => OpenQA::Task::Job::Limit::DEFAULT_SCREENSHOTS_PER_BATCH,
             screenshot_cleanup_batches_per_minion_job => OpenQA::Task::Job::Limit::DEFAULT_BATCHES_PER_MINION_JOB,
+            result_cleanup_min_free_percentage => undef,
+            archive_cleanup_min_free_percentage => undef,
+            cleanup_min_free_dry_run => undef,
             results_min_free_disk_space_percentage => undef,
             archive_min_free_disk_space_percentage => undef,
             dry_min_free_disk_space_cleanup => undef,
@@ -325,6 +328,9 @@ sub default_config () {
         },
         archiving => {
             archive_preserved_important_jobs => 0,
+            archive_important_jobs_min_free_percentage => 0,
+            archive_keep_free_percentage => 5,
+            archive_max_duration => 300,
         },
         job_details_archive => {
             job_details_archive_cache_dir => undef,
@@ -384,6 +390,25 @@ sub read_config ($app) {
     if ($config->{audit}->{blacklist}) {
         $app->log->warn("Deprecated use of config key '[audit]: blacklist'. Use '[audit]: blocklist' instead");
         $config->{audit}->{blocklist} = delete $config->{audit}->{blacklist};
+    }
+    my $misc_limits = $config->{misc_limits};
+    for my $item (
+        [qw(results_min_free_disk_space_percentage result_cleanup_min_free_percentage)],
+        [qw(archive_min_free_disk_space_percentage archive_cleanup_min_free_percentage)],
+        [qw(dry_min_free_disk_space_cleanup cleanup_min_free_dry_run)])
+    {
+        my ($old_key, $new_key) = @$item;
+        if (defined $misc_limits->{$old_key}) {
+            if (defined $misc_limits->{$new_key}) {
+                $app->log->warn("Conflict: both '$old_key' (deprecated) and '$new_key' are set. Using '$new_key'.");
+            }
+            else {
+                $app->log->warn(
+                    "Deprecated use of config key '[misc_limits]: $old_key'. Use '[misc_limits]: $new_key' instead");
+                $misc_limits->{$new_key} = $misc_limits->{$old_key};
+            }
+            delete $misc_limits->{$old_key};
+        }
     }
     my $minion_task_triggers = $config->{minion_task_triggers};
     $minion_task_triggers->{$_} = [split /\s+/, $minion_task_triggers->{$_}] for keys %{$minion_task_triggers};
