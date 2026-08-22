@@ -47,6 +47,9 @@ severity = 5
 [OpenQA::RedundantStrictWarning]
 equivalent_modules = Test::Most
 
+# -- Prohibit escaped delimiters that can be avoided with q{} or qq{}
+[-OpenQA::ProhibitEscapedDelimiters]
+
 [ValuesAndExpressions::RequireNumberSeparators]
 min_value = 1000000
 
