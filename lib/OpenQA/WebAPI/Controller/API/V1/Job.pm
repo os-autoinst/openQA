@@ -443,6 +443,11 @@ children and parents, job id, group id, name, parent group id and name, priority
 settings, state and times of startup and finish of the job.
 Pass follow=1 as query param to follow job clones and report most recent result for given id.
 
+Pass ancestors=1 as query parameter to include how many restarts have happened until the
+current job.
+Pass descendants=1 as query parameter to include how many restarts have happened as of the
+current job.
+
 =back
 
 =cut
