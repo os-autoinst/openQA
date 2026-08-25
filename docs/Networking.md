@@ -114,13 +114,14 @@ multi-machine worker instance.
 > The bridge device will also call a script at
 > `/etc/wicked/scripts/gre_tunnel_preup.sh` on _PRE_UP_.
 > This script needs **manual** touch if you want to set up multiple
-> multi-machine worker hosts. Refer to the [GRE tunnels](#gre-tunnels) section below
-> for further information.
+> multi-machine worker hosts. Refer to the [GRE tunnels](#gre-tunnels) section
+> below for further information.
 
 ##### Configure NAT with firewalld
 
 > **NOTE:**
-> `os-autoinst-setup-multi-machine` can set this up for you, but using > plain NFT instead of firewalld (which `os-autoinst-setup-multi-machine` can
+> `os-autoinst-setup-multi-machine` can set this up for you, but using
+> plain NFT instead of firewalld (which `os-autoinst-setup-multi-machine` can
 > setup as well) is recommended due to firewalld's suboptimal performance with
 > many tap interfaces present.
 
@@ -287,12 +288,9 @@ network to bisect problematic hosts/connections (via `ovs-vsctl add-port …` an
 Boot sequence with wicked (version 0.6.23 and newer):
 
 1.  openvswitch (as above)
-
 2.  wicked - creates the bridge `br1` and tap devices, adds tap devices to the
     bridge,
-
 3.  firewalld (or SuSEfirewall2 in older setups)
-
 4.  os-autoinst-openvswitch - installs openflow rules, handles vlan assignment
 
 The configuration and operation can be checked with the following commands:
@@ -327,8 +325,8 @@ Bridge "br0"
 ```
 
 > **NOTE:**
-> Notice the tag numbers are assigned to tap1 and tap2. They should have
-> the same number.
+> Notice the tag numbers are assigned to tap1 and tap2. They should have the
+> same number.
 
 > **NOTE:**
 > If the balance of the tap devices is wrong in
@@ -340,7 +338,9 @@ To list the rules which are effectively configured in the underlying netfilter
 netfilter is used.
 
 > **NOTE:**
-> Whether firewalld is using `nftables` or `iptables` is determined by the > setting `FirewallBackend` in `/etc/firewalld/firewalld.conf`. SuSEfirewall2 is > always using `iptables`.
+> Whether firewalld is using `nftables` or `iptables` is determined by the
+> setting `FirewallBackend` in `/etc/firewalld/firewalld.conf`. SuSEfirewall2 is
+> always using `iptables`.
 
 ```sh
 nft list tables           # list all tables
@@ -354,11 +354,8 @@ iptables --list --verbose # list all rules with package counts
 Check the flow of packets over the network:
 
 - packets from tapX to br1 create additional rules in table=1
-
 - packets from br1 to tapX increase packet counts in table=1
-
 - empty output indicates a problem with os-autoinst-openvswitch service
-
 - zero packet count or missing rules in table=1 indicate problem with tap
   devices
 
@@ -389,7 +386,9 @@ systemctl enable --now openvswitch
 | B    | 192.0.2.2/24    | 192.168.43.1/24 | 192.0.2.1 |
 
 > **NOTE:**
-> instead of having two /24 networks, it is also possible to assign addresses from one bigger network (which have the benefit of not needing explicit route assignment).
+> instead of having two /24 networks, it is also possible to assign addresses
+> from one bigger network (which have the benefit of not needing explicit route
+> assignment).
 
 #### Simple scenario
 

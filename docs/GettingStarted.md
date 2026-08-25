@@ -139,7 +139,7 @@ Types" in the web interface of openQA
 
 **scenario**
 : A composition of `<distri>-<version>-<flavor>-<arch>-<test_suite>@<machine>`,
-e.g. "openSUSE-Tumbleweed-DVD-x86_64-gnome@64bit", nicknamed _koala_
+e.g. `openSUSE-Tumbleweed-DVD-x86_64-gnome@64bit`, nicknamed _koala_
 
 **build**
 : Different versions of a product as tested, can be considered a "sub-version"
