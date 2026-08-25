@@ -15,6 +15,7 @@ use OpenQA::Test::TimeLimit '30';
 use OpenQA::Test::Case;
 use OpenQA::Test::Client 'client';
 use MCP::Client;
+use MCP;
 
 OpenQA::Test::Case->new(config_directory => "$FindBin::Bin/../data/17-mcp")
   ->init_data(fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl');
@@ -32,12 +33,15 @@ subtest 'Authentication' => sub {
 };
 
 subtest 'Start session' => sub {
-    is $client->session_id, undef, 'no session id';
-    my $result = $client->initialize_session;
-    is $result->{serverInfo}{name}, 'openQA', 'server name';
-    is $result->{serverInfo}{version}, '1.0.0', 'server version';
-    ok $result->{capabilities}, 'has capabilities';
-    ok $client->session_id, 'session id set';
+    if (version->parse(MCP->VERSION) >= version->parse('0.15')) {
+        plan(skip_all => 'Subtest should only be executed with MCP < 0.15');    # uncoverable statement
+    }
+    is $client->session_id, undef, 'no session id';    # uncoverable statement
+    my $result = $client->initialize_session;    # uncoverable statement
+    is $result->{serverInfo}{name}, 'openQA', 'server name';    # uncoverable statement
+    is $result->{serverInfo}{version}, '1.0.0', 'server version';    # uncoverable statement
+    ok $result->{capabilities}, 'has capabilities';    # uncoverable statement
+    ok $client->session_id, 'session id set';    # uncoverable statement
 };
 
 subtest 'List tools' => sub {
