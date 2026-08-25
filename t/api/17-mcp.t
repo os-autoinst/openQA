@@ -32,7 +32,6 @@ subtest 'Authentication' => sub {
 };
 
 subtest 'Start session' => sub {
-    my $result = $client->initialize_session;
     is $result->{serverInfo}{name}, 'openQA', 'server name';
     is $result->{serverInfo}{version}, '1.0.0', 'server version';
     ok $result->{capabilities}, 'has capabilities';
