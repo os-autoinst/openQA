@@ -2262,7 +2262,10 @@ sub _compute_result_and_reason ($self, $new_val, $result, $reason, $restart) {
         # restart incompletes when the reason matches the configured regex
         my $append_reason = '';
         my $auto_clone_regex = OpenQA::App->singleton->config->{global}->{auto_clone_regex};
-        if ($result eq INCOMPLETE and $auto_clone_regex and $reason =~ $auto_clone_regex) {
+        if (    ($result eq INCOMPLETE || $result eq TIMEOUT_EXCEEDED)
+            and $auto_clone_regex
+            and $reason =~ $auto_clone_regex)
+        {
             my $limit = OpenQA::App->singleton->config->{global}{auto_clone_limit};
             my $ancestors = $self->incomplete_ancestors($limit + 1);
             # how many of those incomplete ancestors had a reason not matching auto_clone?
