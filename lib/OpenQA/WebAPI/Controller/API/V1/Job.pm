@@ -441,7 +441,14 @@ sub create ($self) {
 Shows details for a specific job, such as the assets associated, assigned worker id,
 children and parents, job id, group id, name, parent group id and name, priority, result,
 settings, state and times of startup and finish of the job.
-Pass follow=1 as query param to follow job clones and report most recent result for given id.
+
+Pass follow=1 as query parameter to follow job restarts and report most the recent result
+for the specified job id.
+
+Pass ancestors=1 as query parameter to include how many restarts have happened until the
+current job.
+Pass descendants=1 as query parameter to include how many restarts have happened as of the
+current job.
 
 =back
 
@@ -455,7 +462,7 @@ sub show ($self) {
     my $unredacted = $self->param('unredacted') && $self->is_operator;
     return unless my $job = $self->find_job_or_render_not_found($job_id, $follow ? {prefetch => 'settings'} : {});
     $job = $job->latest_job if $follow;
-    $job = $job->to_hash(
+    my $job_data = $job->to_hash(
         assets => 1,
         check_assets => $check_assets,
         deps => 1,
@@ -463,8 +470,11 @@ sub show ($self) {
         parent_group => 1,
         unredacted => $unredacted,
     );
-    $job->{followed_id} = $job_id if ($job_id != $job->{id});
-    $self->render(json => {job => $job});
+    $job_data->{followed_id} = $job_id if $job_id != $job_data->{id};
+    for my $param (qw(ancestors descendants)) {
+        $job_data->{$param} = $job->$param if $self->param($param);
+    }
+    $self->render(json => {job => $job_data});
 }
 
 =over 4
@@ -597,14 +607,16 @@ sub update_status ($self) {
 Retrieve status of a job. Returns id, state, result, blocked_by_id.
 Preferable over /job/<id> for performance and payload size, if you are only
 interested in the status.
-Pass follow=1 as query param to follow job clones and report most recent result for given id.
+
+Pass follow=1 as query parameter to follow job restarts and report most the recent result
+for the specified job id.
 
 =back
 
 =cut
 
 sub get_status ($self) {
-    my $follow = $self->param('follow');    # follow job clones and report most recent result for given id
+    my $follow = $self->param('follow');    # follow job restarts and report most recent result for given id
     my @fields = qw(id state result blocked_by_id);
     my $jobid = $self->stash('jobid');
     return unless my $job = $self->find_job_or_render_not_found($jobid);
