@@ -959,7 +959,7 @@ distinguish differing variants, e.g. &quot;DVD&quot;</p>
 for &quot;64bit&quot;, &quot;uefi&quot;, etc.</p>
 <p><strong>scenario</strong> : A composition of
 <code>&lt;distri&gt;-&lt;version&gt;-&lt;flavor&gt;-&lt;arch&gt;-&lt;test_suite&gt;@&lt;machine&gt;</code>,
-e.g. &quot;openSUSE-Tumbleweed-DVD-x86_64-gnome@64bit&quot;, nicknamed
+e.g. <code>openSUSE-Tumbleweed-DVD-x86_64-gnome@64bit</code>, nicknamed
 <em>koala</em></p>
 <p><strong>build</strong> : Different versions of a product as tested,
 can be considered a &quot;sub-version&quot; of <em>version</em>, e.g. &quot;Build1234&quot;;
@@ -1594,9 +1594,9 @@ configuration</a>.</p>
 <p>To run tests based on the default qemu backend the following hardware
 specifications are recommended per openQA worker instance:</p>
 <ul>
-<li><p>1x CPU core with 2x hyperthreads (or 2x CPU cores)</p></li>
-<li><p>8GB RAM</p></li>
-<li><p>40GB HDD (preferably SSD or NVMe)</p></li>
+<li>1x CPU core with 2x hyperthreads (or 2x CPU cores)</li>
+<li>8GB RAM</li>
+<li>40GB HDD (preferably SSD or NVMe)</li>
 </ul>
 <p><a id="basic-configuration"></a></p>
 <h2 data-number="2.6" id="basic-configuration"><span class="header-section-number">2.6</span> Basic configuration</h2>
@@ -1895,8 +1895,8 @@ openQA without enabling it permanently one can simply use
 zero-downtime upgrades</h3>
 <p>The main openQA web UI service (the <code>openqa-webui-daemon</code>
 script which is usually started via the systemd unit
-<code>openqa-webui.service</code>) supports <a href="https://docs.mojolicious.org/Mojolicious/Guides/Cookbook#Zero-downtime-software-upgrades">zero-downtime
-upgrades</a> with the help of <a href="https://lwn.net/Articles/542629">the <code>SO_REUSEPORT</code>
+<code>openqa-webui.service</code>) supports [zero-downtime upgrades](<a href="https://docs.mojolicious.org/Mojolicious/Guides/Cookbook#Zero-downtime">https://docs.mojolicious.org/Mojolicious/Guides/Cookbook#Zero-downtime</a>
+-software-upgrades) with the help of <a href="https://lwn.net/Articles/542629">the <code>SO_REUSEPORT</code>
 socket option</a>. A zero-downtime restart is triggered by sending
 <code>SIGHUP</code> to the script/service (which can be done by
 reloading <code>openqa-webui.service</code> when using systemd which is
@@ -1993,16 +1993,13 @@ results and other data</a> section.</p>
 <p>If your tests and needles are stored in Git, openQA can perform
 various operations:</p>
 <ul>
-<li><p>Automatically commit needles created in the web UI editor back to
-the repository</p></li>
-<li><p>Automatically update the repository when scheduling
-tests</p></li>
-<li><p>Update the server&#39;s tests and needles from Git repos specified in
-a job&#39;s <code>CASEDIR</code> and <code>NEEDLES_DIR</code>
-variables</p></li>
-<li><p>Attempt to have the web UI display the correct needles each job
-was executed with via temporary Git checkouts, based on its
-variables</p></li>
+<li>Automatically commit needles created in the web UI editor back to
+the repository</li>
+<li>Automatically update the repository when scheduling tests</li>
+<li>Update the server&#39;s tests and needles from Git repos specified in a
+job&#39;s <code>CASEDIR</code> and <code>NEEDLES_DIR</code> variables</li>
+<li>Attempt to have the web UI display the correct needles each job was
+executed with via temporary Git checkouts, based on its variables</li>
 </ul>
 <p>By default, cloning based on <code>CASEDIR</code> and
 <code>NEEDLES_DIR</code> is enabled, but the other features are
@@ -2014,23 +2011,21 @@ settings:</p>
 <span id="cb55-4"><a href="#cb55-4" aria-hidden="true" tabindex="-1"></a><span class="dt">git_auto_update </span><span class="ot">=</span><span class="st"> yes|no</span></span>
 <span id="cb55-5"><a href="#cb55-5" aria-hidden="true" tabindex="-1"></a><span class="dt">checkout_needles_sha </span><span class="ot">=</span><span class="st"> yes|no</span></span></code></pre></div>
 <ul>
-<li><p><code>git_auto_commit</code> controls whether needles saved in
-the web UI editor are automatically committed. For backwards
-compatibility, setting <code>scm</code> in the <code>[global]</code>
-section to &#39;git&#39; also enables this feature, if
-<code>git_auto_commit</code> is not set exactly to &#39;no&#39; (its default
-value is the empty string &#39;&#39;).</p></li>
-<li><p><code>git_auto_update</code> controls automatic test/needle
-updating when scheduling tests.</p></li>
-<li><p><code>git_auto_clone</code> controls the automatic cloning of
-repos referenced by <code>CASEDIR</code> and <code>NEEDLES_DIR</code>,
-at job schedule time. Check out the <a href="#terms-and-variables-for-certain-directories-used-by-openqa-and-isotovideo">section
-about directories</a> for where the repositories will be
-stored.</p></li>
-<li><p><code>checkout_needles_sha</code> controls the feature whereby,
-when a job viewed in the web UI has variables indicating the needles
-came from a specific Git repository and ref, openQA will attempt to
-clone that ref and display the needles from it.</p></li>
+<li><code>git_auto_commit</code> controls whether needles saved in the
+web UI editor are automatically committed. For backwards compatibility,
+setting <code>scm</code> in the <code>[global]</code> section to &#39;git&#39;
+also enables this feature, if <code>git_auto_commit</code> is not set
+exactly to &#39;no&#39; (its default value is the empty string &#39;&#39;).</li>
+<li><code>git_auto_update</code> controls automatic test/needle updating
+when scheduling tests.</li>
+<li><code>git_auto_clone</code> controls the automatic cloning of repos
+referenced by <code>CASEDIR</code> and <code>NEEDLES_DIR</code>, at job
+schedule time. Check out the <a href="#terms-and-variables-for-certain-directories-used-by-openqa-and-isotovideo">section
+about directories</a> for where the repositories will be stored.</li>
+<li><code>checkout_needles_sha</code> controls the feature whereby, when
+a job viewed in the web UI has variables indicating the needles came
+from a specific Git repository and ref, openQA will attempt to clone
+that ref and display the needles from it.</li>
 </ul>
 <h4 data-number="2.10.2.1" id="configuration-of-automatic-needle-commit-feature"><span class="header-section-number">2.10.2.1</span> Configuration of automatic
 needle commit feature</h4>
@@ -2262,10 +2257,9 @@ available a worker can be configured to register and accept jobs from
 all of them.</p>
 <p>Requirements:</p>
 <ul>
-<li><p><code>/etc/openqa/client.conf</code> must contain API keys and
-secrets to all instances</p></li>
-<li><p>Shared storage from all instances must be properly
-mounted</p></li>
+<li><code>/etc/openqa/client.conf</code> must contain API keys and
+secrets to all instances</li>
+<li>Shared storage from all instances must be properly mounted</li>
 </ul>
 <p>In <a href="#worker-configuration">the worker configuration</a>,
 enter space-separated instance hosts and optionally configure where the
@@ -2282,11 +2276,11 @@ shared storage is mounted. Example:</p>
 Workers will try following directories prior registering with openQA
 instance:</p>
 <ol type="1">
-<li><p><code>SHARE_DIRECTORY</code></p></li>
-<li><p><code>/var/lib/openqa/$instance_host</code></p></li>
-<li><p><code>/var/lib/openqa/share</code></p></li>
-<li><p><code>/var/lib/openqa</code></p></li>
-<li><p>fail if none of above is available</p></li>
+<li><code>SHARE_DIRECTORY</code></li>
+<li><code>/var/lib/openqa/$instance_host</code></li>
+<li><code>/var/lib/openqa/share</code></li>
+<li><code>/var/lib/openqa</code></li>
+<li>fail if none of above is available</li>
 </ol>
 <p>Once a worker registers to an openQA instance, scheduled jobs (of
 matching worker class) can be assigned to it. Dependencies between jobs
@@ -2353,15 +2347,16 @@ openQA webui instance) it results in downloading the same assets several
 times. In such case, one can setup local cache on their own (without
 using openqa-worker-cacheservice service) and share it with workers
 using some network filesystem (see <a href="#configuring_remote_workers">Configuring remote workers</a>
-section above). Such setups can use <code>SYNC_ASSETS_HOOK</code> in <a href="#webui-configuration">the web UI configuration</a> to ensure the
-cache is up to date before starting the job (or resuming test in
-developer mode). The setting takes a shell command that is executed just
-before evaluating assets. It is up to the system administrator to decide
-what it should do, but there are few suggestions:</p>
+section above). Such setups can use <code>SYNC_ASSETS_HOOK</code> in <a href="GettingStarted.md#webui-configuration">the web UI
+configuration</a> to ensure the cache is up to date before starting the
+job (or resuming test in developer mode). The setting takes a shell
+command that is executed just before evaluating assets. It is up to the
+system administrator to decide what it should do, but there are few
+suggestions:</p>
 <ul>
-<li><p>Call rsync, possibly via ssh on the cache host</p></li>
-<li><p>Wait for a lock file signaling that cache download is in progress
-to disappear</p></li>
+<li>Call rsync, possibly via ssh on the cache host</li>
+<li>Wait for a lock file signaling that cache download is in progress to
+disappear</li>
 </ul>
 <p>If the command exits with code 32, re-downloading needles in
 developer mode will be skipped.</p>
@@ -2506,9 +2501,9 @@ the retention policy for different audit event types:</p>
 <span id="cb83-9"><a href="#cb83-9" aria-hidden="true" tabindex="-1"></a><span class="dt">needle </span><span class="ot">=</span><span class="st"> </span><span class="dv">30</span></span>
 <span id="cb83-10"><a href="#cb83-10" aria-hidden="true" tabindex="-1"></a><span class="dt">other </span><span class="ot">=</span><span class="st"> </span><span class="dv">15</span></span></code></pre></div>
 <p>In this example events of the type <code>startup</code> would be
-cleaned up after 10 days, events related to job groups after 365 days
-and so on. Events which do not fall into one of these categories would
-be cleaned after 15 days. By default, cleanup is disabled.</p>
+cleaned up after 10 days,events related to job groups after 365 days and
+so on. Events which do not fall into one of these categories would be
+cleaned after 15 days. By default, cleanup is disabled.</p>
 <p>Use
 <code>systemctl enable --now openqa-enqueue-audit-event-cleanup.timer</code>
 to schedule the cleanup automatically every day. It is also possible to
@@ -2592,15 +2587,11 @@ well. These instructions can migrate big databases in seconds without
 requiring additional disk space. However, services need to be stopped
 during the (short) migration.</p>
 <ol type="1">
-<li>Locate the <code>data</code>-directory. Its path is configured in
+<li><p>Locate the <code>data</code>-directory. Its path is configured in
 <code>/etc/sysconfig/postgresql</code> and should be
 <code>/var/lib/pgsql/data</code> by default. The paths in the next steps
-assume the default.</li>
-</ol>
-<!-- -->
-
-<ol start="2" type="1">
-<li><p>To ease migrations, it is recommended making the
+assume the default.</p></li>
+<li><p>To ease migrations, it is recommended to make the
 <code>data</code>-directory a symlink to a versioned directory. So the
 file system layout would look for example like this:</p>
 <div class="sourceCode" id="cb85"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb85-1"><a href="#cb85-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> sudo <span class="at">-u</span> postgres ls <span class="at">-l</span> /var/lib/pgsql <span class="kw">|</span> <span class="fu">grep</span> data</span>
@@ -2608,25 +2599,13 @@ file system layout would look for example like this:</p>
 <span id="cb85-3"><a href="#cb85-3" aria-hidden="true" tabindex="-1"></a><span class="ex">drwx------</span> 20 postgres postgres 4096 30. Aug 00:00 data.10</span>
 <span id="cb85-4"><a href="#cb85-4" aria-hidden="true" tabindex="-1"></a><span class="ex">drwx------</span> 20 postgres postgres 4096  8. Sep 2019  data.96</span></code></pre></div>
 <p>The next steps assume such a layout.</p></li>
-</ol>
-<!-- -->
-
-<ol start="3" type="1">
 <li><p>Install same set of postgresql* packages as are installed for the
 old version:</p>
 <div class="sourceCode" id="cb86"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb86-1"><a href="#cb86-1" aria-hidden="true" tabindex="-1"></a><span class="va">oldver</span><span class="op">=</span>17 <span class="va">newver</span><span class="op">=</span>18</span>
 <span id="cb86-2"><a href="#cb86-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> zypper in postgresql<span class="va">$newver</span>-server postgresql<span class="va">$newver</span>-contrib</span></code></pre></div></li>
-</ol>
-<!-- -->
-
-<ol start="4" type="1">
 <li><p>Change to a directory where the user postgres will be able to
 write logs to, e.g.:</p>
 <div class="sourceCode" id="cb87"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb87-1"><a href="#cb87-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> /tmp</span></code></pre></div></li>
-</ol>
-<!-- -->
-
-<ol start="5" type="1">
 <li><p>Prepare the migration:</p>
 <div class="sourceCode" id="cb88"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb88-1"><a href="#cb88-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> <span class="at">-u</span> postgres /usr/lib/postgresql<span class="va">$newver</span>/bin/initdb <span class="pp">[</span><span class="ss">locale</span><span class="pp">-</span><span class="ss">settings</span><span class="pp">]</span> <span class="at">-D</span> /var/lib/pgsql/data.<span class="va">$newver</span></span></code></pre></div>
 <blockquote>
@@ -2646,10 +2625,6 @@ the following settings: <code>--encoding=UTF8</code>
 <code>--locale=en_US.UTF-8 --lc-collate=C --lc-ctype=en_US.UTF-8 --lc-messages=C</code>
 <code>--lc-monetary=C --lc-numeric=C --lc-time=C</code></p>
 </blockquote></li>
-</ol>
-<!-- -->
-
-<ol start="6" type="1">
 <li><p>Take over any relevant changes from the old config to the new
 one, e.g.:</p>
 <div class="sourceCode" id="cb89"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb89-1"><a href="#cb89-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> <span class="at">-u</span> postgres vimdiff <span class="dt">\</span></span>
@@ -2659,18 +2634,10 @@ one, e.g.:</p>
 <p><strong>IMPORTANT:</strong> There shouldn&#39;t be a diff in the locale
 settings, otherwise <code>pg_upgrade</code> will complain.</p>
 </blockquote></li>
-</ol>
-<!-- -->
-
-<ol start="7" type="1">
 <li><p>Shutdown postgres server and related services as appropriate for
 your setup, e.g.:</p>
 <div class="sourceCode" id="cb90"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb90-1"><a href="#cb90-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> systemctl stop openqa-<span class="dt">{webui</span><span class="op">,</span><span class="dt">websockets</span><span class="op">,</span><span class="dt">scheduler</span><span class="op">,</span><span class="dt">livehandler</span><span class="op">,</span><span class="dt">gru}</span></span>
 <span id="cb90-2"><a href="#cb90-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> systemctl stop postgresql</span></code></pre></div></li>
-</ol>
-<!-- -->
-
-<ol start="8" type="1">
 <li><p>Perform the migration:</p>
 <div class="sourceCode" id="cb91"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb91-1"><a href="#cb91-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> <span class="at">-u</span> postgres /usr/lib/postgresql<span class="va">$newver</span>/bin/pg_upgrade <span class="at">--link</span> <span class="dt">\</span></span>
 <span id="cb91-2"><a href="#cb91-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">--old-bindir</span><span class="op">=</span>/usr/lib/postgresql<span class="va">$oldver</span>/bin <span class="dt">\</span></span>
@@ -2688,17 +2655,9 @@ documentation</a> for details.</p>
 multiple production DBs because the <code>--link</code> option is
 used.</p>
 </blockquote></li>
-</ol>
-<!-- -->
-
-<ol start="9" type="1">
 <li><p>Change symlink (shown in step 2) to use the new data
 directory:</p>
 <div class="sourceCode" id="cb92"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb92-1"><a href="#cb92-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> ln <span class="at">--force</span> <span class="at">--no-dereference</span> <span class="at">--relative</span> <span class="at">--symbolic</span> /var/lib/pgsql/data.<span class="va">$newver</span> /var/lib/pgsql/data</span></code></pre></div></li>
-</ol>
-<!-- -->
-
-<ol start="10" type="1">
 <li><p>Start services again as appropriate for your setup, e.g.:</p>
 <div class="sourceCode" id="cb93"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb93-1"><a href="#cb93-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> systemctl start postgresql</span>
 <span id="cb93-2"><a href="#cb93-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> systemctl start openqa-<span class="dt">{webui</span><span class="op">,</span><span class="dt">websockets</span><span class="op">,</span><span class="dt">scheduler</span><span class="op">,</span><span class="dt">livehandler</span><span class="op">,</span><span class="dt">gru}</span></span></code></pre></div>
@@ -2707,23 +2666,11 @@ directory:</p>
 new version of the PostgreSQL service. The start script checks the
 version of the data directory and starts the correct version.</p>
 </blockquote></li>
-</ol>
-<!-- -->
-
-<ol start="11" type="1">
 <li><p>Check whether usual role and database are present and running on
 the new version:</p>
 <div class="sourceCode" id="cb94"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb94-1"><a href="#cb94-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> <span class="at">-u</span> geekotest psql <span class="at">-c</span> <span class="st">&#39;select version();&#39;</span> openqa</span></code></pre></div></li>
-</ol>
-<!-- -->
-
-<ol start="12" type="1">
 <li><p>Remove old postgres packages if not needed anymore:</p>
 <div class="sourceCode" id="cb95"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb95-1"><a href="#cb95-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> zypper rm postgresql<span class="va">$oldver</span>-server postgresql<span class="va">$oldver</span>-contrib postgresql<span class="va">$oldver</span></span></code></pre></div></li>
-</ol>
-<!-- -->
-
-<ol start="13" type="1">
 <li><p>Delete the old data directory if not needed anymore:</p>
 <div class="sourceCode" id="cb96"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb96-1"><a href="#cb96-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> <span class="at">-u</span> postgres rm <span class="at">-r</span> /var/lib/pgsql/data.<span class="va">$oldver</span></span></code></pre></div></li>
 </ol>
@@ -2737,15 +2684,15 @@ statistics</h3>
 <p>These statistics help to identify the most time-consuming
 queries.</p>
 <ol type="1">
-<li><p>Configure the PostgreSQL extension
-<code>pg_stat_statements</code>, see example on <a href="https://www.postgresql.org/docs/current/pgstatstatements.html">the
-official documentation</a>.</p></li>
-<li><p>Ensure the extension library is installed which might be provided
-by a separate package (e.g. <code>postgresql14-contrib</code> for
-PostgreSQL 14 on openSUSE).</p></li>
-<li><p>Restart PostgreSQL.</p></li>
-<li><p>Enable the extension via
-<code>CREATE EXTENSION pg_stat_statements</code>.</p></li>
+<li>Configure the PostgreSQL extension <code>pg_stat_statements</code>,
+see example on <a href="https://www.postgresql.org/docs/current/pgstatstatements.html">the
+official documentation</a>.</li>
+<li>Ensure the extension library is installed which might be provided by
+a separate package (e.g. <code>postgresql14-contrib</code> for
+PostgreSQL 14 on openSUSE).</li>
+<li>Restart PostgreSQL.</li>
+<li>Enable the extension via
+<code>CREATE EXTENSION pg_stat_statements</code>.</li>
 </ol>
 <h4 data-number="2.15.1.1" id="make-use-of-these-statistics"><span class="header-section-number">2.15.1.1</span> Make use of these
 statistics</h4>
@@ -2768,11 +2715,11 @@ to make sure they are using indexes (and not just sequential scans).</p>
 <ol type="1">
 <li>Try to tweak database configuration parameters. For example
 increasing <code>work_mem</code> in <code>postgresql.conf</code> might
-help with some heavy queries. 2. Run
-<code>VACUUM VERBOSE ANALYZE table_name;</code> for any table that shows
-to be impacting the performance. This can take some seconds or minutes
-but can help to improve performance in particular after bigger schema
-migrations for example type changes.</li>
+help with some heavy queries.</li>
+<li>Run <code>VACUUM VERBOSE ANALYZE table_name;</code> for any table
+that shows to be impacting the performance. This can take some seconds
+or minutes but can help to improve performance in particular after
+bigger schema migrations for example type changes.</li>
 </ol>
 <h3 data-number="2.15.3" id="further-resources"><span class="header-section-number">2.15.3</span> Further resources</h3>
 <ul>
@@ -2861,11 +2808,7 @@ e.g.</p>
 <ul>
 <li><p><code>/var/lib/openqa/pool/1</code></p></li>
 <li><p><code>/var/lib/openqa/pool/2</code></p></li>
-<li><ol type="1">
-<li><ul>
-<li>add more if you have more worker instances</li>
-</ul></li>
-</ol></li>
+<li><p>add more if you have more worker instances</p></li>
 </ul>
 <p>You can also give the whole pool directory to the
 <code>_openqa-worker</code> user and let the workers create their own
@@ -3094,24 +3037,24 @@ repository checkouts being stored on the host the openQA web UI is
 running. Note that these settings only control the openQA web UI. The
 os-autoinst backend will still clone repositories specified via
 <code>CASEDIR</code> and <code>NEEDLES_DIR</code>
-<strong>regardless</strong> of the <code>[scm git]</code> settings.
-Other relevant settings: <code>hsts</code>,
+<strong>regardless</strong> of the <code>[scm git]</code> settings.</p>
+<p>Other relevant settings: <code>hsts</code>,
 <code>file_security_policy</code></p>
 <h2 data-number="2.20" id="troubleshooting"><span class="header-section-number">2.20</span> Troubleshooting</h2>
 <h3 data-number="2.20.1" id="tests-fail-quickly"><span class="header-section-number">2.20.1</span> Tests fail quickly</h3>
 <p>Check the log files in <code>/var/lib/openqa/testresults</code></p>
 <h3 data-number="2.20.2" id="kvm-does-not-work"><span class="header-section-number">2.20.2</span> KVM does not work</h3>
 <ul>
-<li><p>make sure you have a machine with kvm support</p></li>
-<li><p>make sure <code>kvm_intel</code> or <code>kvm_amd</code> modules
-are loaded</p></li>
-<li><p>make sure you do have virtualization enabled in BIOS</p></li>
-<li><p>make sure the &#39;_openqa-worker&#39; user can access
-<code>/dev/kvm</code></p></li>
-<li><p>make sure you are not already running other hypervisors such as
-VirtualBox</p></li>
-<li><p>when running inside a vm make sure nested virtualization is
-enabled (pass nested=1 to your kvm module)</p></li>
+<li>make sure you have a machine with kvm support</li>
+<li>make sure <code>kvm_intel</code> or <code>kvm_amd</code> modules are
+loaded</li>
+<li>make sure you do have virtualization enabled in BIOS</li>
+<li>make sure the &#39;_openqa-worker&#39; user can access
+<code>/dev/kvm</code></li>
+<li>make sure you are not already running other hypervisors such as
+VirtualBox</li>
+<li>when running inside a vm make sure nested virtualization is enabled
+(pass nested=1 to your kvm module)</li>
 </ul>
 <h3 data-number="2.20.3" id="openid-login-times-out"><span class="header-section-number">2.20.3</span> OpenID login times out</h3>
 <p><a href="http://www.opensuse.org&#39;s">www.opensuse.org&#39;s</a> OpenID
@@ -3138,7 +3081,7 @@ can make a huge difference.</p>
 <h2 data-number="3.1" id="introduction-2"><span class="header-section-number">3.1</span> Introduction</h2>
 <p>This document provides additional information for use of the web
 interface or the REST API as well as administration information. For
-administrators it is recommend to have read the <a href="#installing">Installation Guide</a> first to understand the
+administrators it is recommended to read the <a href="#installing">Installation Guide</a> first to understand the
 structure of components as well as the configuration of an installed
 instance.</p>
 <p><a id="job_templates"></a></p>
@@ -3161,15 +3104,13 @@ required jobs for each revision of your operating system that needs to
 be tested. If you are starting from scratch, you should probably go
 through the following order:</p>
 <ol type="1">
-<li><p>Define machines in &#39;Machines&#39; menu</p></li>
-<li><p>Define medium types (products) you have in &#39;Medium types&#39;
-menu</p></li>
-<li><p>Specify various collections of tests you want to run in the &#39;Test
-suites&#39; menu</p></li>
-<li><p>Define job groups in &#39;Job groups&#39; menu for groups of
-tests</p></li>
-<li><p>Select individual &#39;Job groups&#39; and decide what combinations make
-sense and need to be tested</p></li>
+<li>Define machines in &#39;Machines&#39; menu</li>
+<li>Define medium types (products) you have in &#39;Medium types&#39; menu</li>
+<li>Specify various collections of tests you want to run in the &#39;Test
+suites&#39; menu</li>
+<li>Define job groups in &#39;Job groups&#39; menu for groups of tests</li>
+<li>Select individual &#39;Job groups&#39; and decide what combinations make
+sense and need to be tested</li>
 </ol>
 <p>Machines, mediums, test suites and job templates can all set various
 configuration variables. The so called job templates within the job
@@ -3192,11 +3133,11 @@ and i586 machines like <code>64bit</code>, <code>64bit_USBBoot</code>,
 scenarios considering that the &quot;x86_64&quot; flavor is not compatible with
 the <code>32bit</code> machine:</p>
 <ul>
-<li><p>openSUSE-DVD-x86_64-kde-64bit</p></li>
-<li><p>openSUSE-DVD-x86_64-kde-64bit_USBBoot</p></li>
-<li><p>openSUSE-NET-i586-kde-64bit</p></li>
-<li><p>openSUSE-NET-i586-kde-64bit_USBBoot</p></li>
-<li><p>openSUSE-NET-i586-kde-32bit</p></li>
+<li>openSUSE-DVD-x86_64-kde-64bit</li>
+<li>openSUSE-DVD-x86_64-kde-64bit_USBBoot</li>
+<li>openSUSE-NET-i586-kde-64bit</li>
+<li>openSUSE-NET-i586-kde-64bit_USBBoot</li>
+<li>openSUSE-NET-i586-kde-32bit</li>
 </ul>
 <p>For every test scenario we need to configure a different instance of
 the test backend, for example <code>os-autoinst</code>, with a different
@@ -3209,30 +3150,22 @@ connected that can fulfill those specifications.</p>
 <ul>
 <li><strong>Name.</strong> User defined string - only needed for
 operator to identify the machine configuration.</li>
-</ul>
-<!-- -->
-
-<ul>
 <li><strong>Backend.</strong> What backend should be used for this
 machine. Recommended value is <code>qemu</code> as it is the most tested
 one, but other options (such as <code>kvm2usb</code> or
 <code>vbox</code>) are also possible.</li>
-</ul>
-<!-- -->
-
-<ul>
 <li><strong>Variables</strong> Most machine variables influence
 os-autoinst&#39;s behavior in terms of how the test machine is set up. A few
 important examples:
 <ul>
-<li><p><code>QEMUCPU</code> can be &#39;qemu32&#39; or &#39;qemu64&#39; and specifies
-the architecture of the virtual CPU.</p></li>
-<li><p><code>QEMUCPUS</code> is an integer that specifies the number of
-cores you wish for.</p></li>
-<li><p><code>LAPTOP</code> if set to 1, QEMU will create a laptop
-profile.</p></li>
-<li><p><code>USBBOOT</code> when set to 1, the image will be loaded
-through an emulated USB stick.</p></li>
+<li><code>QEMUCPU</code> can be &#39;qemu32&#39; or &#39;qemu64&#39; and specifies the
+architecture of the virtual CPU.</li>
+<li><code>QEMUCPUS</code> is an integer that specifies the number of
+cores you wish for.</li>
+<li><code>LAPTOP</code> if set to 1, QEMU will create a laptop
+profile.</li>
+<li><code>USBBOOT</code> when set to 1, the image will be loaded through
+an emulated USB stick.</li>
 </ul></li>
 </ul>
 <p><a id="medium_types_products"></a></p>
@@ -3242,17 +3175,17 @@ concrete meaning. It basically consists of a name and a set of variables
 that define or characterize this product in os-autoinst.</p>
 <p>Some example variables used by openSUSE are:</p>
 <ul>
-<li><p><code>ISO_MAXSIZE</code> contains the maximum size of the
-product. There is a test that checks that the current size of the
-product is less or equal than this variable.</p></li>
-<li><p><code>DVD</code> if it is set to 1, this indicates that the
-medium is a DVD.</p></li>
-<li><p><code>LIVECD</code> if it is set to 1, this indicates that the
-medium is a live image (can be a CD or USB)</p></li>
-<li><p><code>GNOME</code> this variable, if it is set to 1, indicates
-that it is a GNOME only distribution.</p></li>
-<li><p><code>PROMO</code> marks the promotional product.</p></li>
-<li><p><code>RESCUECD</code> is set to 1 for rescue CD images.</p></li>
+<li><code>ISO_MAXSIZE</code> contains the maximum size of the product.
+There is a test that checks that the current size of the product is less
+or equal than this variable.</li>
+<li><code>DVD</code> if it is set to 1, this indicates that the medium
+is a DVD.</li>
+<li><code>LIVECD</code> if it is set to 1, this indicates that the
+medium is a live image (can be a CD or USB)</li>
+<li><code>GNOME</code> this variable, if it is set to 1, indicates that
+it is a GNOME only distribution.</li>
+<li><code>PROMO</code> marks the promotional product.</li>
+<li><code>RESCUECD</code> is set to 1 for rescue CD images.</li>
 </ul>
 <h4 data-number="3.2.3.1" id="using-wildcards-in-medium-versions"><span class="header-section-number">3.2.3.1</span> Using Wildcards in Medium
 Versions</h4>
@@ -3325,38 +3258,36 @@ The test variables can be used to parameterize the actual test code and
 influence the behaviour according to the settings.</p>
 <p>Some sample variables used by openSUSE are:</p>
 <ul>
-<li><p><code>BTRFS</code> if set, the file system will be
-BtrFS.</p></li>
-<li><p><code>DESKTOP</code> possible values are &#39;kde&#39; &#39;gnome&#39; &#39;lxde&#39;
-&#39;xfce&#39; or &#39;textmode&#39;. Used to indicate the desktop selected by the user
-during the test.</p></li>
-<li><p><code>DOCRUN</code> used for documentation tests.</p></li>
-<li><p><code>DUALBOOT</code> dual boot testing, needs HDD_1 and
-HDDVERSION.</p></li>
-<li><p><code>ENCRYPT</code> encrypt the home directory via
-YaST.</p></li>
-<li><p><code>HDDVERSION</code> used together with HDD_1 to set the
-operating system previously installed on the hard disk.</p></li>
-<li><p><code>INSTALLONLY</code> only basic installation.</p></li>
-<li><p><code>INSTLANG</code> installation language. Actually used only
-in documentation tests.</p></li>
-<li><p><code>LIVETEST</code> the test is on a live medium, do not
-install the distribution.</p></li>
-<li><p><code>LVM</code> select LVM volume manager.</p></li>
-<li><p><code>NICEVIDEO</code> used for rendering a result video for use
-in show rooms, skipping ugly and boring tests.</p></li>
-<li><p><code>NOAUTOLOGIN</code> unmark autologin in YaST</p></li>
-<li><p><code>NUMDISKS</code> total number of disks in QEMU.</p></li>
-<li><p><code>REBOOTAFTERINSTALL</code> if set to 1, will reboot after
-the installation.</p></li>
-<li><p><code>SCREENSHOTINTERVAL</code> used with NICEVIDEO to improve
-the video quality.</p></li>
-<li><p><code>SPLITUSR</code> a YaST configuration option.</p></li>
-<li><p><code>TOGGLEHOME</code> a YaST configuration option.</p></li>
-<li><p><code>UPGRADE</code> upgrade testing, need HDD_1 and
-HDDVERSION.</p></li>
-<li><p><code>VIDEOMODE</code> if the value is &#39;text&#39;, the installation
-will be done in text mode.</p></li>
+<li><code>BTRFS</code> if set, the file system will be BtrFS.</li>
+<li><code>DESKTOP</code> possible values are &#39;kde&#39; &#39;gnome&#39; &#39;lxde&#39; &#39;xfce&#39;
+or &#39;textmode&#39;. Used to indicate the desktop selected by the user during
+the test.</li>
+<li><code>DOCRUN</code> used for documentation tests.</li>
+<li><code>DUALBOOT</code> dual boot testing, needs HDD_1 and
+HDDVERSION.</li>
+<li><code>ENCRYPT</code> encrypt the home directory via YaST.</li>
+<li><code>HDDVERSION</code> used together with HDD_1 to set the
+operating system previously installed on the hard disk.</li>
+<li><code>INSTALLONLY</code> only basic installation.</li>
+<li><code>INSTLANG</code> installation language. Actually used only in
+documentation tests.</li>
+<li><code>LIVETEST</code> the test is on a live medium, do not install
+the distribution.</li>
+<li><code>LVM</code> select LVM volume manager.</li>
+<li><code>NICEVIDEO</code> used for rendering a result video for use in
+show rooms, skipping ugly and boring tests.</li>
+<li><code>NOAUTOLOGIN</code> unmark autologin in YaST</li>
+<li><code>NUMDISKS</code> total number of disks in QEMU.</li>
+<li><code>REBOOTAFTERINSTALL</code> if set to 1, will reboot after the
+installation.</li>
+<li><code>SCREENSHOTINTERVAL</code> used with NICEVIDEO to improve the
+video quality.</li>
+<li><code>SPLITUSR</code> a YaST configuration option.</li>
+<li><code>TOGGLEHOME</code> a YaST configuration option.</li>
+<li><code>UPGRADE</code> upgrade testing, need HDD_1 and
+HDDVERSION.</li>
+<li><code>VIDEOMODE</code> if the value is &#39;text&#39;, the installation will
+be done in text mode.</li>
 </ul>
 <p>Some of the variables usually set in test suites that influence
 openQA and/or os-autoinst&#39;s own behavior are:</p>
@@ -3387,25 +3318,13 @@ configured by different means:</p>
 <ul>
 <li>A simple web UI wizard which is automatically shown for job groups
 when a new medium is added to the job group.</li>
-</ul>
-<!-- -->
-
-<ul>
 <li>An intuitive table within the web UI for adding additional test
 scenarios to existing media including the possibility to configure the
 priority values.</li>
-</ul>
-<!-- -->
-
-<ul>
 <li>The scripts <code>openqa-load-templates</code> and
 <code>openqa-dump-templates</code> to quickly dump and load the
 configuration from custom plain-text dump format files using the REST
 API.</li>
-</ul>
-<!-- -->
-
-<ul>
 <li>Using declarative schedule definitions in the YAML format using REST
 API routes or an online-editor within the web UI including a syntax
 checker.</li>
@@ -3528,14 +3447,13 @@ reference or a test issue reason is stated:</p>
 <h4 data-number="3.3.3.1" id="meaning-of-the-different-colors"><span class="header-section-number">3.3.3.1</span> Meaning of the different
 colors</h4>
 <ul>
-<li><p>No icon is shown if at least one failure still need to be
-reviewed.</p></li>
-<li><p>The green tick icon shows up when there is no work to be
-done.</p></li>
-<li><p>The black certificate icon is shown if all review work has been
-done.</p></li>
-<li><p>The grey comment icon is shown if all failures have at least one
-comment.</p></li>
+<li>No icon is shown if at least one failure still need to be
+reviewed.</li>
+<li>The green tick icon shows up when there is no work to be done.</li>
+<li>The black certificate icon is shown if all review work has been
+done.</li>
+<li>The grey comment icon is shown if all failures have at least one
+comment.</li>
 </ul>
 <p>(To simplify, checking for false-negatives is not considered
 here.)</p>
@@ -3735,12 +3653,12 @@ bug reports &quot;does this bug still happen?&quot;</p></li>
 </ul>
 <p>Examples:</p>
 <ul>
-<li><p><code>tests/latest?distri=opensuse&amp;version=13.1&amp;flavor=DVD&amp;arch=x86_64&amp;test=kde&amp;machine=64bit</code></p></li>
-<li><p><code>tests/latest?flavor=DVD&amp;arch=x86_64&amp;test=kde</code></p></li>
-<li><p><code>tests/latest?test=foobar</code> - this searches for the
-most recent job using test_suite `foobar&#39; covering all distri, version,
+<li><code>tests/latest?distri=opensuse&amp;version=13.1&amp;flavor=DVD&amp;arch=x86_64&amp;test=kde&amp;machine=64bit</code></li>
+<li><code>tests/latest?flavor=DVD&amp;arch=x86_64&amp;test=kde</code></li>
+<li><code>tests/latest?test=foobar</code> - this searches for the most
+recent job using test_suite `foobar&#39; covering all distri, version,
 flavor, arch, machines. To be more specific, add the other query
-entries.</p></li>
+entries.</li>
 </ul>
 <h3 data-number="3.3.12" id="allow-group-overview-query-by-result-gh"><span class="header-section-number">3.3.12</span> Allow group overview query
 by result
@@ -3874,7 +3792,7 @@ web UI configuration</a> for details.</p>
 <blockquote>
 <p><strong>NOTE:</strong> For an approach to add bug references based on
 a search expression found in the job reason for incomplete jobs or job
-logs consider to <a href="#enable_custom_hook_scripts_on_job_done_based_on_result">Enable
+logs consider <a href="#enable_custom_hook_scripts_on_job_done_based_on_result">Enabling
 custom hook scripts on &quot;job done&quot; based on result</a>.</p>
 </blockquote>
 <blockquote>
@@ -3905,10 +3823,10 @@ for &quot;Website appearance&quot;. - On Chrome, go to
 <h3 data-number="3.3.21" id="developer-mode"><span class="header-section-number">3.3.21</span> Developer mode</h3>
 <p>The developer mode allows to:</p>
 <ul>
-<li><p>Create or update needles from <code>assert_screen</code>
-mismatches (&quot;re-needling&quot;)</p></li>
-<li><p>Pause the test execution (at a certain module) for manual
-investigation of the SUT</p></li>
+<li>Create or update needles from <code>assert_screen</code> mismatches
+(&quot;re-needling&quot;)</li>
+<li>Pause the test execution (at a certain module) for manual
+investigation of the SUT</li>
 </ul>
 <p>It can be accessed via the &quot;Live View&quot; tab of a running test. Only
 registered users can take control over tests. Basic instructions and
@@ -3921,20 +3839,20 @@ mode under &#39;Pitfalls&#39;</a>.</p>
 <h4 data-number="3.3.21.1" id="workflow-for-creating-or-updating-needles"><span class="header-section-number">3.3.21.1</span> Workflow for creating or
 updating needles</h4>
 <ol type="1">
-<li><p>In case a new needles should be created, add the corresponding
-<code>assert_screen</code> calls to your test.</p></li>
-<li><p>Start the test with the <code>assert_screen</code> calls which
-are supposed to fail. 3. Select &quot;<code>assert_screen</code> timeout&quot;
-under &quot;Pause on screen mismatch&quot; and confirm.</p></li>
-<li><p>Wait until the test has paused. There is a button to skip the
-current timeout to speed this up.</p></li>
-<li><p>A button for accessing the needle editor should occur. It may
-take a few seconds till it occurs because the screenshots created so far
-need to be uploaded from the worker to the web UI. Of course it is also
+<li>In case a new needles should be created, add the corresponding
+<code>assert_screen</code> calls to your test.</li>
+<li>Start the test with the <code>assert_screen</code> calls which are
+supposed to fail. 3. Select &quot;<code>assert_screen</code> timeout&quot; under
+&quot;Pause on screen mismatch&quot; and confirm.</li>
+<li>Wait until the test has paused. There is a button to skip the
+current timeout to speed this up.</li>
+<li>A button for accessing the needle editor should occur. It may take a
+few seconds till it occurs because the screenshots created so far need
+to be uploaded from the worker to the web UI. Of course it is also
 possible to go back to the &quot;Details&quot; tab to create a new needle from any
-previous screenshot/match available.</p></li>
-<li><p>After creating the new needle, click the resume button to test
-whether it worked.</p></li>
+previous screenshot/match available.</li>
+<li>After creating the new needle, click the resume button to test
+whether it worked.</li>
 </ol>
 <p>Steps 4. to 6. can be repeated for further needles without restarting
 the test.</p>
@@ -4234,35 +4152,35 @@ but it is also useful for additional filtering (see js&#39;s <a href="https://st
 <p>However, openQA&#39;s API provides many more filters on its own. These
 can be used by adding additional query parameters, e.g.:</p>
 <ul>
-<li><p><code>ids</code>/<code>state</code>/<code>result</code>: Return
-only jobs with matching ID/state/result. Multiple IDs/states/results can
-be specified by repeating the parameter or by passing comma-separated
-values.</p></li>
-<li><p><code>distri</code>/<code>version</code>/<code>build</code>/<code>test</code>/<code>arch</code>/<code>machine</code>
+<li><code>ids</code>/<code>state</code>/<code>result</code>: Return only
+jobs with matching ID/state/result. Multiple IDs/states/results can be
+specified by repeating the parameter or by passing comma-separated
+values.</li>
+<li><code>distri</code>/<code>version</code>/<code>build</code>/<code>test</code>/<code>arch</code>/<code>machine</code>
 /<code>worker_class</code>/<code>iso</code>/<code>hdd_1</code>: Return
 only jobs where the job settings match the specified values like in the
 example above. Note that it is not possible to filter by arbitrary job
-settings although this list might not be complete.</p></li>
-<li><p><code>groupid</code>/<code>group</code>: Return only jobs within
-the job group with the specified ID/name like in the example above.
-These parameters are mutually exclusive, <code>groupid</code> has
-precedence.</p></li>
-<li><p><code>latest=1</code>: De-duplicates, so that for the same
+settings although this list might not be complete.</li>
+<li><code>groupid</code>/<code>group</code>: Return only jobs within the
+job group with the specified ID/name like in the example above. These
+parameters are mutually exclusive, <code>groupid</code> has
+precedence.</li>
+<li><code>latest=1</code>: De-duplicates, so that for the same
 <code>DISTRI</code>, <code>VERSION</code>, <code>BUILD</code>,
 <code>TEST</code>, <code>FLAVOR</code>, <code>ARCH</code> and
-<code>MACHINE</code> only the latest job is returned.</p></li>
-<li><p><code>limit</code>/<code>page</code>: Limit the number of
-returned jobs and allow pagination, e.g.
-<code>page=2&amp;limit=10</code> would only show results 11-20.</p></li>
-<li><p><code>modules</code>/<code>modules_result</code>: Return only
-jobs which have a test module with the specified name/result.</p></li>
-<li><p><code>before</code>/<code>after</code>: Return only jobs with a
-job ID less/greater than the specified job ID.</p></li>
-<li><p><code>scope=current</code>: Returns only jobs which have not been
-cloned yet.</p></li>
-<li><p><code>scope=relevant</code>: Returns only jobs which have not
-been obsoleted yet and which have not been cloned yet. Clones which are
-still pending do <strong>not</strong> count.</p></li>
+<code>MACHINE</code> only the latest job is returned.</li>
+<li><code>limit</code>/<code>page</code>: Limit the number of returned
+jobs and allow pagination, e.g. <code>page=2&amp;limit=10</code> would
+only show results 11-20.</li>
+<li><code>modules</code>/<code>modules_result</code>: Return only jobs
+which have a test module with the specified name/result.</li>
+<li><code>before</code>/<code>after</code>: Return only jobs with a job
+ID less/greater than the specified job ID.</li>
+<li><code>scope=current</code>: Returns only jobs which have not been
+cloned yet.</li>
+<li><code>scope=relevant</code>: Returns only jobs which have not been
+obsoleted yet and which have not been cloned yet. Clones which are still
+pending do <strong>not</strong> count.</li>
 </ul>
 <h4 data-number="3.5.1.1" id="remarks"><span class="header-section-number">3.5.1.1</span> Remarks</h4>
 <ul>
@@ -4640,7 +4558,7 @@ job can run at the same time unless <code>concurrent</code> is set to
 <code>1</code> in the <code>[cleanup]</code> settings of <a href="#webui-configuration">the web UI configuration</a>. Many other
 cleanup-related settings can be found within the web UI configuration as
 well, e.g. the <code>[…_limits]</code> sections contain various tweaks
-and allow to change certain defaults. Check out the sub section <a href="#timers-and-triggers">Timers and triggers</a> to learn more about
+and allow changing certain defaults. Check out the sub section <a href="#timers-and-triggers">Timers and triggers</a> to learn more about
 how those jobs are triggered.</p>
 <p>The cleanup of <strong>assets</strong> and job
 <strong>results</strong> (and certain other data) is happening
@@ -4677,17 +4595,16 @@ retained in the database after they finished. This limit only applies if
 it&#39;s higher than regular jobs.</p>
 <p>Further remarks:</p>
 <ul>
-<li><p>Check out the <a href="#build-tagging">Build tagging</a> section
-for how to mark a job as important on job group level. Jobs can also be
+<li>Check out the <a href="#build-tagging">Build tagging</a> section for
+how to mark a job as important on job group level. Jobs can also be
 marked as important by adding a &quot;link label&quot; (e.g.
 <code>label:linked Job mentioned on https://…</code>) in a job comment.
 - New groups use the limits configured in the
 <code>[default_group_limits]</code> section of <a href="#webui-configuration">the web UI configuration</a>. Jobs outside
 of any group use the limits configured in the
-<code>[no_group_limits]</code> section of the web UI
-configuration.</p></li>
-<li><p>The <a href="#auditing">Auditing</a> section explains the cleanup
-of the audit log.</p></li>
+<code>[no_group_limits]</code> section of the web UI configuration.</li>
+<li>The <a href="#auditing">Auditing</a> section explains the cleanup of
+the audit log.</li>
 </ul>
 <h3 data-number="3.7.1" id="automatic-archiving-of-old-jobs"><span class="header-section-number">3.7.1</span> Automatic archiving of old
 jobs</h3>
@@ -4702,12 +4619,12 @@ This happens as part of the normal cleanup. In the web UI an icon
 indicates that a job was archived.</p>
 <p>This means a job is &quot;in the archive&quot; if:</p>
 <ol type="1">
-<li><p>it is important.</p></li>
-<li><p>its age is between the retention of regular jobs and important
-jobs.</p></li>
-<li><p>thresholds for space-aware cleanup do not prevent the cleanup of
-job results from happening at all (because if the cleanup is skipped,
-also archiving is skipped).</p></li>
+<li>it is important.</li>
+<li>its age is between the retention of regular jobs and important
+jobs.</li>
+<li>thresholds for space-aware cleanup do not prevent the cleanup of job
+results from happening at all (because if the cleanup is skipped, also
+archiving is skipped).</li>
 </ol>
 <blockquote>
 <p><strong>NOTE:</strong> Archiving does <strong>not</strong> prevent
@@ -4726,10 +4643,10 @@ space is free. This extended deletion happens independently of
 configured time-based retention thresholds.</p>
 <p>The deletion happens in the following order:</p>
 <ol type="1">
-<li><p>Videos of unimportant jobs</p></li>
-<li><p>Results of unimportant jobs</p></li>
-<li><p>Videos of important jobs</p></li>
-<li><p>Results of important jobs</p></li>
+<li>Videos of unimportant jobs</li>
+<li>Results of unimportant jobs</li>
+<li>Videos of important jobs</li>
+<li>Results of important jobs</li>
 </ol>
 <p>Within each group the oldest jobs are deleted first.</p>
 <p>It is also possible to abort cleanup and archiving early in case
@@ -4767,11 +4684,11 @@ an asset is never counted twice.</p>
 <p>If the size limit for assets of a group is exceeded, openQA will
 remove assets which belong to that group:</p>
 <ul>
-<li><p>Assets belonging to old jobs are preferred.</p></li>
-<li><p>Assets belonging to jobs which are still scheduled or running are
-not considered.</p></li>
-<li><p>Assets which have been accounted to another group that has still
-space left are not considered.</p></li>
+<li>Assets belonging to old jobs are preferred.</li>
+<li>Assets belonging to jobs which are still scheduled or running are
+not considered.</li>
+<li>Assets which have been accounted to another group that has still
+space left are not considered.</li>
 </ul>
 <p>Assets which do <em>not</em> belong to any group are removed after a
 configurable duration unless the files are still being updated. Keep in
@@ -4823,12 +4740,12 @@ timers <code>openqa-enqueue-*-cleanup</code> to periodically run tasks.
 Both can be used separately or in combination.</p>
 <p>The relevant Minion tasks are:</p>
 <ul>
-<li><p>limit_assets</p></li>
-<li><p>limit_audit_events</p></li>
-<li><p>limit_bugs</p></li>
-<li><p>limit_results_and_logs</p></li>
-<li><p>limit_scheduled_products</p></li>
-<li><p>limit_screenshots</p></li>
+<li>limit_assets</li>
+<li>limit_audit_events</li>
+<li>limit_bugs</li>
+<li>limit_results_and_logs</li>
+<li>limit_scheduled_products</li>
+<li>limit_screenshots</li>
 </ul>
 <p>These are no-ops if a task is already running so they can safely be
 enqueued repeatedly. Note that the tasks can still take considerable
@@ -4853,14 +4770,14 @@ Consumers can use <code>#</code> to match any number of words or
 subscribes to all openQA events, for instance.</p>
 <p>Here are the events triggered and published by openQA:</p>
 <ol type="1">
-<li><p><code>openqa.job.create</code> when a job is created</p></li>
-<li><p><code>openqa.job.delete</code> when a job is deleted</p></li>
-<li><p><code>openqa.job.cancel</code> when a job is cancelled</p></li>
-<li><p><code>openqa.job.restart</code> when a job is restarted or
-duplicated</p></li>
-<li><p><code>openqa.job.update_result</code> when a job result is
-updated</p></li>
-<li><p><code>openqa.job.done</code> when a job finishes</p></li>
+<li><code>openqa.job.create</code> when a job is created</li>
+<li><code>openqa.job.delete</code> when a job is deleted</li>
+<li><code>openqa.job.cancel</code> when a job is cancelled</li>
+<li><code>openqa.job.restart</code> when a job is restarted or
+duplicated</li>
+<li><code>openqa.job.update_result</code> when a job result is
+updated</li>
+<li><code>openqa.job.done</code> when a job finishes</li>
 </ol>
 <p>Job event bodies include the job settings (e.g. <code>BUILD</code>,
 <code>TEST</code>, <code>ARCH</code>, <code>MACHINE</code>,
@@ -4890,9 +4807,9 @@ body (at the time of writing):</p>
 <span id="cb141-16"><a href="#cb141-16" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
 <p>Event for comments are also published:</p>
 <ol type="1">
-<li><p><code>openqa.comment.create</code></p></li>
-<li><p><code>openqa.comment.update</code></p></li>
-<li><p><code>openqa.comment.delete</code></p></li>
+<li><code>openqa.comment.create</code></li>
+<li><code>openqa.comment.update</code></li>
+<li><code>openqa.comment.delete</code></li>
 </ol>
 <p>Comment event bodies include: <code>id</code>, <code>job_id</code>,
 <code>group_id</code>, <code>parent_group_id</code>, <code>user</code>,
@@ -4942,42 +4859,40 @@ the right format one can make a decision, inform automatic tools at the
 same time as other users and have a traceable documentation of the
 actions taken.</p>
 <ul>
-<li><p>In openQA parent job groups can be defined with multiple job
-groups. This allows to segment tests for scopes of individual review
-teams. The parent job group overview pages as well as the central index
-page of openQA show &quot;bullet list&quot; icons that bring you directly to a
-combined test overview showing results from all sub groups. This allows
-to have queries ready like <a href="https://openqa.opensuse.org/tests/overview?groupid=1&amp;groupid=2&amp;groupid=3">https://openqa.opensuse.org/tests/overview?groupid=1&amp;groupid=2&amp;groupid=3</a>
+<li>In openQA parent job groups can be defined with multiple job groups.
+This allows to segment tests for scopes of individual review teams. The
+parent job group overview pages as well as the central index page of
+openQA show &quot;bullet list&quot; icons that bring you directly to a combined
+test overview showing results from all sub groups. This allows to have
+queries ready like <a href="https://openqa.opensuse.org/tests/overview?groupid=1&amp;groupid=2&amp;groupid=3">https://openqa.opensuse.org/tests/overview?groupid=1&amp;groupid=2&amp;groupid=3</a>
 which show all openQA test failures within the hierarchy of test
 results. This can be combined with the flag &quot;todo=1&quot; (click the &quot;TODO&quot;
 checkbox in the filter box on test overview pages) to show only tests
 that need review. Other combinations of queries are possible, e.g. <a href="https://openqa.opensuse.org/tests/overview?build=my-build&amp;todo=1">https://openqa.opensuse.org/tests/overview?build=my-build&amp;todo=1</a>
-to show all test results that need review for build &quot;my-build&quot;</p></li>
-<li><p><a href="https://github.com/os-autoinst/openqa_review">https://github.com/os-autoinst/openqa_review</a>
+to show all test results that need review for build &quot;my-build&quot;</li>
+<li><a href="https://github.com/os-autoinst/openqa_review">https://github.com/os-autoinst/openqa_review</a>
 can be used to produce multiple different generated reports, e.g. all
-tests that need review, tests that are linked to closed bugs,
-etc.</p></li>
-<li><p>Use <a href="https://github.com/os-autoinst/os-autoinst-scripts/blob/master/README.md#auto-review---automatically-detect-known-issues-in-openqa-jobs-label-openqa-jobs-with-ticket-references-and-optionally-retrigger">auto-review</a>
+tests that need review, tests that are linked to closed bugs, etc.</li>
+<li>Use <a href="https://github.com/os-autoinst/os-autoinst-scripts/blob/master/README.md#auto-review---automatically-detect-known-issues-in-openqa-jobs-label-openqa-jobs-with-ticket-references-and-optionally-retrigger">auto-review</a>
 to handle flaky issues and even automatically retrigger according
-tests</p></li>
-<li><p>In case of known sporadic issues that can not be fixed quickly
+tests</li>
+<li>In case of known sporadic issues that can not be fixed quickly
 consider <a href="#automatic-retries-of-jobs">automatic retries of
-jobs</a>.</p></li>
-<li><p>In case of known non-sporadic test issues that can not be fixed
+jobs</a>.</li>
+<li>In case of known non-sporadic test issues that can not be fixed
 quickly consider <a href="#overwrite-result-of-job">overwriting the
-result of jobs</a>.</p></li>
-<li><p>To quickly label and - as desired - restart multiple jobs
-consider using the command line application
-<code>openqa-label-all</code>. Call <code>openqa-label-all --help</code>
-to see all options.</p></li>
-<li><p>For the SUSE maintenance test workflows a &quot;branding&quot; specific
+result of jobs</a>.</li>
+<li>To quickly label and - as desired - restart multiple jobs consider
+using the command line application <code>openqa-label-all</code>. Call
+<code>openqa-label-all --help</code> to see all options.</li>
+<li>For the SUSE maintenance test workflows a &quot;branding&quot; specific
 approach is provided: In case of needing to urgently release individual
 maintenance updates before test failures can be resolved consider
 instructing qem-bot, the automation validating and approving release
 requests based on openQA test results, to ignore individual job failures
 for specific incidents. See <a href="https://progress.opensuse.org/issues/95479#Suggestions">https://progress.opensuse.org/issues/95479#Suggestions</a>
 for the necessary comment format or use the comment template from the
-openqa.suse.de comment edit window.</p></li>
+openqa.suse.de comment edit window.</li>
 </ul>
 <h2 data-number="3.11" id="where-to-now-1"><span class="header-section-number">3.11</span> Where to now?</h2>
 <p>For test developers it is recommended to continue with the <a href="#writingtests">Test Developer Guide</a>.
@@ -5471,8 +5386,9 @@ used for test</h4>
 <p>There are two sets of packages that can be included in test logs:</p>
 <ol type="1">
 <li>Packages installed on the worker itself - stored as
-<code>worker_packages.txt</code>. 2. Packages installed on SUT - stored
-as <code>sut_packages.txt</code>.</li>
+<code>worker_packages.txt</code>.</li>
+<li>Packages installed on SUT - stored as
+<code>sut_packages.txt</code>.</li>
 </ol>
 <p>For both sets, if present, openQA will include the difference to the
 last good job in the &quot;Investigation&quot; tab of a failed job.</p>
@@ -6019,11 +5935,10 @@ test writer (beware deadlocks).</p></li>
 <p>In short, writing multi-machine tests adds a few more layers of
 complexity:</p>
 <ol type="1">
-<li><p>Documenting the dependencies and order between individual
-tests</p></li>
-<li><p>Synchronization between individual tests</p></li>
-<li><p>Actual technical realization (i.e. <a href="#networking">custom
-networking</a>)</p></li>
+<li>Documenting the dependencies and order between individual tests</li>
+<li>Synchronization between individual tests</li>
+<li>Actual technical realization (i.e. <a href="#networking">custom
+networking</a>)</li>
 </ol>
 <h3 data-number="4.6.10" id="test-synchronization-and-locking-api"><span class="header-section-number">4.6.10</span> Test synchronization and
 locking API</h3>
@@ -6427,7 +6342,7 @@ root.</p>
 <blockquote>
 <p><strong>NOTE:</strong> for <a href="https://github.com/os-autoinst/os-autoinst-distri-opensuse">os-autoinst-distri-opensuse</a>
 tests instead of using
-<code>select_console(&#39;root-virtio-terminal&#39;)</code> directly is the &gt;
+<code>select_console(&#39;root-virtio-terminal&#39;)</code> directly is the
 preferred way to use wrapper <code>select_serial_terminal()</code>,
 which handles all backends:</p>
 </blockquote>
@@ -7065,7 +6980,7 @@ from the main repository in this example. This is the conservative
 approach. To allow scheduling jobs based on the PR version of the
 scenario definitions file one could use e.g.
 <code>SCENARIO_DEFINITIONS_YAML_FILE=https://raw.githubusercontent.com/$GH_REPO/$GH_REF/.github/workflows/openqa.yml</code>
-&gt; instead of <code>- uses: actions/checkout@v3</code> and &gt;
+instead of <code>- uses: actions/checkout@v3</code> and
 <code>--param-file SCENARIO_DEFINITIONS_YAML=scenario-definitions.yaml</code>.</p>
 </blockquote>
 <h3 data-number="4.8.2" id="use-webhooks-and-status-reporting-apis-of-github"><span class="header-section-number">4.8.2</span> Use webhooks and status
@@ -7117,30 +7032,30 @@ GitHub</h4>
 <p>This setup is required for GitHub to be able to inform openQA that a
 PR has been created or updated.</p>
 <ol type="1">
-<li><p>Open <a href="https://github.com/$orga/$project/settings/hooks/new">https://github.com/$orga/$project/settings/hooks/new</a>.
+<li>Open <a href="https://github.com/$orga/$project/settings/hooks/new">https://github.com/$orga/$project/settings/hooks/new</a>.
 You need to substitute the placeholders <code>$orga</code> and
 <code>$project</code> with the corresponding value of the repository you
-want to add CI checks to.</p></li>
-<li><p>Add <a href="https://$user:$apikey:$apisecret@$openqa_host/api/v1/webhooks/product?DISTRI=example&amp;VERSION=0&amp;FLAVOR=DVD&amp;ARCH=x86_64&amp;TEST=simple_boot">https://$user:$apikey:$apisecret@$openqa_host/api/v1/webhooks/product?DISTRI=example&amp;VERSION=0&amp;FLAVOR=DVD&amp;ARCH=x86_64&amp;TEST=simple_boot</a>
+want to add CI checks to.</li>
+<li>Add <a href="https://$user:$apikey:$apisecret@$openqa_host/api/v1/webhooks/product?DISTRI=example&amp;VERSION=0&amp;FLAVOR=DVD&amp;ARCH=x86_64&amp;TEST=simple_boot">https://$user:$apikey:$apisecret@$openqa_host/api/v1/webhooks/product?DISTRI=example&amp;VERSION=0&amp;FLAVOR=DVD&amp;ARCH=x86_64&amp;TEST=simple_boot</a>
 as &quot;Payload URL&quot;. You need to substitute the placeholders with valid API
 credentials and hostname for your openQA instance. If you don&#39;t have an
 API key/secret then you can create one on <a href="https://$openqa_host/api_keys">https://$openqa_host/api_keys</a>.
 Make sure the casing of the user name is correct. The scheduling
 parameters need to be adjusted to produce the wanted set of jobs from
-your scenario definitions YAML file.</p></li>
-<li><p>Select &quot;application/json&quot; as &quot;Content type&quot;.</p></li>
-<li><p>Add <code>$user:$apikey:$apisecret</code> as secret replacing
+your scenario definitions YAML file.</li>
+<li>Select &quot;application/json&quot; as &quot;Content type&quot;.</li>
+<li>Add <code>$user:$apikey:$apisecret</code> as secret replacing
 placeholders again. You need to use the same credentials as in step
-2.</p></li>
-<li><p>Keep SSL enabled. (Be sure your openQA instance is reachable via
-HTTPS.)</p></li>
-<li><p>Select &quot;Let me select individual events.&quot; and then &quot;Pull
-requests&quot;.</p></li>
-<li><p>Ensure &quot;Active&quot; is checked and confirm.</p></li>
-<li><p>GitHub should now have been delivering a &quot;ping&quot; event. Check out
+2.</li>
+<li>Keep SSL enabled. (Be sure your openQA instance is reachable via
+HTTPS.)</li>
+<li>Select &quot;Let me select individual events.&quot; and then &quot;Pull
+requests&quot;.</li>
+<li>Ensure &quot;Active&quot; is checked and confirm.</li>
+<li>GitHub should now have been delivering a &quot;ping&quot; event. Check out
 whether it could be delivered. If you have gotten a 200 response then
 everything is setup correctly. Otherwise, check out the response of the
-delivery to investigate what is wrong.</p></li>
+delivery to investigate what is wrong.</li>
 </ol>
 <h2 data-number="4.9" id="integrating-test-results-from-external-systems"><span class="header-section-number">4.9</span> Integrating test results from
 external systems</h2>
@@ -7175,11 +7090,10 @@ such as LTP, and also xUnit or JUnit, but this can be easily extended to
 include more formats, such as RSpec or TAP.</p>
 <p>The requirements to use this functionality, are quite simple:</p>
 <ul>
-<li><p>The test harness must produce a compatible format with supported
-<a href="#parser-formats">parsers</a>.</p></li>
-<li><p>The test results can be uploaded via
-<code>testapi::parse_extra_log</code> within an openQA test.</p></li>
-<li><p>The test results can also be uploaded via web <a href="#rest_api">REST API</a>.</p></li>
+<li>The test harness must produce a compatible format with supported <a href="#parser-formats">parsers</a>.</li>
+<li>The test results can be uploaded via
+<code>testapi::parse_extra_log</code> within an openQA test.</li>
+<li>The test results can also be uploaded via web <a href="#rest_api">REST API</a>.</li>
 </ul>
 <p>openQA will store these results in its own internal format for easier
 presentation, but still will allow the original file to be
@@ -7511,27 +7425,27 @@ of old jobs. <a id="pitfalls"></a></p>
 <h1 data-number="7" id="pitfalls-1"><span class="header-section-number">7</span> Pitfalls</h1>
 <h2 data-number="7.1" id="needle-editing"><span class="header-section-number">7.1</span> Needle editing</h2>
 <ul>
-<li><p>If a new needle is created based on a failed test, the new needle
+<li>If a new needle is created based on a failed test, the new needle
 will not be listed in old tests. However, when opening the needle
 editor, a warning about the new needle will be shown and it can be
-selected as base.</p></li>
-<li><p>If an existing needle is updated with a new image or different
+selected as base.</li>
+<li>If an existing needle is updated with a new image or different
 areas, the old test will display the new needle which might be
-confusing.</p></li>
-<li><p>If a needle is deleted, old tests may display an error when
-viewing them in the web UI.</p></li>
+confusing.</li>
+<li>If a needle is deleted, old tests may display an error when viewing
+them in the web UI.</li>
 </ul>
 <h2 data-number="7.2" id="403-messages-when-using-scripts"><span class="header-section-number">7.2</span> 403 messages when using
 scripts</h2>
 <ul>
-<li><p>If you come across messages displaying
+<li>If you come across messages displaying
 <code>ERROR: 403 - Forbidden</code>, make sure that the correct API key
-is present in client.conf file.</p></li>
-<li><p>If you are using a hostname other than <code>localhost</code>,
-pass <strong>--host foo</strong> to the script.</p></li>
-<li><p>If you are using fake authentication method, and the message says
+is present in client.conf file.</li>
+<li>If you are using a hostname other than <code>localhost</code>, pass
+<strong>--host foo</strong> to the script.</li>
+<li>If you are using fake authentication method, and the message says
 also &quot;api key expired&quot; you can simply logout and log in again in the
-webUI and the expiration will be automatically updated</p></li>
+webUI and the expiration will be automatically updated</li>
 </ul>
 <h2 data-number="7.3" id="mixed-production-and-development-environment"><span class="header-section-number">7.3</span> Mixed production and
 development environment</h2>
@@ -7605,16 +7519,16 @@ console of the web browser. If it contains messages like
 <code>Received message via ws proxy: …</code> the livehandler daemon can
 be reached. Otherwise, try the following sub-steps:</p>
 <ol type="1">
-<li><p>The installation guide has been updated to cover the developer
-mode. In case you installed your instance before the developer mode has
-been introduced, make sure that the Apache module <code>rewrite</code>
-is enabled (via <code>a2enmod rewrite</code>). Also be sure the vhost
+<li>The installation guide has been updated to cover the developer mode.
+In case you installed your instance before the developer mode has been
+introduced, make sure that the Apache module <code>rewrite</code> is
+enabled (via <code>a2enmod rewrite</code>). Also be sure the vhost
 configuration looks like the one found in the openQA Git repository
-(especially the part for the reverse proxies).</p></li>
-<li><p>Check whether <code>openqa-livehandler.service</code> is running.
-It is supposed to be run on the same machine as the web UI and should
+(especially the part for the reverse proxies).</li>
+<li>Check whether <code>openqa-livehandler.service</code> is running. It
+is supposed to be run on the same machine as the web UI and should
 actually be started automatically as a dependency of
-<code>openqa-webui.service</code>.</p></li>
+<code>openqa-webui.service</code>.</li>
 </ol></li>
 <li><p>Check whether the livehandler can reach the os-autoinst command
 server. Go to a running test and open the live view. Then open the
@@ -7626,19 +7540,18 @@ at least a message like
 which contains the URL the livehandler is attempting to query. In this
 case try the following sub-steps:</p>
 <ol type="1">
-<li><p>If the host is wrong, add
-<code>WORKER_HOSTNAME = correcthost</code> to
-<a href="GettingStarted.md#configuration" class="cross-reference">the
+<li>If the host is wrong, add <code>WORKER_HOSTNAME = correcthost</code>
+to <a href="GettingStarted.md#configuration" class="cross-reference">the
 worker configuration</a>. The worker should then tell the web UI that it
 is reachable via <code>correcthost</code> resulting in a correct URL for
 the os-autoinst command server. Be sure the setting appears after the
-<code>[global]</code> section header.</p></li>
-<li><p>It might also be the case that the firewall is blocking the
+<code>[global]</code> section header.</li>
+<li>It might also be the case that the firewall is blocking the
 HTTP/websocket connection on the required port. The required port is
 <code>QEMUPORT</code> plus 1. By default, <code>QEMUPORT</code> is set
 to <code>$worker_instance_number * 10 + 20002</code> by the worker. So
 to cover worker slots from 1 to 10 one would by default require the
-ports 20013, 20023, … and 20103.</p></li>
+ports 20013, 20023, … and 20103.</li>
 </ol></li>
 <li><p>It can also help to look at the <a href="images/architecture.svg">architecture diagram</a> which shows
 which component needs access to which other components and the ports
@@ -7746,9 +7659,9 @@ information.</p>
 firewalld</h5>
 <blockquote>
 <p><strong>NOTE:</strong> <code>os-autoinst-setup-multi-machine</code>
-can set this up for you, but using &gt; plain NFT instead of firewalld
-(which <code>os-autoinst-setup-multi-machine</code> can setup as well)
-is recommended due to firewalld&#39;s suboptimal performance with many tap
+can set this up for you, but using plain NFT instead of firewalld (which
+<code>os-autoinst-setup-multi-machine</code> can setup as well) is
+recommended due to firewalld&#39;s suboptimal performance with many tap
 interfaces present.</p>
 </blockquote>
 <p>The required firewall rules for masquerading (NAT) and zone
@@ -7879,12 +7792,12 @@ hosts/connections (via <code>ovs-vsctl add-port …</code> and
 Configuration</h3>
 <p>Boot sequence with wicked (version 0.6.23 and newer):</p>
 <ol type="1">
-<li><p>openvswitch (as above)</p></li>
-<li><p>wicked - creates the bridge <code>br1</code> and tap devices,
-adds tap devices to the bridge,</p></li>
-<li><p>firewalld (or SuSEfirewall2 in older setups)</p></li>
-<li><p>os-autoinst-openvswitch - installs openflow rules, handles vlan
-assignment</p></li>
+<li>openvswitch (as above)</li>
+<li>wicked - creates the bridge <code>br1</code> and tap devices, adds
+tap devices to the bridge,</li>
+<li>firewalld (or SuSEfirewall2 in older setups)</li>
+<li>os-autoinst-openvswitch - installs openflow rules, handles vlan
+assignment</li>
 </ol>
 <p>The configuration and operation can be checked with the following
 commands:</p>
@@ -7924,9 +7837,9 @@ netfilter (<code>nftables</code> or <code>iptables</code>) use one of
 the following commands depending on which netfilter is used.</p>
 <blockquote>
 <p><strong>NOTE:</strong> Whether firewalld is using
-<code>nftables</code> or <code>iptables</code> is determined by the &gt;
+<code>nftables</code> or <code>iptables</code> is determined by the
 setting <code>FirewallBackend</code> in
-<code>/etc/firewalld/firewalld.conf</code>. SuSEfirewall2 is &gt; always
+<code>/etc/firewalld/firewalld.conf</code>. SuSEfirewall2 is always
 using <code>iptables</code>.</p>
 </blockquote>
 <div class="sourceCode" id="cb275"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb275-1"><a href="#cb275-1" aria-hidden="true" tabindex="-1"></a><span class="ex">nft</span> list tables           <span class="co"># list all tables</span></span>
@@ -7934,14 +7847,12 @@ using <code>iptables</code>.</p>
 <div class="sourceCode" id="cb276"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb276-1"><a href="#cb276-1" aria-hidden="true" tabindex="-1"></a><span class="ex">iptables</span> <span class="at">--list</span> <span class="at">--verbose</span> <span class="co"># list all rules with package counts</span></span></code></pre></div>
 <p>Check the flow of packets over the network:</p>
 <ul>
-<li><p>packets from tapX to br1 create additional rules in
-table=1</p></li>
-<li><p>packets from br1 to tapX increase packet counts in
-table=1</p></li>
-<li><p>empty output indicates a problem with os-autoinst-openvswitch
-service</p></li>
-<li><p>zero packet count or missing rules in table=1 indicate problem
-with tap devices</p></li>
+<li>packets from tapX to br1 create additional rules in table=1</li>
+<li>packets from br1 to tapX increase packet counts in table=1</li>
+<li>empty output indicates a problem with os-autoinst-openvswitch
+service</li>
+<li>zero packet count or missing rules in table=1 indicate problem with
+tap devices</li>
 </ul>
 <p>As long as the SUT has access to external network, there should be a
 non-zero packet count in the forward chain between the br1 and external
@@ -8096,33 +8007,32 @@ repository</a>.</p>
 GitHub</a> where several repositories can be found.</p>
 <h3 data-number="9.2.1" id="repository-urls"><span class="header-section-number">9.2.1</span> Repository URLs</h3>
 <ul>
-<li><p>os-autoinst: <a href="https://github.com/os-autoinst/os-autoinst">https://github.com/os-autoinst/os-autoinst</a></p>
+<li>os-autoinst: <a href="https://github.com/os-autoinst/os-autoinst">https://github.com/os-autoinst/os-autoinst</a>
 <ul>
 <li>the &quot;backend&quot; (thing that executes tests and starts/controls the SUT
 e.g. using QEMU)</li>
 </ul></li>
-<li><p>openQA: <a href="https://github.com/os-autoinst/openQA">https://github.com/os-autoinst/openQA</a></p>
+<li>openQA: <a href="https://github.com/os-autoinst/openQA">https://github.com/os-autoinst/openQA</a>
 <ul>
-<li><p>mainly the web UI and accompanying daemons like the
-scheduler</p></li>
-<li><p>the worker (thing that starts the backend and uploads results to
-the web UI)</p></li>
-<li><p>documentation</p></li>
-<li><p>miscellaneous support scripts</p></li>
+<li>mainly the web UI and accompanying daemons like the scheduler</li>
+<li>the worker (thing that starts the backend and uploads results to the
+web UI)</li>
+<li>documentation</li>
+<li>miscellaneous support scripts</li>
 </ul></li>
-<li><p>test distribution: e.g. <a href="https://github.com/os-autoinst/os-autoinst-distri-opensuse">https://github.com/os-autoinst/os-autoinst-distri-opensuse</a>
-for openSUSE</p>
+<li>test distribution: e.g. <a href="https://github.com/os-autoinst/os-autoinst-distri-opensuse">https://github.com/os-autoinst/os-autoinst-distri-opensuse</a>
+for openSUSE
 <ul>
 <li>the actual tests, in case of
 <code>os-autoinst-distri-opensuse</code> conducted on <a href="http://openqa.opensuse.org">http://openqa.opensuse.org</a></li>
 </ul></li>
-<li><p>needles: e.g. <a href="https://github.com/os-autoinst/os-autoinst-needles-opensuse">https://github.com/os-autoinst/os-autoinst-needles-opensuse</a>
-for openSUSE</p>
+<li>needles: e.g. <a href="https://github.com/os-autoinst/os-autoinst-needles-opensuse">https://github.com/os-autoinst/os-autoinst-needles-opensuse</a>
+for openSUSE
 <ul>
 <li>reference images if not already included in the test
 distribution</li>
 </ul></li>
-<li><p>empty example test distribution: <a href="https://github.com/os-autoinst/os-autoinst-distri-example">https://github.com/os-autoinst/os-autoinst-distri-example</a></p>
+<li>empty example test distribution: <a href="https://github.com/os-autoinst/os-autoinst-distri-example">https://github.com/os-autoinst/os-autoinst-distri-example</a>
 <ul>
 <li>meant to be used to start writing tests (and creating the
 corresponding needles) from scratch for a new operating system</li>
@@ -8135,28 +8045,18 @@ and are the right way to contribute improvements and fixes.</p>
 <ul>
 <li>Every commit is checked in <a href="https://circleci.com/dashboard">CI</a> as soon as you create a
 pull request, but you <strong>should</strong> run the tidy scripts
-locally, i.e. before every commit call:</li>
-</ul>
+locally, i.e. before every commit call:
 <div class="sourceCode" id="cb284"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb284-1"><a href="#cb284-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> tidy</span></code></pre></div>
-<p>to ensure your Perl, JavaScript and Python code changes are
-consistent with the style rules.</p>
-<ul>
+This ensures your Perl, JavaScript and Python code changes are
+consistent with the style rules.</li>
 <li>All tests are passed. This is ensured by a CI system. You can also
 run local tests in your development environment to verify everything
 works as expected, see <a href="#conducting-tests">Conducting
 tests</a>)</li>
-</ul>
-<!-- -->
-
-<ul>
 <li>For git commit messages use the rules stated on <a href="http://chris.beams.io/posts/git-commit/">How to Write a Git Commit
 Message</a> as a reference. One especially useful make target for
 developers is <code>make</code> <code>setup-hooks</code> which installs
 git pre-commit hooks to check commit styles.</li>
-</ul>
-<!-- -->
-
-<ul>
 <li>Every pull request is reviewed in a peer review to give feedback on
 possible implications and how we can help each other to improve</li>
 </ul>
@@ -8166,41 +8066,38 @@ proposal.</p>
 <h3 data-number="9.2.3" id="code-style-suggestions"><span class="header-section-number">9.2.3</span> Code style suggestions</h3>
 <p><a id="code_style_suggestions"></a></p>
 <ul>
-<li><p>In Perl files:</p></li>
-<li><p>Sort the use statements in this order from top to bottom:</p>
+<li>In Perl files:
 <ul>
-<li><p><code>strict</code>, <code>warnings</code> or other modules that
-provide static checks</p></li>
-<li><p>All external modules and from &quot;lib&quot; folder</p>
-<p>*** <code>use FindBin; use lib &quot;$FindBin/lib&quot;;</code> or similar to
-resolve internal modules</p></li>
-<li><p>Internal test modules which provide early checks before other
-modules</p></li>
-<li><p>Other internal test modules</p></li>
+<li>Sort the use statements in this order from top to bottom:
+<ul>
+<li><code>strict</code>, <code>warnings</code> or other modules that
+provide static checks</li>
+<li>All external modules and from &quot;lib&quot; folder</li>
+<li><code>use FindBin; use lib &quot;$FindBin/lib&quot;;</code> or similar to
+resolve internal modules</li>
+<li>Internal test modules which provide early checks before other
+modules</li>
+<li>Other internal test modules</li>
 </ul></li>
-</ul>
-<!-- -->
-
-<ul>
 <li>When using <a href="https://perldoc.perl.org/perlsub#Signatures">signatures</a> try to
 follow these rules:
 <ul>
-<li><p>Activate the feature with modules we already use if possible,
-e.g. <code>use Mojo Base &#39;Something&#39;, -signatures;</code></p></li>
-<li><p>Use positional parameters whenever possible, e.g.
-<code>sub foo ($first, $second) {</code></p></li>
-<li><p>Use default values when appropriate, e.g.
-<code>sub foo ($first, $second = &#39;some value&#39;) {</code></p></li>
-<li><p>Use slurpy parameters when appropriate (hash and array), e.g.
-<code>sub foo ($first, @more) {</code></p></li>
-<li><p>Use nameless parameters when appropriate (very uncommon), e.g.
-<code>sub foo ($first, $, $third) {</code></p></li>
-<li><p>Do <strong>not</strong> get too creative with computational
-default values, e.g.
-<code>sub foo ($first, $second = rand($first)) {</code></p></li>
-<li><p>Do <strong>not</strong> combine sub attributes with signatures
-(requires Perl 5.28+), e.g.
-<code>sub foo :lvalue ($first) {</code></p></li>
+<li>Activate the feature with modules we already use if possible, e.g.
+<code>use Mojo Base &#39;Something&#39;, -signatures;</code></li>
+<li>Use positional parameters whenever possible, e.g.
+<code>sub foo ($first, $second) {</code></li>
+<li>Use default values when appropriate, e.g.
+<code>sub foo ($first, $second = &#39;some value&#39;) {</code></li>
+<li>Use slurpy parameters when appropriate (hash and array), e.g.
+<code>sub foo ($first, @more) {</code></li>
+<li>Use nameless parameters when appropriate (very uncommon), e.g.
+<code>sub foo ($first, $, $third) {</code></li>
+<li>Do <strong>not</strong> get too creative with computational default
+values, e.g.
+<code>sub foo ($first, $second = rand($first)) {</code></li>
+<li>Do <strong>not</strong> combine sub attributes with signatures
+(requires Perl 5.28+), e.g. <code>sub foo :lvalue ($first) {</code></li>
+</ul></li>
 </ul></li>
 </ul>
 <h2 data-number="9.3" id="getting-involved-into-development"><span class="header-section-number">9.3</span> Getting involved into
@@ -8257,34 +8154,38 @@ implement those tests. As usual, tests are located under the
 <h2 data-number="9.5" id="folder-structure"><span class="header-section-number">9.5</span> Folder structure</h2>
 <p>Meaning and purpose of the most important folders within openQA
 are:</p>
-<p>public Static assets published to users over the web UI or API</p>
-<p>t Self-tests of openQA</p>
-<p>assets 3rd party JavaScript and CSS files</p>
-<p>docs Documentation, including this document</p>
-<p>etc Configuration files including template branding
-specializations</p>
-<p>lib Main perl module library folder</p>
-<p>script Main applications and startup files</p>
-<p>.circleci circleCI definitions</p>
-<p>dbicdh Database schema startup and migration files</p>
-<p>container Container definitions</p>
-<p>profiles Apparmor profiles</p>
-<p>systemd systemd service definitions</p>
-<p>templates HTML templates delivered by web UI</p>
-<p>tools Development tools</p>
+<ul>
+<li><code>public</code>: Static assets published to users over the web
+UI or API</li>
+<li><code>t</code>: Self-tests of openQA</li>
+<li><code>assets</code>: 3rd party JavaScript and CSS files</li>
+<li><code>docs</code>: Documentation, including this document</li>
+<li><code>etc</code>: Configuration files including template branding
+specializations</li>
+<li><code>lib</code>: Main perl module library folder</li>
+<li><code>script</code>: Main applications and startup files</li>
+<li><code>.circleci</code>: CircleCI definitions</li>
+<li><code>dbicdh</code>: Database schema startup and migration
+files</li>
+<li><code>container</code>: Container definitions</li>
+<li><code>profiles</code>: Apparmor profiles</li>
+<li><code>systemd</code>: systemd service definitions</li>
+<li><code>templates</code>: HTML templates delivered by web UI</li>
+<li><code>tools</code>: Development tools</li>
+</ul>
 <h2 data-number="9.6" id="dependencies"><span class="header-section-number">9.6</span> Dependencies</h2>
 <p>Here we differentiate between these types of dependencies:</p>
 <ul>
-<li><p>Runtime: run openQA</p></li>
-<li><p>Test: run the test suite of openQA itself</p></li>
-<li><p>For developers: style checks, code coverage etc.</p></li>
+<li>Runtime: run openQA</li>
+<li>Test: run the test suite of openQA itself</li>
+<li>For developers: style checks, code coverage etc.</li>
 </ul>
 <p>You can get those dependencies in several ways:</p>
 <ul>
-<li><p>Packaged in openSUSE and other distributions</p></li>
-<li><p>Manually install from source</p></li>
-<li><p>Perl modules via CPAN client</p></li>
-<li><p>Use a prebuilt container</p></li>
+<li>Packaged in openSUSE and other distributions</li>
+<li>Manually install from source</li>
+<li>Perl modules via CPAN client</li>
+<li>Use a prebuilt container</li>
 </ul>
 <p>We manage our dependencies via a central
 <code>dependencies.yaml</code> file per repository. We generate the
@@ -8425,26 +8326,24 @@ database</h3>
 <p>Setting up a PostgreSQL database for openQA takes the following
 steps:</p>
 <ol type="1">
-<li><p>Install PostgreSQL - under openSUSE the following package are
-required: <code>postgresql-server postgresql-init</code></p></li>
-<li><p>Start the server:
-<code>systemctl start postgresql</code></p></li>
-<li><p>The next two steps need to be done as the user
-<strong>postgres</strong>: <code>sudo su - postgres</code></p></li>
-<li><p>Create user: <code>createuser your_username</code> where
+<li>Install PostgreSQL - under openSUSE the following package are
+required: <code>postgresql-server postgresql-init</code></li>
+<li>Start the server: <code>systemctl start postgresql</code></li>
+<li>The next two steps need to be done as the user
+<strong>postgres</strong>: <code>sudo su - postgres</code></li>
+<li>Create user: <code>createuser your_username</code> where
 <code>your_username</code> must be the same as the UNIX user you start
 your local openQA instance with. For a development instance that is
-normally your regular user.</p></li>
-<li><p>Create database:
-<code>createdb -O your_username openqa-local</code> where
-<code>openqa-local</code> is the name you want to use for the
-database</p></li>
-<li><p>Configure openQA to use PostgreSQL as described in the section <a href="#database">Database</a> of the installation guide. User name and
+normally your regular user.</li>
+<li>Create database: <code>createdb -O your_username openqa-local</code>
+where <code>openqa-local</code> is the name you want to use for the
+database</li>
+<li>Configure openQA to use PostgreSQL as described in the section <a href="#database">Database</a> of the installation guide. User name and
 password are not required. Of course you need to change the
 <code>database.ini</code> file under your custom config directory (as
-you have probably done that in the previous section).</p></li>
-<li><p>openQA will default-initialize the new database on the next
-startup.</p></li>
+you have probably done that in the previous section).</li>
+<li>openQA will default-initialize the new database on the next
+startup.</li>
 </ol>
 <p>The script <code>openqa-setup-db</code> can be used to conduct step 4
 and 5. You must still specify the user and database name and run it as
@@ -8509,22 +8408,22 @@ changes in the <code>t/data</code> directory.</p>
 tests without Container</a>.</p>
 <h4 data-number="9.7.5.1" id="further-tips"><span class="header-section-number">9.7.5.1</span> Further tips</h4>
 <ul>
-<li><p>It is also useful to start openQA with morbo which allows
-applying changes without restarting the server:
-<code>morbo -m development -w assets -w lib -w templates -l http://localhost:9526 script/openqa daemon</code></p></li>
-<li><p>In case you have problems with broken rendering of the web page
-it can help to delete the asset cache and let the webserver regenerate
-it on first startup. For this delete the subdirectories
+<li>It is also useful to start openQA with morbo which allows applying
+changes without restarting the server:
+<code>morbo -m development -w assets -w lib -w templates -l http://localhost:9526 script/openqa daemon</code></li>
+<li>In case you have problems with broken rendering of the web page it
+can help to delete the asset cache and let the webserver regenerate it
+on first startup. For this delete the subdirectories
 <code>.sass-cache/</code>, <code>assets/cache/</code> and
 <code>assets/assetpack.db</code>. Make sure to look for error messages
 on startup of the webserver and to force the refresh of the web page in
-your browser.</p></li>
-<li><p>If you get errors like &quot;ERROR: Failed to build gem native
+your browser.</li>
+<li>If you get errors like &quot;ERROR: Failed to build gem native
 extension.&quot; make sure you have all listed dependencies including the
-&quot;sass&quot; application installed.</p></li>
-<li><p>For a concrete example some developers use under openSUSE
-Tumbleweed have a look at the <a href="https://github.com/Martchus/openQA-helper">openQA-helper
-repository</a>.</p></li>
+&quot;sass&quot; application installed.</li>
+<li>For a concrete example some developers use under openSUSE Tumbleweed
+have a look at the <a href="https://github.com/Martchus/openQA-helper">openQA-helper
+repository</a>.</li>
 </ul>
 <p><a id="quick-container-development-setup"></a></p>
 <h3 data-number="9.7.6" id="quick-container-development-setup"><span class="header-section-number">9.7.6</span> Quick container development
@@ -8765,17 +8664,9 @@ schema</h3>
 file. Note that it is recommended to notify the other developers before
 doing so, to synchronize in case there are more developers wanting to
 increase the version number at the same time.</li>
-</ol>
-<!-- -->
-
-<ol start="2" type="1">
 <li>Then you need to generate the deployment files for new
 installations, this is done by running
 <code>./script/initdb --prepare_init</code>.</li>
-</ol>
-<!-- -->
-
-<ol start="3" type="1">
 <li>Afterwards you need to generate the deployment files for existing
 installations, this is done by running
 <code>./script/upgradedb --prepare_upgrade</code>. After doing so, the
@@ -8784,10 +8675,6 @@ directories <code>dbicdh/$ENGINE/deploy/&lt;new version&gt;</code> and
 for PostgreSQL should have been created with some SQL files inside
 containing the statements to initialize the schema and to upgrade from
 one version to the next in the corresponding database engine.</li>
-</ol>
-<!-- -->
-
-<ol start="4" type="1">
 <li>Custom migration scripts to upgrade from previous versions can be
 added under <code>dbicdh/_common/upgrade</code>. Create a
 <code>&lt;prev_version&gt;-&lt;new_version&gt;</code> directory and put
@@ -9101,20 +8988,21 @@ available everywhere.</p>
 <p>For UI plugins there are two named authentication routes defined:</p>
 <ol type="1">
 <li><code>ensure_operator</code>: under <code>/admin/</code>, only
-allows logged in users with <code>operator</code> privileges 2.
-<code>ensure_admin</code>: under <code>/admin/</code>, only allows
+allows logged in users with <code>operator</code> privileges</li>
+<li><code>ensure_admin</code>: under <code>/admin/</code>, only allows
 logged in users with <code>admin</code> privileges</li>
 </ol>
 <p>And for HTTP API plugins there are four named authentication routes
 defined:</p>
 <ol type="1">
 <li><code>api_public</code>: under <code>/api/v1/</code>, allows access
-to everyone 2. <code>api_ensure_user</code>: under
-<code>/api/v1/</code>, only allows authenticated users 3.
-<code>api_ensure_operator</code>: under <code>/api/v1/</code>, only
-allows authenticated users with <code>operator</code> privileges 4.
-<code>api_ensure_admin</code>: under <code>/api/v1/</code>, only allows
-authenticated nusers with <code>admin</code> privileges</li>
+to everyone</li>
+<li><code>api_ensure_user</code>: under <code>/api/v1/</code>, only
+allows authenticated users</li>
+<li><code>api_ensure_operator</code>: under <code>/api/v1/</code>, only
+allows authenticated users with <code>operator</code> privileges</li>
+<li><code>api_ensure_admin</code>: under <code>/api/v1/</code>, only
+allows authenticated nusers with <code>admin</code> privileges</li>
 </ol>
 <p>To generate a minimal installable plugin with a CPAN distribution
 directory structure you can use the Mojolicious tools. It can be
@@ -9136,15 +9024,15 @@ JavaScript code. It can be installed easily via <code>npm</code>.</p>
 <span id="cb320-2"><a href="#cb320-2" aria-hidden="true" tabindex="-1"></a><span class="ex">node_modules/jshint/bin/jshint</span> path/to/javascript.js</span></code></pre></div>
 <h2 data-number="9.14" id="profiling-the-web-ui"><span class="header-section-number">9.14</span> Profiling the web UI</h2>
 <ol type="1">
-<li><p>Install NYTProf, under openSUSE Tumbleweed:
-<code>zypper in perl-Devel-NYTProf perl-Mojolicious-Plugin-NYTProf</code></p></li>
-<li><p>Put <code>profiling_enabled = 1</code> in
-<code>openqa.ini</code>.</p></li>
-<li><p>Optionally import production data like described in the official
-contributors documentation.</p></li>
-<li><p>Restart the web UI, browse some pages. Profiling is done in the
-background.</p></li>
-<li><p>Access profiling data via <code>/nytprof</code> route.</p></li>
+<li>Install NYTProf, under openSUSE Tumbleweed:
+<code>zypper in perl-Devel-NYTProf perl-Mojolicious-Plugin-NYTProf</code></li>
+<li>Put <code>profiling_enabled = 1</code> in
+<code>openqa.ini</code>.</li>
+<li>Optionally import production data like described in the official
+contributors documentation.</li>
+<li>Restart the web UI, browse some pages. Profiling is done in the
+background.</li>
+<li>Access profiling data via <code>/nytprof</code> route.</li>
 </ol>
 <h3 data-number="9.14.1" id="note"><span class="header-section-number">9.14.1</span> Note</h3>
 <p>Profiling data is extensive. Remove it if you do not need it anymore
@@ -9540,50 +9428,50 @@ operators may have their own privacy practices.</p>
 external authentication provider, an account is automatically created.
 We collect the following information provided by that provider:</p>
 <ul>
-<li><p>Username</p></li>
-<li><p>Email address (optional)</p></li>
-<li><p>Full name (optional)</p></li>
-<li><p>Nickname (optional)</p></li>
-<li><p>Role (operator, admin)</p></li>
+<li>Username</li>
+<li>Email address (optional)</li>
+<li>Full name (optional)</li>
+<li>Nickname (optional)</li>
+<li>Role (operator, admin)</li>
 </ul>
 <h3 data-number="12.2.2" id="authentication-data"><span class="header-section-number">12.2.2</span> Authentication Data</h3>
 <ul>
-<li><p>API keys and secrets (stored in hashed form)</p></li>
-<li><p>Session data (login time, user ID)</p></li>
+<li>API keys and secrets (stored in hashed form)</li>
+<li>Session data (login time, user ID)</li>
 </ul>
 <h3 data-number="12.2.3" id="activity-data"><span class="header-section-number">12.2.3</span> Activity Data</h3>
 <ul>
-<li><p>Comments you post on jobs or test results</p></li>
-<li><p>Job settings and configurations you create</p></li>
-<li><p>Audit events recording your actions</p></li>
-<li><p>Developer session data when using the interactive debugging
-feature</p></li>
+<li>Comments you post on jobs or test results</li>
+<li>Job settings and configurations you create</li>
+<li>Audit events recording your actions</li>
+<li>Developer session data when using the interactive debugging
+feature</li>
 </ul>
 <h2 data-number="12.3" id="how-we-use-your-data"><span class="header-section-number">12.3</span> How We Use Your Data</h2>
 <p>Your data is used for:</p>
 <ul>
-<li><p>Providing the openQA testing service</p></li>
-<li><p>Authenticating your session</p></li>
-<li><p>Managing your permissions and API access</p></li>
-<li><p>Recording test activities and results</p></li>
-<li><p>Maintaining security through audit logging</p></li>
-<li><p>No marketing or advertising purposes</p></li>
+<li>Providing the openQA testing service</li>
+<li>Authenticating your session</li>
+<li>Managing your permissions and API access</li>
+<li>Recording test activities and results</li>
+<li>Maintaining security through audit logging</li>
+<li>No marketing or advertising purposes</li>
 </ul>
 <h2 data-number="12.4" id="data-protection"><span class="header-section-number">12.4</span> Data Protection</h2>
 <p>We implement appropriate technical and organizational measures:</p>
 <ul>
-<li><p>API secrets are stored using secure hashing</p></li>
-<li><p>Access controls limit who can view your data</p></li>
-<li><p>Audit logs track changes to accounts and data</p></li>
-<li><p>When you delete your account, your personal data is anonymized
-while preserving historical records (see User Rights)</p></li>
+<li>API secrets are stored using secure hashing</li>
+<li>Access controls limit who can view your data</li>
+<li>Audit logs track changes to accounts and data</li>
+<li>When you delete your account, your personal data is anonymized while
+preserving historical records (see User Rights)</li>
 </ul>
 <h2 data-number="12.5" id="data-sharing"><span class="header-section-number">12.5</span> Data Sharing</h2>
 <p>We do not share your personal data with third parties except:</p>
 <ul>
-<li><p>When required by law or legal process</p></li>
-<li><p>When necessary to protect our rights or safety</p></li>
-<li><p>Aggregated, anonymized data that cannot identify you</p></li>
+<li>When required by law or legal process</li>
+<li>When necessary to protect our rights or safety</li>
+<li>Aggregated, anonymized data that cannot identify you</li>
 </ul>
 <p>We do not sell your personal data.</p>
 <h2 data-number="12.6" id="user-rights"><span class="header-section-number">12.6</span> User Rights</h2>
@@ -9598,13 +9486,11 @@ please do so through that provider.</p>
 <h3 data-number="12.6.3" id="deletion"><span class="header-section-number">12.6.3</span> Deletion</h3>
 <p>You can delete your account, which will:</p>
 <ul>
-<li><p>Remove your personal information (email, fullname,
-nickname)</p></li>
-<li><p>Anonymize your username (replaced with
-&quot;deleted-user-[id]&quot;)</p></li>
-<li><p>Delete your API keys</p></li>
-<li><p>Clear your user reference from comments and audit events</p></li>
-<li><p>Preserve historical test data without identifying you</p></li>
+<li>Remove your personal information (email, fullname, nickname)</li>
+<li>Anonymize your username (replaced with &quot;deleted-user-[id]&quot;)</li>
+<li>Delete your API keys</li>
+<li>Clear your user reference from comments and audit events</li>
+<li>Preserve historical test data without identifying you</li>
 </ul>
 <p>To exercise these rights, use the account deletion feature in your
 user settings or contact the instance administrator.</p>
