@@ -53,6 +53,7 @@ common_requires:
   perl(Storable):
   perl(Text::Glob):
   perl(Time::Moment):
+  perl(IO::Interactive):
   ntp-daemon:
 
 cover_requires:
