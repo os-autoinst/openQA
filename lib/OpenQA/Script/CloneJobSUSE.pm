@@ -29,7 +29,7 @@ sub collect_incident_repos ($url_handler, $settings) {
 
 sub verify_incident_repos ($url_handler, $incident_repos, $unexpanded = []) {
     my @incident_urls;
-    my $ua = $url_handler->{ua};
+    my $ua = $url_handler->{remote};
     foreach my $incident (split /,/, $incident_repos) {
         my @vars = grep { $incident =~ /%\Q$_\E%/ } @$unexpanded;
         if (@vars) {
@@ -38,7 +38,7 @@ sub verify_incident_repos ($url_handler, $incident_repos, $unexpanded = []) {
 "URL '$incident' contains unexpanded variables: $vars_str. Specify the necessary variables at the command line for expansion. Skipping verification.\n";
             next;
         }
-        push @incident_urls, $incident unless $ua->get($incident)->is_success;
+        push @incident_urls, $incident unless $ua->get($incident)->res->is_success;
     }
     return \@incident_urls;
 }
