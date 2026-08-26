@@ -32,6 +32,7 @@ END { session->clean }
 my $port = OpenQA::Utils::reserve_ports(['test'])->sockport;
 my $host = make_access_url($port);
 my $url = "$host/build/%%PROJECT/_result";
+## no critic (ValuesAndExpressions::ProhibitImplicitNewlines)
 my %fake_response_by_project = (
     Proj3 => '
 <!-- This project is published. -->
