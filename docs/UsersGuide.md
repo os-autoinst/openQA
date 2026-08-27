@@ -162,10 +162,10 @@ for two jobs to share a history:
 - explicit keys (e.g. `_HISTORY_ISOLATION_KEYS=PR_ID,SUBMISSION_ID`): exactly
   those keys, overriding or extending the default.
 
-Carry-over and investigation isolate on all declared keys automatically. The
-"Next & Previous" tab keeps showing the generalized history by default and
-offers a switch to the isolated ("strict") view when a job has isolation keys
-in effect.
+Carry-over isolates on all declared keys automatically. The "Investigation" tab
+(which isolates by default) and the "Next & Previous" tab (which shows the
+generalized history by default) both offer a "Strict scenario" checkbox when
+isolation keys are in effect, allowing you to easily toggle history isolation.
 
 ### Test Suites
 
