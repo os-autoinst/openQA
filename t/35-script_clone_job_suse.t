@@ -13,20 +13,28 @@ use OpenQA::Script::CloneJobSUSE qw(detect_maintenance_update);
 use Mojo::URL;
 
 # define fake client
-package Test::FakeLWPUserAgentMirrorResult {
+package Test::FakeUserAgentRes {
     use Mojo::Base -base, -signatures;
     has is_success => 1;
 }    # uncoverable statement
 
-package Test::FakeLWPUserAgent {
+package Test::FakeUserAgentTxn {
+    use Mojo::Base -base, -signatures;
+    has res => sub { Test::FakeUserAgentRes->new };
+}    # uncoverable statement
+
+package Test::FakeUserAgent {
     use Mojo::Base -base, -signatures;
     has is_validrepo => 1;
-    sub get ($self, $url) { Test::FakeLWPUserAgentMirrorResult->new(is_success => $self->is_validrepo) }
+
+    sub get ($self, $url) {
+        Test::FakeUserAgentTxn->new(res => Test::FakeUserAgentRes->new(is_success => $self->is_validrepo));
+    }
 }    # uncoverable statement
 
 sub create_mock () {
-    my $fake_ua = Test::FakeLWPUserAgent->new;
-    my %url_handler = (remote_url => Mojo::URL->new('http://foo'), ua => $fake_ua);
+    my $fake_ua = Test::FakeUserAgent->new;
+    my %url_handler = (remote_url => Mojo::URL->new('http://foo'), remote => $fake_ua);
     return ($fake_ua, \%url_handler);
 }
 
