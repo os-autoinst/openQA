@@ -2,12 +2,12 @@
 # script to be used for sending munin alert emails. This lets us add
 # useful information and links for certain alerts.
 # configuration in munin.conf:
-# contact.o3admins.command /path/to/munin-mail "${var:group} ${var:host} ${var:plugin} ${var:graph_category} '${var:graph_title}'" email-address
+# contact.o3admins.command /path/to/munin-mail "${var:group} ${var:host} ${var:plugin} ${var:graph_category} '${var:graph_title}'" email-address https://munin.example.org/munin
 
 use strict;
 use warnings;
 
-my ($subject, $email) = @ARGV;
+my ($subject, $email, $base_url) = @ARGV;
 my $content = '';
 while (<STDIN>) {
     $content .= $_;
@@ -16,7 +16,15 @@ if ($subject =~ m/systemd_(units|status)/) {
     $content .= "\n" . qx{systemctl --failed};
 }
 
-open my $pipe, '|-', 'mail', '-s', $subject, '-r', $email, $email or die "Could not open pipe: $?";
+my ($group, $host, $plugin) = split ' ', $subject;
+$base_url //= 'https://openqa.opensuse.org/munin';
+my $url = "$base_url/$group/$host/$plugin.html";
+# e.g.
+# https://openqa.opensuse.org/munin/opensuse.org/openqa.opensuse.org/df.html
+
+$content .= "\n\nSee $url";
+
+open my $pipe, '|-', 'mail', '-s', "[munin] $subject", '-r', $email, $email or die "Could not open pipe: $?";
 print $pipe $content or die "Could not print: $!";;
 close $pipe or die "Could not close pipe: $?";
 
