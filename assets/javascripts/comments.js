@@ -13,11 +13,12 @@ function hideCommentEditor(form) {
 }
 
 function renderDate(date) {
-  const abbr = $('<abbr></abbr>');
-  abbr.text(timeago.format(date));
-  abbr.prop('title', date);
-  timeago.render(abbr.get());
-  return abbr[0];
+  const abbr = document.createElement('abbr');
+  abbr.textContent = timeago.format(date);
+  abbr.title = date;
+  abbr.className = 'timeago';
+  timeago.render([abbr]);
+  return abbr;
 }
 
 function renderCommentHeading(comment, commentId) {
@@ -48,22 +49,11 @@ function deleteComment(deleteButton) {
     return;
   }
   fetchWithCSRF(deleteButton.dataset.deleteUrl, {method: 'DELETE'})
-    .then(response => {
-      return response
-        .json()
-        .then(json => {
-          // Attach the parsed JSON to the response object for further use
-          return {response, json};
-        })
-        .catch(() => {
-          // If parsing fails, handle it as a non-JSON response
-          throw `Server returned ${response.status}: ${response.statusText}`;
-        });
-    })
+    .then(handleJSONResponseOrThrow)
     .then(({response, json}) => {
       if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}\n${json.error || ''}`;
       if (json.error) throw json.error;
-      $(deleteButton).parents('.comment-row, .pinned-comment-row').remove();
+      deleteButton.closest('.comment-row, .pinned-comment-row').remove();
       updateNumerOfComments();
     })
     .catch(error => {
@@ -85,18 +75,7 @@ function updateComment(form) {
   markdownElement.style.display = '';
   markdownElement.innerHTML = '<em>Loading…</em>';
   fetchWithCSRF(url, {method: 'PUT', body: new FormData(form)})
-    .then(response => {
-      return response
-        .json()
-        .then(json => {
-          // Attach the parsed JSON to the response object for further use
-          return {response, json};
-        })
-        .catch(() => {
-          // If parsing fails, handle it as a non-JSON response
-          throw `Server returned ${response.status}: ${response.statusText}`;
-        });
-    })
+    .then(handleJSONResponseOrThrow)
     .then(({response, json}) => {
       if (!response.ok || json.error)
         throw `Server returned ${response.status}: ${response.statusText}\n${json.error || ''}`;
@@ -131,18 +110,7 @@ function addComment(form, insertAtBottom) {
   }
   const url = form.action;
   fetch(url, {method: 'POST', body: new FormData(form)})
-    .then(response => {
-      return response
-        .json()
-        .then(json => {
-          // Attach the parsed JSON to the response object for further use
-          return {response, json};
-        })
-        .catch(() => {
-          // If parsing fails, handle it as a non-JSON response
-          throw `Server returned ${response.status}: ${response.statusText}`;
-        });
-    })
+    .then(handleJSONResponseOrThrow)
     .then(({response, json}) => {
       if (!response.ok || json.error)
         throw `Server returned ${response.status}: ${response.statusText}\n${json.error || ''}`;
@@ -156,7 +124,9 @@ function addComment(form, insertAtBottom) {
         })
         .then(comment => {
           const templateElement = document.getElementById('comment-row-template');
-          const commentRow = $(templateElement.innerHTML.replace(/@comment_id@/g, commentId))[0];
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = templateElement.innerHTML.replace(/@comment_id@/g, commentId);
+          const commentRow = tempDiv.firstElementChild;
           commentRow.querySelector('[name="text"]').value = comment.text;
           commentRow.querySelector('h4').replaceWith(renderCommentHeading(comment, commentId));
           commentRow.querySelector('.markdown').innerHTML = comment.renderedMarkdown;
@@ -168,7 +138,7 @@ function addComment(form, insertAtBottom) {
             nextElement = templateElement;
           }
           nextElement.parentNode.insertBefore(commentRow, nextElement);
-          $('html, body').animate({scrollTop: commentRow.offsetTop}, 1000);
+          commentRow.scrollIntoView({behavior: 'smooth'});
           textElement.value = '';
           updateNumerOfComments();
         })

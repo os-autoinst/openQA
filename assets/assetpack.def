@@ -1,6 +1,5 @@
 ! bootstrap.css
 < ../node_modules/datatables.net-bs5/css/dataTables.bootstrap5.min.css
-< ../node_modules/chosen-js/chosen.css
 << ../node_modules/bootstrap/scss/bootstrap.scss
 << ../node_modules/bootstrap/scss/bootstrap-utilities.scss
 << ../node_modules/bootstrap/scss/bootstrap-grid.scss
@@ -150,8 +149,6 @@
 < javascripts/obs_rsync.js
 < javascripts/parent_group_overview.js
 < ../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js
-< ../node_modules/chosen-js/chosen.jquery.js
-< ../node_modules/jquery-ujs/src/rails.js
 < javascripts/disable_animations.js [mode==test]
 < javascripts/fetch_status.js [mode==test]
 
