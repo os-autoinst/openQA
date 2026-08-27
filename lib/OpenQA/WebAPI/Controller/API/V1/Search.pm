@@ -117,7 +117,6 @@ sub _search_job_modules ($self, $keywords, $limit) {
             join => 'job',
             group_by =>
               ['me.id', 'job.DISTRI', 'job.VERSION', 'job.FLAVOR', 'job.TEST', 'job.ARCH', 'job.MACHINE', 'job.id'],
-            prefetch => [qw(job)],
             select => [qw(me.id me.script me.job_id job.DISTRI job.VERSION job.FLAVOR job.ARCH job.BUILD job.TEST)],
             order_by => {-desc => 'job_id'}})->slice(0, $limit);
     while (my $job_module = $job_modules->next) {
