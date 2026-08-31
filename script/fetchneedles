@@ -17,6 +17,7 @@
 
 : "${updateall:="0"}"
 : "${force:="0"}"
+: "${interactive:="1"}"
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     printf "Get %s tests and needles from:\n\t\t%s\n" "${dist_name}" "${giturl}"
@@ -31,6 +32,12 @@ if [[ $# -gt 0 && $1 != -* ]]; then
     # this script doesn't take non-option arguments currently
     echo "Unknown command: $1"
     exit 1
+fi
+
+if [[ $interactive -eq 0 ]]; then
+    noninteractive_regex_replace='s|(http[s]*://)|\1:@|g'
+    giturl="$(echo "$giturl" | sed -E "$noninteractive_regex_replace")"
+    needles_giturl="$(echo "$needles_giturl" | sed -E "$noninteractive_regex_replace")"
 fi
 
 dir="${OPENQA_BASEDIR:-/var/lib}/openqa/share/tests"
