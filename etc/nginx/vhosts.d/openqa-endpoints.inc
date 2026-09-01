@@ -67,6 +67,11 @@ location /liveviewhandler/ {
 }
 
 location / {
+#    # Apply optional rate limiting (needs zone definition, see `openqa.conf.template`)
+#    limit_req zone=webui_limit burst=10 nodelay;
+#    limit_req_status 429;
+#    add_header Retry-After 5 always;
+
     proxy_pass "http://webui";
 }
 
@@ -76,12 +81,23 @@ location ~ /tests/[0-9]+/(livelog|liveterminal)$ {
     proxy_buffering off;
 }
 
-# Optional rate limiting of certain routes, e.g.:
-#location ~ ^/tests/[0-9]+/details_ajax$ {
-#    # Apply rate limiting to details_ajax (needs zone definition, see `openqa.conf.template`)
-#    limit_req zone=details_ajax_limit burst=10 nodelay;
+# Optional more restrictive rate limiting for heavy routes
+#location ~ ^(/search|/tests/[0-9]+/(investigation|dependencies)_ajax)/?$ {
+#    # Apply rate limiting (needs zone definition, see `openqa.conf.template`)
+#    limit_req zone=webui_heavy_limit burst=10 nodelay;
 #    limit_req_status 429;
 #    add_header Retry-After 5 always;
+#
+#    # Backend settings are inherited from the server block
+#    proxy_pass "http://webui";
+#}
+
+# Optional less restrictive rate limiting for lightweight routes that potentially need to be queried frequently
+#location ~ ^(/api/v1/jobs/[0-9]+/(mutex|barrier)) {
+#    # Apply rate limiting (needs zone definition, see `openqa.conf.template`)
+#    limit_req zone=webui_light_limit burst=10 nodelay;
+#    limit_req_status 429;
+#    add_header Retry-After 1 always;
 #
 #    # Backend settings are inherited from the server block
 #    proxy_pass "http://webui";
