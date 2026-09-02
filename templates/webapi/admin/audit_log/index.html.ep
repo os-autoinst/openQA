@@ -25,28 +25,26 @@
                 By default, the filter will only consider the <em>Event data</em> column.
                 The following key words can be used to filter the other columns:
             </p>
-            <table class="table">
-                <tr>
-                    <td><code>older:yyyy/mm/dd</code></td>
-                    <td>events older than the specified date</td>
-                </tr>
-                <tr>
-                    <td><code>newer:yyyy/mm/dd</code></td>
-                    <td>events newer than the specified date</td>
-                </tr>
-                <tr>
-                    <td><code>user:string</code></td>
-                    <td><em>User</em> column</td>
-                </tr>
-                <tr>
-                    <td><code>event:string</code></td>
-                    <td><em>Event</em> column</td>
-                </tr>
-                <tr>
-                    <td><code>data:string</code></td>
-                    <td><em>Event data</em> column</td>
-                </tr>
-            </table>
+            <p>
+                <code>older:yyyy/mm/dd</code>:<br>
+                events older than the specified date
+            </p>
+            <p>
+                <code>newer:yyyy/mm/dd</code>:<br>
+                events newer than the specified date
+            </p>
+            <p>
+                <code>user:string</code>:<br>
+                <em>User</em> column
+            </p>
+            <p>
+                <code>event:string</code>:<br>
+                <em>Event</em> column
+            </p>
+            <p>
+                <code>data:string</code>:<br>
+                <em>Event data</em> column
+            </p>
             <p>
                 <strong>Example</strong><br>
                 <code>user:Demo newer:15 days older:2016/12/14 event:job_restart</code>
