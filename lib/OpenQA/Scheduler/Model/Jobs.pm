@@ -106,6 +106,10 @@ sub _allocate_jobs ($self, $online_workers = undef, $free_workers = undef) {
     #       instead into the broken state for some reason).
     $self->_pick_siblings_of_running($allocated_jobs, $allocated_workers);
 
+    # Parse class limits from online workers
+    my ($class_limits, $executing_class_counts, $allocated_class_counts)
+      = _parse_class_limits_and_counts($schema, $online_workers, $allocated_jobs);
+
     my @sorted = sort { $a->{priority} <=> $b->{priority} || $a->{id} <=> $b->{id} } values %$scheduled_jobs;
     my %checked_jobs;
     for my $j (@sorted) {
@@ -125,13 +129,27 @@ sub _allocate_jobs ($self, $online_workers = undef, $free_workers = undef) {
         my $parallel_count = scalar @tobescheduled;
         log_debug "Need to schedule $parallel_count parallel jobs for job $job_id (with priority $j->{priority})";
         next unless @tobescheduled;
-        my %taken;
+        my %taken = ();
+        my %temp_taken_class_counts;
         for my $sub_job (sort { $a->{id} <=> $b->{id} } @tobescheduled) {
             $checked_jobs{$sub_job->{id}} = 1;
             my $picked_worker;
+            my $matched_but_limit = 0;
+            my $limit_class_name = '';
             for my $worker (@{$sub_job->{matching_workers}}) {
                 next if $allocated_workers->{$worker->id};
                 next if $taken{$worker->id};
+
+                # Check if picking this worker would exceed any class limit
+                my ($exceeds_limit, $exceeded_class)
+                  = _worker_exceeds_class_limits($worker, $class_limits, $executing_class_counts,
+                    $allocated_class_counts, \%temp_taken_class_counts);
+                if ($exceeds_limit) {
+                    $matched_but_limit = 1;
+                    $limit_class_name = $exceeded_class;
+                    next;
+                }
+
                 $picked_worker = $worker;
                 last;
             }
@@ -145,11 +163,17 @@ sub _allocate_jobs ($self, $online_workers = undef, $free_workers = undef) {
                     my ($picked_worker, $job_info) = @{$taken{$worker}};
                     $self->_allocate_worker_with_priority($prio, $job_info, $j, $allocated_workers, $picked_worker);
                 }
-                $_->{current_reason} //= 'no matching worker is free' for @tobescheduled;
+                my $limit_val = $class_limits->{$limit_class_name};
+                my $reason
+                  = $matched_but_limit
+                  ? "class limit reached ($limit_class_name limit is $limit_val)"
+                  : 'no matching worker is free';
+                $_->{current_reason} //= $reason for @tobescheduled;
                 %taken = ();
                 last;
             }
             $taken{$picked_worker->id} = [$picked_worker, $sub_job];
+            _update_temp_taken_class_counts($picked_worker, $class_limits, \%temp_taken_class_counts);
         }
         for my $picked_worker_id (keys %taken) {
             my ($picked_worker, $job_info) = @{$taken{$picked_worker_id}};
@@ -157,6 +181,12 @@ sub _allocate_jobs ($self, $online_workers = undef, $free_workers = undef) {
             $allocated_workers->{$picked_worker_id} = $job_id;
             $allocated_jobs->{$job_id}
               = {job => $job_id, worker => $picked_worker_id, priority_offset => \$j->{priority_offset}};
+        }
+        # Update allocated class counts
+        if (%taken && keys %$class_limits) {
+            for my $k (keys %temp_taken_class_counts) {
+                $allocated_class_counts->{$k} += $temp_taken_class_counts{$k};
+            }
         }
         # we make sure we schedule clusters no matter what,
         # but we stop if we're over the limit
@@ -630,6 +660,94 @@ sub incomplete_and_duplicate_stale_jobs ($self) {
     }
     catch ($e) {
         log_info("Failed stale job detection: $e");
+    }
+}
+
+sub _parse_class_limits_and_counts ($schema, $online_workers, $allocated_jobs) {
+    # Parse class limits from online workers
+    my %class_limits;
+    for my $worker (@$online_workers) {
+        my $worker_class_prop = $worker->get_property('WORKER_CLASS') || '';
+        for my $k (split /,/, $worker_class_prop) {
+            if ($k =~ /^([^:]+):limit=(\d+)$/) {
+                my ($class, $limit) = ($1, $2);
+                if (!exists $class_limits{$class} || $limit < $class_limits{$class}) {
+                    $class_limits{$class} = $limit;
+                }
+            }
+        }
+    }
+
+    my %executing_class_counts;
+    my %allocated_class_counts;
+    if (%class_limits) {
+        my @executing_jobs = $schema->resultset('Jobs')
+          ->search({state => [OpenQA::Jobs::Constants::EXECUTION_STATES]}, {prefetch => 'assigned_worker'})->all;
+        for my $job (@executing_jobs) {
+            my $worker = $job->assigned_worker;
+            next unless $worker;
+            my $worker_class_prop = $worker->get_property('WORKER_CLASS') || '';
+            my %seen_class;
+            for my $k (split /,/, $worker_class_prop) {
+                $k =~ s/:limit=\d+$//;
+                next if $seen_class{$k}++;
+                if (exists $class_limits{$k}) {
+                    $executing_class_counts{$k}++;
+                }
+            }
+        }
+
+        my %worker_by_id = map { $_->id => $_ } @$online_workers;
+        for my $job_id (keys %$allocated_jobs) {
+            my $worker_id = $allocated_jobs->{$job_id}->{worker};
+            my $worker = $worker_by_id{$worker_id};
+            next unless $worker;
+            my $worker_class_prop = $worker->get_property('WORKER_CLASS') || '';
+            my %seen_class;
+            for my $k (split /,/, $worker_class_prop) {
+                $k =~ s/:limit=\d+$//;
+                next if $seen_class{$k}++;
+                if (exists $class_limits{$k}) {
+                    $allocated_class_counts{$k}++;
+                }
+            }
+        }
+    }
+    return (\%class_limits, \%executing_class_counts, \%allocated_class_counts);
+}
+
+sub _worker_exceeds_class_limits ($worker, $class_limits, $executing_class_counts, $allocated_class_counts,
+    $temp_taken_class_counts)
+{
+    return (0, '') unless keys %$class_limits;
+    my $worker_class_prop = $worker->get_property('WORKER_CLASS') || '';
+    my %seen_class;
+    for my $k (split /,/, $worker_class_prop) {
+        $k =~ s/:limit=\d+$//;
+        next if $seen_class{$k}++;
+        if (exists $class_limits->{$k}) {
+            my $current
+              = ($executing_class_counts->{$k} // 0)
+              + ($allocated_class_counts->{$k} // 0)
+              + ($temp_taken_class_counts->{$k} // 0);
+            if ($current + 1 > $class_limits->{$k}) {
+                return (1, $k);
+            }
+        }
+    }
+    return (0, '');
+}
+
+sub _update_temp_taken_class_counts ($worker, $class_limits, $temp_taken_class_counts) {
+    return unless keys %$class_limits;
+    my $worker_class_prop = $worker->get_property('WORKER_CLASS') || '';
+    my %seen_class;
+    for my $k (split /,/, $worker_class_prop) {
+        $k =~ s/:limit=\d+$//;
+        next if $seen_class{$k}++;
+        if (exists $class_limits->{$k}) {
+            $temp_taken_class_counts->{$k}++;
+        }
     }
 }
 

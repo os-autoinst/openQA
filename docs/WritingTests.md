@@ -738,6 +738,32 @@ workers.ini
 WORKER_CLASS = planet-earth,continent-antarctica,location-my_station
 ```
 
+#### Worker class parallel limits
+
+It is possible to restrict the number of parallel jobs running across all
+workers for a specific class. This can be used, for example, to control access
+to a shared resource or a target testing host from multiple openQA worker
+hosts/slots in parallel.
+
+To specify a limit on a worker class, append the `:limit=n` suffix (where `n` is
+an integer) to the class name in the `WORKER_CLASS` setting of your `workers.ini`:
+
+```ini
+[1]
+WORKER_CLASS = qemu_x86_64,shared_host:limit=1
+
+[2]
+WORKER_CLASS = qemu_x86_64,shared_host:limit=1
+```
+
+In the example above, even though both worker slots are online, openQA will
+ensure that at most 1 job is scheduled or executing at any given time across
+these workers. The limits count even, if a job only requires the `qemu_x86_64`
+class but the worker still has the `shared_host:limit:1` class additionally to
+the `qemu_x86_64` class. If a job cannot be scheduled due to this limit,
+it will show `class limit reached (shared_host limit is 1)` as the scheduling
+reason in the web UI.
+
 ### Running a custom worker engine
 
 By default the openQA workers run the "isotovideo" application from PATH on the

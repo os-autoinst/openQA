@@ -130,6 +130,7 @@ sub websocket_api_version ($self) {
 sub check_class ($self, $class) {
     unless ($self->{_worker_class_hash}) {
         for my $k (split /,/, ($self->get_property('WORKER_CLASS') || 'NONE')) {
+            $k =~ s/:limit=\d+$//;
             $self->{_worker_class_hash}->{$k} = 1;
         }
     }
