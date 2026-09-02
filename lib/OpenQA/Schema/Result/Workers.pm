@@ -10,7 +10,7 @@ use Feature::Compat::Try;
 use OpenQA::App;
 use OpenQA::Log qw(log_error log_warning log_info);
 use OpenQA::WebSockets::Client;
-use OpenQA::Constants qw(WORKER_API_COMMANDS DB_TIMESTAMP_ACCURACY VNC_PORT);
+use OpenQA::Constants qw(WORKER_API_COMMANDS DB_TIMESTAMP_ACCURACY VNC_PORT WORKER_CLASS_LIMIT_REGEX);
 use OpenQA::Jobs::Constants;
 use Mojo::JSON qw(encode_json decode_json);
 use List::Util qw(any);
@@ -130,6 +130,7 @@ sub websocket_api_version ($self) {
 sub check_class ($self, $class) {
     unless ($self->{_worker_class_hash}) {
         for my $k (split /,/, ($self->get_property('WORKER_CLASS') || 'NONE')) {
+            $k =~ s/${\WORKER_CLASS_LIMIT_REGEX}/$1/;
             $self->{_worker_class_hash}->{$k} = 1;
         }
     }
