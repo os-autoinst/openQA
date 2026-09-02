@@ -290,7 +290,7 @@ sub create_webapi ($port = undef, $no_cover = undef) {
         my $t = time;
         note "Waiting for web UI on $address";
         last if $ua->get($address)->res->is_success;
-        sleep 1 if time - $t < 1;
+        sleep 1 if time - $t < 1;    # uncoverable statement
     }
     return $h;
 }
