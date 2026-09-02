@@ -177,8 +177,7 @@ is_deeply
   ['Test parent', $test_overview_tooltip],
   'only link to parent (and related overview) shown, no more top-level job groups';
 
-sub check_test_parent {
-    my ($default_expanded) = @_;
+sub check_test_parent ($default_expanded) {
 
     @h4 = $t->tx->res->dom->find("div.children-$default_expanded .h4 a")->map('text')->each;
     is_deeply
@@ -250,7 +249,7 @@ is
 # add tags (99901 is user ID of arthur)
 my $tag_for_0092_comment = $opensuse_group->comments->create({text => 'tag:0092:important:some_tag', user_id => 99901});
 
-sub check_tags {
+sub check_tags () {
     $t->get_ok('/dashboard_build_results?limit_builds=20&show_tags=1')->status_is(200);
     my @tags = $t->tx->res->dom->find('div.children-collapsed span span.tag')->map('text')->each;
     is_deeply \@tags, ['some_tag'], 'tag is shown on parent-level';
@@ -324,9 +323,7 @@ $t->element_count_is('#child-review-' . $test_parent->id . $review_build_id,
 $not_reviewed_job->delete();
 
 # auto badges when all passed or all either passed or softfailed
-sub check_auto_badge {
-    my ($all_passed_count, $build) = @_;
-    $build //= '13_1-0092';
+sub check_auto_badge ($all_passed_count, $build = '13_1-0092') {
     $t->element_count_is('#badge-all-passed-' . $test_parent->id . '-' . $build,
         $all_passed_count, "all passed review badge shown for build $build on parent level");
     $t->element_count_is('#child-badge-all-passed-' . $test_parent->id . '-' . $build,
@@ -463,8 +460,7 @@ subtest 'build which has jobs with different DISTRIs links to overview with all 
 };
 
 # helper sub used by next two subtests
-sub check_builds {
-    my ($build_names, $group, $msg, $parent) = @_;
+sub check_builds ($build_names, $group, $msg, $parent = undef) {
     my $route = $parent ? 'parent_group_overview' : 'group_overview';
     my $div_class = $parent ? 'children-expanded' : 'no-children';
     $t->get_ok("/$route/" . $group->id . '?limit_builds=100')->status_is(200);

@@ -22,7 +22,7 @@ use OpenQA::SeleniumTest;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-sub prepare_database {
+sub prepare_database () {
     my $jobs = $schema->resultset('Jobs');
 
     # Populate more jobs to test page setting and include incompletes
@@ -77,7 +77,7 @@ prepare_database;
 driver_missing unless my $driver = call_driver;
 disable_timeout;
 
-sub goto_next_previous_tab {
+sub goto_next_previous_tab () {
     my $tab_link = wait_for_element(selector => 'Next & previous results', method => 'link_text');
     wait_for_element(trigger_function => sub { $tab_link->click }, selector => '.dt-container');
     wait_for_ajax(msg => 'Next & previous table ready');

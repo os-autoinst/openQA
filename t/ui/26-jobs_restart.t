@@ -93,7 +93,7 @@ disable_bootstrap_animations;
 $driver->title_is('openQA', 'on main page');
 $driver->find_element_by_link_text('Login')->click();
 
-sub flash_messages { $driver->find_element('#flash-messages')->get_text }
+sub flash_messages () { $driver->find_element('#flash-messages')->get_text }
 
 subtest 'restart job from info panel in test results' => sub {
     subtest 'parent job shows options for advanced restart' => sub {

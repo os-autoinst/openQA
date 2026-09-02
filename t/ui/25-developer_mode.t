@@ -22,7 +22,7 @@ use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
 use OpenQA::Test::FullstackUtils qw(find_status_text);
 
-sub prepare_database {
+sub prepare_database () {
     my $schema = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl');
     my $workers = $schema->resultset('Workers');
     my $jobs = $schema->resultset('Jobs');
@@ -58,17 +58,13 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 driver_missing unless my $driver = call_driver;
 
 # executes JavaScript code taking a note
-sub inject_java_script {
-    my ($java_script) = @_;
-
+sub inject_java_script ($java_script) {
     note "injecting JavaScript: $java_script\n";
     $driver->execute_script($java_script);
 }
 
 # sets the properties of the specified global JavaScript object and updates the developer panel
-sub fake_state {
-    my ($variable, $state) = @_;
-
+sub fake_state ($variable, $state) {
     my $java_script = '';
     $java_script .= "$variable\['$_'\] = $state->{$_};" for (keys %$state);
     $java_script .= 'updateDeveloperPanel();';
@@ -76,16 +72,12 @@ sub fake_state {
 }
 
 # invokes the handler for messages from ws connection
-sub fake_message_from_ws_connection {
-    my ($message) = @_;
-
+sub fake_message_from_ws_connection ($message) {
     inject_java_script("handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: \"$message\" });");
 }
 
 # checks whether the commands sent by the JavaScript since the last call matches the expected commands
-sub assert_sent_commands {
-    my ($expected, $test_name) = @_;
-
+sub assert_sent_commands ($expected, $test_name) {
     my $sent_cmds
       = $driver->execute_script('var sentCmds = window.sentCmds; window.sentCmds = undefined; return sentCmds;');
     is_deeply $sent_cmds, $expected, $test_name or always_explain $sent_cmds;
@@ -108,17 +100,16 @@ sub assert_flash_messages ($kind, $expected_messages, $test_name) {
     };
 }
 
-sub js_variable {
-    my ($variable_name) = @_;
+sub js_variable ($variable_name) {
     return $driver->execute_script("return $variable_name;");
 }
 
 # clicks on the header of the developer panel
-sub click_header {
+sub click_header () {
     $driver->find_element('#developer-status')->click();
 }
 
-sub options_state { map_elements('#developer-pause-at-module option', 'e.selected, e.value || ""') }
+sub options_state () { map_elements('#developer-pause-at-module option', 'e.selected, e.value || ""') }
 
 # login an navigate to a running job with assigned worker
 $driver->get('/login');

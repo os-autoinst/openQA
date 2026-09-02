@@ -31,9 +31,7 @@ embed_server_for_testing(
     client => OpenQA::WebSockets::Client->singleton,
 );
 
-sub job_get {
-    my ($id) = @_;
-
+sub job_get ($id) {
     my $job = $schema->resultset('Jobs')->find({id => $id});
     return $job;
 }
@@ -102,8 +100,7 @@ $job = job_get(99963);
 is $job->state, 'running', 'old job is running';
 is $job->t_finished, undef, 'There is a no finish time yet';
 
-sub lj {
-    # check the call succeeds every time, only output if verbose
+sub lj () {
     my @jobs = $schema->resultset('Jobs')->all;
     return unless $ENV{HARNESS_IS_VERBOSE};
     printf "%d %-10s %s\n", $_->id, $_->state, $_->name for @jobs;    # uncoverable statement
