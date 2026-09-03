@@ -490,16 +490,15 @@ below, if you do not setup NGINX for SSL.
 
 #### Rate limiting
 
-The example NGINX configurations include a rate-limiting setup for the
-potentially resource-intensive `/tests/<testid:num>/details_ajax` endpoint to
-protect the web UI from being overwhelmed by too many simultaneous Ajax requests
-(e.g., from automated scripts or heavy browser sessions).
+The example NGINX configurations include rate-limiting settings to protect the
+web UI from being overwhelmed by too many simultaneous requests (e.g. from
+automated scripts or heavy browser sessions).
 
 This is configured in:
 
-- `openqa.conf.template` via the `limit_req_zone` directive, defining a shared
-  memory zone `details_ajax_limit`.
-- `openqa-endpoints.inc` via the matching location block applying `limit_req`.
+- `openqa.conf.template` via the `limit_req_zone` directives, defining shared
+  memory zones.
+- `openqa-endpoints.inc` via in `location` blocks applying `limit_req`.
 
 ##### Load balancer and reverse proxy consideration
 
