@@ -553,7 +553,7 @@ The database connection can be configured in
 [the database configuration file](GettingStarted.md#database-configuration).
 (normally the `[production]` section is relevant). More info about the `dsn`
 value format can be found in the
-<https://metacpan.org/pod/DBD>::Pg#DBI-Class-Methods[DBD::Pg documentation].
+[DBD::Pg documentation](https://metacpan.org/pod/DBD::Pg#DBI-Class-Methods).
 
 #### Example for connecting to local PostgreSQL database
 
