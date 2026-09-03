@@ -17,7 +17,7 @@ use Mojo::IOLoop;
 use Mojo::URL;
 use OpenQA::Test::TimeLimit '40';
 use OpenQA::Test::Case;
-use OpenQA::Test::Utils qw(prepare_clean_needles_dir prepare_default_needle);
+use OpenQA::Test::Utils qw(prepare_clean_needles_dir prepare_default_needle wait_for);
 use OpenQA::Client;
 use OpenQA::Jobs::Constants;
 use OpenQA::SeleniumTest;
@@ -983,6 +983,30 @@ subtest 'test duration' => sub {
     );
     my $duration = $t->app->format_time_duration($end - $start);
     like $duration, qr/2 days 02:30 hours/, 'duration formatted';
+};
+
+subtest 'strict scenario toggle on investigation tab' => sub {
+    my $job = $jobs->find(99940);
+    $job->settings->create({key => 'SUBMISSION_ID', value => 'abc'});
+    $job->discard_changes;
+
+    $driver->get('/tests/99940');
+    wait_for_ajax msg => 'details tab for job 99940 loaded';
+    $driver->find_element_by_link_text('Investigation')->click;
+    wait_for_element selector => '#investigation_status_entry', desc => 'investigation tab contents loaded';
+
+    my $toggle = wait_for_element selector => '#investigation_strict', desc => 'strict toggle present';
+    ok $toggle->is_selected, 'strict scenario checkbox is checked by default';
+
+    $toggle->click;
+    wait_for_url qr/investigation_strict=0/, 'URL reflects the non-strict view';
+    ok !$toggle->is_selected, 'strict scenario checkbox is unchecked';
+    wait_for_element selector => '#investigation_status_entry', desc => 'investigation tab contents re-loaded';
+
+    $toggle->click;
+    wait_for { $driver->get_current_url !~ qr/investigation_strict/ } 'investigation reloaded after enabling strict';
+    unlike $driver->get_current_url, qr/investigation_strict/, 'URL does not contain investigation_strict anymore';
+    ok $toggle->is_selected, 'strict scenario checkbox is checked';
 };
 
 kill_driver();

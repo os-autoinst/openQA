@@ -1,0 +1,9 @@
+% my $isolation_keys = $job->history_isolation_keys;
+% if ($isolation_keys && @$isolation_keys) {
+    <div class="form-check form-switch mb-2">
+        <input class="form-check-input" type="checkbox" role="switch" id="<%= $id %>"<%= ($checked // 0) ? ' checked' : '' %>>
+        <label class="form-check-label" for="<%= $id %>">
+            Strict scenario (isolate history by <%= join ', ', @$isolation_keys %>)
+        </label>
+    </div>
+% }

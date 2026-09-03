@@ -944,11 +944,7 @@ subtest 'AMQP event emission for job restarts within Minion tasks' => sub {
     my @event_body;
     my $io_loop_mock = Test::MockModule->new('Mojo::IOLoop');
     $io_loop_mock->redefine(start => sub { });
-    $plugin_mock->redefine(
-        publish_amqp => sub ($self, $topic, $data) {
-            $published{$topic} = $data;
-            Mojo::IOLoop->next_tick(sub { OpenQA::Events->singleton->emit('amqp_handled'); });
-        });
+    $plugin_mock->redefine(publish_amqp => sub ($self, $topic, $data) { $published{$topic} = $data });
 
     my $events_mock = Test::MockModule->new('OpenQA::Events');
     $events_mock->redefine(
@@ -985,6 +981,10 @@ subtest 'AMQP event emission for job restarts within Minion tasks' => sub {
     ok exists $data->{result}->{$job_id}, 'old job id is in result';
     $job->discard_changes;
     is $job->clone_id, $data->{result}->{$job_id}, 'clone_id points to reported id';
+
+    OpenQA::Events->singleton->unsubscribe("openqa_$_")
+      for
+      qw(job_create job_delete job_cancel job_restart job_update_result job_done comment_create comment_update comment_delete);
 };
 
 subtest '"race" between status updates and stale job detection' => sub {
@@ -1313,6 +1313,15 @@ subtest 'history isolation keys separate the scenario history' => sub {
         $cur->create_result_dir;
         my $inv = $cur->investigate;
         is $inv->{last_good}{link}, '/tests/' . $good_same->id, 'last good is the same-PR job, not the newer other PR';
+
+        my $inv_non_strict = $cur->investigate(isolation_keys => []);
+        is $inv_non_strict->{last_good}{link}, '/tests/' . $good_other->id,
+          'non-strict investigation picks the newer other PR';
+
+        $t->get_ok('/tests/' . $cur->id . '/investigation_ajax')->status_is(200);
+        $t->json_is('/last_good/link' => '/tests/' . $good_same->id);
+        $t->get_ok('/tests/' . $cur->id . '/investigation_ajax?strict=0')->status_is(200);
+        $t->json_is('/last_good/link' => '/tests/' . $good_other->id);
     };
 };
 

@@ -89,7 +89,10 @@
                     <div role="tabpanel" class="tab-pane" id="dependencies" data-src="<%= url_for('test_dependencies', testid => $testid) %>" data-current-job-id="<%= $testid %>"></div>
                 % }
                 % if ($show_investigation) {
-                    <div role="tabpanel" class="tab-pane" id="investigation" data-src="<%= url_for('test_investigation', testid => $testid) %>"></div>
+                    <div role="tabpanel" class="tab-pane" id="investigation" data-src="<%= url_for('test_investigation', testid => $testid) %>">
+                        %= include 'test/strict_scenario_checkbox', id => 'investigation_strict', checked => 1
+                        <div id="investigation_content"></div>
+                    </div>
                 % }
                 <div role="tabpanel" class="tab-pane" id="comments" data-src="<%= url_for('test_comments', testid => $testid) %>"></div>
                 <div role="tabpanel" class="tab-pane" id="next_previous">

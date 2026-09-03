@@ -444,6 +444,20 @@ function setupTabHandling() {
       deactivateTab(tabNameForNavElement(e.relatedTarget));
     }
   });
+  const strictToggle = document.getElementById('investigation_strict');
+  if (strictToggle) {
+    strictToggle.checked = parseQueryParams().investigation_strict?.[0] !== '0';
+    strictToggle.addEventListener('change', function () {
+      const p = parseQueryParams();
+      if (strictToggle.checked) {
+        delete p.investigation_strict;
+      } else {
+        p.investigation_strict = ['0'];
+      }
+      updateQueryParams(p);
+      loadTabPanelElement('investigation', tabConfiguration.investigation);
+    });
+  }
   // show relevant nav elements from the start
   showRelevantTabNavElements();
   // change tab when the hash changes and process initial hash
@@ -557,11 +571,24 @@ function loadTabPanelElement(tabName, tabConfig) {
   if (!tabPanelElement) {
     return false;
   }
-  const ajaxUrl = tabPanelElement.dataset.src;
+  let ajaxUrl = tabPanelElement.dataset.src;
   if (!ajaxUrl) {
     return false;
   }
-  tabConfig.panelElement = tabPanelElement; // for easier access in custom renderers
+  let container = tabPanelElement;
+  if (tabName === 'investigation') {
+    const contentContainer = document.getElementById('investigation_content');
+    if (contentContainer) {
+      container = contentContainer;
+    }
+    const strictToggle = document.getElementById('investigation_strict');
+    if (strictToggle) {
+      const url = new URL(ajaxUrl, window.location.origin);
+      url.searchParams.set('strict', strictToggle.checked ? '1' : '0');
+      ajaxUrl = url.pathname + url.search;
+    }
+  }
+  tabConfig.panelElement = container; // for easier access in custom renderers
   if (tabConfig._abortController) {
     tabConfig._abortController.abort();
   }
@@ -587,12 +614,12 @@ function loadTabPanelElement(tabName, tabConfig) {
       if (customRenderer) {
         return customRenderer.call(tabConfig, error);
       }
-      tabPanelElement.innerHTML = '';
-      tabPanelElement.appendChild(
+      container.innerHTML = '';
+      container.appendChild(
         document.createTextNode(`Unable to load ${tabConfig.descriptiveName || tabName}: ${error}`)
       );
     });
-  tabPanelElement.innerHTML =
+  container.innerHTML =
     '<p style="text-align: center;"><i class="fa-solid fa-spinner fa-spin fa-lg"></i> Loading ' +
     (tabConfig.descriptiveName || tabName) +
     '…</p>';

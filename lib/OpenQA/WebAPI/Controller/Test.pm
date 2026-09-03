@@ -1246,7 +1246,9 @@ sub dependencies ($self) {
 sub investigate ($self) {
     return $self->reply->not_found unless my $job = $self->_get_current_job;
     my $git_limit = OpenQA::App->singleton->config->{global}->{job_investigate_git_log_limit} // HTTP_OK;
-    my $investigation = $job->investigate(git_limit => $git_limit);
+    my $strict = $self->param('strict') // '1';
+    my $isolation_keys = $strict && $strict ne '0' ? undef : [];
+    my $investigation = $job->investigate(git_limit => $git_limit, isolation_keys => $isolation_keys);
     $self->render(json => $investigation);
 }
 
