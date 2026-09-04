@@ -161,45 +161,41 @@ sub fake_asset_server () {
                 $c->res->headers->content_length(10);
                 $c->res->headers->content_type('text/plain');
                 $c->res->body('Six!!!');
-                $c->rendered(200);
+                return $c->rendered(200);
             }
 
-            elsif (my ($size) = ($filename =~ /sle-12-SP3-x86_64-0368-200_?([0-9]+)?\@/)) {
+            if (my ($size) = ($filename =~ /sle-12-SP3-x86_64-0368-200_?([0-9]+)?\@/)) {
                 my $our_etag = 'andi $a3, $t1, 41399';
 
                 my $browser_etag = $c->req->headers->header('If-None-Match');
                 if ($browser_etag && $browser_etag eq $our_etag) {
                     $c->res->body('');
-                    $c->rendered(304);
+                    return $c->rendered(304);
                 }
-                else {
-                    $c->res->headers->content_length($size // 1024);
-                    $c->res->headers->content_type('text/plain');
-                    $c->res->headers->header('ETag' => $our_etag);
-                    $c->res->body("\0" x ($size // 1024));
-                    $c->rendered(200);
-                }
+                $c->res->headers->content_length($size // 1024);
+                $c->res->headers->content_type('text/plain');
+                $c->res->headers->header('ETag' => $our_etag);
+                $c->res->body("\0" x ($size // 1024));
+                return $c->rendered(200);
             }
 
-            elsif ($filename =~ /sle-12-SP3-x86_64-0368-200_client_error/) {
-                $c->render(text => 'Client error!', status => 404);
-            }
+            return $c->render(text => 'Client error!', status => 404)
+              if $filename =~ /sle-12-SP3-x86_64-0368-200_client_error/;
 
-            elsif ($filename =~ /sle-12-SP3-x86_64-0368-200_server_error/) {
-                $c->render(text => 'Server error!', status => 500);
-            }
+            return $c->render(text => 'Server error!', status => 500)
+              if $filename =~ /sle-12-SP3-x86_64-0368-200_server_error/;
 
-            elsif ($filename =~ /sle-12-SP3-x86_64-0368-200_close/) {
+            if ($filename =~ /sle-12-SP3-x86_64-0368-200_close/) {
                 my $stream = Mojo::IOLoop->stream($c->tx->connection);
-                Mojo::IOLoop->next_tick(sub { $stream->close });
+                return Mojo::IOLoop->next_tick(sub { $stream->close });
             }
 
-            elsif ($filename =~ /sle-12-SP3-x86_64-0368-200_#:/) {
+            if ($filename =~ /sle-12-SP3-x86_64-0368-200_#:/) {
                 $c->res->headers->content_length(20);
                 $c->res->headers->content_type('text/plain');
                 $c->res->headers->header('ETag' => '123456789');
                 $c->res->body('this is a test for character check');
-                $c->rendered(200);
+                return $c->rendered(200);
             }
         });
     return $mock;
