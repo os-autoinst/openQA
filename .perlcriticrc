@@ -78,6 +78,6 @@ max_mccabe = 63
 
 [Subroutines::ProhibitManyArgs]
 # Reduce me!
-max_arguments = 10
+max_arguments = 8
 # Ignore first arg if called $self or $class
 skip_object = 1
