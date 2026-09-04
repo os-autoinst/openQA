@@ -138,6 +138,7 @@ sub list ($self) {
     $self->render(
         json => {
             $table => [
+                ## no critic (BuiltinFunctions::ProhibitComplexMappings)
                 map {
                     my $row = $_;
                     my @settings = sort { $a->key cmp $b->key } $row->settings;
