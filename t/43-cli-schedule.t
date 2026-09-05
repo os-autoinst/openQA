@@ -139,6 +139,56 @@ subtest 'monitor jobs as a separate command' => sub {
     is $res, 0, 'zero return-code if clone of followed jobs ok';
 };
 
+subtest 'monitor scheduled product as a separate command' => sub {
+    my $res;
+    my $monitor = OpenQA::CLI::monitor->new;
+    my $jobs = $schema->resultset('Jobs');
+    $jobs->create({id => $_, TEST => "test-$_"}) for (200 .. 201);
+    my $sp = $schema->resultset('ScheduledProducts')->create(
+        {
+            id => 50,
+            distri => 'opensuse',
+            version => '13.1',
+            flavor => 'DVD',
+            arch => 'i586',
+            status => 'scheduled',
+            settings => {},
+            results => {
+                successful_job_ids => [200, 201]}});
+    $job_controller_mock->mock(
+        get_status => sub ($self) {
+            $job_controller_mock->original('get_status')->($self);
+            my $job = $self->schema->resultset('Jobs')->find(int($self->stash('jobid')));
+            $job->done(result => (shift(@job_mock_results) // PASSED), reason => 'mocked')
+              if $job && $job->result eq NONE;
+        });
+    @job_mock_results = (PASSED, SOFTFAILED);
+    combined_like { $res = $monitor->run(@basic_options, '--scheduled-product-id', 50) } qr/200.*201/s,
+      'status logged for scheduled product';
+    is $res, 0, 'zero return-code if all jobs of scheduled product ok';
+    $job_controller_mock->unmock('get_status');
+};
+
+subtest 'monitor scheduled product error case' => sub {
+    my $res;
+    my $monitor = OpenQA::CLI::monitor->new;
+    my $sp = $schema->resultset('ScheduledProducts')->create(
+        {
+            id => 51,
+            distri => 'opensuse',
+            version => '13.1',
+            flavor => 'DVD',
+            arch => 'i586',
+            status => 'fatal_error',
+            settings => {},
+            results => {
+                error => 'scheduling failed'
+            }});
+    combined_like { $res = $monitor->run(@basic_options, '--scheduled-product-id', 51) } qr/scheduling failed/s,
+      'error logged for scheduled product failure';
+    is $res, 1, 'non-zero return-code if scheduled product failed';
+};
+
 subtest 'api command preserves lowercase keys for routes expecting them' => sub {
     my $res;
     my $api = OpenQA::CLI::api->new;
