@@ -490,28 +490,29 @@ below, if you do not setup NGINX for SSL.
 
 #### Rate limiting
 
-The example NGINX configurations include a rate-limiting setup for the
-potentially resource-intensive `/tests/<testid:num>/details_ajax` endpoint to
-protect the web UI from being overwhelmed by too many simultaneous Ajax requests
-(e.g., from automated scripts or heavy browser sessions).
+The example NGINX configurations include rate-limiting settings to protect the
+web UI from being overwhelmed by too many simultaneous requests (e.g. from
+automated scripts or heavy browser sessions).
 
 This is configured in:
 
-- `openqa.conf.template` via the `limit_req_zone` directive, defining a shared
-  memory zone `details_ajax_limit`.
-- `openqa-endpoints.inc` via the matching location block applying `limit_req`.
+- `openqa.conf.template` via the `limit_req_zone` directives, defining shared
+  memory zones.
+- `openqa-endpoints.inc` via in `location` blocks applying `limit_req`.
 
 ##### Load balancer and reverse proxy consideration
 
-If your openQA instance is hosted behind an upstream load balancer or an
-external reverse proxy (like HAProxy, AWS ALB, or Cloudflare), NGINX's
-`$binary_remote_addr` will evaluate to the IP address of that load balancer
-instead of the actual client's IP. This would cause all client requests to share
-the same rate-limiting bucket, causing premature HTTP `429 Too Many Requests`
-responses.
+If your openQA instance is hosted behind an upstream load balancer, an external
+reverse proxy (like HAProxy, AWS ALB, or Cloudflare) or additional gatekeeper
+like Anubis, NGINX's `$binary_remote_addr` will evaluate to the IP address of
+that load balancer instead of the actual client's IP. This would cause all
+client requests to share the same rate-limiting bucket, causing premature HTTP
+`429 Too Many Requests` responses.
 
-To resolve this, make sure the NGINX `real_ip` module is configured in your main
-NGINX setup to extract the true client IP from the `X-Forwarded-For` header:
+To resolve this, make sure the NGINX
+[`real_ip`](https://nginx.org/en/docs/http/ngx_http_realip_module.html) module
+is configured in your main NGINX setup to extract the true client IP from the
+`X-Forwarded-For` header:
 
 ```nginx
 real_ip_header X-Forwarded-For;
