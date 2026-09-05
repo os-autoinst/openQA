@@ -946,11 +946,42 @@ function setupTestDetailsFilter(tabConfig) {
 
   detailsNameFilter.on('keyup', applyFilterChanges);
   detailsFailedOnlyFilter.on('change', applyFilterChanges);
-  $('.details-filter-toggle').on('click', event => {
-    event.preventDefault();
-    detailsFilter.toggleClass('hidden');
-    applyFilterChanges();
-  });
+  const toggleAllRows = collapse => {
+    document.querySelectorAll('button.logview_expand_btn').forEach(btn => {
+      const resultTd = btn.closest('td');
+      if (resultTd && (resultTd.getAttribute('mode') === 'log') === collapse) {
+        showTextBoxes(btn);
+      }
+    });
+  };
+
+  const expandAllRows = document.getElementById('expand-all-rows');
+  if (expandAllRows) {
+    expandAllRows.addEventListener('click', event => {
+      event.preventDefault();
+      toggleAllRows(false);
+    });
+  }
+
+  const collapseAllRows = document.getElementById('collapse-all-rows');
+  if (collapseAllRows) {
+    collapseAllRows.addEventListener('click', event => {
+      event.preventDefault();
+      toggleAllRows(true);
+    });
+  }
+
+  const detailsFilterToggle = document.getElementById('details-filter-toggle');
+  if (detailsFilterToggle) {
+    detailsFilterToggle.addEventListener('click', event => {
+      event.preventDefault();
+      const detailsFilterElement = document.getElementById('details-filter');
+      if (detailsFilterElement) {
+        detailsFilterElement.classList.toggle('hidden');
+      }
+      applyFilterChanges();
+    });
+  }
 
   tabConfig._hasFilterHandlers = true;
 }

@@ -467,10 +467,14 @@ ul.modcategory {
   display: inline-block;
   float: right;
   margin-top: -50px;
+  a {
+    display: inline-block;
+    margin-left: 10px;
+  }
 }
 #result_tabs {
   // ensure filter icon and last .nav-item for tabs don't overlap
-  padding-right: 40px;
+  padding-right: 100px;
 }
 
 // hide all tabs (actually their nav items) by default; they will be activated via JavaScript as needed

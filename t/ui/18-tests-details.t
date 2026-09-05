@@ -199,7 +199,7 @@ subtest 'filtering' => sub {
     is $count_headings->(), 3, 'number of module headings without filter';
 
     # show filter form
-    $driver->find_element('.details-filter-toggle a')->click();
+    $driver->find_element('#details-filter-toggle')->click();
 
     # enable name filter
     $driver->find_element('#details-name-filter')->send_keys('er');
@@ -228,6 +228,29 @@ subtest 'filtering' => sub {
     is $count_steps->('ok'), 6, 'same number of passed steps as initial';
     is $count_steps->('failed'), 2, 'same number of failed steps as initial';
     is $count_headings->(), 3, 'module headings shown again';
+};
+
+subtest 'expand and collapse all rows' => sub {
+    my $expand_all = $driver->find_element('#expand-all-rows');
+    ok $expand_all->is_displayed(), 'expand-all-rows button is displayed';
+    my $collapse_all = $driver->find_element('#collapse-all-rows');
+    ok $collapse_all->is_displayed(), 'collapse-all-rows button is displayed';
+
+    my $expand_btns_count = $driver->execute_script(q{return $('button.logview_expand_btn').length;});
+    ok $expand_btns_count > 0, "found $expand_btns_count expand buttons";
+
+    my $expanded_count_init = $driver->execute_script(q{return $('#results td[mode="log"]').length;});
+    is $expanded_count_init, 0, 'no rows expanded initially';
+
+    $expand_all->click();
+
+    my $expanded_count_after = $driver->execute_script(q{return $('#results td[mode="log"]').length;});
+    is $expanded_count_after, $expand_btns_count, 'all rows are expanded';
+
+    $collapse_all->click();
+
+    my $expanded_count_final = $driver->execute_script(q{return $('#results td[mode="log"]').length;});
+    is $expanded_count_final, 0, 'all rows are collapsed';
 };
 
 sub check_report_links ($failed_module, $failed_step, $container = undef) {
@@ -260,6 +283,11 @@ sub check_report_links ($failed_module, $failed_step, $container = undef) {
 
 subtest 'bug reporting' => sub {
     subtest 'screenshot' => sub {
+        my @previews = $driver->find_elements('.links_a.current_preview');
+        if (!@previews) {
+            $driver->find_element('[href="#step/bootloader/1"]')->click();
+            wait_for_element(selector => '#preview_container_in .report', is_displayed => 1);
+        }
         # note: image of bootloader step from previous test 'correct tags displayed' is still shown
         check_report_links(bootloader => 1);
         # close bootloader step preview so it will not hide other elements used by subsequent tests
