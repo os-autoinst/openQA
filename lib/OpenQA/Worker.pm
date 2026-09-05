@@ -822,20 +822,8 @@ sub _handle_job_status_changed ($self, $job, $event_data) {
         die "Received job status update for job $job_id ($status) which is not the current one.";
     }
 
-    if ($status eq 'accepting') {
-        log_debug("Accepting job $job_id from $webui_host.");
-    }
-    elsif ($status eq 'accepted') {
+    if ($status eq 'accepted') {
         $job->start();
-    }
-    elsif ($status eq 'setup') {
-        log_debug("Setting job $job_id from $webui_host up");
-    }
-    elsif ($status eq 'running') {
-        log_debug("Running job $job_id from $webui_host: $job_name.");
-    }
-    elsif ($status eq 'stopping') {
-        log_debug("Stopping job $job_id from $webui_host: $job_name - reason: $reason");
     }
     elsif ($status eq 'stopped') {
         log_debug("Job $job_id from $webui_host finished - reason: $reason");
@@ -867,6 +855,15 @@ sub _handle_job_status_changed ($self, $job, $event_data) {
             # stop if we can not accept/skip the next job (e.g. because there's no further job) if that's configured
             $self->stop(WORKER_COMMAND_QUIT) if $self->settings->global_settings->{TERMINATE_AFTER_JOBS_DONE};
         }
+    }
+    else {
+        my %log_message = (
+            accepting => "Accepting job $job_id from $webui_host.",
+            setup => "Setting job $job_id from $webui_host up",
+            running => "Running job $job_id from $webui_host: $job_name.",
+            stopping => "Stopping job $job_id from $webui_host: $job_name - reason: $reason",
+        );
+        log_debug($log_message{$status}) if defined $log_message{$status};
     }
     return undef;
 }

@@ -72,7 +72,7 @@ max_mccabe = 83
 
 [ControlStructures::ProhibitCascadingIfElse]
 # Reduce me!
-max_elsif = 5
+max_elsif = 3
 
 [Subroutines::ProhibitExcessComplexity]
 # Reduce me!
