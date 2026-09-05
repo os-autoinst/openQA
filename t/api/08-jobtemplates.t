@@ -1286,6 +1286,34 @@ $t->post_ok(
     })->status_is(403);
 $t->delete_ok("/api/v1/job_templates/$job_template_id1")->status_is(403);
 
+subtest 'validate route (public)' => sub {
+    client($t, apikey => undef, apisecret => undef);
+    my $template = path("$FindBin::Bin/../data/08-create-modify-group.yaml")->slurp;
+    my %val_form = (
+        schema => $schema_filename,
+        template => $template,
+    );
+
+    $opensuse->update({template => $template});
+
+    $t->post_ok('/api/v1/job_templates_scheduling/' . $opensuse->id . '/validate', form => \%val_form)
+      ->status_is(200, 'POST request to /validate without authentication is 200');
+
+    my $res = $t->tx->res->json;
+    is $res->{preview}, 1, 'Validate route is always in preview mode';
+    ok !exists $res->{changes}, 'No changes expected';
+
+    $val_form{template} =~ s/removed later/replaced after/;
+    $val_form{preview} = 0;
+
+    $t->post_ok('/api/v1/job_templates_scheduling/' . $opensuse->id . '/validate', form => \%val_form)
+      ->status_is(200, 'POST after altering template returns 200');
+
+    $res = $t->tx->res->json;
+    is $res->{preview}, 1, 'Validate route is always in preview mode';
+    ok exists $res->{changes}, 'Changes were detected';
+};
+
 is_deeply \@logged_errors, [], 'no errors logged' or always_explain \@logged_errors;
 
 done_testing();
