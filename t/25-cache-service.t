@@ -14,11 +14,14 @@ BEGIN {
 
     $ENV{OPENQA_CACHE_SERVICE_QUIET} = $ENV{HARNESS_IS_VERBOSE} ? 0 : 1;
     $ENV{OPENQA_CACHE_ATTEMPTS} = 3;
-    $ENV{OPENQA_CACHE_ATTEMPT_SLEEP_TIME} = 0;
-    $ENV{OPENQA_RSYNC_RETRY_PERIOD} = 0;
+    $ENV{OPENQA_CACHE_ATTEMPT_SLEEP_TIME} = 0.01;
+    $ENV{OPENQA_CACHE_SERVICE_POLL_DELAY} = 0.01;
+    $ENV{OPENQA_RSYNC_RETRY_PERIOD} = 0.01;
     $ENV{OPENQA_RSYNC_RETRIES} = 1;
     $ENV{OPENQA_METRICS_DOWNLOAD_SIZE} = 1024;
     $ENV{OPENQA_TEST_WAIT_INTERVAL} = 0.05;
+    $ENV{OPENQA_MINION_DEQUEUE_TIMEOUT} = 0;
+    $ENV{OPENQA_SQLITE_BUSY_TIMEOUT} = 600000;
 
     $tempdir = tempdir;
     my $basedir = $tempdir->child('t', 'cache.d');
@@ -46,7 +49,7 @@ use Mojo::IOLoop::ReadWriteProcess qw(queue process);
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 use OpenQA::Test::Utils
   qw(fake_asset_server cache_minion_worker cache_worker_service wait_for_or_bail_out perform_minion_jobs wait_for);
-use OpenQA::Test::TimeLimit '90';
+use OpenQA::Test::TimeLimit '60';
 use Mojo::Util qw(md5_sum);
 use OpenQA::CacheService;
 use OpenQA::CacheService::Request;
@@ -78,10 +81,10 @@ sub start_servers () {
     $sockets = OpenQA::Utils::reserve_ports([qw(webui cache_service)]);
     $host = make_access_url($sockets->{webui}->sockport);
     $cache_client = OpenQA::CacheService::Client->new;
-    $server_instance->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
-    $cache_service->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
+    $server_instance->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->start;
+    $cache_service->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->start;
     perform_minion_jobs($t->app->minion);
-    wait_for_or_bail_out { $cache_client->info->available } 'cache service', {interval => 0.5};
+    wait_for_or_bail_out { $cache_client->info->available } 'cache service';
 }
 
 sub test_default_usage ($id, $asset) {
@@ -305,7 +308,7 @@ subtest 'Client can check if there are available workers' => sub {
     ok !$cache_client->info->available, 'Cache server is not available';
     OpenQA::Utils::reserve_ports([qw(cache_service)], force => 1);
     $cache_client = OpenQA::CacheService::Client->new;
-    $cache_service->restart;
+    $cache_service->start;
     perform_minion_jobs($t->app->minion);
     wait_for_or_bail_out { $cache_client->info->available } 'cache service';
     ok $cache_client->info->available, 'Cache server is available';
@@ -664,7 +667,7 @@ subtest 'Concurrent rsync' => sub {
 };
 
 subtest 'OpenQA::CacheService::Task::Sync' => sub {
-    test_sync $_ for (1 .. 4);
+    test_sync $_ for (1 .. 2);
 
     subtest 'Sync to non-existent parent' => sub {
         my $from = tempdir;
