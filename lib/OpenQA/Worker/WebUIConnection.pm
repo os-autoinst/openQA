@@ -11,7 +11,6 @@ use OpenQA::Worker::CommandHandler;
 
 use Mojo::IOLoop;
 use HTTP::Status qw(:constants);
-use List::Util qw(max);
 # In HTTP-Message < 6.26 HTTP::Status did not have HTTP_TOO_EARLY yet, so we
 # define it here for now until we can drop support for Leap 15.6
 use constant _HTTP_TOO_EARLY => 425;
@@ -251,7 +250,7 @@ sub _retry_delay ($self, $is_webui_busy, $tx = undef) {
     my $settings = $self->worker->settings;
     my $host_specific_settings = $settings->webui_host_specific_settings->{$self->webui_host} // {};
     my $retry_after_delay = $self->ua->evaluate_retry_after($tx);
-    return max($retry_after_delay // 0, $host_specific_settings->{$key} // $settings->global_settings->{$key});
+    return $retry_after_delay // $host_specific_settings->{$key} // $settings->global_settings->{$key};
 }
 
 sub evaluate_error ($self, $tx, $remaining_tries) {

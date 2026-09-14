@@ -93,9 +93,7 @@ subtest 'evaluate_retry_after with invalid/empty value' => sub {
 
 subtest 'evaluate_error tests' => sub {
     my $connection = OpenQA::Worker::WebUIConnection->new('http://127.0.0.1:1', {});
-    my $settings = OpenQA::Worker::Settings->new(1, {});
-    $settings->global_settings->{RETRY_DELAY_IF_WEBUI_BUSY} = 0;
-    $connection->worker(OpenQA::Test::FakeWorker->new(settings => $settings));
+    $connection->worker(OpenQA::Test::FakeWorker->new(settings => OpenQA::Worker::Settings->new(1, {})));
 
     subtest 'evaluate_error with 429 and Retry-After' => sub {
         my $tx = $connection->ua->build_tx(GET => 'http://localhost');
