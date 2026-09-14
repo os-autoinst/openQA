@@ -456,21 +456,27 @@ sub _parse_job_template_products ($yaml_products_for_arch, $yaml_defaults_for_ar
 
             $machine_names = [$machine_names] if ref($machine_names) ne 'ARRAY';
             my $ret = _parse_job_template_machines(
-                $machine_names, $job_template_names, $prio, $arch, $product_name,
-                $yaml_products, $job_template_name, $testsuite_name, $settings, $description
-            );
+                $machine_names,
+                $job_template_names,
+                {
+                    prio => $prio,
+                    arch => $arch,
+                    product_name => $product_name,
+                    product_spec => $yaml_products->{$product_name},
+                    job_template_name => $job_template_name,
+                    testsuite_name => $testsuite_name,
+                    settings => $settings,
+                    description => $description,
+                });
             return $ret if defined $ret;
         }
     }
     return undef;
 }
 
-sub _parse_job_template_machines (
-    $machine_names, $job_template_names, $prio, $arch, $product_name,
-    $yaml_products, $job_template_name, $testsuite_name, $settings, $description
-  )
-{
-
+sub _parse_job_template_machines ($machine_names, $job_template_names, $scenario) {
+    my ($arch, $product_name, $job_template_name, $testsuite_name, $description)
+      = @$scenario{qw(arch product_name job_template_name testsuite_name description)};
     foreach my $machine_name (@{$machine_names}) {
         my $job_template_key
           = $arch . $product_name . $machine_name . ($testsuite_name // '') . ($job_template_name // '');
@@ -481,14 +487,14 @@ sub _parse_job_template_machines (
             return {error => $error};
         }
         $job_template_names->{$job_template_key} = {
-            prio => $prio,
+            prio => $scenario->{prio},
             machine_name => $machine_name,
             arch => $arch,
             product_name => $product_name,
-            product_spec => $yaml_products->{$product_name},
+            product_spec => $scenario->{product_spec},
             job_template_name => $job_template_name,
             testsuite_name => $testsuite_name,
-            settings => $settings,
+            settings => $scenario->{settings},
             length $description ? (description => $description) : (),
         };
     }
