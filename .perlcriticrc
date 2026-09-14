@@ -65,11 +65,13 @@ allow = redefine
 max_statements = 3
 
 # The following thresholds should ideally be reduced
-# https://progress.opensuse.org/issues/201318
+# https://progress.opensuse.org/issues/206793
 [Modules::ProhibitExcessMainComplexity]
 # Reduce me!
-max_mccabe = 83
+max_mccabe = 40
 
+# The following thresholds should ideally be reduced
+# https://progress.opensuse.org/issues/201318
 [ControlStructures::ProhibitCascadingIfElse]
 # Reduce me!
 max_elsif = 5

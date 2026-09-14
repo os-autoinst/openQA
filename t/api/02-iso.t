@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#!/usr/bin/env perl    ## no critic (Modules::ProhibitExcessMainComplexity)
 # Copyright SUSE LLC
 # Copyright 2016 Red Hat
 # SPDX-License-Identifier: GPL-2.0-or-later
