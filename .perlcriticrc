@@ -78,7 +78,7 @@ max_elsif = 3
 
 [Subroutines::ProhibitExcessComplexity]
 # Reduce me!
-max_mccabe = 63
+max_mccabe = 39
 
 [Subroutines::ProhibitManyArgs]
 # Reduce me!

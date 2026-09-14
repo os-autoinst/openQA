@@ -29,17 +29,7 @@ sub register ($self, $app, $config) {
             return $timedate->strftime($format);
         });
 
-    $app->helper(
-        format_time_duration => sub ($c, $timedate = undef) {
-            return unless $timedate;
-            if ($timedate->days() > 0) {
-                return sprintf '%d days %02d:%02d hours', $timedate->days(), $timedate->hours(), $timedate->minutes();
-            }
-            elsif ($timedate->hours() > 0) {
-                return sprintf '%02d:%02d hours', $timedate->hours(), $timedate->minutes();
-            }
-            return sprintf '%02d:%02d minutes', $timedate->minutes(), $timedate->seconds();
-        });
+    $app->helper(format_time_duration => \&_format_time_duration);
 
     $app->helper(bugurl_for => sub ($c, $bugref = undef) { bugurl($bugref) });
 
@@ -87,38 +77,7 @@ sub register ($self, $app, $config) {
 
     $app->helper(rendered_refs_no_shortening => sub ($c, $text) { render_escaped_refs($text) });
 
-    $app->helper(
-        current_job_group => sub ($c) {
-            my $job = $c->stash('job') or return;
-            my $distri = $c->stash('distri');
-            my $build = $c->stash('build');
-            my $version = $c->stash('version');
-            my $group_id = $job->group_id;
-            return if !$group_id && !($distri && $build && $version);
-
-            my %query = (build => $build, distri => $distri, version => $version);
-            my ($crumbs, $overview_text);
-            if ($group_id) {
-                $query{groupid} = $group_id;
-                $crumbs .= "\n<li id='current-group-overview'>";
-                $crumbs
-                  .= $c->link_to($c->url_for('group_overview', groupid => $group_id) => (class => 'dropdown-item') =>
-                      sub { return $job->group->name . ' (current)' });
-                $crumbs .= '</li>';
-                $overview_text = 'Build ' . $job->BUILD;
-            }
-            else {
-                $overview_text = "Build $build\@$distri $version";
-            }
-            my $overview_url = $c->url_for('tests_overview')->query(%query);
-
-            $crumbs .= "\n<li id='current-build-overview'>";
-            $crumbs .= $c->link_to($overview_url => (class => 'dropdown-item') =>
-                  sub { '<i class="fa-solid fa-arrow-right"></i> ' . $overview_text });
-            $crumbs .= '</li>';
-            $crumbs .= "\n<li role='separator' class='dropdown-divider'></li>\n";
-            return Mojo::ByteStream->new($crumbs);
-        });
+    $app->helper(current_job_group => \&_current_job_group);
 
     $app->helper(current_job => sub ($c) { $c->stash('job') });
     $app->helper(current_theme => sub ($c) { $c->session->{theme} || 'light' });
@@ -144,17 +103,7 @@ sub register ($self, $app, $config) {
             return $c->url_for(assetpack => $icon_asset->TO_JSON);
         });
 
-    $app->helper(
-        favicon_url => sub ($c, $suffix) {
-            if (my $job = $c->stash('job')) {
-                my $status = $job->status;
-                return $c->icon_url("logo-$status$suffix");
-            }
-            if (my $agg_status = $c->stash('aggregate_status')) {
-                return $c->icon_url("logo-aggregate-$agg_status$suffix") if $agg_status ne 'none';
-            }
-            return $c->icon_url("logo$suffix");
-        });
+    $app->helper(favicon_url => \&_favicon_url);
 
     $app->helper(
         # generate popover help button with title, content and optional details_url
@@ -283,27 +232,7 @@ sub register ($self, $app, $config) {
                 });
         });
 
-    $app->helper(
-        populate_hash_with_needle_timestamps_and_urls => sub ($c, $needle, $hash) {
-            $hash->{last_seen} = $needle ? $needle->last_seen_time_fmt : 'unknown';
-            $hash->{last_match} = $needle ? $needle->last_matched_time_fmt : 'unknown';
-            return $hash unless $needle;
-            if (my $last_seen_module_id = $needle->last_seen_module_id) {
-                $hash->{last_seen_link} = $c->url_for(
-                    'admin_needle_module',
-                    module_id => $last_seen_module_id,
-                    needle_id => $needle->id
-                );
-            }
-            if (my $last_matched_module_id = $needle->last_matched_module_id) {
-                $hash->{last_match_link} = $c->url_for(
-                    'admin_needle_module',
-                    module_id => $last_matched_module_id,
-                    needle_id => $needle->id
-                );
-            }
-            return $hash;
-        });
+    $app->helper(populate_hash_with_needle_timestamps_and_urls => \&_populate_hash_with_needle_timestamps_and_urls);
 
     $app->helper(
         popover_link => sub ($c, $text, $url = undef) {
@@ -346,31 +275,107 @@ sub register ($self, $app, $config) {
             $c->res->headers->links($links);
         });
 
-    $app->helper(
-        regex_problem => sub ($c, $regexes, $context = undef) {
-            my $regex_problem;
-            for my $regex_string (@$regexes) {
-                # treat regex warnings as fatal as apparently not all problems are fatal errors
-                # note: We should not leave those warnings unhandled as they would end up in the log.
-                #       An example for such a warning is "$* matches null string many times in regex".
-                use warnings FATAL => 'regexp';
-                # test regex compilation and matching as some problems are only warned about when matching
-                try { '' =~ qr/$regex_string/ }
-                catch ($e) {
-                    # strip last part of error/warning as it does not contain anything useful for the user
-                    $regex_problem = $e;
-                    $regex_problem =~ s{/ at .*}{}s;
-                    last;
-                }
-            }
-            return $regex_problem && $context ? "$context: $regex_problem" : $regex_problem;
-        });
+    $app->helper(regex_problem => \&_regex_problem);
 
     $app->helper(
         log_url => sub ($c, $testid, $resultfile, $is_userfile = 1) {
             my $url = $c->url_for('test_file', testid => $testid, filename => $resultfile);
             return _domain_url_for($c, $url, $is_userfile);
         });
+}
+
+sub _format_time_duration ($c, $timedate = undef) {
+    return undef unless $timedate;
+    if ($timedate->days() > 0) {
+        return sprintf '%d days %02d:%02d hours', $timedate->days(), $timedate->hours(), $timedate->minutes();
+    }
+    elsif ($timedate->hours() > 0) {
+        return sprintf '%02d:%02d hours', $timedate->hours(), $timedate->minutes();
+    }
+    return sprintf '%02d:%02d minutes', $timedate->minutes(), $timedate->seconds();
+}
+
+sub _current_job_group ($c) {
+    my $job = $c->stash('job') or return undef;
+    my $distri = $c->stash('distri');
+    my $build = $c->stash('build');
+    my $version = $c->stash('version');
+    my $group_id = $job->group_id;
+    return undef if !$group_id && !($distri && $build && $version);
+
+    my %query = (build => $build, distri => $distri, version => $version);
+    my ($crumbs, $overview_text);
+    if ($group_id) {
+        $query{groupid} = $group_id;
+        $crumbs .= "\n<li id='current-group-overview'>";
+        $crumbs
+          .= $c->link_to($c->url_for('group_overview', groupid => $group_id) => (class => 'dropdown-item') =>
+              sub { return $job->group->name . ' (current)' });
+        $crumbs .= '</li>';
+        $overview_text = 'Build ' . $job->BUILD;
+    }
+    else {
+        $overview_text = "Build $build\@$distri $version";
+    }
+    my $overview_url = $c->url_for('tests_overview')->query(%query);
+
+    $crumbs .= "\n<li id='current-build-overview'>";
+    $crumbs .= $c->link_to($overview_url => (class => 'dropdown-item') =>
+          sub { '<i class="fa-solid fa-arrow-right"></i> ' . $overview_text });
+    $crumbs .= '</li>';
+    $crumbs .= "\n<li role='separator' class='dropdown-divider'></li>\n";
+    return Mojo::ByteStream->new($crumbs);
+}
+
+sub _favicon_url ($c, $suffix) {
+    if (my $job = $c->stash('job')) {
+        my $status = $job->status;
+        return $c->icon_url("logo-$status$suffix");
+    }
+    if (my $agg_status = $c->stash('aggregate_status')) {
+        return $c->icon_url("logo-aggregate-$agg_status$suffix") if $agg_status ne 'none';
+    }
+    return $c->icon_url("logo$suffix");
+}
+
+sub _populate_hash_with_needle_timestamps_and_urls ($c, $needle, $hash) {
+    $hash->{last_seen} = $needle ? $needle->last_seen_time_fmt : 'unknown';
+    $hash->{last_match} = $needle ? $needle->last_matched_time_fmt : 'unknown';
+    return $hash unless $needle;
+    if (my $last_seen_module_id = $needle->last_seen_module_id) {
+        $hash->{last_seen_link} = $c->url_for(
+            'admin_needle_module',
+            module_id => $last_seen_module_id,
+            needle_id => $needle->id
+        );
+    }
+    if (my $last_matched_module_id = $needle->last_matched_module_id) {
+        $hash->{last_match_link} = $c->url_for(
+            'admin_needle_module',
+            module_id => $last_matched_module_id,
+            needle_id => $needle->id
+        );
+    }
+    return $hash;
+}
+
+sub _regex_problem ($c, $regexes, $context = undef) {
+    my $regex_problem;
+    for my $regex_string (@$regexes) {
+        # treat regex warnings as fatal as apparently not all problems are fatal errors
+        # note: We should not leave those warnings unhandled as they would end up in the log.
+        #       An example for such a warning is "$* matches null string many times in regex".
+        use warnings FATAL => 'regexp';
+        # test regex compilation and matching as some problems are only warned about when matching
+        try { '' =~ qr/$regex_string/ }
+        catch ($e) {
+            # strip last part of error/warning as it does not contain anything useful for the user
+            $regex_problem = $e;
+            $regex_problem =~ s{/ at .*}{}s;
+            last;
+        }
+    }
+    return $regex_problem && $context ? "$context: $regex_problem" : $regex_problem;
 }
 
 sub _domain_url_for ($c, $url, $is_userfile) {

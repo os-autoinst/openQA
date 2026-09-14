@@ -62,6 +62,72 @@ sub _get_latest_job_ids ($jobs_resultset, $version, $buildnr, $group_ids) {
         {select => [{max => 'id'}], as => ['id'], group_by => [qw(TEST ARCH FLAVOR MACHINE)]})->all;
 }
 
+sub _categorize_job_result ($stat) {
+    if ($stat->state eq OpenQA::Jobs::Constants::DONE) {
+        return 'passed' if $stat->result eq OpenQA::Jobs::Constants::PASSED;
+        return 'softfailed' if $stat->result eq OpenQA::Jobs::Constants::SOFTFAILED;
+        return 'skipped' if any { $stat->result eq $_ } OpenQA::Jobs::Constants::ABORTED_RESULTS;
+        return 'failed' if any { $stat->result eq $_ } OpenQA::Jobs::Constants::NOT_OK_RESULTS;
+    }
+    elsif ($stat->state eq OpenQA::Jobs::Constants::CANCELLED) { return 'skipped' }
+    return 'unfinished';
+}
+
+sub _aggregate_build_stats ($jobs_resultset, $latest_ids, $jr, $newest, $version, $buildnr) {
+    my $stats_rs = $jobs_resultset->search(
+        {id => {-in => $latest_ids}},
+        {
+            select => [qw(state result DISTRI group_id), {count => '*'}, {($newest ? 'max' : 'min') => 't_created'}],
+            as => [qw(state result DISTRI group_id count t_created_agg)],
+            group_by => [qw(state result DISTRI group_id)],
+        });
+    while (my $stat = $stats_rs->next) {
+        my $count = $stat->get_column('count');
+        $jr->{total} += $count;
+        $jr->{distris}->{$stat->DISTRI} = 1;
+        my $t_agg = $stat->get_column('t_created_agg');
+        $t_agg = DateTime::Format::Pg->parse_datetime($t_agg) if $t_agg && !ref $t_agg;
+        if ($newest) {
+            $jr->{oldest_newest} = $t_agg if !$jr->{oldest_newest} || $t_agg > $jr->{oldest_newest};
+        }
+        else {
+            $jr->{oldest_newest} = $t_agg if !$jr->{oldest_newest} || $t_agg < $jr->{oldest_newest};
+        }
+        my $cat = _categorize_job_result($stat);
+        $jr->{$cat} += $count;
+        if ($jr->{children} && (my $child = $jr->{children}->{$stat->group_id})) {
+            $child->{total} += $count;
+            $child->{$cat} += $count;
+            $child->{distris}->{$stat->DISTRI} = 1;
+            $child->{version} //= $version;
+            $child->{build} //= $buildnr;
+        }
+    }
+}
+
+sub _aggregate_comment_stats ($group, $jobs_resultset, $latest_ids, $jr) {
+    my $failed_rs = $jobs_resultset->search(
+        {
+            id => {-in => $latest_ids},
+            state => OpenQA::Jobs::Constants::DONE,
+            result => {in => [OpenQA::Jobs::Constants::FAILED, OpenQA::Jobs::Constants::NOT_COMPLETE_RESULTS]},
+        },
+        {select => [qw(id group_id)]});
+    my $failed_id_to_group = {map { $_->id => $_->group_id } $failed_rs->all};
+    return unless keys %$failed_id_to_group;
+    my $comment_data = $group->result_source->schema->resultset('Comments')->comment_data_for_jobs($failed_rs);
+    for my $id (keys %$comment_data) {
+        my $cd = $comment_data->{$id};
+        next unless $cd->{reviewed} || $cd->{comments};
+        $jr->{labeled}++ if $cd->{reviewed};
+        $jr->{comments}++ if $cd->{comments} || $cd->{reviewed};
+        if ($jr->{children} && (my $child = $jr->{children}->{$failed_id_to_group->{$id}})) {
+            $child->{labeled}++ if $cd->{reviewed};
+            $child->{comments}++ if $cd->{comments} || $cd->{reviewed};
+        }
+    }
+}
+
 sub compute_build_results (
     $group, $limit, $time_limit_days, $tags, $subgroup_filter, $show_tags,
     $max_jobs_limit = undef,
@@ -161,70 +227,8 @@ sub compute_build_results (
         );
         init_job_figures(\%jr);
         init_job_figures($jr{children}->{$_->id} = {}) for @$children;
-        my $stats_rs = $jobs_resultset->search(
-            {id => {-in => \@latest_ids}},
-            {
-                select =>
-                  [qw(state result DISTRI group_id), {count => '*'}, {($newest ? 'max' : 'min') => 't_created'}],
-                as => [qw(state result DISTRI group_id count t_created_agg)],
-                group_by => [qw(state result DISTRI group_id)],
-            });
-        while (my $stat = $stats_rs->next) {
-            my $count = $stat->get_column('count');
-            $jr{total} += $count;
-            $jr{distris}->{$stat->DISTRI} = 1;
-            my $t_agg = $stat->get_column('t_created_agg');
-            if ($t_agg && !ref $t_agg) {
-                $t_agg = DateTime::Format::Pg->parse_datetime($t_agg);
-            }
-            if ($newest) {
-                $jr{oldest_newest} = $t_agg if !$jr{oldest_newest} || $t_agg > $jr{oldest_newest};
-            }
-            else {
-                $jr{oldest_newest} = $t_agg if !$jr{oldest_newest} || $t_agg < $jr{oldest_newest};
-            }
-            my $cat = 'unfinished';
-            if ($stat->state eq OpenQA::Jobs::Constants::DONE) {
-                if ($stat->result eq OpenQA::Jobs::Constants::PASSED) { $cat = 'passed' }
-                elsif ($stat->result eq OpenQA::Jobs::Constants::SOFTFAILED) { $cat = 'softfailed' }
-                elsif (any { $stat->result eq $_ } OpenQA::Jobs::Constants::ABORTED_RESULTS) {
-                    $cat = 'skipped';
-                }
-                elsif (any { $stat->result eq $_ } OpenQA::Jobs::Constants::NOT_OK_RESULTS) {
-                    $cat = 'failed';
-                }
-            }
-            elsif ($stat->state eq OpenQA::Jobs::Constants::CANCELLED) { $cat = 'skipped' }
-            $jr{$cat} += $count;
-            if ($jr{children} && (my $child = $jr{children}->{$stat->group_id})) {
-                $child->{total} += $count;
-                $child->{$cat} += $count;
-                $child->{distris}->{$stat->DISTRI} = 1;
-                $child->{version} //= $version;
-                $child->{build} //= $buildnr;
-            }
-        }
-        my $failed_rs = $jobs_resultset->search(
-            {
-                id => {-in => \@latest_ids},
-                state => OpenQA::Jobs::Constants::DONE,
-                result => {in => [OpenQA::Jobs::Constants::FAILED, OpenQA::Jobs::Constants::NOT_COMPLETE_RESULTS]},
-            },
-            {select => [qw(id group_id)]});
-        my $failed_id_to_group = {map { $_->id => $_->group_id } $failed_rs->all};
-        if (keys %$failed_id_to_group) {
-            my $comment_data = $group->result_source->schema->resultset('Comments')->comment_data_for_jobs($failed_rs);
-            for my $id (keys %$comment_data) {
-                my $cd = $comment_data->{$id};
-                next unless $cd->{reviewed} || $cd->{comments};
-                $jr{labeled}++ if $cd->{reviewed};
-                $jr{comments}++ if $cd->{comments} || $cd->{reviewed};
-                if ($jr{children} && (my $child = $jr{children}->{$failed_id_to_group->{$id}})) {
-                    $child->{labeled}++ if $cd->{reviewed};
-                    $child->{comments}++ if $cd->{comments} || $cd->{reviewed};
-                }
-            }
-        }
+        _aggregate_build_stats($jobs_resultset, \@latest_ids, \%jr, $newest, $version, $buildnr);
+        _aggregate_comment_stats($group, $jobs_resultset, \@latest_ids, \%jr);
         add_review_badge($_) for values %{$jr{children} // {}};
         $total_jobs_seen += $jr{total};
         $jr{date} = delete $jr{oldest_newest};
