@@ -74,40 +74,29 @@ subtest 'git clone' => sub {
             (undef, $path) = splice @$cmd, 1, 2 if $cmd->[1] eq '-C';
             my $action = $cmd->[1];
             my $return_code = 0;
-            if ($action eq 'remote') {
-                if ($clone_dirs->{$path}) {
-                    $stdout = $clone_dirs->{$path} =~ s/#.*//r;
-                }
-                elsif ($path =~ m/opensuse/) {
-                    $stdout = 'http://osado';
-                }
-                elsif ($path =~ m/wrong-url/) {
-                    $stdout = 'http://other';
-                }
-            }
-            elsif ($action eq 'ls-remote') {
-                $stdout = "ref: refs/heads/master\tHEAD";
-                $stdout = 'ref: something' if "@$cmd" =~ m/nodefault/;
-            }
-            elsif ($action eq 'branch') {
-                $stdout = 'master';
-            }
-            elsif ($action eq 'diff') {
-                $return_code = 1 if $path =~ m/dirty-status/;
-                $return_code = 2 if $path =~ m/dirty-error/;
-            }
-            elsif ($action eq 'rev-parse') {
-                if ($path =~ m/sha1/) {
-                    $return_code = 0;
-                    $stdout = 'abcdef123456';
-                }
-                if ($path =~ m/sha-branchname/) {
-                    $return_code = 0;
-                    $stdout = 'abcdef123456789';
-                }
-                $return_code = 1 if $path =~ m/sha2/;
-                $return_code = 2 if $path =~ m/sha-error/;
-            }
+            my %handle_action = (
+                remote => sub {
+                    if ($clone_dirs->{$path}) { $stdout = $clone_dirs->{$path} =~ s/#.*//r }
+                    elsif ($path =~ m/opensuse/) { $stdout = 'http://osado' }
+                    elsif ($path =~ m/wrong-url/) { $stdout = 'http://other' }
+                },
+                'ls-remote' => sub {
+                    $stdout = "ref: refs/heads/master\tHEAD";
+                    $stdout = 'ref: something' if "@$cmd" =~ m/nodefault/;
+                },
+                branch => sub { $stdout = 'master' },
+                diff => sub {
+                    $return_code = 1 if $path =~ m/dirty-status/;
+                    $return_code = 2 if $path =~ m/dirty-error/;
+                },
+                'rev-parse' => sub {
+                    if ($path =~ m/sha1/) { $return_code = 0; $stdout = 'abcdef123456' }
+                    if ($path =~ m/sha-branchname/) { $return_code = 0; $stdout = 'abcdef123456789' }
+                    $return_code = 1 if $path =~ m/sha2/;
+                    $return_code = 2 if $path =~ m/sha-error/;
+                },
+            );
+            if (my $handler = $handle_action{$action}) { $handler->() }
             return {
                 status => $return_code == 0,
                 return_code => $return_code,

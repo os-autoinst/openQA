@@ -71,14 +71,11 @@ sub reset ($self) {
 sub gen_tree_el ($el) {
     return {DATA_FIELD() => $el} unless blessed $el;
 
+    return {DATA_FIELD() => $el, TYPE_FIELD() => ref $el} if $el->isa('OpenQA::Parser');
+    return $el->gen_tree_el if $el->can('gen_tree_el');
+
     my $el_ref;
-    if ($el->isa('OpenQA::Parser')) {
-        $el_ref = $el;
-    }
-    elsif ($el->can('gen_tree_el')) {
-        return $el->gen_tree_el;
-    }
-    elsif ($el->can('to_hash')) {
+    if ($el->can('to_hash')) {
         $el_ref = $el->to_hash;
     }
     elsif ($el->can('to_array')) {
