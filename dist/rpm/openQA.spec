@@ -586,7 +586,6 @@ fi
 %service_del_postun %{openqa_extra_services}
 # reload AppArmor profiles
 %apparmor_reload %{_sysconfdir}/apparmor.d/usr.share.openqa.script.openqa
-%apparmor_reload %{_sysconfdir}/apparmor.d/local/usr.share.openqa.script.openqa
 
 %postun worker
 # reload AppArmor profiles
@@ -661,9 +660,9 @@ fi
 %config(noreplace) %{_sysconfdir}/nginx/vhosts.d/openqa-upstreams.inc
 # apparmor profile
 %dir %{_sysconfdir}/apparmor.d
-%config %{_sysconfdir}/apparmor.d/usr.share.openqa.script.openqa
+%config(noreplace) %{_sysconfdir}/apparmor.d/usr.share.openqa.script.openqa
 %dir %{_sysconfdir}/apparmor.d/local
-%config %{_sysconfdir}/apparmor.d/local/usr.share.openqa.script.openqa
+%config(noreplace) %{_sysconfdir}/apparmor.d/local/usr.share.openqa.script.openqa
 # init
 %dir %{_unitdir}
 %{_unitdir}/openqa-webui.service
