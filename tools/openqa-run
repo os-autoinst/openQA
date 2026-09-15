@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+
+import os
+import subprocess
+import sys
+from pathlib import Path
+from typing import Optional
+
+import typer
+
+app = typer.Typer(help="Call an openQA service with OPENQA_BASEDIR set to the local working copy.")
+
+
+@app.command(context_settings={"allow_extra_args": True, "ignore_unknown_options": True})
+def run(
+    ctx: typer.Context,
+    service: str = typer.Argument(
+        ..., help="The openQA service to call (e.g. openqa-webui-daemon or script/openqa-gru)"
+    ),
+    basedir: Optional[Path] = typer.Option(None, "--basedir", "-b",
+        help="Base directory for openQA data. Defaults to OPENQA_BASEDIR environment variable or t/data."),
+    test_db: bool = typer.Option(False, "--test-db", "-t", help="Use a temporary test database (starts t/test_postgresql if not running)."),
+):
+    """
+    Call an openQA service with appropriate environment.
+    """
+    if basedir is None:
+        if "OPENQA_BASEDIR" in os.environ:
+            basedir = Path(os.environ["OPENQA_BASEDIR"])
+        else:
+            basedir = Path(__file__).resolve().parent.parent / "t/data"
+
+    # Ensure basedir is absolute
+    basedir = basedir.resolve()
+
+    env = os.environ.copy()
+    env["OPENQA_BASEDIR"] = str(basedir)
+
+    if test_db:
+        test_pg_path = Path("/dev/shm/tpg")
+        if not (test_pg_path / "postmaster.pid").exists():
+            typer.echo("Starting test database...")
+            subprocess.run([str(Path(__file__).resolve().parent.parent / "t" / "test_postgresql")], check=True)
+
+        env["TEST_PG"] = f"DBI:Pg:dbname=openqa_test;host={test_pg_path}"
+        env["OPENQA_DATABASE"] = "test"
+        env["OPENQA_WEBUI_MODE"] = "test"
+
+    # Try to find the service in script/ if it's not an absolute path or in current dir
+    cmd = service
+    if not Path(service).is_absolute() and not Path(service).exists():
+        script_path = Path(__file__).resolve().parent.parent / "script" / service
+        if script_path.exists():
+            cmd = str(script_path)
+    args = [cmd] + ctx.args
+    try:
+        result = subprocess.run(args, env=env)
+        sys.exit(result.returncode)
+    except FileNotFoundError:
+        typer.echo(f"Error: Command '{cmd}' not found.", err=True)
+        sys.exit(127)
+    except KeyboardInterrupt:
+        sys.exit(130)
+
+
+if __name__ == "__main__":
+    app()
