@@ -96,13 +96,11 @@ sub _auth ($self) {
         elsif (my $key = $self->req->headers->header('X-API-Key')) {
             ($user, $reason) = $self->_key_auth($reason, $key);
         }
-        elsif ($self->_auth_method_is_none()) {
-            $user = $self->schema->resultset('Users')->find({username => DEFAULT_ADMIN});
-            $reason = undef;
-        }
         else {
-            $log->trace('No API key from client');
-            $reason = 'no api key';
+            my $auth_module = 'OpenQA::WebAPI::Auth::' . ($self->app->config->{auth}->{method} // '');
+            $user = $auth_module->can('unauthenticated_user') ? $auth_module->unauthenticated_user($self->app) : undef;
+            $reason = $user ? undef : 'no api key';
+            $log->trace('No API key from client') unless $user;
         }
     }
 
