@@ -20,6 +20,7 @@ sub actions ($c) {
     my $latest = $c->url_for('latest')->query($job->scenario_hash)->to_abs;
     my ($build, $image) = split /_/, $ctx->{build}, 2;
     $image //= 'NaN';
+    $build //= 'NaN';
 
     # CONTAINER_IMAGE_TO_TEST is required only for sles
     # opensuse container links are handled internally by BCI framework
@@ -104,5 +105,13 @@ Target: <%= $target %>
 
 ## Useful links
 
+% if ($raw_distri eq 'opensuse') {
+
 Last good: <%= $last_good %> (or more recent)
 The latest result in this scenario: <%= $latest %>
+% } else {
+== EDIT ==
+Manually enter last good result of sle BCI results
+==========
+% }
+
