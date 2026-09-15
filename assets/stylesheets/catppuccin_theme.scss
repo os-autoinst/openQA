@@ -1,0 +1,768 @@
+// Catppuccin theme overrides
+// This file applies Catppuccin color variables when the theme-catppuccin class is present
+
+@import 'openqa_theme';
+
+html.theme-catppuccin {
+  // Base colors
+  color: $default-font-color-catppuccin !important;
+  background-color: $default-bg-color-catppuccin !important;
+
+  body {
+    color: $default-font-color-catppuccin !important;
+    background-color: $default-bg-color-catppuccin !important;
+  }
+
+  // Links
+  a {
+    color: $link-color-catppuccin !important;
+    
+    &:hover {
+      color: $link-hover-color-catppuccin !important;
+    }
+  }
+
+  // Tables
+  .table {
+    border-color: $table-border-color-catppuccin !important;
+    color: $color-result-catppuccin !important;
+    
+    th, td {
+      border-color: $table-border-color-catppuccin !important;
+    }
+  }
+
+  // Buttons
+  .btn-default {
+    color: $btn-default-color-catppuccin !important;
+    background-color: $btn-default-bg-catppuccin !important;
+  }
+
+  .btn-primary {
+    background-color: $btn-primary-bg-catppuccin !important;
+    border-color: $btn-primary-bg-catppuccin !important;
+  }
+
+  .btn-secondary {
+    background-color: $btn-secondary-bg-catppuccin !important;
+    border-color: $btn-secondary-bg-catppuccin !important;
+  }
+
+  .btn-success {
+    background-color: $btn-success-bg-catppuccin !important;
+    border-color: $btn-success-bg-catppuccin !important;
+  }
+
+  .btn-info {
+    background-color: $btn-info-bg-catppuccin !important;
+    border-color: $btn-info-bg-catppuccin !important;
+  }
+
+  .btn-warning {
+    background-color: $btn-warning-bg-catppuccin !important;
+    border-color: $btn-warning-bg-catppuccin !important;
+    color: $catppuccin-base !important;
+  }
+
+  .btn-danger {
+    background-color: $btn-danger-bg-catppuccin !important;
+    border-color: $btn-danger-bg-catppuccin !important;
+  }
+
+  .btn-light {
+    background-color: $btn-light-bg-catppuccin !important;
+    border-color: $btn-light-bg-catppuccin !important;
+  }
+
+  .btn-dark {
+    background-color: $btn-dark-bg-catppuccin !important;
+    border-color: $btn-dark-bg-catppuccin !important;
+  }
+
+  // Cards and panels
+  .card {
+    background-color: $catppuccin-surface0 !important;
+    border-color: $catppuccin-surface1 !important;
+  }
+
+  .card-header {
+    background-color: $catppuccin-surface1 !important;
+    border-color: $catppuccin-surface2 !important;
+  }
+
+  // Navbar
+  .navbar {
+    background-color: $catppuccin-mantle !important;
+  }
+
+  // Footer
+  .footer {
+    background-color: $catppuccin-mantle !important;
+    color: $catppuccin-subtext0 !important;
+  }
+
+  // Test result colors
+  .result_passed,
+  .resultok {
+    color: $color-ok-catppuccin !important;
+  }
+
+  .result_failed,
+  .resultfailed {
+    color: $color-failed-catppuccin !important;
+  }
+
+  .result_softfailed,
+  .resultsoftfailed {
+    color: $color-softfailed-catppuccin !important;
+  }
+
+  .result_incomplete {
+    color: $color-incomplete-catppuccin !important;
+  }
+
+  // Module states
+  .module_passed {
+    color: $color-module-passed-catppuccin !important;
+  }
+
+  .module_softfailed {
+    color: $color-module-softfailed-catppuccin !important;
+  }
+
+  .module_failed {
+    color: $color-module-none-catppuccin !important;
+  }
+
+  .module_skipped {
+    color: $color-module-skipped-catppuccin !important;
+  }
+
+  // Job states
+  .state_scheduled {
+    color: $color-state-scheduled-catppuccin !important;
+  }
+
+  .state_blocked {
+    color: $color-state-blocked-catppuccin !important;
+  }
+
+  .state_cancelled {
+    color: $color-state-cancelled-catppuccin !important;
+  }
+
+  .state_running {
+    color: $color-state-running-catppuccin !important;
+  }
+
+  // Forms
+  .form-control,
+  .form-select {
+    background-color: $catppuccin-surface0 !important;
+    border-color: $catppuccin-surface2 !important;
+    color: $catppuccin-text !important;
+
+    &:focus {
+      background-color: $catppuccin-surface1 !important;
+      border-color: $catppuccin-blue !important;
+      color: $catppuccin-text !important;
+    }
+  }
+
+  // Alerts
+  .alert-primary {
+    background-color: $catppuccin-blue !important;
+    border-color: $catppuccin-sapphire !important;
+    color: $catppuccin-base !important;
+  }
+
+  .alert-success {
+    background-color: $catppuccin-green !important;
+    border-color: $catppuccin-teal !important;
+    color: $catppuccin-base !important;
+  }
+
+  .alert-warning {
+    background-color: $catppuccin-yellow !important;
+    border-color: $catppuccin-peach !important;
+    color: $catppuccin-base !important;
+  }
+
+  .alert-danger {
+    background-color: $catppuccin-red !important;
+    border-color: $catppuccin-maroon !important;
+    color: $catppuccin-base !important;
+  }
+
+  .alert-info {
+    background-color: $catppuccin-sky !important;
+    border-color: $catppuccin-sapphire !important;
+    color: $catppuccin-base !important;
+  }
+}
+
+// Catppuccin Latte (light) theme overrides
+html.theme-catppuccin-latte {
+  // Base colors
+  color: $default-font-color-catppuccin-latte !important;
+  background-color: $default-bg-color-catppuccin-latte !important;
+
+  body {
+    color: $default-font-color-catppuccin-latte !important;
+    background-color: $default-bg-color-catppuccin-latte !important;
+  }
+
+  // Links
+  a {
+    color: $link-color-catppuccin-latte !important;
+    
+    &:hover {
+      color: $link-hover-color-catppuccin-latte !important;
+    }
+  }
+
+  // Tables
+  .table {
+    border-color: $table-border-color-catppuccin-latte !important;
+    color: $color-result-catppuccin-latte !important;
+    
+    th, td {
+      border-color: $table-border-color-catppuccin-latte !important;
+    }
+  }
+
+  // Buttons
+  .btn-default {
+    color: $btn-default-color-catppuccin-latte !important;
+    background-color: $btn-default-bg-catppuccin-latte !important;
+  }
+
+  .btn-primary {
+    background-color: $btn-primary-bg-catppuccin-latte !important;
+    border-color: $btn-primary-bg-catppuccin-latte !important;
+    color: $catppuccin-latte-base !important;
+  }
+
+  .btn-secondary {
+    background-color: $btn-secondary-bg-catppuccin-latte !important;
+    border-color: $btn-secondary-bg-catppuccin-latte !important;
+    color: $catppuccin-latte-base !important;
+  }
+
+  .btn-success {
+    background-color: $btn-success-bg-catppuccin-latte !important;
+    border-color: $btn-success-bg-catppuccin-latte !important;
+    color: $catppuccin-latte-base !important;
+  }
+
+  .btn-info {
+    background-color: $btn-info-bg-catppuccin-latte !important;
+    border-color: $btn-info-bg-catppuccin-latte !important;
+    color: $catppuccin-latte-base !important;
+  }
+
+  .btn-warning {
+    background-color: $btn-warning-bg-catppuccin-latte !important;
+    border-color: $btn-warning-bg-catppuccin-latte !important;
+    color: $catppuccin-latte-base !important;
+  }
+
+  .btn-danger {
+    background-color: $btn-danger-bg-catppuccin-latte !important;
+    border-color: $btn-danger-bg-catppuccin-latte !important;
+    color: $catppuccin-latte-base !important;
+  }
+
+  .btn-light {
+    background-color: $btn-light-bg-catppuccin-latte !important;
+    border-color: $btn-light-bg-catppuccin-latte !important;
+  }
+
+  .btn-dark {
+    background-color: $btn-dark-bg-catppuccin-latte !important;
+    border-color: $btn-dark-bg-catppuccin-latte !important;
+  }
+
+  // Cards and panels
+  .card {
+    background-color: $catppuccin-latte-mantle !important;
+    border-color: $catppuccin-latte-crust !important;
+  }
+
+  .card-header {
+    background-color: $catppuccin-latte-crust !important;
+    border-color: $catppuccin-latte-surface0 !important;
+  }
+
+  // Navbar
+  .navbar {
+    background-color: $catppuccin-latte-mantle !important;
+  }
+
+  // Footer
+  .footer {
+    background-color: $catppuccin-latte-mantle !important;
+    color: $catppuccin-latte-subtext0 !important;
+  }
+
+  // Test result colors
+  .result_passed,
+  .resultok {
+    color: $color-ok-catppuccin-latte !important;
+  }
+
+  .result_failed,
+  .resultfailed {
+    color: $color-failed-catppuccin-latte !important;
+  }
+
+  .result_softfailed,
+  .resultsoftfailed {
+    color: $color-softfailed-catppuccin-latte !important;
+  }
+
+  .result_incomplete {
+    color: $color-incomplete-catppuccin-latte !important;
+  }
+
+  // Module states
+  .module_passed {
+    color: $color-module-passed-catppuccin-latte !important;
+  }
+
+  .module_softfailed {
+    color: $color-module-softfailed-catppuccin-latte !important;
+  }
+
+  .module_failed {
+    color: $color-module-none-catppuccin-latte !important;
+  }
+
+  .module_skipped {
+    color: $color-module-skipped-catppuccin-latte !important;
+  }
+
+  // Job states
+  .state_scheduled {
+    color: $color-state-scheduled-catppuccin-latte !important;
+  }
+
+  .state_blocked {
+    color: $color-state-blocked-catppuccin-latte !important;
+  }
+
+  .state_cancelled {
+    color: $color-state-cancelled-catppuccin-latte !important;
+  }
+
+  .state_running {
+    color: $color-state-running-catppuccin-latte !important;
+  }
+
+  // Forms
+  .form-control,
+  .form-select {
+    background-color: $catppuccin-latte-surface0 !important;
+    border-color: $catppuccin-latte-surface2 !important;
+    color: $catppuccin-latte-text !important;
+
+    &:focus {
+      background-color: $catppuccin-latte-base !important;
+      border-color: $catppuccin-latte-blue !important;
+      color: $catppuccin-latte-text !important;
+    }
+  }
+
+  // Alerts
+  .alert-primary {
+    background-color: $catppuccin-latte-blue !important;
+    border-color: $catppuccin-latte-sapphire !important;
+    color: $catppuccin-latte-base !important;
+  }
+
+  .alert-success {
+    background-color: $catppuccin-latte-green !important;
+    border-color: $catppuccin-latte-teal !important;
+    color: $catppuccin-latte-base !important;
+  }
+
+  .alert-warning {
+    background-color: $catppuccin-latte-yellow !important;
+    border-color: $catppuccin-latte-peach !important;
+    color: $catppuccin-latte-base !important;
+  }
+
+  .alert-danger {
+    background-color: $catppuccin-latte-red !important;
+    border-color: $catppuccin-latte-maroon !important;
+    color: $catppuccin-latte-base !important;
+  }
+
+  .alert-info {
+    background-color: $catppuccin-latte-sky !important;
+    border-color: $catppuccin-latte-sapphire !important;
+    color: $catppuccin-latte-base !important;
+  }
+}
+
+// Catppuccin Frappé (dark) theme overrides
+html.theme-catppuccin-frappe {
+  color: $default-font-color-catppuccin-frappe !important;
+  background-color: $default-bg-color-catppuccin-frappe !important;
+
+  body {
+    color: $default-font-color-catppuccin-frappe !important;
+    background-color: $default-bg-color-catppuccin-frappe !important;
+  }
+
+  a {
+    color: $link-color-catppuccin-frappe !important;
+    &:hover {
+      color: $link-hover-color-catppuccin-frappe !important;
+    }
+  }
+
+  .table {
+    border-color: $table-border-color-catppuccin-frappe !important;
+    color: $color-result-catppuccin-frappe !important;
+    th, td {
+      border-color: $table-border-color-catppuccin-frappe !important;
+    }
+  }
+
+  .btn-default {
+    color: $btn-default-color-catppuccin-frappe !important;
+    background-color: $btn-default-bg-catppuccin-frappe !important;
+  }
+
+  .btn-primary {
+    background-color: $btn-primary-bg-catppuccin-frappe !important;
+    border-color: $btn-primary-bg-catppuccin-frappe !important;
+  }
+
+  .btn-secondary {
+    background-color: $btn-secondary-bg-catppuccin-frappe !important;
+    border-color: $btn-secondary-bg-catppuccin-frappe !important;
+  }
+
+  .btn-success {
+    background-color: $btn-success-bg-catppuccin-frappe !important;
+    border-color: $btn-success-bg-catppuccin-frappe !important;
+  }
+
+  .btn-info {
+    background-color: $btn-info-bg-catppuccin-frappe !important;
+    border-color: $btn-info-bg-catppuccin-frappe !important;
+  }
+
+  .btn-warning {
+    background-color: $btn-warning-bg-catppuccin-frappe !important;
+    border-color: $btn-warning-bg-catppuccin-frappe !important;
+    color: $catppuccin-frappe-base !important;
+  }
+
+  .btn-danger {
+    background-color: $btn-danger-bg-catppuccin-frappe !important;
+    border-color: $btn-danger-bg-catppuccin-frappe !important;
+  }
+
+  .btn-light {
+    background-color: $btn-light-bg-catppuccin-frappe !important;
+    border-color: $btn-light-bg-catppuccin-frappe !important;
+  }
+
+  .btn-dark {
+    background-color: $btn-dark-bg-catppuccin-frappe !important;
+    border-color: $btn-dark-bg-catppuccin-frappe !important;
+  }
+
+  .card {
+    background-color: $catppuccin-frappe-surface0 !important;
+    border-color: $catppuccin-frappe-surface1 !important;
+  }
+
+  .card-header {
+    background-color: $catppuccin-frappe-surface1 !important;
+    border-color: $catppuccin-frappe-surface2 !important;
+  }
+
+  .navbar {
+    background-color: $catppuccin-frappe-mantle !important;
+  }
+
+  .footer {
+    background-color: $catppuccin-frappe-mantle !important;
+    color: $catppuccin-frappe-subtext0 !important;
+  }
+
+  .result_passed, .resultok {
+    color: $color-ok-catppuccin-frappe !important;
+  }
+
+  .result_failed, .resultfailed {
+    color: $color-failed-catppuccin-frappe !important;
+  }
+
+  .result_softfailed, .resultsoftfailed {
+    color: $color-softfailed-catppuccin-frappe !important;
+  }
+
+  .result_incomplete {
+    color: $color-incomplete-catppuccin-frappe !important;
+  }
+
+  .module_passed {
+    color: $color-module-passed-catppuccin-frappe !important;
+  }
+
+  .module_softfailed {
+    color: $color-module-softfailed-catppuccin-frappe !important;
+  }
+
+  .module_failed {
+    color: $color-module-none-catppuccin-frappe !important;
+  }
+
+  .module_skipped {
+    color: $color-module-skipped-catppuccin-frappe !important;
+  }
+
+  .state_scheduled {
+    color: $color-state-scheduled-catppuccin-frappe !important;
+  }
+
+  .state_blocked {
+    color: $color-state-blocked-catppuccin-frappe !important;
+  }
+
+  .state_cancelled {
+    color: $color-state-cancelled-catppuccin-frappe !important;
+  }
+
+  .state_running {
+    color: $color-state-running-catppuccin-frappe !important;
+  }
+
+  .form-control, .form-select {
+    background-color: $catppuccin-frappe-surface0 !important;
+    border-color: $catppuccin-frappe-surface2 !important;
+    color: $catppuccin-frappe-text !important;
+
+    &:focus {
+      background-color: $catppuccin-frappe-surface1 !important;
+      border-color: $catppuccin-frappe-blue !important;
+      color: $catppuccin-frappe-text !important;
+    }
+  }
+
+  .alert-primary {
+    background-color: $catppuccin-frappe-blue !important;
+    border-color: $catppuccin-frappe-sapphire !important;
+    color: $catppuccin-frappe-base !important;
+  }
+
+  .alert-success {
+    background-color: $catppuccin-frappe-green !important;
+    border-color: $catppuccin-frappe-teal !important;
+    color: $catppuccin-frappe-base !important;
+  }
+
+  .alert-warning {
+    background-color: $catppuccin-frappe-yellow !important;
+    border-color: $catppuccin-frappe-peach !important;
+    color: $catppuccin-frappe-base !important;
+  }
+
+  .alert-danger {
+    background-color: $catppuccin-frappe-red !important;
+    border-color: $catppuccin-frappe-maroon !important;
+    color: $catppuccin-frappe-base !important;
+  }
+
+  .alert-info {
+    background-color: $catppuccin-frappe-sky !important;
+    border-color: $catppuccin-frappe-sapphire !important;
+    color: $catppuccin-frappe-base !important;
+  }
+}
+
+// Catppuccin Macchiato (dark) theme overrides
+html.theme-catppuccin-macchiato {
+  color: $default-font-color-catppuccin-macchiato !important;
+  background-color: $default-bg-color-catppuccin-macchiato !important;
+
+  body {
+    color: $default-font-color-catppuccin-macchiato !important;
+    background-color: $default-bg-color-catppuccin-macchiato !important;
+  }
+
+  a {
+    color: $link-color-catppuccin-macchiato !important;
+    &:hover {
+      color: $link-hover-color-catppuccin-macchiato !important;
+    }
+  }
+
+  .table {
+    border-color: $table-border-color-catppuccin-macchiato !important;
+    color: $color-result-catppuccin-macchiato !important;
+    th, td {
+      border-color: $table-border-color-catppuccin-macchiato !important;
+    }
+  }
+
+  .btn-default {
+    color: $btn-default-color-catppuccin-macchiato !important;
+    background-color: $btn-default-bg-catppuccin-macchiato !important;
+  }
+
+  .btn-primary {
+    background-color: $btn-primary-bg-catppuccin-macchiato !important;
+    border-color: $btn-primary-bg-catppuccin-macchiato !important;
+  }
+
+  .btn-secondary {
+    background-color: $btn-secondary-bg-catppuccin-macchiato !important;
+    border-color: $btn-secondary-bg-catppuccin-macchiato !important;
+  }
+
+  .btn-success {
+    background-color: $btn-success-bg-catppuccin-macchiato !important;
+    border-color: $btn-success-bg-catppuccin-macchiato !important;
+  }
+
+  .btn-info {
+    background-color: $btn-info-bg-catppuccin-macchiato !important;
+    border-color: $btn-info-bg-catppuccin-macchiato !important;
+  }
+
+  .btn-warning {
+    background-color: $btn-warning-bg-catppuccin-macchiato !important;
+    border-color: $btn-warning-bg-catppuccin-macchiato !important;
+    color: $catppuccin-macchiato-base !important;
+  }
+
+  .btn-danger {
+    background-color: $btn-danger-bg-catppuccin-macchiato !important;
+    border-color: $btn-danger-bg-catppuccin-macchiato !important;
+  }
+
+  .btn-light {
+    background-color: $btn-light-bg-catppuccin-macchiato !important;
+    border-color: $btn-light-bg-catppuccin-macchiato !important;
+  }
+
+  .btn-dark {
+    background-color: $btn-dark-bg-catppuccin-macchiato !important;
+    border-color: $btn-dark-bg-catppuccin-macchiato !important;
+  }
+
+  .card {
+    background-color: $catppuccin-macchiato-surface0 !important;
+    border-color: $catppuccin-macchiato-surface1 !important;
+  }
+
+  .card-header {
+    background-color: $catppuccin-macchiato-surface1 !important;
+    border-color: $catppuccin-macchiato-surface2 !important;
+  }
+
+  .navbar {
+    background-color: $catppuccin-macchiato-mantle !important;
+  }
+
+  .footer {
+    background-color: $catppuccin-macchiato-mantle !important;
+    color: $catppuccin-macchiato-subtext0 !important;
+  }
+
+  .result_passed, .resultok {
+    color: $color-ok-catppuccin-macchiato !important;
+  }
+
+  .result_failed, .resultfailed {
+    color: $color-failed-catppuccin-macchiato !important;
+  }
+
+  .result_softfailed, .resultsoftfailed {
+    color: $color-softfailed-catppuccin-macchiato !important;
+  }
+
+  .result_incomplete {
+    color: $color-incomplete-catppuccin-macchiato !important;
+  }
+
+  .module_passed {
+    color: $color-module-passed-catppuccin-macchiato !important;
+  }
+
+  .module_softfailed {
+    color: $color-module-softfailed-catppuccin-macchiato !important;
+  }
+
+  .module_failed {
+    color: $color-module-none-catppuccin-macchiato !important;
+  }
+
+  .module_skipped {
+    color: $color-module-skipped-catppuccin-macchiato !important;
+  }
+
+  .state_scheduled {
+    color: $color-state-scheduled-catppuccin-macchiato !important;
+  }
+
+  .state_blocked {
+    color: $color-state-blocked-catppuccin-macchiato !important;
+  }
+
+  .state_cancelled {
+    color: $color-state-cancelled-catppuccin-macchiato !important;
+  }
+
+  .state_running {
+    color: $color-state-running-catppuccin-macchiato !important;
+  }
+
+  .form-control, .form-select {
+    background-color: $catppuccin-macchiato-surface0 !important;
+    border-color: $catppuccin-macchiato-surface2 !important;
+    color: $catppuccin-macchiato-text !important;
+
+    &:focus {
+      background-color: $catppuccin-macchiato-surface1 !important;
+      border-color: $catppuccin-macchiato-blue !important;
+      color: $catppuccin-macchiato-text !important;
+    }
+  }
+
+  .alert-primary {
+    background-color: $catppuccin-macchiato-blue !important;
+    border-color: $catppuccin-macchiato-sapphire !important;
+    color: $catppuccin-macchiato-base !important;
+  }
+
+  .alert-success {
+    background-color: $catppuccin-macchiato-green !important;
+    border-color: $catppuccin-macchiato-teal !important;
+    color: $catppuccin-macchiato-base !important;
+  }
+
+  .alert-warning {
+    background-color: $catppuccin-macchiato-yellow !important;
+    border-color: $catppuccin-macchiato-peach !important;
+    color: $catppuccin-macchiato-base !important;
+  }
+
+  .alert-danger {
+    background-color: $catppuccin-macchiato-red !important;
+    border-color: $catppuccin-macchiato-maroon !important;
+    color: $catppuccin-macchiato-base !important;
+  }
+
+  .alert-info {
+    background-color: $catppuccin-macchiato-sky !important;
+    border-color: $catppuccin-macchiato-sapphire !important;
+    color: $catppuccin-macchiato-base !important;
+  }
+}
