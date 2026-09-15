@@ -20,6 +20,8 @@ description: |2
         # Archive job from O3
         openqa-cli archive --o3 408 /tmp/job_408
 
+        # Encode a token as string for the specified host+key+secret combination
+        openqa-cli token encode openqa.example.com@123456@789ABC
 
         Configuration:
           API key and secret are read from "client.conf" or environment
@@ -192,3 +194,8 @@ subcommands:
     options:
       - *poll_intervall
       - *follow
+
+  token:
+    summary: Encodes authentication tokens from specified credentials
+    description: |
+      Usage: openqa-cli token create HOST@KEY@SECRET
