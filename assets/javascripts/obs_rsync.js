@@ -8,14 +8,14 @@ function fetchValue(url, element, controlToShow) {
       if (response.error) throw response.error;
       element.innerText = response?.message ?? '';
       if (controlToShow) {
-        $(controlToShow).show();
+        controlToShow.style.display = '';
       }
     })
     .catch(error => {
       console.error(error);
       addFlash('danger', `Error: ${error}`);
       if (controlToShow) {
-        $(controlToShow).show();
+        controlToShow.style.display = '';
       }
     });
 }
@@ -24,7 +24,7 @@ function postAndRedrawElement(btn, id, delay = 0, confirmMessage = '') {
   if (confirmMessage && !confirm(confirmMessage)) {
     return;
   }
-  $(btn).hide();
+  btn.style.display = 'none';
   const cell = document.getElementById(id);
   if (!cell) {
     addFlash('danger', 'Internal error: Unable to find related cell.');

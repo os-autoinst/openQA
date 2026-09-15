@@ -24,7 +24,7 @@
 
       %= javascript begin
           %= content_for 'head_javascript'
-          $(function() {
+          document.addEventListener('DOMContentLoaded', function() {
           setupForAll();
           %= content_for 'ready_function'
           } );
