@@ -5,10 +5,12 @@ package OpenQA::UserAgent;
 use Mojo::Base 'Mojo::UserAgent', -signatures;
 
 use OpenQA::Config;
+use Mojo::Date;
 use Mojo::File 'path';
 use Mojo::Util 'hmac_sha1_sum';
 use Scalar::Util ();
 use Time::Seconds;
+use HTTP::Status qw(:constants);
 use Carp;
 
 has [qw(apikey apisecret base_url)];
@@ -81,6 +83,25 @@ sub _path_query ($url) {
     $query =~ s,%20,+,g;
     my $r = $url->path->to_string . (length $query ? "?$query" : '');
     return $r;
+}
+
+sub evaluate_retry_after ($self, $tx) {
+    return undef if !$tx || !$tx->res;
+    my $retry_after = $tx->res->headers->header('Retry-After');
+    return undef if !defined $retry_after || $retry_after eq '';
+    return $retry_after if $retry_after =~ /^\d+$/;
+    my $date = Mojo::Date->new($retry_after);
+    return undef unless defined(my $epoch = $date->epoch);
+    my $diff = $epoch - time;
+    return $diff > 0 ? int($diff) : 0;
+}
+
+sub _retry_with_delay ($code) { !$code || $code == HTTP_TOO_MANY_REQUESTS || $code >= HTTP_INTERNAL_SERVER_ERROR }
+
+sub delay ($self, $tx, $default_delay = 1) {
+    my $retry_delay = $self->evaluate_retry_after($tx);
+    $retry_delay //= $default_delay if _retry_with_delay($tx && $tx->res ? $tx->res->code : undef);
+    sleep $retry_delay if $retry_delay;
 }
 
 1;

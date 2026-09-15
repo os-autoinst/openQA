@@ -242,14 +242,15 @@ sub finish_websocket_connection ($self) {
 
 # define list of HTTP error codes which indicate that the web UI is overloaded or down for maintenance
 # (in these cases the re-try delay should be increased)
-my %BUSY_ERROR_CODES = map { $_ => 1 } HTTP_REQUEST_TIMEOUT, _HTTP_TOO_EARLY, HTTP_BAD_GATEWAY,
+my %BUSY_ERROR_CODES = map { $_ => 1 } HTTP_REQUEST_TIMEOUT, _HTTP_TOO_EARLY, HTTP_TOO_MANY_REQUESTS, HTTP_BAD_GATEWAY,
   HTTP_SERVICE_UNAVAILABLE, HTTP_GATEWAY_TIMEOUT, 598;
 
-sub _retry_delay ($self, $is_webui_busy) {
+sub _retry_delay ($self, $is_webui_busy, $tx = undef) {
     my $key = $is_webui_busy ? 'RETRY_DELAY_IF_WEBUI_BUSY' : 'RETRY_DELAY';
     my $settings = $self->worker->settings;
     my $host_specific_settings = $settings->webui_host_specific_settings->{$self->webui_host} // {};
-    return $host_specific_settings->{$key} // $settings->global_settings->{$key};
+    my $retry_after_delay = $self->ua->evaluate_retry_after($tx);
+    return $retry_after_delay // $host_specific_settings->{$key} // $settings->global_settings->{$key};
 }
 
 sub evaluate_error ($self, $tx, $remaining_tries) {
@@ -263,6 +264,7 @@ sub evaluate_error ($self, $tx, $remaining_tries) {
         if (   $error_code < HTTP_INTERNAL_SERVER_ERROR
             && $error_code != HTTP_REQUEST_TIMEOUT
             && $error_code != _HTTP_TOO_EARLY
+            && $error_code != HTTP_TOO_MANY_REQUESTS
             && $error_code != 490)
         {
             # don't retry on most 4xx errors (in this case we can't expect different results on further attempts)
@@ -276,7 +278,7 @@ sub evaluate_error ($self, $tx, $remaining_tries) {
         $msg = "Connection error: $msg";
         $is_webui_busy = 1 if $error->{message} =~ qr/timeout/i;
     }
-    $retry_delay = $self->_retry_delay($is_webui_busy) if $$remaining_tries > 0;
+    $retry_delay = $self->_retry_delay($is_webui_busy, $tx) if $$remaining_tries > 0;
     return ($msg, $retry_delay);
 }
 
