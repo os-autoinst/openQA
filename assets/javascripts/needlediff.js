@@ -314,43 +314,48 @@ NeedleDiff.shapecolor = function (type) {
   return 'pink';
 };
 
-function setDiffScreenshot(screenshotSrc) {
-  $('<img src="' + screenshotSrc + '">').on('load', function () {
-    const image = $(this).get(0);
+function setDiffScreenshot(screenshotSrc, onComplete) {
+  $('<img src="' + screenshotSrc + '">')
+    .on('load', function () {
+      const image = $(this).get(0);
 
-    // set screenshot resolution
-    window.differ = new NeedleDiff('needle_diff', image.width, image.height);
-    window.differ.screenshotImg = image;
-    setNeedle();
+      // set screenshot resolution
+      window.differ = new NeedleDiff('needle_diff', image.width, image.height);
+      window.differ.screenshotImg = image;
+      setNeedle();
 
-    // create gray version of it in off screen canvas
-    const gray_canvas = document.createElement('canvas');
-    gray_canvas.width = image.width;
-    gray_canvas.height = image.height;
+      // create gray version of it in off screen canvas
+      const gray_canvas = document.createElement('canvas');
+      gray_canvas.width = image.width;
+      gray_canvas.height = image.height;
 
-    const gray_context = gray_canvas.getContext('2d');
+      const gray_context = gray_canvas.getContext('2d');
 
-    gray_context.drawImage(image, 0, 0);
-    const imageData = gray_context.getImageData(0, 0, image.width, image.height);
-    const data = imageData.data;
+      gray_context.drawImage(image, 0, 0);
+      const imageData = gray_context.getImageData(0, 0, image.width, image.height);
+      const data = imageData.data;
 
-    for (let i = 0; i < data.length; i += 4) {
-      let brightness = 0.34 * data[i] + 0.5 * data[i + 1] + 0.16 * data[i + 2];
-      brightness *= 0.6;
-      // red
-      data[i] = brightness;
-      // green
-      data[i + 1] = brightness;
-      // blue
-      data[i + 2] = brightness;
-    }
+      for (let i = 0; i < data.length; i += 4) {
+        let brightness = 0.34 * data[i] + 0.5 * data[i + 1] + 0.16 * data[i + 2];
+        brightness *= 0.6;
+        // red
+        data[i] = brightness;
+        // green
+        data[i + 1] = brightness;
+        // blue
+        data[i + 2] = brightness;
+      }
 
-    // overwrite original image
-    gray_context.putImageData(imageData, 0, 0);
-    window.differ.gray_canvas = gray_canvas;
+      // overwrite original image
+      gray_context.putImageData(imageData, 0, 0);
+      window.differ.gray_canvas = gray_canvas;
 
-    window.differ.draw();
-  });
+      window.differ.draw();
+      if (onComplete) onComplete();
+    })
+    .on('error', function () {
+      if (onComplete) onComplete();
+    });
 }
 
 function setNeedle(sel, kind) {
@@ -370,15 +375,13 @@ function setNeedle(sel, kind) {
   }
 
   const currentSelection = $('#needlediff_selector tbody tr.selected');
-  if (sel) {
+  if (sel !== undefined) {
     // set needle for newly selected item
     currentSelection.removeClass('selected');
+    sel = sel ? $(sel) : $([]);
     sel.addClass('selected');
     // update label/button text
-    let label = sel.data('label');
-    if (!label) {
-      label = 'Screenshot';
-    }
+    const label = sel.data('label') || 'Screenshot';
     $('#current_needle_label').text(label);
   } else {
     // set needle for current selection
