@@ -153,7 +153,11 @@ sub wait_for_ajax (%args) {
     my $slept = 0;
     my $msg = $args{msg} ? (': ' . $args{msg}) : '';
 
-    while (!$_DRIVER->execute_script('return window.jQuery && jQuery.active === 0 && !window.runningFetchRequests')) {
+    while (
+        !$_DRIVER->execute_script(
+'return (!window.jQuery || jQuery.active === 0) && (!window.runningFetchRequests || window.runningFetchRequests <= 0)'
+        ))
+    {
         if ($timeout <= 0) {
             #<<< no perltidy
             my $s = 'return `(jQuery: ${window.jQuery && jQuery.active}, fetch: ${window.runningFetchRequests})`'; # uncoverable statement
