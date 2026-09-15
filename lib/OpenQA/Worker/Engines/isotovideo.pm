@@ -6,6 +6,7 @@ package OpenQA::Worker::Engines::isotovideo;
 use Mojo::Base -signatures;
 
 our $CA_DIRS = [qw(/etc/ssl/certs /etc/pki /usr/share/pki /var/lib/ca-certificates)];
+our $BOOT_ID_FILE = '/proc/sys/kernel/random/boot_id';
 use OpenQA::Constants qw(WORKER_SR_DONE WORKER_EC_CACHE_FAILURE WORKER_EC_ASSET_FAILURE WORKER_SR_DIED);
 use OpenQA::JobSettings;
 use OpenQA::Log qw(log_error log_info log_debug log_warning get_channel_handle format_settings);
@@ -543,6 +544,17 @@ sub _construct_isotovideo_cmd ($job_settings, $isotovideo) {
         my $podman_dir = prjdir() . '/cache/podman';
         path($podman_dir)->make_path;
         my $podman_runroot = "$podman_dir/run";
+        # Podman tracks the kernel boot ID in libpod/tmp/alive to detect unhandled reboots;
+        # see checkBootID in https://github.com/containers/podman/blob/main/libpod/runtime_linux.go
+        my $alive_file = "$podman_runroot/libpod/tmp/alive";
+        if (-f $alive_file && -f $BOOT_ID_FILE) {
+            my $cached_id = trim(eval { path($alive_file)->slurp } // '');
+            my $current_id = trim(eval { path($BOOT_ID_FILE)->slurp } // '');
+            if ($cached_id && $current_id && $cached_id ne $current_id) {
+                log_info "Boot ID changed ($cached_id -> $current_id), clearing stale podman runroot $podman_runroot";
+                path($podman_runroot)->remove_tree;
+            }
+        }
         path($podman_runroot)->make_path;
         my $podman_tmp_dir = getcwd() . '/podman_tmp';
         path($podman_tmp_dir)->make_path;
