@@ -1479,11 +1479,9 @@ by this configuration and cloned in any case.
 
 ### Enable automatic database backup
 
-<a id="automatic_database_cleanup"></a>
-
-An optional systemd service, `openqa-dump-db.service`, can be enabled to perform
-daily database backups. This service is triggered by the `openqa-dump-db.timer`.
-To enable automatic database backup, run:
+An optional systemd service, `openqa-dump-db.service`, can be enabled to
+perform daily database backups. This service is triggered by the
+`openqa-dump-db.timer`. To enable automatic database backup, run:
 
 ```sh
 systemctl enable --now openqa-dump-db.timer
@@ -1574,8 +1572,6 @@ Some of these events are very common and may clutter audit database. For this
 reason `job_grab` and `job_done` events are on the blocklist by default.
 
 ## Automatic system upgrades and reboots of openQA hosts
-
-<a id="auto_upgrade"></a>
 
 The distribution package `openQA-auto-update` offers automatic system
 upgrades and reboots of openQA hosts. To use that feature install the package
@@ -1801,8 +1797,6 @@ are using indexes (and not just sequential scans).
 
 ## Filesystem layout
 
-<a id="filesystem"></a>
-
 Tests, needles, assets, results and working directories (a.k.a. "pool
 directories") are located in certain subdirectories within `/var/lib/openqa`.
 This directory is configurable (see
@@ -1943,8 +1937,6 @@ the workers create their own instance directories.
   located in the specified cache directory on the worker host.
 
 ## Automatic installation of the operating systems for openQA machines
-
-<a id="auto_installation_machines"></a>
 
 As a maintainer of an openQA infrastructure running multiple openQA worker
 machines one likely wants to use installation recipes for automatic

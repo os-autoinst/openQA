@@ -419,7 +419,7 @@ setup-hooks: ## Install pre-commit git hooks
 
 # all additional checks not called by prove
 .PHONY: test-checkstyle-standalone
-test-checkstyle-standalone: test-shellcheck test-yaml test-shfmt test-gitlint test-python-static-checks ## Run all style and static analysis checks
+test-checkstyle-standalone: test-shellcheck test-yaml test-shfmt test-gitlint test-python-static-checks test-markdown ## Run all style and static analysis checks
 ifeq ($(CONTAINER_TEST),1)
 test-checkstyle-standalone: test-check-containers
 endif
@@ -450,6 +450,10 @@ test-shfmt: ## Run shfmt on scripts
 
 .PHONY: test-python-static-checks ## Run all static checks on Python scripts
 test-python-static-checks: test-ruff test-python-conventions
+
+.PHONY: test-markdown
+test-markdown: ## Check markdown files for style and consistency
+	@python3 tools/check-markdown.py
 
 .PHONY: test-ruff
 test-ruff: ## Run `ruff format --check` and `ruff check` on Python scripts
