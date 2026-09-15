@@ -365,11 +365,13 @@ sub startup ($self) {
     # api/v1/bugs
     $api_public_r->get('/bugs')->name('apiv1_bugs')->to('bug#list');
     $api_ro->post('/bugs')->name('apiv1_create_bug')->to('bug#create');
-    my $bug_r = $api_ro->any('/bugs/<id:num>');
-    push @api_routes, $bug_r;
-    $bug_r->get('/')->name('apiv1_show_bug')->to('bug#show');
-    $bug_r->put('/')->name('apiv1_put_bug')->to('bug#update');
-    $bug_r->delete('/')->name('apiv1_delete_bug')->to('bug#destroy');
+    my $bug_public_r = $api_public_r->any('/bugs/<id:num>');
+    push @api_routes, $bug_public_r;
+    $bug_public_r->get('/')->name('apiv1_show_bug')->to('bug#show');
+    my $bug_ro = $api_ro->any('/bugs/<id:num>');
+    push @api_routes, $bug_ro;
+    $bug_ro->put('/')->name('apiv1_put_bug')->to('bug#update');
+    $bug_ro->delete('/')->name('apiv1_delete_bug')->to('bug#destroy');
 
     # api/v1/workers
     $api_public_r->get('/workers')->name('apiv1_workers')->to('worker#list');
