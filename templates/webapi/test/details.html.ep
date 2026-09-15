@@ -1,5 +1,11 @@
 <div class="details-filter-toggle">
-    <a href="#" aria-controls="next_previous" class="nav-link" title="Filter">
+    <a href="#" class="nav-link" title="Expand all rows" id="expand-all-rows">
+        <i class="fa-solid fa-expand"></i>
+    </a>
+    <a href="#" class="nav-link" title="Collapse all rows" id="collapse-all-rows">
+        <i class="fa-solid fa-compress"></i>
+    </a>
+    <a href="#" aria-controls="next_previous" class="nav-link" title="Filter" id="details-filter-toggle">
         <i class="fa-solid fa-filter"></i>
     </a>
 </div>
