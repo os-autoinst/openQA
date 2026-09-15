@@ -1652,30 +1652,29 @@ of the shared memory segment according to the formula: page_size * 8</p>
 <p>For openQA you need to set <code>httpsonly = 0</code> as described in
 the TLS/SSL section below, if you do not setup NGINX for SSL.</p>
 <h4 data-number="2.6.2.1" id="rate-limiting"><span class="header-section-number">2.6.2.1</span> Rate limiting</h4>
-<p>The example NGINX configurations include a rate-limiting setup for
-the potentially resource-intensive
-<code>/tests/&lt;testid:num&gt;/details_ajax</code> endpoint to protect
-the web UI from being overwhelmed by too many simultaneous Ajax requests
-(e.g., from automated scripts or heavy browser sessions).</p>
+<p>The example NGINX configurations include rate-limiting settings to
+protect the web UI from being overwhelmed by too many simultaneous
+requests (e.g. from automated scripts or heavy browser sessions).</p>
 <p>This is configured in:</p>
 <ul>
 <li><code>openqa.conf.template</code> via the
-<code>limit_req_zone</code> directive, defining a shared memory zone
-<code>details_ajax_limit</code>.</li>
-<li><code>openqa-endpoints.inc</code> via the matching location block
-applying <code>limit_req</code>.</li>
+<code>limit_req_zone</code> directives, defining shared memory
+zones.</li>
+<li><code>openqa-endpoints.inc</code> via in <code>location</code>
+blocks applying <code>limit_req</code>.</li>
 </ul>
 <h5 data-number="2.6.2.1.1" id="load-balancer-and-reverse-proxy-consideration"><span class="header-section-number">2.6.2.1.1</span> Load balancer and reverse
 proxy consideration</h5>
-<p>If your openQA instance is hosted behind an upstream load balancer or
-an external reverse proxy (like HAProxy, AWS ALB, or Cloudflare),
-NGINX&#39;s <code>$binary_remote_addr</code> will evaluate to the IP address
-of that load balancer instead of the actual client&#39;s IP. This would
-cause all client requests to share the same rate-limiting bucket,
-causing premature HTTP <code>429 Too Many Requests</code> responses.</p>
-<p>To resolve this, make sure the NGINX <code>real_ip</code> module is
-configured in your main NGINX setup to extract the true client IP from
-the <code>X-Forwarded-For</code> header:</p>
+<p>If your openQA instance is hosted behind an upstream load balancer,
+an external reverse proxy (like HAProxy, AWS ALB, or Cloudflare) or
+additional gatekeeper like Anubis, NGINX&#39;s
+<code>$binary_remote_addr</code> will evaluate to the IP address of that
+load balancer instead of the actual client&#39;s IP. This would cause all
+client requests to share the same rate-limiting bucket, causing
+premature HTTP <code>429 Too Many Requests</code> responses.</p>
+<p>To resolve this, make sure the NGINX <a href="https://nginx.org/en/docs/http/ngx_http_realip_module.html"><code>real_ip</code></a>
+module is configured in your main NGINX setup to extract the true client
+IP from the <code>X-Forwarded-For</code> header:</p>
 <pre class="nginx"><code>real_ip_header X-Forwarded-For;
 set_real_ip_from &lt;your-balancer-ip-or-subnet&gt;;</code></pre>
 <h3 data-number="2.6.3" id="tlsssl"><span class="header-section-number">2.6.3</span> TLS/SSL</h3>
