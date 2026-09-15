@@ -456,6 +456,7 @@ sub startup ($self) {
       ->to('job_template#schedules', id => undef);
     $api_public_r->get('job_templates_scheduling/<name:str>')->to('job_template#schedules', name => undef);
     $api_ra->post('job_templates_scheduling/<id:num>')->to('job_template#update', id => undef);
+    $api_public_r->post('job_templates_scheduling/<id:num>/validate')->to('job_template#validate', id => undef);
     # Deprecated experimental aliases for the above routes
     $api_public_r->get('experimental/job_templates_scheduling/<id:num>')->name('apiv1_job_templates_schedules')
       ->to('job_template#schedules', id => undef);
