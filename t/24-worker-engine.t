@@ -676,6 +676,38 @@ subtest '_construct_isotovideo_cmd' => sub {
         is scalar(grep { $_ eq '/nonexistent/dir:/nonexistent/dir:ro' } @cmd), 0, 'ignores non-existent CA directory';
         is scalar(@cmd), 31, 'adds exactly 2 elements for the single CA mount';
     };
+
+    subtest 'clears stale runroot on boot id change' => sub {
+        my $settings = {OS_AUTOINST_GIT_REPO => 'https://github.com/foo/os-autoinst.git'};
+        my $podman_dir = prjdir() . '/cache/podman';
+        my $podman_runroot = "$podman_dir/run";
+        my $alive_file = path("$podman_runroot/libpod/tmp/alive");
+        $alive_file->dirname->make_path;
+        $alive_file->spurt("old-boot-id\n");
+        my $stale_file = path("$podman_runroot/containers/stale.lock");
+        $stale_file->dirname->make_path;
+        $stale_file->spurt('lock');
+
+        my $temp_dir = tempdir;
+        my $boot_id_tmp = $temp_dir->child('boot_id');
+        $boot_id_tmp->spurt("new-boot-id\n");
+        local $OpenQA::Worker::Engines::isotovideo::BOOT_ID_FILE = $boot_id_tmp->to_string;
+
+        OpenQA::Worker::Engines::isotovideo::_construct_isotovideo_cmd($settings, $isotovideo);
+
+        ok !-e $stale_file, 'stale file removed on boot id mismatch';
+        ok -d $podman_runroot, 'runroot recreated';
+
+        $alive_file->dirname->make_path;
+        $alive_file->spurt("new-boot-id\n");
+        my $valid_file = path("$podman_runroot/containers/valid.lock");
+        $valid_file->dirname->make_path;
+        $valid_file->spurt('lock');
+
+        OpenQA::Worker::Engines::isotovideo::_construct_isotovideo_cmd($settings, $isotovideo);
+
+        ok -e $valid_file, 'valid runtime file preserved when boot id matches';
+    };
 };
 
 done_testing();
