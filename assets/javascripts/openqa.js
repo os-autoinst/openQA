@@ -20,7 +20,7 @@ function setupForAll() {
   document.querySelectorAll('[data-bs-toggle="popover"]').forEach(e => new bootstrap.Popover(e, {html: true}));
   document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(e => new bootstrap.Tooltip(e, {html: true}));
 
-  window.jQuery?.ajaxSetup({
+  /* no:style:jquery */ window.jQuery?.ajaxSetup({
     headers: {'X-CSRF-TOKEN': getCSRFToken()}
   });
 }
@@ -72,8 +72,14 @@ function fetchWithCSRF(resource, options) {
 function handleJSONResponseOrThrow(response) {
   return response
     .json()
-    .then(json => ({response, json}))
-    .catch(() => {
+    .then(json => {
+      if (!response.ok) {
+        throw json?.error || `Server returned ${response.status}: ${response.statusText}`;
+      }
+      return {response, json};
+    })
+    .catch(error => {
+      if (typeof error === 'string') throw error;
       throw `Server returned ${response.status}: ${response.statusText}`;
     });
 }
@@ -857,178 +863,40 @@ function updateTimeago() {
   }
 }
 
-if (typeof window !== 'undefined' && window.jQuery) {
-  (function ($) {
-    // jQuery 4.0.0 removed several deprecated APIs. These shims maintain compatibility
-    // with 3rd-party plugins (chosen) that still rely on these methods.
-    // See: https://github.com/jquery/jquery/issues/4884
-    //
-    // NOTE: timeago has been replaced with timeago.js (vanilla JS, no jQuery dependency).
-
-    // $.active: Removed in jQuery 4. Required by Selenium wait_for_ajax in t/lib/OpenQA/SeleniumTest.pm.
-    // Note: Only tracks jQuery $.ajax calls, not fetch(). SeleniumTest.pm checks runningFetchRequests separately.
-    if ($.active === undefined) {
-      $.active = 0;
-      const originalAjax = $.ajax;
-      $.ajax.active = 0; // maintain compatibility for scripts checking $.ajax.active
-      $.ajax = function (url, options) {
-        $.active++;
-        $.ajax.active++;
-        const jqXHR = originalAjax.apply(this, arguments);
-        jqXHR.always(() => {
-          $.active = Math.max(0, $.active - 1);
-          $.ajax.active = Math.max(0, $.ajax.active - 1);
-        });
-        return jqXHR;
-      };
-    }
-
-    // $.trim: Removed in jQuery 4. Used by chosen-js/chosen.jquery.js
-    if ($.trim === undefined) {
-      $.trim = function (str) {
-        return String(str).trim();
-      };
-    }
-
-    // $.isFunction: Removed in jQuery 4. Required by some 3rd-party plugins.
-    if ($.isFunction === undefined) {
-      $.isFunction = function (obj) {
-        return typeof obj === 'function';
-      };
-    }
-
-    // $.isArray: Removed in jQuery 4. Used by chosen-js/chosen.jquery.js
-    if ($.isArray === undefined) {
-      $.isArray = Array.isArray;
-    }
-
-    // $.isPlainObject: Removed in jQuery 4. Used by chosen-js/chosen.jquery.js
-    if ($.isPlainObject === undefined) {
-      $.isPlainObject = function (obj) {
-        return obj !== null && typeof obj === 'object' && Object.getPrototypeOf(obj) === Object.prototype;
-      };
-    }
-
-    // $.isEmptyObject: Removed in jQuery 4. Used by chosen-js/chosen.jquery.js
-    if ($.isEmptyObject === undefined) {
-      $.isEmptyObject = function (obj) {
-        return Object.keys(obj).length === 0;
-      };
-    }
-
-    // $.inArray: Behavior changed in jQuery 4 (now delegates to Array.prototype.indexOf).
-    // Used by chosen-js/chosen.jquery.js. Shim for compatibility.
-    if ($.inArray === undefined) {
-      $.inArray = function (elem, arr, i) {
-        return arr ? Array.prototype.indexOf.call(arr, elem, i) : -1;
-      };
-    }
-
-    // $.fn.timeago: Maintain compatibility with templates using the old jQuery plugin API.
-    if ($.fn.timeago === undefined) {
-      $.fn.timeago = function () {
-        if (typeof timeago !== 'undefined') {
-          this.each(function () {
-            const val = this.getAttribute('datetime') || this.getAttribute('title') || this.textContent;
-            if (!val || val === 'never' || val === 'not yet') return;
-            const date = new Date(val);
-            if (isNaN(date.getTime()) && !/^\d+$/.test(val)) return;
-            if (!this.getAttribute('datetime')) {
-              this.setAttribute('datetime', val);
-            }
-            timeago.render(this);
-          });
+document.addEventListener('click', function (event) {
+  const button = event.target.closest('.copy-badge-btn');
+  if (!button) return;
+  event.preventDefault();
+  const text = button.dataset.clipboardText;
+  if (text) {
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        const icon = button.querySelector('i');
+        if (icon) {
+          icon.classList.remove('fa-image');
+          icon.classList.add('fa-check', 'text-success');
+          setTimeout(() => {
+            icon.classList.remove('fa-check', 'text-success');
+            icon.classList.add('fa-image');
+          }, 2000);
         }
-        return this;
-      };
-    }
-
-    // Bootstrap 5 jQuery integration might fail with jQuery 4. Add shims if needed.
-    if (typeof bootstrap !== 'undefined') {
-      if ($.fn.popover === undefined && bootstrap.Popover) {
-        $.fn.popover = function (options) {
-          return this.each(function () {
-            new bootstrap.Popover(this, options);
-          });
-        };
-      }
-      if ($.fn.tooltip === undefined && bootstrap.Tooltip) {
-        $.fn.tooltip = function (options) {
-          return this.each(function () {
-            new bootstrap.Tooltip(this, options);
-          });
-        };
-      }
-    }
-
-    document.addEventListener('click', function (event) {
-      const button = event.target.closest('.copy-badge-btn');
-      if (!button) return;
-      event.preventDefault();
-      const text = button.dataset.clipboardText;
-      if (text) {
-        navigator.clipboard
-          .writeText(text)
-          .then(() => {
-            const icon = button.querySelector('i');
-            if (icon) {
-              icon.classList.remove('fa-image');
-              icon.classList.add('fa-check', 'text-success');
-              setTimeout(() => {
-                icon.classList.remove('fa-check', 'text-success');
-                icon.classList.add('fa-image');
-              }, 2000);
-            }
-            const tooltip = bootstrap.Tooltip.getInstance(button);
-            if (tooltip) {
-              const originalTitle = button.getAttribute('data-bs-original-title') || button.getAttribute('title');
-              tooltip.setContent({'.tooltip-inner': 'Copied!'});
-              tooltip.show();
-              setTimeout(() => {
-                tooltip.setContent({'.tooltip-inner': originalTitle});
-                tooltip.hide();
-              }, 2000);
-            }
-          })
-          .catch(err => {
-            console.error('Failed to copy text: ', err);
-          });
-      }
-    });
-  })(window.jQuery);
-
-  $(document).ready(function () {
-    updateTimeago();
-    setTimeout(function () {
-      const $dropdownToggle = $('.dropdown-menu a.dropdown-toggle');
-      if ($dropdownToggle.length) {
-        $dropdownToggle.off('click');
-        $dropdownToggle.on('click', function (e) {
-          const $el = $(this);
-          const $parent = $(this).offsetParent('.dropdown-menu');
-          if (!$(this).next().hasClass('show')) {
-            $(this).parents('.dropdown-menu').first().find('.show').removeClass('show');
-          }
-          const $subMenu = $(this).next('.dropdown-menu');
-          $subMenu.toggleClass('show');
-          $(this).parent('li').toggleClass('show');
-
-          if (!$parent.parent().hasClass('navbar-nav')) {
-            $el.next().css({top: $el[0].offsetTop + 'px', left: $parent.outerWidth() - 4 + 'px'});
-          }
-
-          return false;
-        });
-      }
-
-      const $dropdown = $('.nav-item.dropdown');
-      $dropdown.off('hidden.bs.dropdown');
-      $dropdown.on('hidden.bs.dropdown', function (e) {
-        $(this).find('.dropdown-menu .show').removeClass('show');
+        const tooltip = bootstrap.Tooltip.getInstance(button);
+        if (tooltip) {
+          const originalTitle = button.getAttribute('data-bs-original-title') || button.getAttribute('title');
+          tooltip.setContent({'.tooltip-inner': 'Copied!'});
+          tooltip.show();
+          setTimeout(() => {
+            tooltip.setContent({'.tooltip-inner': originalTitle});
+            tooltip.hide();
+          }, 2000);
+        }
+      })
+      .catch(err => {
+        console.error('Failed to copy text: ', err);
       });
-    }, 0);
-  });
-}
+  }
+});
 
 function handleRemote(element) {
   const method = (element.getAttribute('data-method') || 'GET').toUpperCase();
