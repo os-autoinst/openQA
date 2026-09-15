@@ -175,6 +175,10 @@ sub default_config () {
             allow_arbitrary_url_fetch => 'no',
             temp_needle_refs_retention => 120,
         },
+        needles => {
+            validation => 'disabled',
+            validation_rules => 'timestamp,workaround_bugref,single_click_area',
+        },
         scheduler => {
             max_job_scheduled_time => 7,
             dynamic_job_limit_enabled => 0,

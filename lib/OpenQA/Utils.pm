@@ -87,6 +87,7 @@ BEGIN {
 }
 
 use constant UNCONSTRAINED_BUGREF_REGEX => $BUGREF_REGEX;
+use constant BUG_TRACKER_MARKERS => $MARKER_REFS;
 use constant BUGREF_REGEX => qr{(?:^|$AFTER_TAG_LOOKBEHIND|(?<=\s|,))$BUGREF_REGEX(?![\w\"])};
 use constant LABEL_REGEX => qr/\blabel:(?<match>([\w:#\/-]+))\b/;
 use constant FLAG_REGEX => qr/\bflag:(?<match>([\w:#]+))\b/;
@@ -98,6 +99,7 @@ use constant DEFAULT_OPENQA_BASE_PORT => 9526;
 our @EXPORT =    ## no critic (Modules::ProhibitAutomaticExportation)
   qw(
   UNCONSTRAINED_BUGREF_REGEX
+  BUG_TRACKER_MARKERS
   BUGREF_REGEX
   LABEL_REGEX
   FLAG_REGEX
