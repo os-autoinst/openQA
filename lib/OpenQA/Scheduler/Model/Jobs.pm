@@ -30,7 +30,10 @@ has shuffle_workers => 1;
 has dynamic_limit => sub { OpenQA::Scheduler::DynamicLimit->new };
 
 sub determine_online_workers ($shuffle = 0) {
-    my @online_workers = grep { !$_->dead } OpenQA::Schema->singleton->resultset('Workers')->search(
+    my $workers = OpenQA::Schema->singleton->resultset('Workers');
+    # reserved workers stay online but are taken out of the scheduling rotation
+    my $reserved = $workers->reserved_worker_ids;
+    my @online_workers = grep { !$_->dead && !$reserved->{$_->id} } $workers->search(
         {
             error => undef,
             'properties.key' => 'WEBSOCKET_API_VERSION',

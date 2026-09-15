@@ -14,7 +14,9 @@ use Test::Output qw(combined_like);
 use Mojo::URL;
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::Test::Case;
+use OpenQA::Test::Client 'client';
 use OpenQA::Test::Utils 'embed_server_for_testing';
+use OpenQA::WorkerReservation 'RESERVATION_PROPERTIES';
 use OpenQA::Client;
 use OpenQA::WebSockets::Client;
 use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT DB_TIMESTAMP_ACCURACY WEBSOCKET_API_VERSION);
@@ -331,6 +333,79 @@ subtest 'delete offline worker' => sub {
 
     $t->delete_ok('/api/v1/workers/99')->status_is(404, 'worker not found');
     $t->delete_ok('/api/v1/workers/1')->status_is(400, 'deleting online worker prevented');
+};
+
+subtest 'worker reservation API' => sub {
+    # $t authenticates as percival, an operator without admin rights, via the default test API key
+    my $users = $schema->resultset('Users');
+    my ($admin, $operator) = map { $users->find($_) } 99901, 99903;
+    my $other_operator = $users->create(
+        {
+            username => 'galahad',
+            is_operator => 1,
+            feature_version => 0,
+            api_keys => [{key => 'GALAHADKEY01', secret => 'GALAHADSECRET01'}]});
+    my $t_admin = client(Test::Mojo->new($t->app), apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR');
+    my $t_non_op = client(Test::Mojo->new($t->app), apikey => 'LANCELOTKEY01', apisecret => 'MANYPEOPLEKNOW');
+    my $t_other_op = client(Test::Mojo->new($t->app), apikey => 'GALAHADKEY01', apisecret => 'GALAHADSECRET01');
+
+    my $worker = $workers->find(2);
+    $worker->delete_properties([RESERVATION_PROPERTIES]);
+    my $reservation_url = '/api/v1/workers/2/reservation';
+
+    $t_non_op->post_ok($reservation_url, form => {comment => 'non-op attempt', duration => '1h'})
+      ->status_is(403, 'reserve attempt by non-operator users is refused by the route guard');
+    $t->post_ok('/api/v1/workers/99/reservation', form => {comment => 'ghost', duration => '1h'})
+      ->status_is(404, 'reserve attempt on an unknown worker is refused with 404');
+    $t->delete_ok('/api/v1/workers/99/reservation')
+      ->status_is(404, 'release attempt on an unknown worker is refused with 404');
+    $t->delete_ok($reservation_url)->status_is(400, 'release attempt on an unreserved worker is refused with 400');
+    $t->post_ok($reservation_url, form => {comment => 'op reservation', duration => 'soon'})
+      ->status_is(400, 'reserve attempt with an unparsable duration is refused with 400')
+      ->json_like('/error' => qr/Invalid duration format/);
+
+    $t->post_ok($reservation_url, form => {comment => 'op reservation', duration => '2h'})
+      ->status_is(200, 'reserve attempt by operator users is allowed with 200')
+      ->json_is('/reservation/comment' => 'op reservation')->json_is('/reservation/user' => $operator->username);
+    is_deeply OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'worker_reserve'),
+      {
+        id => 2,
+        name => $worker->name,
+        user => $operator->username,
+        comment => 'op reservation',
+        expires => $worker->reservation->{t_expires},
+      },
+      'reservation is logged in the audit table with the expected fields';
+
+    $t->post_ok($reservation_url, form => {comment => 'another', duration => '1h'})
+      ->status_is(409, 'reserve attempt on an already reserved worker is refused with 409');
+    $t_other_op->delete_ok($reservation_url)
+      ->status_is(403, 'release attempt by an operator other than the owner is refused with 403');
+
+    $t->delete_ok($reservation_url)->status_is(200, 'release attempt by the reservation owner is allowed with 200');
+    is_deeply OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'worker_release'),
+      {id => 2, name => $worker->name, user => $operator->username},
+      'release is logged in the audit table with the expected fields';
+
+    $t->post_ok($reservation_url, form => {comment => 'op again', duration => '1h'})->status_is(200);
+    $t_admin->post_ok($reservation_url, form => {comment => 'admin override', duration => '2h', force => 1})
+      ->status_is(200, 'admin force override on an existing reservation is allowed with 200')
+      ->json_is('/reservation/comment' => 'admin override')->json_is('/reservation/user' => $admin->username);
+
+    $t->get_ok('/api/v1/workers?reserved=1')->status_is(200, 'list only reserved workers when reserved filter is 1')
+      ->json_is('/workers/0/id' => 2)->json_has('/workers/0/reservation')->json_hasnt('/workers/1');
+    $t->get_ok('/api/v1/workers?reserved=0')->status_is(200, 'list only unreserved workers when reserved filter is 0')
+      ->json_is('/workers/0/id' => 1)->json_hasnt('/workers/0/reservation');
+
+    $worker->update(
+        {t_seen => time2str('%Y-%m-%d %H:%M:%S', time - DEFAULT_WORKER_TIMEOUT - DB_TIMESTAMP_ACCURACY, 'UTC')});
+    $t_admin->delete_ok('/api/v1/workers/2')
+      ->status_is(400, 'refuse deletion attempts of reserved workers even if they are dead')
+      ->json_is('/error' => 'Cannot delete a reserved worker.');
+    $t_admin->delete_ok('/api/v1/workers/2?force=1')
+      ->status_is(200, 'admins can force the deletion of a reserved worker');
+    is $workers->find(2), undef, 'forcibly deleted reserved worker is gone';
+    $other_operator->delete;
 };
 
 done_testing();
