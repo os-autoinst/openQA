@@ -14,7 +14,10 @@ use OpenQA::Test::Database;
 use Test::Output 'combined_like';
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
+use Mojo::Base -signatures;
 use Mojo::Log;
+use Mojo::Util qw(scope_guard);
+use OpenQA::Constants qw(WEBSOCKET_API_VERSION);
 use OpenQA::Jobs::Constants;
 use OpenQA::Test::TimeLimit '10';
 use Test::MockModule;
@@ -132,6 +135,134 @@ subtest 'scheduling reason when workers are busy' => sub {
     my $online_workers = OpenQA::Scheduler::Model::Jobs::determine_online_workers();
     my $temp_matching = OpenQA::Scheduler::Model::Jobs::_matching_workers($jobinfo, $online_workers);
     is_deeply $temp_matching, \@mocked_free_workers, 'matching workers found without optional parameters';
+};
+
+sub _create_workers_with_limit () {
+    my $w1 = $workers->create(
+        {
+            host => 'worker1',
+            instance => 1,
+            properties => [{key => 'WEBSOCKET_API_VERSION', value => WEBSOCKET_API_VERSION}],
+        });
+    $w1->set_property(WORKER_CLASS => 'foo,bar:limit=1');
+
+    my $w2 = $workers->create(
+        {
+            host => 'worker2',
+            instance => 2,
+            properties => [{key => 'WEBSOCKET_API_VERSION', value => WEBSOCKET_API_VERSION}],
+        });
+    $w2->set_property(WORKER_CLASS => 'foo,bar:limit=1');
+
+    return ($w1, $w2);
+}
+
+sub _cleanup () {
+    # Clean up previous mocked data
+    $jobs->delete_all;
+    $workers->delete_all;
+
+    # Clear cached scheduled jobs
+    OpenQA::Scheduler::Model::Jobs->singleton->scheduled_jobs({});
+}
+
+subtest 'worker class parallel limits' => sub {
+    $schema->txn_begin;
+    my $rollback = scope_guard sub { $schema->txn_rollback };
+    _cleanup();
+    my ($w1, $w2) = _create_workers_with_limit();
+
+    # Check check_class parsing
+    ok $w1->check_class('foo'), 'worker matches class foo even with limit suffix';
+    ok $w1->check_class('bar'), 'worker matches class bar even with limit suffix';
+    ok !$w1->check_class('baz'), 'worker does not match class baz';
+
+    # Setup mocked jobs for scheduler
+    my %test_mocked_jobs = (
+        4 => {
+            id => 4,
+            test => 'test-job-4',
+            priority => 20,
+            state => SCHEDULED,
+            worker_classes => ['foo'],
+            cluster_jobs => {4 => {directly_chained_children => []}},
+        },
+        5 => {
+            id => 5,
+            test => 'test-job-5',
+            priority => 21,
+            state => SCHEDULED,
+            worker_classes => ['foo'],
+            cluster_jobs => {5 => {directly_chained_children => []}},
+        },
+    );
+
+    # Create corresponding DB entries for these scheduled jobs
+    my $j4 = $jobs->create({id => 4, state => SCHEDULED, TEST => 'test-job-4'});
+    $j4->settings->create({key => 'WORKER_CLASS', value => 'foo'});
+
+    my $j5 = $jobs->create({id => 5, state => SCHEDULED, TEST => 'test-job-5'});
+    $j5->settings->create({key => 'WORKER_CLASS', value => 'foo'});
+
+    my @test_online_workers = ($w1, $w2);
+    $mock->redefine(determine_online_workers => sub { \@test_online_workers });
+    $mock->redefine(determine_scheduled_jobs => sub { shift->scheduled_jobs(\%test_mocked_jobs); \%test_mocked_jobs });
+
+    # Explicitly set the scheduled_jobs cache
+    OpenQA::Scheduler::Model::Jobs->singleton->scheduled_jobs(\%test_mocked_jobs);
+
+    # Run scheduler
+    my ($allocated_workers, $allocated_jobs);
+    combined_like {
+        ($allocated_workers, $allocated_jobs) = OpenQA::Scheduler::Model::Jobs->singleton->_allocate_jobs();
+    }
+    qr/Need to schedule 1 parallel jobs for job 4.*Need to schedule 1 parallel jobs for job 5/s,
+      'logging parallel jobs for job 4 and 5';
+
+    # Only 1 job of class foo should be allocated because both workers share the limit for bar:limit=1
+    is scalar(keys %$allocated_jobs), 1, 'Only one job is allocated due to bar:limit=1';
+    is $test_mocked_jobs{5}->{current_reason}, 'class limit reached (bar limit is 1)',
+      'correct current reason for limit failure';
+};
+
+subtest 'worker class parallel limits coverage' => sub {
+    $schema->txn_begin;
+    my $rollback = scope_guard sub { $schema->txn_rollback };
+    _cleanup();
+    my ($w1, $w2) = _create_workers_with_limit();
+
+    # Create an executing (running) job assigned to w1, and mark w1 as busy
+    my $j3 = $jobs->create({id => 3, state => RUNNING, TEST => 'test-job-running', assigned_worker_id => $w1->id});
+    $w1->update({job_id => 3});
+
+    # Setup mocked jobs for scheduler: Job 4 is part of a cluster with Job 3
+    my %test_mocked_jobs = (
+        4 => {
+            id => 4,
+            test => 'test-job-4',
+            priority => 20,
+            state => SCHEDULED,
+            worker_classes => ['foo'],
+            cluster_jobs => {3 => {directly_chained_children => []}, 4 => {directly_chained_children => []}},
+        },
+    );
+
+    # Create corresponding DB entries for these scheduled jobs
+    my $j4 = $jobs->create({id => 4, state => SCHEDULED, TEST => 'test-job-4'});
+    $j4->settings->create({key => 'WORKER_CLASS', value => 'foo'});
+
+    my @test_online_workers = ($w1, $w2);
+    $mock->redefine(determine_online_workers => sub { \@test_online_workers });
+    $mock->redefine(determine_scheduled_jobs => sub { shift->scheduled_jobs(\%test_mocked_jobs); \%test_mocked_jobs });
+
+    # Explicitly set the scheduled_jobs cache
+    OpenQA::Scheduler::Model::Jobs->singleton->scheduled_jobs(\%test_mocked_jobs);
+
+    # Run scheduler
+    my ($allocated_workers, $allocated_jobs) = OpenQA::Scheduler::Model::Jobs->singleton->_allocate_jobs();
+
+    # Check that Job 4 was successfully allocated via sibling allocation
+    ok exists $allocated_jobs->{4}, 'Job 4 allocated via sibling of running Job 3';
 };
 
 done_testing();
