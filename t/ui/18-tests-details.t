@@ -1010,5 +1010,33 @@ subtest 'strict scenario toggle on investigation tab' => sub {
     ok $toggle->is_selected, 'strict scenario checkbox is checked';
 };
 
+subtest 'render log links from steps when viewing via route to latest' => sub {
+    $jobs->find(99982)->delete;
+    $jobs->find(99947)->delete;
+    $driver->get('/tests/latest?test=textmode&machine=32bit');
+    wait_for_ajax(msg => 'test latest loaded');
+    $driver->find_element_by_link_text('Details')->click();
+    wait_for_ajax(msg => 'details tab loaded');
+
+    my $step = 1;
+    $driver->find_element(qq{[href="#step/bootloader/$step"]})->click();
+    wait_for_ajax(msg => "step $step of bootloader test module loaded");
+    my @log_link_elems
+      = $driver->find_elements(q{//span[contains(@class, 'step_actions')]//i[contains(@class, 'fa-file-lines')]/../..},
+        'xpath');
+    my $link = $log_link_elems[0];
+    is $link->get_attribute('title'), 'Jump to logfile', 'log link exists';
+    like $link->get_attribute('href'),
+      qr{/tests/99946/logfile\?filename=autoinst-log\.txt&filter=.*step.*installation.*bootloader.*$step.*sl=1},
+      'log href points to 99946 instead of latest';
+
+    $link->click;
+    wait_for_ajax msg => 'log contents';
+    like $driver->find_element('.embedded-logfile')->get_text,
+      qr/ \[step:installation,bootloader,$step\].* called /, 'log file view loaded successfully';
+    $driver->get('/tests/99946');
+    wait_for_ajax(msg => 'test 99946 loaded');
+};
+
 kill_driver();
 done_testing();
