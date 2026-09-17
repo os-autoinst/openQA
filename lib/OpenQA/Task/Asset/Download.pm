@@ -80,7 +80,7 @@ sub _download ($job, $url, $assetpaths, $do_extract) {
     my $options = {
         extract => $do_extract,
         on_success => sub {
-            chmod 0644, $assetpath;
+            -d $assetpath ? chmod 0755, $assetpath : chmod 0644, $assetpath;
             $ctx->debug(qq{Download of "$assetpath" successful});
         }
     };

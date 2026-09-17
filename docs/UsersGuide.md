@@ -1456,6 +1456,7 @@ The following job settings are specifying that an asset is required by a job:
 - `HDD_n` (type `hdd`)
 - `UEFI_PFLASH_CODE` (type `hdd`) (in some cases, see below)
 - `UEFI_PFLASH_VARS` (type `hdd`) (in some cases, see below)
+- `REPO` (type `repo`)
 - `REPO_n` (type `repo`)
 - `ASSET_n` (type `other`)
 - `KERNEL` (type `other`)
@@ -1492,6 +1493,7 @@ of the openQA web-UI from trusted domains specified in
 For example `ISO_1_URL=http://trusted.com/foo.iso` would, if `trusted.com` is set as a trusted domain, cause openQA to download the file `foo.iso` to
 `/var/lib/openqa/share/factory/iso` and set `ISO_1=foo.iso`. If you set both
 `ISO_1` and `ISO_1_URL`, the file pointed to by `ISO_1_URL` will be downloaded and renamed to the name set as `ISO_1`.
+Similarly, repository assets can be specified via `REPO_1_URL=http://trusted.com/repos/standard/` or `REPO_1_URL=rsync://trusted.com/repos/standard/` which will download or sync the repository into `/var/lib/openqa/share/factory/repo/standard` (using `wget` for HTTP/HTTPS/FTP or `rsync` for `rsync://` URLs) and set `REPO_1=standard`.
 
 \_DECOMPRESS_URL
 Specify a compressed asset to be downloaded that will be uncompressed by openQA.
