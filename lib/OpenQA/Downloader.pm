@@ -79,6 +79,34 @@ sub _download_repo ($self, $url, $target, $options) {
         my $rsync_url = $url =~ m{/$} ? $url : "$url/";
         my @cmd = (qw(rsync -avH --delete));
         push @cmd, map { ('--exclude', $_) } @excludes;
+
+        my $link_dest = $options->{link_dest};
+        my $link_dest_path;
+        if ($link_dest) {
+            for my $cand (path($target_dir, 'fixed', $link_dest), path($target_dir, $link_dest), path($link_dest)) {
+                if (-d $cand) {
+                    $link_dest_path = $cand->to_string;
+                    last;
+                }
+            }
+        }
+        else {
+            my ($prefix) = $name =~ m/^(.*?)(?:-(?:Build|Snapshot)?\d.*)?$/;
+            for my $cand (
+                path($target_dir, 'fixed', "${name}-CURRENT"),
+                path($target_dir, 'fixed', $name),
+                ($prefix ? path($target_dir, 'fixed', "${prefix}-CURRENT") : ()),
+                ($prefix ? path($target_dir, "${prefix}-CURRENT") : ()),
+              )
+            {
+                if (-d $cand) {
+                    $link_dest_path = $cand->to_string;
+                    last;
+                }
+            }
+        }
+        push @cmd, "--link-dest=$link_dest_path" if $link_dest_path;
+
         push @cmd, $rsync_url, $tmp_target->to_string . '/';
         $res = OpenQA::Utils::run_cmd_with_log_return_error(\@cmd);
     }

@@ -575,6 +575,8 @@ sub create_downloads_list ($job_settings) {
             if ($assettype eq 'repo') {
                 my $exclude = $job_settings->{"${short}_EXCLUDE"} // $job_settings->{REPO_EXCLUDE};
                 $options{exclude} = $exclude if defined $exclude && length $exclude;
+                my $link_dest = $job_settings->{"${short}_LINK_DEST"} // $job_settings->{REPO_LINK_DEST};
+                $options{link_dest} = $link_dest if defined $link_dest && length $link_dest;
             }
             $downloads{$url} = %options ? [$fullpath, $do_extract, \%options] : [$fullpath, $do_extract];
         }
