@@ -218,10 +218,11 @@ subtest 'Repository download with rsync command execution' => sub {
             path($tmp_dest, 'repodata')->make_path->child('repomd.xml')->spurt('<repomd/>');
             return {status => 1, return_code => 0, exit_status => 0, stdout => '', stderr => ''};
         });
-    is $downloader->download($from, $repo_dir), undef, 'rsync download succeeds';
+    is $downloader->download($from, $repo_dir, {exclude => '*.src.rpm,*-debuginfo*'}), undef, 'rsync download succeeds';
     ok -d $repo_dir, 'Repository directory created';
     ok -e $repo_dir->child('repodata', 'repomd.xml'), 'Repomd file exists in repo directory';
-    is_deeply [splice @$called_cmd, 0, 3], [qw(rsync -avH --delete)], 'rsync command invoked correctly';
+    is_deeply [splice @$called_cmd, 0, 7], [qw(rsync -avH --delete --exclude *.src.rpm --exclude *-debuginfo*)],
+      'rsync command invoked correctly with excludes';
     $cache_log = '';
 };
 
@@ -237,10 +238,12 @@ subtest 'Repository download with wget command execution' => sub {
             path($tmp_dest, 'repodata')->make_path->child('repomd.xml')->spurt('<repomd/>');
             return {status => 1, return_code => 0, exit_status => 0, stdout => '', stderr => ''};
         });
-    is $downloader->download($from, $repo_dir), undef, 'wget download succeeds';
+    is $downloader->download($from, $repo_dir, {exclude => '*.src.rpm,subdir/'}), undef, 'wget download succeeds';
     ok -d $repo_dir, 'Repository directory created';
     ok -e $repo_dir->child('repodata', 'repomd.xml'), 'Repomd file exists in repo directory';
     is $called_cmd->[4], '--cut-dirs=3', 'cut-dirs calculated correctly';
+    ok + (grep { $_ eq '--reject' } @$called_cmd), 'reject flag passed for file pattern';
+    ok + (grep { $_ eq '--exclude-directories' } @$called_cmd), 'exclude-directories flag passed for dir pattern';
     $cache_log = '';
 };
 

@@ -68,20 +68,28 @@ sub _download_repo ($self, $url, $target, $options) {
     try { $tmp_target->make_path }
     catch ($e) { return (undef, "Unable to create temporary directory $tmp_target: $e") }    # uncoverable statement
 
+    my @excludes;
+    if (my $ex = $options->{exclude}) {
+        @excludes = ref $ex eq 'ARRAY' ? @$ex : split /[\s,]+/, $ex;
+        @excludes = grep { length } @excludes;
+    }
+
     my $res;
     if ($scheme eq 'rsync') {
         my $rsync_url = $url =~ m{/$} ? $url : "$url/";
-        my @cmd = (qw(rsync -avH --delete), $rsync_url, $tmp_target->to_string . '/');
+        my @cmd = (qw(rsync -avH --delete));
+        push @cmd, map { ('--exclude', $_) } @excludes;
+        push @cmd, $rsync_url, $tmp_target->to_string . '/';
         $res = OpenQA::Utils::run_cmd_with_log_return_error(\@cmd);
     }
     elsif ($scheme =~ /^https?|ftp$/) {
         my $http_url = $url =~ m{/$} ? $url : "$url/";
         my $cut_dirs = scalar @{$url_obj->path->parts};
-        my @cmd = (
-            qw(wget -m -np -nH),
-            "--cut-dirs=$cut_dirs", qw(--reject index.html* -P),
-            $tmp_target->to_string, $http_url
-        );
+        my @cmd = (qw(wget -m -np -nH), "--cut-dirs=$cut_dirs", qw(--reject index.html*),);
+        for my $pattern (@excludes) {
+            push @cmd, $pattern =~ m{/} ? ('--exclude-directories', $pattern) : ('--reject', $pattern);
+        }
+        push @cmd, '-P', $tmp_target->to_string, $http_url;
         $res = OpenQA::Utils::run_cmd_with_log_return_error(\@cmd);
     }
     else {

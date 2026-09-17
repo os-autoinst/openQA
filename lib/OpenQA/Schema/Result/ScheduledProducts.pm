@@ -302,7 +302,7 @@ sub _create_jobs_in_database ($self, $jobs, $failed_job_info, $skip_chained_deps
     my %downloads = map {
         $_ => [
             [keys %{$tmp_downloads{$_}->{destination}}], $tmp_downloads{$_}->{do_extract},
-            $tmp_downloads{$_}->{blocked_job_id}]
+            $tmp_downloads{$_}->{blocked_job_id}, $tmp_downloads{$_}->{options}]
     } keys %tmp_downloads;
     my $gru = OpenQA::App->singleton->gru;
     $gru->enqueue_download_jobs(\%downloads, $minion_ids);
@@ -753,6 +753,7 @@ sub _create_download_lists ($self, $tmp_downloads, $download_list, $job_id) {
             $tmp_downloads->{$url} = {
                 destination => {$destination_path => 1},
                 do_extract => $download_parameters->[1],
+                options => $download_parameters->[2] // {},
                 blocked_job_id => [$job_id]};
             next;
         }

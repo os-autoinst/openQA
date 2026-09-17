@@ -565,6 +565,10 @@ subtest 'create downloads list' => sub {
     is_deeply create_downloads_list({REPO_1_URL => 'http://example.com/repo', REPO_1 => 'repo'}),
       {'http://example.com/repo' => ['foo/bar', '0']},
       'valid download for REPO_1_URL';
+    is_deeply create_downloads_list(
+        {REPO_1_URL => 'http://example.com/repo', REPO_1 => 'repo', REPO_1_EXCLUDE => '*.src.rpm,*-debuginfo*'}),
+      {'http://example.com/repo' => ['foo/bar', '0', {exclude => '*.src.rpm,*-debuginfo*'}]},
+      'valid download for REPO_1_URL with exclude';
     is_deeply create_downloads_list({REPO_URL => 'http://example.com/repo', REPO => 'repo'}),
       {'http://example.com/repo' => ['foo/bar', '0']},
       'valid download for REPO_URL';

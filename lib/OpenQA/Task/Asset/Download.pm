@@ -25,7 +25,8 @@ sub _create_symlinks ($job, $ctx, $assetpath, $other_destinations) {
     return undef;
 }
 
-sub _download ($job, $url, $assetpaths, $do_extract) {
+sub _download ($job, $url, $assetpaths, $do_extract, $options = {}) {
+    $options //= {};
     my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($job);
     my $app = $job->app;
     my $job_id = $job->id;
@@ -77,7 +78,8 @@ sub _download ($job, $url, $assetpaths, $do_extract) {
     else { $ctx->debug(qq{Downloading "$url" to "$assetpath"}) }
 
     my $downloader = OpenQA::Downloader->new(log => $ctx, tmpdir => $ENV{MOJO_TMPDIR});
-    my $options = {
+    my $dl_options = {
+        %$options,
         extract => $do_extract,
         on_success => sub {
             -d $assetpath ? chmod 0755, $assetpath : chmod 0644, $assetpath;
@@ -85,7 +87,7 @@ sub _download ($job, $url, $assetpaths, $do_extract) {
         }
     };
     return _create_symlinks($job, $ctx, $assetpath, \@other_destinations)
-      unless my $err = $downloader->download($url, $assetpath, $options);
+      unless my $err = $downloader->download($url, $assetpath, $dl_options);
     my $res = $downloader->res;
     $ctx->error(my $msg = qq{Downloading "$url" failed with: $err});
     return !$err && $res && $res->is_success ? $job->finish($msg) : $job->user_fail($msg);

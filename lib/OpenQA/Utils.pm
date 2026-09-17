@@ -571,7 +571,12 @@ sub create_downloads_list ($job_settings) {
         unless ($exists) {
             # if the file doesn't exist, add the url/target path and extraction
             # flag as a key/value pair to the %downloads hash
-            $downloads{$url} = [$fullpath, $do_extract];
+            my %options;
+            if ($assettype eq 'repo') {
+                my $exclude = $job_settings->{"${short}_EXCLUDE"} // $job_settings->{REPO_EXCLUDE};
+                $options{exclude} = $exclude if defined $exclude && length $exclude;
+            }
+            $downloads{$url} = %options ? [$fullpath, $do_extract, \%options] : [$fullpath, $do_extract];
         }
     }
     return \%downloads;
