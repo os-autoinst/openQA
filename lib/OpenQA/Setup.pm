@@ -17,7 +17,7 @@ use Time::HiRes 'gettimeofday';
 use Time::Seconds;
 use Scalar::Util 'looks_like_number';
 use List::Util qw(any max);
-use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT MAX_TIMER);
+use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT DEFAULT_DOWNLOAD_REPO_TIMEOUT MAX_TIMER);
 use OpenQA::JobGroupDefaults;
 use OpenQA::Jobs::Constants qw(OK_RESULTS);
 use OpenQA::Scheduler::DynamicLimit;
@@ -121,6 +121,7 @@ sub default_config () {
             branding => 'openSUSE',
             privacy_policy_url => 'https://github.com/os-autoinst/openQA/blob/master/docs/PrivacyPolicy.md',
             download_domains => undef,
+            download_repo_timeout => DEFAULT_DOWNLOAD_REPO_TIMEOUT,
             rsync_password_file => undef,
             suse_mirror => undef,
             # deprecated alternate for git_auto_commit below

@@ -577,6 +577,8 @@ sub create_downloads_list ($job_settings) {
                 $options{exclude} = $exclude if defined $exclude && length $exclude;
                 my $link_dest = $job_settings->{"${short}_LINK_DEST"} // $job_settings->{REPO_LINK_DEST};
                 $options{link_dest} = $link_dest if defined $link_dest && length $link_dest;
+                my $timeout = $job_settings->{"${short}_TIMEOUT"} // $job_settings->{REPO_TIMEOUT};
+                $options{timeout} = int $timeout if defined $timeout && $timeout =~ /^\d+$/ && $timeout > 0;
             }
             $downloads{$url} = %options ? [$fullpath, $do_extract, \%options] : [$fullpath, $do_extract];
         }

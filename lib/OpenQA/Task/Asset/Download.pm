@@ -3,6 +3,7 @@
 
 package OpenQA::Task::Asset::Download;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
+use OpenQA::Constants qw(DEFAULT_DOWNLOAD_REPO_TIMEOUT);
 use OpenQA::Task::SignalGuard;
 use OpenQA::Utils qw(check_download_url);
 use OpenQA::Downloader;
@@ -81,6 +82,7 @@ sub _download ($job, $url, $assetpaths, $do_extract, $options = {}) {
         log => $ctx,
         tmpdir => $ENV{MOJO_TMPDIR},
         rsync_password_file => $app->config->{global}->{rsync_password_file},
+        repo_timeout => $app->config->{global}->{download_repo_timeout} // DEFAULT_DOWNLOAD_REPO_TIMEOUT,
     );
     my $dl_options = {
         %$options,

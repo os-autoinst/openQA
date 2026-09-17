@@ -10,6 +10,7 @@ use utf8;
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 
+use OpenQA::Constants qw(DEFAULT_DOWNLOAD_REPO_TIMEOUT);
 use OpenQA::Downloader;
 use Mojo::Server::Daemon;
 use Mojo::Log;
@@ -218,11 +219,13 @@ subtest 'Repository download with rsync command execution' => sub {
             path($tmp_dest, 'repodata')->make_path->child('repomd.xml')->spurt('<repomd/>');
             return {status => 1, return_code => 0, exit_status => 0, stdout => '', stderr => ''};
         });
-    is $downloader->download($from, $repo_dir, {exclude => '*.src.rpm,*-debuginfo*'}), undef, 'rsync download succeeds';
+    is $downloader->download($from, $repo_dir, {exclude => '*.src.rpm,*-debuginfo*', timeout => 1800}), undef,
+      'rsync download succeeds';
     ok -d $repo_dir, 'Repository directory created';
     ok -e $repo_dir->child('repodata', 'repomd.xml'), 'Repomd file exists in repo directory';
-    is_deeply [splice @$called_cmd, 0, 7], [qw(rsync -avH --delete --exclude *.src.rpm --exclude *-debuginfo*)],
-      'rsync command invoked correctly with excludes';
+    is_deeply [splice @$called_cmd, 0, 8],
+      [qw(rsync -avH --delete --timeout=1800 --exclude *.src.rpm --exclude *-debuginfo*)],
+      'rsync command invoked correctly with excludes and timeout';
     $cache_log = '';
 };
 
@@ -291,6 +294,7 @@ subtest 'Repository download with wget command execution' => sub {
     ok -d $repo_dir, 'Repository directory created';
     ok -e $repo_dir->child('repodata', 'repomd.xml'), 'Repomd file exists in repo directory';
     is $called_cmd->[4], '--cut-dirs=3', 'cut-dirs calculated correctly';
+    ok + (grep { $_ eq '--timeout=' . DEFAULT_DOWNLOAD_REPO_TIMEOUT } @$called_cmd), 'default timeout passed to wget';
     ok + (grep { $_ eq '--reject' } @$called_cmd), 'reject flag passed for file pattern';
     ok + (grep { $_ eq '--exclude-directories' } @$called_cmd), 'exclude-directories flag passed for dir pattern';
     $cache_log = '';

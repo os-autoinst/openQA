@@ -7,6 +7,7 @@ use Mojo::Base -base, -signatures;
 use Mojo::Loader 'load_class';
 use Mojo::File 'path';
 use Mojo::URL;
+use OpenQA::Constants qw(DEFAULT_DOWNLOAD_REPO_TIMEOUT);
 use OpenQA::UserAgent;
 use OpenQA::Utils qw(human_readable_size);
 use Time::HiRes 'sleep';
@@ -15,6 +16,7 @@ use HTTP::Status qw(:constants);
 
 has attempts => 5;
 has [qw(log tmpdir rsync_password_file)];
+has repo_timeout => DEFAULT_DOWNLOAD_REPO_TIMEOUT;
 has sleep_time => 5;
 has ua => sub { OpenQA::UserAgent->new(max_redirects => 5, max_response_size => 0) };
 has res => undef;
@@ -74,10 +76,12 @@ sub _download_repo ($self, $url, $target, $options) {
         @excludes = grep { length } @excludes;
     }
 
+    my $timeout = $options->{timeout} // $self->repo_timeout // DEFAULT_DOWNLOAD_REPO_TIMEOUT;
+
     my $res;
     if ($scheme eq 'rsync') {
         my $rsync_url = $url =~ m{/$} ? $url : "$url/";
-        my @cmd = (qw(rsync -avH --delete));
+        my @cmd = (qw(rsync -avH --delete), "--timeout=$timeout");
         push @cmd, map { ('--exclude', $_) } @excludes;
 
         my $link_dest = $options->{link_dest};
@@ -117,7 +121,7 @@ sub _download_repo ($self, $url, $target, $options) {
     elsif ($scheme =~ /^https?|ftp$/) {
         my $http_url = $url =~ m{/$} ? $url : "$url/";
         my $cut_dirs = scalar @{$url_obj->path->parts};
-        my @cmd = (qw(wget -m -np -nH), "--cut-dirs=$cut_dirs", qw(--reject index.html*),);
+        my @cmd = (qw(wget -m -np -nH), "--cut-dirs=$cut_dirs", "--timeout=$timeout", qw(--reject index.html*),);
         for my $pattern (@excludes) {
             push @cmd, $pattern =~ m{/} ? ('--exclude-directories', $pattern) : ('--reject', $pattern);
         }

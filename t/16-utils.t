@@ -573,6 +573,10 @@ subtest 'create downloads list' => sub {
         {REPO_1_URL => 'http://example.com/repo', REPO_1 => 'repo', REPO_1_LINK_DEST => 'baseline-CURRENT'}),
       {'http://example.com/repo' => ['foo/bar', '0', {link_dest => 'baseline-CURRENT'}]},
       'valid download for REPO_1_URL with link_dest';
+    is_deeply create_downloads_list(
+        {REPO_1_URL => 'http://example.com/repo', REPO_1 => 'repo', REPO_1_TIMEOUT => '1800'}),
+      {'http://example.com/repo' => ['foo/bar', '0', {timeout => 1800}]},
+      'valid download for REPO_1_URL with timeout';
     is_deeply create_downloads_list({REPO_URL => 'http://example.com/repo', REPO => 'repo'}),
       {'http://example.com/repo' => ['foo/bar', '0']},
       'valid download for REPO_URL';
