@@ -77,9 +77,9 @@ sub asset ($self, $job_id, $opts) {
                 $final_error = $e;
             }
 
-            unless ($done) {
+            if (!$done) {
                 $self->emit('upload_chunk.fail', $tx, $part, $max_retries - $retries, $max_retries);
-                $final_error ||= $tx if $retries == 0;
+                $retries <= 0 ? ($final_error ||= $tx) : $self->client->delay($tx);
             }
         } until ($retries == 0 || $done);
 
