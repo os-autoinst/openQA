@@ -77,7 +77,11 @@ sub _download ($job, $url, $assetpaths, $do_extract, $options = {}) {
     if ($do_extract) { $ctx->debug(qq{Downloading and uncompressing "$url" to "$assetpath"}) }
     else { $ctx->debug(qq{Downloading "$url" to "$assetpath"}) }
 
-    my $downloader = OpenQA::Downloader->new(log => $ctx, tmpdir => $ENV{MOJO_TMPDIR});
+    my $downloader = OpenQA::Downloader->new(
+        log => $ctx,
+        tmpdir => $ENV{MOJO_TMPDIR},
+        rsync_password_file => $app->config->{global}->{rsync_password_file},
+    );
     my $dl_options = {
         %$options,
         extract => $do_extract,

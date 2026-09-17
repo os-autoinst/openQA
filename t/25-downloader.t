@@ -250,6 +250,31 @@ subtest 'Repository download with rsync link-dest deduplication' => sub {
     $cache_log = '';
 };
 
+subtest 'Repository download with rsync password file' => sub {
+    my $pwd_file = $tempdir->child('rsync.secret');
+    $pwd_file->spurt("secret\n");
+    my $repo_dir = $tempdir->child('repo', 'authrepo');
+    my $from = 'rsync://example.com/repos/standard';
+    my $called_cmd;
+    my $utils_mock = Test::MockModule->new('OpenQA::Utils');
+    $utils_mock->redefine(
+        run_cmd_with_log_return_error => sub ($cmd, %args) {
+            $called_cmd = $cmd;
+            my $tmp_dest = $cmd->[-1];
+            path($tmp_dest, 'repodata')->make_path->child('repomd.xml')->spurt('<repomd/>');
+            return {status => 1, return_code => 0, exit_status => 0, stdout => '', stderr => ''};
+        });
+    my $auth_downloader = OpenQA::Downloader->new(
+        log => $log,
+        tmpdir => $mojo_tmpdir,
+        rsync_password_file => $pwd_file->to_string,
+    );
+    is $auth_downloader->download($from, $repo_dir), undef, 'rsync download succeeds with password file';
+    ok -d $repo_dir, 'Repository directory created';
+    ok + (grep { $_ eq "--password-file=$pwd_file" } @$called_cmd), 'password-file passed to rsync';
+    $cache_log = '';
+};
+
 subtest 'Repository download with wget command execution' => sub {
     my $repo_dir = $tempdir->child('repo', 'httprepo');
     my $from = 'http://example.com/repos/openSUSE/standard/';

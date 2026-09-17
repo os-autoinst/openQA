@@ -2086,7 +2086,7 @@ host the openQA web UI is running. Note that these settings only control the
 openQA web UI. The os-autoinst backend will still clone repositories specified
 via `CASEDIR` and `NEEDLES_DIR` **regardless** of the `[scm git]` settings.
 
-Other relevant settings: `hsts`, `file_security_policy`
+Other relevant settings: `hsts`, `file_security_policy`, `rsync_password_file` (specifies a server-side secret file passed to `rsync --password-file` when downloading repository assets from rsync daemons requiring authentication).
 
 ## Troubleshooting
 

@@ -14,7 +14,7 @@ use Feature::Compat::Try;
 use HTTP::Status qw(:constants);
 
 has attempts => 5;
-has [qw(log tmpdir)];
+has [qw(log tmpdir rsync_password_file)];
 has sleep_time => 5;
 has ua => sub { OpenQA::UserAgent->new(max_redirects => 5, max_response_size => 0) };
 has res => undef;
@@ -106,6 +106,10 @@ sub _download_repo ($self, $url, $target, $options) {
             }
         }
         push @cmd, "--link-dest=$link_dest_path" if $link_dest_path;
+
+        if (my $pwd_file = $self->rsync_password_file) {
+            push @cmd, "--password-file=$pwd_file" if -f $pwd_file;
+        }
 
         push @cmd, $rsync_url, $tmp_target->to_string . '/';
         $res = OpenQA::Utils::run_cmd_with_log_return_error(\@cmd);
