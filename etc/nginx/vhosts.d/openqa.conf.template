@@ -1,12 +1,5 @@
 include vhosts.d/openqa-upstreams.inc;
-
-# Define rate limiting zone for web UI endpoints (10MB zone allows ~160,000 IPs)
-# 5 requests per second by default
-#limit_req_zone $binary_remote_addr zone=webui_limit:10m rate=5r/s;
-# 30 per minute for heavy routes
-#limit_req_zone $binary_remote_addr zone=webui_heavy_limit:10m rate=30r/m;
-# 20 requests per second by default
-#limit_req_zone $binary_remote_addr zone=webui_light_limit:10m rate=20r/s;
+include vhosts.d/openqa-limiting.inc;
 
 server {
     listen       80 default_server;

@@ -67,10 +67,13 @@ location /liveviewhandler/ {
 }
 
 location / {
-#    # Apply optional rate limiting (needs zone definition, see `openqa.conf.template`)
-#    limit_req zone=webui_limit burst=10 nodelay;
+#    # Apply optional rate limiting (needs zone definition, see `openqa-limiting.inc`)
+#    # Limit regular requests via webui_limit
+#    limit_req zone=webui_limit burst=100 nodelay;
+#    # Limit POST/PUT/PATCH/DELETE requests via webui_light_limit so many worker slots can do uploads in parallel
+#    limit_req zone=webui_light_limit burst=500 nodelay;
 #    limit_req_status 429;
-#    add_header Retry-After 5 always;
+#    add_header Retry-After 1 always;
 
     proxy_pass "http://webui";
 }
@@ -83,7 +86,7 @@ location ~ /tests/[0-9]+/(livelog|liveterminal)$ {
 
 # Optional more restrictive rate limiting for heavy routes
 #location ~ ^(/search|/tests/[0-9]+/(investigation|dependencies)_ajax)/?$ {
-#    # Apply rate limiting (needs zone definition, see `openqa.conf.template`)
+#    # Apply rate limiting (needs zone definition, see `openqa-limiting.inc`)
 #    limit_req zone=webui_heavy_limit burst=10 nodelay;
 #    limit_req_status 429;
 #    add_header Retry-After 5 always;
@@ -93,9 +96,9 @@ location ~ /tests/[0-9]+/(livelog|liveterminal)$ {
 #}
 
 # Optional less restrictive rate limiting for lightweight routes that potentially need to be queried frequently
-#location ~ ^(/api/v1/jobs/[0-9]+/(mutex|barrier)) {
-#    # Apply rate limiting (needs zone definition, see `openqa.conf.template`)
-#    limit_req zone=webui_light_limit burst=10 nodelay;
+#location ~ ^(/api/v1/jobs/[0-9]+/(mutex|barrier|artefact)) {
+#    # Apply rate limiting (needs zone definition, see `openqa-limiting.inc`)
+#    limit_req zone=webui_light_limit burst=500 nodelay;
 #    limit_req_status 429;
 #    add_header Retry-After 1 always;
 #
