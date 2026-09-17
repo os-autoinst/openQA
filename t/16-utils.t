@@ -332,6 +332,8 @@ subtest 'Plugins handling' => sub {
 subtest asset_type_from_setting => sub {
     use OpenQA::Utils 'asset_type_from_setting';
     is asset_type_from_setting('ISO'), 'iso', 'simple from ISO';
+    is asset_type_from_setting('REPO'), 'repo', 'simple from REPO';
+    is asset_type_from_setting('REPO_1'), 'repo', 'simple from REPO_1';
     is asset_type_from_setting('UEFI_PFLASH_CODE'), 'hdd', 'simple from UEFI_PFLASH_CODE';
     is asset_type_from_setting('UEFI_PFLASH_CODE', 'relative'), 'hdd', 'relative from UEFI_PFLASH_CODE';
     is asset_type_from_setting('UEFI_PFLASH_CODE', '/absolute'), '', 'absolute from UEFI_PFLASH_CODE';
@@ -370,6 +372,7 @@ subtest parse_assets_from_settings => sub {
         ISO_2 => {type => 'iso', name => 'foo_2.iso'},
         HDD_1 => {type => 'hdd', name => 'hdd_1.qcow2'},
         HDD_2 => {type => 'hdd', name => 'hdd_2.qcow2'},
+        REPO => {type => 'repo', name => 'repo'},
         REPO_1 => {type => 'repo', name => 'repo_1'},
         REPO_2 => {type => 'repo', name => 'repo_2'},
         ASSET_1 => {type => 'other', name => 'asset_1.pm'},
@@ -559,6 +562,12 @@ subtest 'create downloads list' => sub {
     my $utils_mocked = Test::MockModule->new('OpenQA::Utils')->redefine(locate_asset => 'foo/bar');
     is_deeply create_downloads_list({ISO_URL => 'test', ISO => 'test'}), {test => ['foo/bar', '0']},
       'valid download for asset URL';
+    is_deeply create_downloads_list({REPO_1_URL => 'http://example.com/repo', REPO_1 => 'repo'}),
+      {'http://example.com/repo' => ['foo/bar', '0']},
+      'valid download for REPO_1_URL';
+    is_deeply create_downloads_list({REPO_URL => 'http://example.com/repo', REPO => 'repo'}),
+      {'http://example.com/repo' => ['foo/bar', '0']},
+      'valid download for REPO_URL';
 };
 
 subtest 'reserved ports' => sub {

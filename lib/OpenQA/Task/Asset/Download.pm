@@ -77,10 +77,12 @@ sub _download ($job, $url, $assetpaths, $do_extract) {
     else { $ctx->debug(qq{Downloading "$url" to "$assetpath"}) }
 
     my $downloader = OpenQA::Downloader->new(log => $ctx, tmpdir => $ENV{MOJO_TMPDIR});
+    my $is_repo = path($assetpath)->dirname->basename eq 'repo' || (Mojo::URL->new($url)->scheme // '') eq 'rsync';
     my $options = {
         extract => $do_extract,
+        is_repo => $is_repo,
         on_success => sub {
-            chmod 0644, $assetpath;
+            -d $assetpath ? chmod 0755, $assetpath : chmod 0644, $assetpath;
             $ctx->debug(qq{Download of "$assetpath" successful});
         }
     };
