@@ -1,19 +1,24 @@
+% my $reservation = $worker->{reservation};
+% my $reservation_details = '';
+% if ($reservation) {
+%     my $user = escape_html($reservation->{user});
+%     my $comment = escape_html($reservation->{comment});
+%     my $expires = escape_html($reservation->{t_expires} // 'never');
+%     $reservation_details = "Reserved by: $user<br>Comment: $comment<br>Expires: $expires";
+% }
 % if($worker->{status} eq 'running') {
-    Working
-    <%= help_popover('Worker status' =>
-          'Job: ' .
-          link_to($worker->{jobid}, url_for('test', testid => $worker->{jobid})) .
-          ( $worker->{status} eq 'running' && defined($worker->{currentstep}) ?
-          '<br> Step: '. $worker->{currentstep} : '' )
-        )
-    %>
+    <%= $reservation ? 'Working (Reserved)' : 'Working' %>
+    % my $job_link = link_to($worker->{jobid}, url_for('test', testid => $worker->{jobid}));
+    % my $step_info = defined($worker->{currentstep}) ? "<br> Step: $worker->{currentstep}" : '';
+    % my $res_info = $reservation_details ? "<br>$reservation_details" : '';
+    <%= help_popover('Worker status' => "Job: $job_link$step_info$res_info") %>
+% } elsif ($worker->{status} eq 'reserved') {
+    Reserved
+    <%= help_popover('Worker status' => $reservation_details) %>
 % } elsif ($worker->{status} eq 'dead' && $worker->{job}) {
     Dead
-    <%= help_popover('Worker status' =>
-          'Dead with job: ' .
-          link_to($worker->{jobid}, url_for('test', testid => $worker->{jobid}))
-        )
-    %>
+    % my $job_link = link_to($worker->{jobid}, url_for('test', testid => $worker->{jobid}));
+    <%= help_popover('Worker status' => "Dead with job: $job_link") %>
 % } elsif ($worker->{status} eq 'broken') {
     Unavailable <%= help_popover(Details => $worker->{error}) %>
 % } elsif ($worker->{alive}) {
