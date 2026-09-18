@@ -6,7 +6,7 @@ use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use OpenQA::Log qw(log_info log_debug);
 use OpenQA::Utils qw(:DEFAULT assetdir);
-use OpenQA::Task::Utils qw(acquire_limit_lock_or_retry finish_job_if_disk_usage_below_percentage);
+use OpenQA::Task::Utils qw(acquire_limit_lock_or_retry finish_job_if_storage_usage_below_percentage);
 use OpenQA::Task::SignalGuard;
 
 use Mojo::URL;
@@ -50,7 +50,7 @@ sub _limit ($app, $job) {
     return undef unless my $limit_guard = acquire_limit_lock_or_retry($job);
 
     return undef
-      if finish_job_if_disk_usage_below_percentage(
+      if finish_job_if_storage_usage_below_percentage(
         job => $job,
         setting => 'asset_cleanup_max_free_percentage',
         dir => assetdir,
