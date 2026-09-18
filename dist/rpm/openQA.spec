@@ -656,6 +656,7 @@ fi
 %config %{_sysconfdir}/nginx/vhosts.d/openqa-llm.conf.template
 %config(noreplace) %{_sysconfdir}/nginx/vhosts.d/openqa-assets.inc
 %config(noreplace) %{_sysconfdir}/nginx/vhosts.d/openqa-endpoints.inc
+%config(noreplace) %{_sysconfdir}/nginx/vhosts.d/openqa-limiting.inc
 %config(noreplace) %{_sysconfdir}/nginx/vhosts.d/openqa-locations.inc
 %config(noreplace) %{_sysconfdir}/nginx/vhosts.d/openqa-upstreams.inc
 # apparmor profile
