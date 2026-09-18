@@ -27,6 +27,10 @@ sub _extend_info ($w) {
     return $info;
 }
 
+sub _reservation_default_duration ($self) {
+    change_sec_to_word($self->app->config->{worker_reservation}->{default_duration});
+}
+
 sub index ($self) {
     my $workers_db = $self->schema->resultset('Workers');
     my $worker_stats = $workers_db->stats;
@@ -37,11 +41,13 @@ sub index ($self) {
         $workers{$w->name} = _extend_info($w);
     }
     $self->stash(
+        reservation_default_duration => $self->_reservation_default_duration,
         workers_online => $worker_stats->{total_online},
         total => $worker_stats->{total},
         workers_active_free => $worker_stats->{free_active_workers},
         workers_broken_free => $worker_stats->{free_broken_workers},
         workers_busy => $worker_stats->{busy_workers},
+        workers_reserved => $worker_stats->{reserved_workers},
         is_admin => !!$self->is_admin,
         workers => \%workers
     );
@@ -54,7 +60,7 @@ sub index ($self) {
 sub show ($self) {
     my $w = $self->schema->resultset('Workers')->find($self->param('worker_id'))
       or return $self->reply->not_found;
-    $self->stash(worker => _extend_info($w));
+    $self->stash(worker => _extend_info($w), reservation_default_duration => $self->_reservation_default_duration);
 
     $self->render('admin/workers/show');
 }
