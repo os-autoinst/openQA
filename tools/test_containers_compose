@@ -2,6 +2,9 @@
 
 set -euo pipefail
 
+# Propagate signals to the entire process group to ensure clean, immediate abort
+trap 'trap - INT TERM EXIT; kill -TERM 0; exit 130' INT TERM
+
 thisdir="$(cd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null 2>&1 && pwd)"
 
 # longer, exponential sleep between retries to retry on infrastructure issues
@@ -40,12 +43,18 @@ if 'services' in d:
 with open('docker-compose.yaml', 'w') as f:
     yaml.safe_dump(d, f)
 "
-    sudo env OPENQA_WEBUI_REPLICAS=1 OPENQA_WORKER_REPLICAS=1 "$thisdir"/retry docker compose -p "$project_name" build
+    status=0
+    "$thisdir"/retry sudo env OPENQA_WEBUI_REPLICAS=1 OPENQA_WORKER_REPLICAS=1 docker compose -p "$project_name" build || status=$?
+    if [[ $status -ne 0 ]]; then
+        exit "$status"
+    fi
     exit_code=""
-    sudo env OPENQA_WEBUI_REPLICAS=1 OPENQA_WORKER_REPLICAS=1 MOJO_CLIENT_DEBUG=1 "$thisdir"/retry docker compose -p "$project_name" up -d || exit_code=$?
+    "$thisdir"/retry sudo env OPENQA_WEBUI_REPLICAS=1 OPENQA_WORKER_REPLICAS=1 MOJO_CLIENT_DEBUG=1 docker compose -p "$project_name" up -d || exit_code=$?
     if [[ -n $exit_code ]]; then
-        echo "docker compose exited with non-zero code $exit_code, showing logs:"
-        sudo docker compose -p "$project_name" logs
+        if [[ $exit_code -ne 130 && $exit_code -ne 143 ]]; then
+            echo "docker compose exited with non-zero code $exit_code, showing logs:"
+            sudo docker compose -p "$project_name" logs
+        fi
         exit "$exit_code"
     fi
     # Wait for all services with healthchecks to become healthy
@@ -55,18 +64,22 @@ with open('docker-compose.yaml', 'w') as f:
         fi
         wait_until "sudo docker inspect $id --format '{{.State.Health.Status}}' | grep -q healthy" 60
     done
-    (sudo docker compose -p "$project_name" ps --services --filter status=stopped | grep "^[[:space:]]*$") || (
-        sudo docker compose -p "$project_name" logs
-        sudo docker compose -p "$project_name" ps
-        exit 1
-    )
+    status=0
+    (sudo docker compose -p "$project_name" ps --services --filter status=stopped | grep "^[[:space:]]*$") || status=$?
+    if [[ $status -ne 0 ]]; then
+        if [[ $status -ne 130 && $status -ne 143 ]]; then
+            sudo docker compose -p "$project_name" logs
+            sudo docker compose -p "$project_name" ps
+        fi
+        exit "$status"
+    fi
 }
 
 test_webui() {
     (
         workspace=$(mktemp -d)
         project_name=$(basename "$workspace" | tr '[:upper:]' '[:lower:]' | tr -d '.')
-        trap 'sudo docker compose -p "$project_name" down; sudo rm -rf "$workspace"' EXIT
+        trap 'sudo docker compose -p "$project_name" down >/dev/null 2>&1; sudo rm -rf "$workspace"' EXIT
         cp -r container/webui "$workspace"
         cd "$workspace/webui"
         sed -i -e "s/method = OpenID/method = Fake/" conf/openqa.ini
@@ -75,29 +88,42 @@ test_webui() {
         printf "[nginx]\nkey = 1234567890ABCDEF\nsecret = 1234567890ABCDEF\n" > conf/client.conf
         setup_containers "$project_name"
         # Use 'run' instead of 'exec' as it might have better network alias support in some environments
-        sudo env OPENQA_WEBUI_REPLICAS=1 OPENQA_WORKER_REPLICAS=1 "$thisdir"/retry docker compose -p "$project_name" run --rm webui openqa-cli api -X POST jobs ISO=foo.iso DISTRI=my-distri FLAVOR=my-flavor VERSION=42 BUILD=42 TEST=my-test \
-            --host http://nginx:9526 || (
-            echo "Error executing a job"
-            sudo docker compose -p "$project_name" ps
-            exit 1
-        )
-        (wait_until "sudo docker compose -p $project_name logs webui | grep 'GET /api/wakeup' >/dev/null" 20) || (
-            sudo docker compose -p "$project_name" logs webui
-            exit 1
-        )
-    ) || exit 1
+        status=0
+        "$thisdir"/retry sudo env OPENQA_WEBUI_REPLICAS=1 OPENQA_WORKER_REPLICAS=1 docker compose -p "$project_name" run --rm webui openqa-cli api -X POST jobs ISO=foo.iso DISTRI=my-distri FLAVOR=my-flavor VERSION=42 BUILD=42 TEST=my-test \
+            --host http://nginx:9526 || status=$?
+        if [[ $status -ne 0 ]]; then
+            if [[ $status -ne 130 && $status -ne 143 ]]; then
+                echo "Error executing a job"
+                sudo docker compose -p "$project_name" ps
+            fi
+            exit "$status"
+        fi
+        status=0
+        wait_until "sudo docker compose -p $project_name logs webui | grep 'GET /api/wakeup' >/dev/null" 20 || status=$?
+        if [[ $status -ne 0 ]]; then
+            if [[ $status -ne 130 && $status -ne 143 ]]; then
+                sudo docker compose -p "$project_name" logs webui
+            fi
+            exit "$status"
+        fi
+    ) || exit $?
 }
 
 test_worker() {
     (
         workspace=$(mktemp -d)
         project_name=$(basename "$workspace" | tr '[:upper:]' '[:lower:]' | tr -d '.')
-        trap 'sudo docker compose -p "$project_name" down; sudo rm -rf "$workspace"' EXIT
+        trap 'sudo docker compose -p "$project_name" down >/dev/null 2>&1; sudo rm -rf "$workspace"' EXIT
         cp -r container/webui container/worker "$workspace"
         cd "$workspace/worker"
         setup_containers "$project_name"
-    ) || exit 1
+    ) || exit $?
 }
 
-test_webui
-test_worker
+test_webui &
+WAIT_PID=$!
+wait $WAIT_PID
+
+test_worker &
+WAIT_PID=$!
+wait $WAIT_PID
