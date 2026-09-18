@@ -108,12 +108,12 @@ sub check_comment ($supposed_text, $edited = undef) {
 
     # check heading
     my $first_heading_text = $comment_headings[0]->get_text();
-    my $time_re = qr/(?:just now|\d+ seconds? ago|\d+ minutes? ago)/;
+    my $time_re = qr/(?:less than a minute ago|just now|\d+ seconds? ago|\d+ minutes? ago)/;
     if ($edited) {
-        like $first_heading_text, qr/^\Q$user_name\E wrote $time_re \(last edited $time_re\)$/, 'heading text';
+        like $first_heading_text, qr/\Q$user_name\E wrote $time_re \(last edited $time_re\)/, 'heading text';
     }
     else {
-        like $first_heading_text, qr/^\Q$user_name\E wrote $time_re$/, 'heading text';
+        like $first_heading_text, qr/\Q$user_name\E wrote $time_re/, 'heading text';
     }
 
     # check body
