@@ -60,4 +60,52 @@ subtest 'We can switch back to light theme' => sub {
       ->element_exists_not('select option[selected][value="detect"]');
 };
 
+subtest 'We can switch to catpuccin-latte theme' => sub {
+    $t->get_ok('/appearance')->status_is(200)->element_exists('select option[selected][value="light"]')
+      ->element_exists_not('select option[selected][value="catpuccin-latte"]');
+    $t->post_ok('/appearance' => form => {theme => 'catpuccin-latte'})->status_is(200)
+      ->element_exists('select option[selected][value="catpuccin-latte"]')
+      ->element_exists_not('select option[selected][value="light"]');
+    $t->get_ok('/appearance')->status_is(200)->element_exists('select option[selected][value="catpuccin-latte"]')
+      ->element_exists_not('select option[selected][value="light"]');
+};
+
+subtest 'We can switch to catpuccin-frappe theme' => sub {
+    $t->get_ok('/appearance')->status_is(200)->element_exists('select option[selected][value="catpuccin-latte"]')
+      ->element_exists_not('select option[selected][value="catpuccin-frappe"]');
+    $t->post_ok('/appearance' => form => {theme => 'catpuccin-frappe'})->status_is(200)
+      ->element_exists('select option[selected][value="catpuccin-frappe"]')
+      ->element_exists_not('select option[selected][value="catpuccin-latte"]');
+    $t->get_ok('/appearance')->status_is(200)->element_exists('select option[selected][value="catpuccin-frappe"]')
+      ->element_exists_not('select option[selected][value="catpuccin-latte"]');
+};
+
+subtest 'We can switch to catpuccin-macchiato theme' => sub {
+    $t->get_ok('/appearance')->status_is(200)->element_exists('select option[selected][value="catpuccin-frappe"]')
+      ->element_exists_not('select option[selected][value="catpuccin-macchiato"]');
+    $t->post_ok('/appearance' => form => {theme => 'catpuccin-macchiato'})->status_is(200)
+      ->element_exists('select option[selected][value="catpuccin-macchiato"]')
+      ->element_exists_not('select option[selected][value="catpuccin-frappe"]');
+    $t->get_ok('/appearance')->status_is(200)->element_exists('select option[selected][value="catpuccin-macchiato"]')
+      ->element_exists_not('select option[selected][value="catpuccin-frappe"]');
+};
+
+subtest 'We can switch to catpuccin-mocha theme' => sub {
+    $t->get_ok('/appearance')->status_is(200)->element_exists('select option[selected][value="catpuccin-macchiato"]')
+      ->element_exists_not('select option[selected][value="catpuccin-mocha"]');
+    $t->post_ok('/appearance' => form => {theme => 'catpuccin-mocha'})->status_is(200)
+      ->element_exists('select option[selected][value="catpuccin-mocha"]')
+      ->element_exists_not('select option[selected][value="catpuccin-macchiato"]');
+    $t->get_ok('/appearance')->status_is(200)->element_exists('select option[selected][value="catpuccin-mocha"]')
+      ->element_exists_not('select option[selected][value="catpuccin-macchiato"]');
+};
+
+subtest 'Catpuccin themes persist across sessions' => sub {
+    $t->post_ok('/appearance' => form => {theme => 'catpuccin-latte'})->status_is(200);
+    $t->get_ok('/appearance')->status_is(200)->element_exists('select option[selected][value="catpuccin-latte"]');
+    
+    $t->post_ok('/appearance' => form => {theme => 'catpuccin-mocha'})->status_is(200);
+    $t->get_ok('/appearance')->status_is(200)->element_exists('select option[selected][value="catpuccin-mocha"]');
+};
+
 done_testing();
