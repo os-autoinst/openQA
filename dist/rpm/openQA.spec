@@ -155,6 +155,9 @@ Requires(pre):  group(nogroup)
 BuildRequires:  sysuser-tools
 %sysusers_requires
 %endif
+%if 0%{?is_opensuse} && 0%{?suse_version} >= 1600
+BuildRequires:  rpmlint-strict
+%endif
 
 %description
 openQA is a testing framework that allows you to test GUI applications on one
