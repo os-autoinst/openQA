@@ -387,7 +387,7 @@ sub asset_type_from_setting ($setting, $value = undef) {
     return 'hdd' if $setting =~ /^HDD_\d+$/;
     # non-absolute-path value of UEFI_PFLASH_(CODE|VARS) treated as HDD asset
     return 'hdd' if $setting =~ /^UEFI_PFLASH_(?:CODE|VARS)$/ && ($value // '') !~ m{^/};
-    return 'repo' if $setting =~ /^REPO_\d+$/;
+    return 'repo' if $setting eq 'REPO' || $setting =~ /^REPO_\d+$/;
     return 'other' if $setting =~ /^ASSET_\d+$/ || $setting eq 'KERNEL' || $setting eq 'INITRD';
     # empty string if this doesn't look like an asset type
     return '';
@@ -567,10 +567,20 @@ sub create_downloads_list ($job_settings) {
         # Find where we should download the file to
         my $fullpath = locate_asset($assettype, $filename, mustexist => 0);
 
-        unless (-s $fullpath) {
+        my $exists = $assettype eq 'repo' ? -e $fullpath : -s $fullpath;
+        unless ($exists) {
             # if the file doesn't exist, add the url/target path and extraction
             # flag as a key/value pair to the %downloads hash
-            $downloads{$url} = [$fullpath, $do_extract];
+            my %options;
+            if ($assettype eq 'repo') {
+                my $exclude = $job_settings->{"${short}_EXCLUDE"} // $job_settings->{REPO_EXCLUDE};
+                $options{exclude} = $exclude if defined $exclude && length $exclude;
+                my $link_dest = $job_settings->{"${short}_LINK_DEST"} // $job_settings->{REPO_LINK_DEST};
+                $options{link_dest} = $link_dest if defined $link_dest && length $link_dest;
+                my $timeout = $job_settings->{"${short}_TIMEOUT"} // $job_settings->{REPO_TIMEOUT};
+                $options{timeout} = int $timeout if defined $timeout && $timeout =~ /^\d+$/ && $timeout > 0;
+            }
+            $downloads{$url} = %options ? [$fullpath, $do_extract, \%options] : [$fullpath, $do_extract];
         }
     }
     return \%downloads;
