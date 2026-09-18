@@ -1,0 +1,122 @@
+#!/usr/bin/env python3
+
+# Copyright SUSE LLC
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+# ruff: file-ignore[boolean-default-value-positional-argument]
+
+"""Helper tool to initialize the openQA developer test environment with fixtures."""
+
+import os
+import subprocess  # ruff: ignore[suspicious-subprocess-import]
+from pathlib import Path
+from typing import Annotated
+
+import typer
+
+app = typer.Typer(help="Initialize the openQA developer test environment with fixtures.")
+
+
+@app.command()
+def init(
+    fixtures: Annotated[
+        str,
+        typer.Option(
+            "--fixtures",
+            "-f",
+            help="Specify fixture files to load (default: '*.pl')",
+        ),
+    ] = "*.pl",
+    reset: Annotated[
+        bool,
+        typer.Option(
+            "--reset/--no-reset",
+            help="Drop and recreate the schema before populating (default: True)",
+        ),
+    ] = True,
+    silent: Annotated[
+        bool,
+        typer.Option(
+            "--silent",
+            "-s",
+            help="Suppress summary and status output",
+        ),
+    ] = False,
+) -> None:
+    """Initialize or reset the openQA test database with standard fixtures and mock assets."""
+    # Ensure t/fixtures exists
+    fixtures_dir = Path("t/fixtures")
+    if not fixtures_dir.exists():
+        typer.echo(f"Error: Fixtures directory {fixtures_dir} not found.", err=True)
+        raise typer.Exit(code=1)
+
+    schema_name = os.environ.get("OPENQA_DATABASE_SEARCH_PATH", "public")
+
+    if not silent:
+        if reset:
+            typer.echo(f"Resetting schema '{schema_name}'...")
+        typer.echo(f"Deploying schema and loading fixtures from '{fixtures}'...")
+
+    # We use a compact Perl one-liner invoked via subprocess.
+    # This ensures 100% compatibility with openQA's DBIC schema, connections, and fixture files.
+    perl_script = f"""
+use Mojo::Base -signatures;
+use lib 'lib', 't/lib', 'external/os-autoinst-common/lib';
+use OpenQA::Schema;
+use OpenQA::Test::Database;
+use OpenQA::Test::Utils qw(assume_all_assets_exist);
+
+my $schema = OpenQA::Schema::connect_db(mode => 'test', deploy => 0);
+my $schema_name = $ENV{{OPENQA_DATABASE_SEARCH_PATH}} // 'public';
+
+if ({"1" if reset else "0"}) {{
+    my $dbh = $schema->storage->dbh;
+    $dbh->do("SET client_min_messages TO WARNING");
+    $dbh->do("DROP SCHEMA IF EXISTS \\"$schema_name\\" CASCADE");
+    $dbh->do("CREATE SCHEMA \\"$schema_name\\"");
+}}
+
+# Deploy schema and insert fixtures
+OpenQA::Test::Database->new->create(
+    skip_schema => 1,
+    fixtures_glob => '{fixtures}',
+);
+
+# Configure mock assets to avoid 404s/warnings
+assume_all_assets_exist();
+"""
+
+    try:
+        # Run Perl with the constructed one-liner
+        subprocess.run(  # ruff: ignore[subprocess-without-shell-equals-true]
+            ["/usr/bin/perl", "-e", perl_script],
+            check=True,
+            capture_output=silent,
+            text=True,
+        )
+    except subprocess.CalledProcessError as e:
+        typer.echo("Error: Failed to initialize test fixtures.", err=True)
+        if e.stderr:
+            typer.echo(e.stderr, err=True)
+        raise typer.Exit(code=e.returncode) from e
+
+    if not silent:
+        typer.echo("\n========================================================================")
+        typer.echo("  openQA interactive test environment has been initialized")
+        typer.echo("========================================================================\n")
+        typer.echo(f"  Database resets and schema deployed onto '{schema_name}'.")
+        typer.echo(f"  Loaded fixtures matching: {fixtures}")
+        typer.echo("  Mock assets activated.\n")
+        typer.echo("  You can interact with the local Web UI using the following links:")
+        typer.echo("    - Home/Overview:  http://localhost:9526/")
+        typer.echo("    - Test Results:   http://localhost:9526/tests/overview")
+        typer.echo("    - Sample Details:  http://localhost:9526/tests/99981")
+        typer.echo("    - Admin Workers:  http://localhost:9526/admin/workers\n")
+        typer.echo("  Authentication Info:")
+        typer.echo("    - Click 'Login' in the top-right corner to log in automatically")
+        typer.echo("      as the 'Demo' user (who has administrator/operator rights).\n")
+        typer.echo("========================================================================\n")
+
+
+if __name__ == "__main__":
+    app()
