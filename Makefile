@@ -329,6 +329,24 @@ run-test-env: setup-database ## Run all local test services (webui, websockets, 
 	$(call RUN_SERVICE_TEST_ENV,script/openqa-gru) & \
 	wait
 
+.PHONY: load-test-fixtures
+load-test-fixtures: setup-database ## Load standard mock fixtures into the test database
+	$(call RUN_SERVICE_TEST_ENV,tools/init-test-fixtures)
+
+.PHONY: run-webui-mock-env
+run-webui-mock-env: load-test-fixtures ## Run a local web UI instance pre-loaded with mock fixtures
+	$(call RUN_SERVICE_TEST_ENV,script/openqa-webui-daemon)
+
+.PHONY: run-mock-env
+run-mock-env: load-test-fixtures ## Run all local test services pre-loaded with mock fixtures
+	trap 'kill 0' SIGINT SIGTERM; \
+	$(call RUN_SERVICE_TEST_ENV,script/openqa-webui-daemon) & \
+	$(call RUN_SERVICE_TEST_ENV,script/openqa-websockets-daemon) & \
+	$(call RUN_SERVICE_TEST_ENV,script/openqa-scheduler-daemon) & \
+	$(call RUN_SERVICE_TEST_ENV,script/worker) & \
+	$(call RUN_SERVICE_TEST_ENV,script/openqa-gru) & \
+	wait
+
 .PHONY: run-webui-test-env
 run-webui-test-env: setup-database ## Run a local web UI instance using a test environment
 	$(call RUN_SERVICE_TEST_ENV,script/openqa-webui-daemon)
