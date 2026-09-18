@@ -56,8 +56,8 @@ function createLogLink(module, step) {
     filter: `[step:${module.category},${module.name},${step.num}]`,
     sl: 1
   });
-  const currentPath = window.location.pathname.replace(/\/$/, '');
-  const logHref = `${currentPath}/logfile?${params.toString()}`;
+  const jobId = document.querySelector('.copy-jobid').dataset.jobid;
+  const logHref = `/tests/${jobId}/logfile?${params.toString()}`;
   const logLinkText = E('i', [''], {
     class: 'step_action fa-regular fa-file-lines fa-lg',
     title: 'Jump to logfile'
