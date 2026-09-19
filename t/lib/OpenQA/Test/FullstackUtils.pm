@@ -132,7 +132,10 @@ sub wait_for_developer_console_like ($driver, $message_regex, $diag_info, $timeo
 
     my $match_index;
     while (($match_index = _match_regex_returning_index($message_regex, $log, $position_of_last_match)) < 0) {
-        return fail("Wait for $message_regex timed out") if $timeout <= 0;
+        if ($timeout <= 0) {
+            diag("Developer console log contains:\n$log");
+            return fail("Wait for $message_regex timed out");
+        }
 
         $timeout -= $check_interval;
         sleep $check_interval;
