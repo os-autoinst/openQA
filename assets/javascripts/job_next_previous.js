@@ -19,10 +19,10 @@ function setupJobNextPrevious() {
 
   const tableElement = document.getElementById('job_next_previous_table');
   const strictToggle = document.getElementById('next_previous_strict');
-  if (strictToggle && params.strict && params.strict[0] === '1') {
-    strictToggle.checked = true; // restore the shared/bookmarked strict view
+  if (strictToggle) {
+    strictToggle.checked = params.strict?.[0] === '1'; // restore the shared/bookmarked strict view
   }
-  const table = $(tableElement).DataTable({
+  const table = new DataTable(tableElement, {
     ajax: {
       url: tableElement.dataset.ajaxUrl,
       data: function (d) {
@@ -63,7 +63,7 @@ function setupJobNextPrevious() {
       {
         targets: 1,
         createdCell: function (td, cellData, rowData, row, col) {
-          $(td).attr('id', 'res_' + rowData.id);
+          td.id = 'res_' + rowData.id;
         },
         render: renderJobResults
       },
@@ -78,18 +78,16 @@ function setupJobNextPrevious() {
     setupLazyLoadingFailedSteps();
     document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(e => new bootstrap.Tooltip(e));
   });
-  if (strictToggle) {
-    strictToggle.addEventListener('change', function () {
-      const p = parseQueryParams();
-      if (strictToggle.checked) {
-        p.strict = ['1'];
-      } else {
-        delete p.strict;
-      }
-      updateQueryParams(p); // keep the view bookmarkable/shareable
-      table.ajax.reload();
-    });
-  }
+  strictToggle?.addEventListener('change', function () {
+    const p = parseQueryParams();
+    if (strictToggle.checked) {
+      p.strict = ['1'];
+    } else {
+      delete p.strict;
+    }
+    updateQueryParams(p); // keep the view bookmarkable/shareable
+    table.ajax.reload();
+  });
 }
 
 function renderMarks(data, type, row) {
