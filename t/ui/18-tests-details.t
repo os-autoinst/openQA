@@ -185,10 +185,14 @@ subtest 'filtering' => sub {
     # define test helper
     my $count_steps = sub {
         my ($result) = @_;
-        return $driver->execute_script("return \$('#results .result${result}:visible').length;");
+        return $driver->execute_script(
+"return Array.from(document.querySelectorAll('#results .result${result}')).filter(el => el.offsetWidth > 0 || el.offsetHeight > 0).length;"
+        );
     };
     my $count_headings = sub {
-        return $driver->execute_script("return \$('#results td[colspan=\"3\"]:visible').length;");
+        return $driver->execute_script(
+"return Array.from(document.querySelectorAll('#results td[colspan=\"3\"]')).filter(el => el.offsetWidth > 0 || el.offsetHeight > 0).length;"
+        );
     };
 
     # check initial state (no filters enabled)
@@ -546,17 +550,17 @@ subtest 'arrow key navigation between steps' => sub {
     my $first_step_url = $driver->get_current_url();
     like $first_step_url, qr/#step\/bootloader\/1/, 'first step selected';
 
-    $driver->execute_script("\$(window).trigger(\$.Event('keydown', {key: 'ArrowRight'}))");
-    wait_for_ajax(msg => 'arrow right pressed via jQuery');
+    $driver->execute_script("window.dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowRight'}));");
+    wait_for_ajax(msg => 'arrow right pressed');
     my $second_step_url = $driver->get_current_url();
     like $second_step_url, qr/#step\/bootloader\/2/, 'second step selected after right arrow';
 
-    $driver->execute_script("\$(window).trigger(\$.Event('keydown', {key: 'ArrowLeft'}))");
-    wait_for_ajax(msg => 'arrow left pressed via jQuery');
+    $driver->execute_script("window.dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowLeft'}));");
+    wait_for_ajax(msg => 'arrow left pressed');
     my $back_to_first_url = $driver->get_current_url();
     like $back_to_first_url, qr/#step\/bootloader\/1/, 'back to first step after left arrow';
 
-    $driver->execute_script("\$(window).trigger(\$.Event('keydown', {key: 'Escape'}))");
+    $driver->execute_script("window.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape'}));");
     wait_for_ajax(msg => 'escape pressed to close preview');
 };
 
@@ -810,9 +814,10 @@ subtest 'test candidate list' => sub {
         like $step_details->get_text, qr/can not display/, 'info about unsupported result';
     };
 
-    $driver->get('/tests/99946#step/installer_timezone/1');
+    my $random_number = int rand 100000;
+    $driver->get("/tests/99946?prevent_caching=$random_number#step/installer_timezone/1");
     wait_for_ajax(msg => 'step of installer_timezone test module loaded');
-    my $clicks = 0;
+    my $checks = 0;
     wait_for_element(
         selector => '#needlediff_selector .show-needle-info',
         is_displayed => 1,
@@ -823,9 +828,8 @@ subtest 'test candidate list' => sub {
             #       accidentally close the menu again if it shows up after all (see poo#196829). So we now give the
             #       menu around 5 seconds to show up. If it hasn't shown up then, it is most likely also not going to
             #       show up anymore and we can try clicking again.
-            return if $clicks != 0 && ($clicks % 50) == 0;
+            return if ($checks++ % 50) != 0;
             wait_for_element(selector => '#candidatesMenu', is_displayed => 1)->click;
-            ++$clicks;
         })->click;
     like
       $driver->find_element('.needle-info-table')->get_text(),
