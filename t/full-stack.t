@@ -80,7 +80,7 @@ my $tempdir = setup_fullstack_temp_dir('full-stack.d');
 my $sharedir = setup_share_dir($ENV{OPENQA_BASEDIR});
 
 # initialize database, start daemons
-my $schema = OpenQA::Test::Database->new->create(schema_name => 'public', drop_schema => 1);
+my $schema = OpenQA::Test::Database->new->create(drop_schema => 1);
 ok +Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'), 'assets are prefetched';
 my $mojoport = service_port 'websocket';
 $ws = create_websocket_server($mojoport, 0);
