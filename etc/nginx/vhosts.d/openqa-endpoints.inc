@@ -70,7 +70,7 @@ location / {
 #    # Apply optional rate limiting (needs zone definition, see `openqa-limiting.inc`)
 #    # Limit regular requests via webui_limit
 #    limit_req zone=webui_limit burst=100 nodelay;
-#    # Limit POST/PUT/PATCH/DELETE requests via webui_light_limit so many worker slots can do uploads in parallel
+#    # Limit modifying requests via webui_light_limit so many worker slots can do uploads in parallel
 #    limit_req zone=webui_light_limit burst=500 nodelay;
 #    limit_req_status 429;
 #    add_header Retry-After 1 always;
