@@ -347,6 +347,9 @@ statistics.
 %package client-bash-completion
 Summary:        Bash Completion for %{name}
 Group:          Development/Tools/Other
+%if 0%{?suse_version} > 1500
+BuildRequires:  perl-App-AppSpec
+%endif
 Requires:       bash-completion
 Supplements:    (%{name}-client and bash-completion)
 
@@ -356,6 +359,9 @@ The official bash completion script for openqa-cli.
 %package client-zsh-completion
 Summary:        Zsh Completion for %{name}
 Group:          Development/Tools/Other
+%if 0%{?suse_version} > 1500
+BuildRequires:  perl-App-AppSpec
+%endif
 Supplements:    (%{name}-client and zsh)
 
 %description client-zsh-completion
