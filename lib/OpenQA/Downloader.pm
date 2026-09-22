@@ -65,9 +65,9 @@ sub _extract_asset ($self, $to_extract, $target) {
     my ($res, $err) = ($?, $!);
     my ($signal, $return_code) = ($res & 127, $res >> 8);
     chomp $stderr and $stderr = ": $stderr" if $stderr;
-    return "Failed to invoke \"$cmd\": $err" if $res == -1;    # uncoverable statement
-    return "Command \"$cmd\" died with signal $signal$stderr" if $signal;    # uncoverable statement
-    return "Command \"$cmd\" exited with non-zero return code $return_code$stderr" if $return_code != 0;
+    return qq{Failed to invoke "$cmd": $err} if $res == -1;    # uncoverable statement
+    return qq{Command "$cmd" died with signal $signal$stderr} if $signal;    # uncoverable statement
+    return qq{Command "$cmd" exited with non-zero return code $return_code$stderr} if $return_code != 0;
     return undef;
 }
 

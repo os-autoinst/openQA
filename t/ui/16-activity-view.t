@@ -115,7 +115,7 @@ subtest 'Current jobs' => sub {
             user_id => $demo_user->id,
             connection_id => 'foo',
             event => $fake_events{$_},
-            event_data => "{\"id\": $_}",
+            event_data => qq{{"id": $_}},
             t_created => time2str('%Y-%m-%d %H:%M:%S', time - $_ - 80000, 'UTC'),
         }) for sort keys %fake_events;
     # Multiple events for the same job amount to one item

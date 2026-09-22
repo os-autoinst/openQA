@@ -36,6 +36,10 @@ severity = 3
 severity = 1
 
 # == Custom Policies
+# -- Prohibit escaped double quotes inside double-quoted strings
+[OpenQA::ProhibitEscapedDoubleQuotes]
+severity = 3
+
 # -- Useless quotes on hashes
 [OpenQA::HashKeyQuotes]
 severity = 5

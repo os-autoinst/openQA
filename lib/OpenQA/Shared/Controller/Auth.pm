@@ -221,7 +221,7 @@ sub _key_auth ($self, $reason, $key) {
         }
         $log->debug("$reject_msg, $reason");
     }
-    elsif ($key) { $log->debug("API key \"$key\" not found") }
+    elsif ($key) { $log->debug(qq{API key "$key" not found}) }
 
     return (undef, $reason);
 }

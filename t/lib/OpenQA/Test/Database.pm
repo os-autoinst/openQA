@@ -38,14 +38,14 @@ sub create ($self, %options) {
     # create a new schema or use an existing one
     unless (defined $options{skip_schema}) {
         my $schema_name = $options{schema_name} // generate_schema_name;
-        log_info("using database schema \"$schema_name\"");
+        log_info(qq{using database schema "$schema_name"});
 
         if ($options{drop_schema}) {
             $dbh->do('set client_min_messages to WARNING;');
             $dbh->do("drop schema if exists $schema_name cascade;");
         }
         $schema->search_path_for_tests($schema_name);
-        $dbh->do("create schema \"$schema_name\"");
+        $dbh->do(qq{create schema "$schema_name"});
         $schema->set_search_path($schema_name);
     }
 

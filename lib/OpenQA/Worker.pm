@@ -75,7 +75,7 @@ sub new ($class, $cli_options) {
     # determine instance number
     my $instance_number = $cli_options->{instance};
     die 'no instance number specified' unless defined $instance_number;
-    die "the specified instance number \"$instance_number\" is no number" unless looks_like_number($instance_number);
+    die qq{the specified instance number "$instance_number" is no number} unless looks_like_number($instance_number);
 
     # determine settings and create app
     my $settings = OpenQA::Worker::Settings->new($instance_number, $cli_options);

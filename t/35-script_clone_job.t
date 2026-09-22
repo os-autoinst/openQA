@@ -193,7 +193,7 @@ subtest 'asset download' => sub {
             return {id => 3, settings => {PUBLISH_HDD_1 => 'some.qcow2'}} if $job_id eq 3;
             return {id => 4, settings => {UEFI => 1, PUBLISH_PFLASH_VARS => 'uefi-vars.qcow2'}} if $job_id eq 4;
             return {id => 5, settings => {UEFI => 0, PUBLISH_PFLASH_VARS => 'uefi-vars.qcow2'}} if $job_id eq 5;
-            fail "clone_job_get_job called with unexpected job ID \"$job_id\"";    # uncoverable statement
+            fail qq{clone_job_get_job called with unexpected job ID "$job_id"};    # uncoverable statement
         });
     my %expected_downloads = (
         "http://foo/tests/$job_id/asset/iso/foo.iso" => "$temp_assetdir/iso/foo.iso",

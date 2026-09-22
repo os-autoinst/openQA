@@ -57,12 +57,12 @@ _openqa_cli_completions() {
     cur="${COMP_WORDS[COMP_CWORD]}"
 HEADER
 
-$bash_content .= sprintf "    subcommands=\"%s\"\n", join ' ', @subcmds;
-$bash_content .= sprintf "    main_options=\"%s\"\n", bash_option_list(@global_opts);
+$bash_content .= sprintf qq{    subcommands="%s"\n}, join ' ', @subcmds;
+$bash_content .= sprintf qq{    main_options="%s"\n}, bash_option_list(@global_opts);
 
 for my $cmd (@subcmds) {
     my @opts = collect_options($subcommands{$cmd}{options});
-    $bash_content .= sprintf "    %s_options=\"%s\"\n", $cmd, bash_option_list(@opts);
+    $bash_content .= sprintf qq{    %s_options="%s"\n}, $cmd, bash_option_list(@opts);
 }
 
 $bash_content .= <<'BODY';
@@ -76,7 +76,7 @@ BODY
 
 for my $cmd (@subcmds) {
     $bash_content .= sprintf "        %s)\n", $cmd;
-    $bash_content .= sprintf "            COMPREPLY=(\$(compgen -W \"\$main_options \$%s_options\" -- \"\$cur\"))\n",
+    $bash_content .= sprintf qq{            COMPREPLY=(\$(compgen -W "\$main_options \$%s_options" -- "\$cur"))\n},
       $cmd;
     $bash_content .= "            ;;\n";
 }
@@ -118,7 +118,7 @@ for my $cmd (@subcmds) {
     $zsh_content .= sprintf "    local -a %s_options\n", $cmd;
 }
 
-$zsh_content .= sprintf "    subcommands=(%s)\n", join ' ', map { "\"$_\"" } @subcmds;
+$zsh_content .= sprintf "    subcommands=(%s)\n", join ' ', map { qq{"$_"} } @subcmds;
 
 $zsh_content .= "    main_options=(\n";
 $zsh_content .= join("\n", map { zsh_option_entry(@$_) } @global_opts) . "\n";
@@ -141,7 +141,7 @@ BODY
 for my $cmd (@subcmds) {
     $zsh_content .= sprintf "            %s)\n", $cmd;
     $zsh_content .= sprintf "                local -a _all\n";
-    $zsh_content .= sprintf "                _all=(\"\${main_options[@]}\" \"\${%s_options[@]}\")\n", $cmd;
+    $zsh_content .= sprintf qq{                _all=("\${main_options[@]}" "\${%s_options[@]}")\n}, $cmd;
     $zsh_content .= sprintf "                _describe 'option' _all\n";
     $zsh_content .= "                ;;\n";
 }

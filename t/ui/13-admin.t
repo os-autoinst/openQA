@@ -534,7 +534,7 @@ subtest 'edit job templates' => sub() {
     $yaml .= "        testsuite: advanced_kde\n";
     $yaml .= "        priority: 11\n";
     $yaml =~ s/\n/\\n/g;
-    $driver->execute_script("editor.setValue(\"$yaml\");");
+    $driver->execute_script(qq{editor.setValue("$yaml");});
     $driver->find_element_by_id('preview-template')->click();
     wait_for_ajax;
     like $result->get_text(), qr/Preview of the changes/, 'preview shown' or always_explain $result->get_text();
@@ -567,7 +567,7 @@ subtest 'edit job templates' => sub() {
     $yaml .= "        testsuite: advanced_kde\n";
     $yaml .= "        priority: 99\n";
     $yaml =~ s/\n/\\n/g;
-    $driver->execute_script("editor.setValue(\"$yaml\");");
+    $driver->execute_script(qq{editor.setValue("$yaml");});
     $driver->find_element_by_id('save-template')->click();
     wait_for_ajax;
     like $result->get_text(), qr/YAML saved!/, 'saving confirmed' or always_explain $result->get_text();
@@ -594,7 +594,7 @@ subtest 'edit job templates' => sub() {
     $result = $form->child('.result');
     $yaml .= ' # additional comment';
     my $jsyaml = $yaml =~ s/\n/\\n/gr;
-    $driver->execute_script("editor.setValue(\"$jsyaml\");");
+    $driver->execute_script(qq{editor.setValue("$jsyaml");});
     $driver->find_element_by_id('save-template')->click();
     wait_for_ajax;
     like $result->get_text(), qr/YAML saved!/, 'second tab saved' or always_explain $result->get_text();
@@ -605,7 +605,7 @@ subtest 'edit job templates' => sub() {
     $form = $driver->find_element_by_id('editor-form');
     $result = $form->child('.result');
     $jsyaml .= ' # one more comment\n';
-    $driver->execute_script("editor.setValue(\"$jsyaml\");");
+    $driver->execute_script(qq{editor.setValue("$jsyaml");});
     $driver->find_element_by_id('save-template')->click();
     wait_for_ajax;
     like $result->get_text(), qr/Template was modified/, 'conflict reported' or always_explain $result->get_text();

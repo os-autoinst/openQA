@@ -299,7 +299,7 @@ sub handle_message_from_os_autoinst ($self, $job_id, $json) {
             my $required_version_str
               = OS_AUTOINST_DEVEL_MODE_MAJOR_VERSION . '.' . OS_AUTOINST_DEVEL_MODE_MINOR_VERSION;
             my $disconnect_reason
-              = "os-autoinst version \"$actual_version_str\" is incompatible, version \"$required_version_str\" is required";
+              = qq{os-autoinst version "$actual_version_str" is incompatible, version "$required_version_str" is required};
             $self->disconnect_from_os_autoinst($job_id, $disconnect_reason);
             return;
         }

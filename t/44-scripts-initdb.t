@@ -21,7 +21,7 @@ $ENV{OPENQA_DATABASE_SEARCH_PATH} = $schema_name;
 $ENV{OPENQA_SCHEMA_VERSION_OVERRIDE} = $schema_version;
 
 my $schema = OpenQA::Schema::connect_db(deploy => 0, silent => $ENV{HARNESS_IS_VERBOSE} ? 0 : 1, from_script => 1);
-$schema->storage->dbh->do("create schema \"$schema_name\"");
+$schema->storage->dbh->do(qq{create schema "$schema_name"});
 
 my $tempdir = tempdir;
 my $dbicdh_dir = path($FindBin::RealBin, '../dbicdh');

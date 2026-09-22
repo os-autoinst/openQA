@@ -854,7 +854,7 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
         # send status info with incompatible version which should cause a disconnect
         my $actual_major_version = $status_info{devel_mode_major_version} = $required_major_version + 1;
         my $expected_error
-          = "os-autoinst version \"$actual_major_version.$required_minor_version\" is incompatible, version \"$required_major_version.$required_minor_version\" is required";
+          = qq{os-autoinst version "$actual_major_version.$required_minor_version" is incompatible, version "$required_major_version.$required_minor_version" is required};
         $fake_cmd_srv_tx->emit_json(\%status_info);
         $t_livehandler->message_ok('message from command server received');
         $t_livehandler->json_message_is(

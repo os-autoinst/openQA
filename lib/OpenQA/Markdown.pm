@@ -37,11 +37,11 @@ qq{<span title="$bugtitle" class="openqa-bugref"><a href="$bugurl"><i class="tes
 
 sub _label_to_html ($label_text) {
     $label_text =~ s/${\UNCONSTRAINED_BUGREF_REGEX}/bugref_to_html($+{match})/ge;
-    return "<span class=\"openqa-label\">label:$label_text<\/span>";
+    return qq{<span class="openqa-label">label:$label_text<\/span>};
 }
 
 sub _flag_to_html ($flag_text) {
-    return "<span class=\"openqa-flag\">flag:$flag_text<\/span>";
+    return qq{<span class="openqa-flag">flag:$flag_text<\/span>};
 }
 
 sub markdown_to_html ($text) {
