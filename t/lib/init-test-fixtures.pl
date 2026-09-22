@@ -15,8 +15,8 @@ my $schema_name = $ENV{OPENQA_DATABASE_SEARCH_PATH} // 'public';
 if ($ENV{RESET_SCHEMA}) {
     my $dbh = $schema->storage->dbh;
     $dbh->do('SET client_min_messages TO WARNING');
-    $dbh->do("DROP SCHEMA IF EXISTS \"$schema_name\" CASCADE");
-    $dbh->do("CREATE SCHEMA \"$schema_name\"");
+    $dbh->do(qq{DROP SCHEMA IF EXISTS "$schema_name" CASCADE});
+    $dbh->do(qq{CREATE SCHEMA "$schema_name"});
 }
 
 # Deploy schema and insert fixtures
