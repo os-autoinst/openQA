@@ -123,7 +123,7 @@ sub test_comments ($in, $id) {
         $t->get_ok("/api/v1/$in/$id/comments?render_markdown=1")->status_is(200)
           ->json_is('/0/text' => $edited_test_message, 'text correct')->json_is(
             '/0/renderedMarkdown' =>
-"<p>This is a cool test \x{2620} - <a href=\"http://open.qa\">http://open.qa</a> - this message will be\\nappended if editing works \x{2620}</p>\n",
+qq{<p>This is a cool test \x{2620} - <a href="http://open.qa">http://open.qa</a> - this message will be\\nappended if editing works \x{2620}</p>\n},
             'markdown correct'
           );
         is scalar @{$t->tx->res->json}, 1, 'one comment present';
