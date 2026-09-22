@@ -1144,6 +1144,48 @@ A worker reserved this way still counts as reserved rather than idle in the over
 statistics. Reservations are tracked per web UI, so a worker connected to multiple
 web UIs is only tagged on the one where the reservation was made.
 
+### Reserving complete worker hosts
+
+Complete physical worker hosts can be reserved atomically for maintenance or
+configuration updates, taking all of their worker instances out of rotation
+in one action. This avoids the manual effort of reserving dozens of slots
+individually and eliminates race conditions.
+
+```bash
+openqa-cli reservation --worker-host=worker01.infra.opensuse.org --comment="Kernel update" --duration=5h
+openqa-cli reservation --worker-host=worker01.infra.opensuse.org --release
+```
+
+- **Symmetric all-or-nothing semantics**: Host reservation is atomic. If any
+  worker instance on the host is already reserved by another user, the
+  operation fails with a 409 Conflict identifying the conflicting instances.
+  Admins can override this with the `--force` option.
+- **Inheritance on worker registration**: When worker instances restart,
+  reconnect, or newly register, they automatically inherit any active
+  host-level reservation from their sibling instances on the same host. This
+  prevents fresh slots from picking up production jobs during a machine's
+  maintenance window.
+- **Verification mode support**: Just like individual reservations, you can
+  supply `--class` to a whole-host reservation to place the entire machine
+  into verification mode for testing host-level changes:
+
+```bash
+openqa-cli reservation --worker-host=worker01.infra.opensuse.org --class=poo167749 --comment="poo#167749 host verification" --duration=1d
+```
+
+### Worker Host Administration
+
+Clicking on any host name in the workers table or a worker's detail page
+navigates to the joint host administration view
+(`/admin/worker_hosts/<host>`). This view aggregates:
+
+- **Aggregated host health**: Statistics on online, busy, idle, reserved, and
+  dead worker instances.
+- **Joint configuration**: Consolidated properties comparing and highlighting
+  identical vs. different configuration parameters across all instances.
+- **Aggregated job history**: A combined DataTable of previous jobs executed
+  across all worker slots on the machine.
+
 <a id="rest_api"></a>
 
 ## Use of the REST API
