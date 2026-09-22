@@ -61,7 +61,7 @@ driver_missing unless check_driver_modules;
 my $tempdir = setup_fullstack_temp_dir('developer-mode');
 my $sharedir = setup_share_dir($ENV{OPENQA_BASEDIR});
 my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
-ok -d $resultdir, "resultdir \"$resultdir\" exists";
+ok -d $resultdir, qq{resultdir "$resultdir" exists};
 
 # setup database without fixtures and special admin users 'Demo' and 'otherdeveloper'
 my $schema = OpenQA::Test::Database->new->create(drop_schema => 1);
