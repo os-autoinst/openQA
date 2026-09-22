@@ -266,7 +266,7 @@ subtest 'bug reference shown' => sub {
     my @bug_labels = $driver->find_elements('#bug-99981 .label_bug');
     is scalar @bug_labels, 1, 'one bug label present';
     is $bug_labels[0]->get_attribute('title'),
-      "Bug referenced: boo#1138417\nsome title with \"quotes\" and <html>elements</html>",
+      qq{Bug referenced: boo#1138417\nsome title with "quotes" and <html>elements</html>},
       'title rendered with new-line, HTML code is rendered as text';
 };
 
