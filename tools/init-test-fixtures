@@ -4,8 +4,11 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Mojo::Base -signatures;
+use lib 'lib', 't/lib', 'external/os-autoinst-common/lib';
+use OpenQA::Schema;
+use OpenQA::Test::Database;
+use OpenQA::Test::Utils qw(assume_all_assets_exist);
 use Getopt::Long::Descriptive;
-use IPC::Run qw(run);
 
 sub init ($opt) {
     # Initialize or reset the openQA test database with standard fixtures and mock assets
@@ -13,9 +16,10 @@ sub init ($opt) {
     # Ensure t/fixtures exists
     my $fixtures_dir = 't/fixtures';
     unless (-e $fixtures_dir) {
-        die sprintf 'Error: Fixtures directory %s not found.', $fixtures_dir;
+        die sprintf 'Error: Fixtures directory %s not found.', $fixtures_dir;    # uncoverable statement
     }
 
+    my $schema = OpenQA::Schema::connect_db(mode => 'test', deploy => 0);
     my $schema_name = $ENV{OPENQA_DATABASE_SEARCH_PATH} // 'public';
 
     unless ($opt->silent) {
@@ -25,14 +29,21 @@ sub init ($opt) {
         say sprintf "Deploying schema and loading fixtures from '%s'...", $opt->fixtures;
     }
 
-    local $ENV{FIXTURES_GLOB} = $opt->fixtures;
-    local $ENV{RESET_SCHEMA} = $opt->reset ? 1 : 0;
-
-    my @cmd = ($^X, 't/lib/init-test-fixtures.pl');
-    unless (run \@cmd, \my $in, \my $out, \my $err) {
-        warn "Error: Failed to initialize test fixtures.\n$err";
-        exit $?;
+    if ($opt->reset) {
+        my $dbh = $schema->storage->dbh;
+        $dbh->do('SET client_min_messages TO WARNING');
+        $dbh->do(qq{DROP SCHEMA IF EXISTS "$schema_name" CASCADE});
+        $dbh->do(qq{CREATE SCHEMA "$schema_name"});
     }
+
+    # Deploy schema and insert fixtures
+    OpenQA::Test::Database->new->create(
+        skip_schema => 1,
+        fixtures_glob => $opt->fixtures,
+    );
+
+    # Configure mock assets to avoid 404s/warnings
+    assume_all_assets_exist();
 
     return if $opt->silent;
 
@@ -66,8 +77,8 @@ sub main () {
 
     Helper tool to initialize the openQA developer test environment with fixtures
     EOM
-        ['fixtures|f=s', 'Specify fixture files to load', {default => '*.pl'}],
-        ['reset!', 'Drop and recreate the schema before populating', {default => 1}],
+        ['fixtures|f=s', 'Specify fixture files to load', {default => $ENV{FIXTURES_GLOB} // '*.pl'}],
+        ['reset!', 'Drop and recreate the schema before populating', {default => $ENV{RESET_SCHEMA} // 1}],
         ['silent', 'Suppress summary and status output'],
         ['help|h', 'print usage message and exit', {shortcircuit => 1}],
     );
