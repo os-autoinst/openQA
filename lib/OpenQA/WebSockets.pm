@@ -69,7 +69,7 @@ sub ws_send ($workerid, $msg, $jobid = undef, $retry = 0) {
     my $tx = $worker->{tx};
     if (!$tx || $tx->is_finished) {
         # uncoverable statement untested exceptional error
-        log_debug("Unable to send command \"$msg\" to worker $workerid: worker not connected");
+        log_debug(qq{Unable to send command "$msg" to worker $workerid: worker not connected});
 
         # try again in 10 seconds because workers try to re-connect in 10 s intervals
         # uncoverable statement
