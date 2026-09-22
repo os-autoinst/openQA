@@ -88,7 +88,7 @@ my $driver = call_driver({mojoport => service_port 'webui'});
 $livehandler = create_live_view_handler;
 
 my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
-ok -d $resultdir, "resultdir \"$resultdir\" exists";
+ok -d $resultdir, qq{resultdir "$resultdir" exists};
 
 $driver->title_is('openQA', 'on main page');
 is $driver->find_element('#user-action a')->get_text(), 'Login', 'no one logged in';
