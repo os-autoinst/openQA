@@ -423,6 +423,110 @@ subtest 'worker reservation API' => sub {
     $other_operator->delete;
 };
 
+subtest 'worker host reservation API' => sub {
+    my $users = $schema->resultset('Users');
+    my ($admin, $operator) = map { $users->find($_) } 99901, 99903;
+    my $other_operator = $users->create(
+        {
+            username => 'galahad_host',
+            is_operator => 1,
+            feature_version => 0,
+            api_keys => [{key => 'GALAHADHOSTKEY01', secret => 'GALAHADHOSTSECRET01'}]});
+    my $t_admin = client(Test::Mojo->new($t->app), apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR');
+    my $t_non_op = client(Test::Mojo->new($t->app), apikey => 'LANCELOTKEY01', apisecret => 'MANYPEOPLEKNOW');
+    my $t_other_op = client(Test::Mojo->new($t->app), apikey => 'GALAHADHOSTKEY01', apisecret => 'GALAHADHOSTSECRET01');
+
+    # Let's create two workers on a dotted host 'worker01.infra.opensuse.org'
+    my $w1 = $workers->create({host => 'worker01.infra.opensuse.org', instance => 1});
+    my $w2 = $workers->create({host => 'worker01.infra.opensuse.org', instance => 2});
+
+    my $host_res_url = '/api/v1/worker_hosts/worker01.infra.opensuse.org/reservation';
+
+    # 1. Non-operator attempts to reserve -> 403 Forbidden
+    $t_non_op->post_ok($host_res_url, form => {comment => 'maint', duration => '1h'})
+      ->status_is(403, 'reserve attempt by non-operator is forbidden');
+
+    # 2. Unknown host -> 404 Not Found
+    $t_admin->post_ok('/api/v1/worker_hosts/nonexistent.host/reservation',
+        form => {comment => 'maint', duration => '1h'})
+      ->status_is(404, 'reserve attempt on nonexistent host returns 404');
+    $t_admin->delete_ok('/api/v1/worker_hosts/nonexistent.host/reservation')
+      ->status_is(404, 'release attempt on nonexistent host returns 404');
+
+    # 3. Happy path POST and DELETE
+    $t->post_ok($host_res_url,
+        form => {comment => 'operator host reservation', duration => '2h', worker_class => 'poo167749'})
+      ->status_is(200, 'operator can reserve complete host')
+      ->json_is('/message' => "Worker host 'worker01.infra.opensuse.org' reserved successfully.")
+      ->json_is('/instances' => [$w1->id, $w2->id]);
+
+    # Check that reservation properties are updated and matches
+    $w1->discard_changes;
+    is $w1->reservation->{comment}, 'operator host reservation', 'w1 comment matches';
+    is $w1->reservation->{scope}, 'host', 'w1 scope is host';
+
+    # 4. Verify audit row for worker_host_reserve
+    is_deeply OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'worker_host_reserve'),
+      {
+        host => 'worker01.infra.opensuse.org',
+        instances => [$w1->id, $w2->id],
+        user => $operator->username,
+        comment => 'operator host reservation',
+        expires => $w1->reservation->{t_expires},
+        worker_class => 'poo167749',
+      },
+      'worker_host_reserve audit row was emitted with correct fields';
+
+    # 5. Overlapping reservation without force as non-admin operator -> 409 Conflict
+    $t_other_op->post_ok($host_res_url, form => {comment => 'other op reservation', duration => '1h'})
+      ->status_is(409, 'refuse overlapping host reservation')->json_like('/error' => qr/already reserved/);
+
+    # 6. Overlapping reservation with force as admin -> succeeds (200)
+    $t_admin->post_ok($host_res_url, form => {comment => 'admin host override', duration => '1h', force => 1})
+      ->status_is(200, 'admin can force reserve the host')
+      ->json_is('/message' => "Worker host 'worker01.infra.opensuse.org' reserved successfully.");
+
+    $w1->discard_changes;
+    is $w1->reservation->{user}, $admin->username, 'owner updated to admin';
+
+    # 7. Release host by other operator -> 403 Forbidden
+    $t_other_op->delete_ok($host_res_url)
+      ->status_is(403, 'release of host reserved by admin by non-admin operator is forbidden');
+
+    # 8. Release host by admin -> 200 OK
+    $t_admin->delete_ok($host_res_url)->status_is(200, 'admin can release host')
+      ->json_is('/message' => "Worker host 'worker01.infra.opensuse.org' reservation released successfully.");
+
+    # 9. Verify audit row for worker_host_release
+    is_deeply OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'worker_host_release'),
+      {
+        host => 'worker01.infra.opensuse.org',
+        instances => [$w1->id, $w2->id],
+        user => $admin->username,
+      },
+      'worker_host_release audit row was emitted with correct fields';
+
+    # 10. Deleting a worker covered by host reservation without force -> 400
+    # Let's reserve host again
+    $t->post_ok($host_res_url, form => {comment => 'operator host reservation', duration => '2h'})->status_is(200);
+    $w1->update(
+        {t_seen => time2str('%Y-%m-%d %H:%M:%S', time - DEFAULT_WORKER_TIMEOUT - DB_TIMESTAMP_ACCURACY, 'UTC')});
+    $t_admin->delete_ok('/api/v1/workers/' . $w1->id)
+      ->status_is(400, 'cannot delete worker covered by host reservation without force')
+      ->json_is('/error' => 'Cannot delete a worker covered by active host reservation.');
+
+    # 11. Deleting with force -> 200
+    $t_admin->delete_ok('/api/v1/workers/' . $w1->id . '?force=1')
+      ->status_is(200, 'admin can delete worker covered by host reservation with force');
+
+    # Clean up
+    $w1->delete_properties([RESERVATION_PROPERTIES]);
+    $w1->delete;
+    $w2->delete_properties([RESERVATION_PROPERTIES]);
+    $w2->delete;
+    $other_operator->delete;
+};
+
 subtest 'worker registration reservation inheritance' => sub {
     my $users = $schema->resultset('Users');
     my $operator = $users->find(99903);

@@ -382,6 +382,10 @@ sub startup ($self) {
     $api_ro->delete('/workers/<worker_id:num>')->name('apiv1_worker_delete')->to('worker#delete');
     $api_ro->post('/workers/<workerid:num>/reservation')->name('apiv1_worker_reserve')->to('worker#reserve');
     $api_ro->delete('/workers/<workerid:num>/reservation')->name('apiv1_worker_release')->to('worker#release');
+    $api_ro->post('/worker_hosts/<#host>/reservation')->name('apiv1_worker_host_reserve')->to('worker#reserve_host');
+    $api_ro->delete('/worker_hosts/<#host>/reservation')->name('apiv1_worker_host_release')->to('worker#release_host');
+    $api_description{apiv1_worker_host_reserve} = 'Reserves all worker instances on a host.';
+    $api_description{apiv1_worker_host_release} = 'Releases reservations across all worker instances on a host.';
 
     # api/v1/mutex
     $api_r_job->post('/mutex')->name('apiv1_mutex_create')->to('locks#mutex_create');

@@ -267,8 +267,17 @@ sub delete ($self) {
     if (!$worker) {
         return $self->render(json => {error => 'Worker not found.'}, status => 404);
     }
-    if ($worker->is_reserved && !($self->param('force') && $self->current_user->is_admin)) {
-        return $self->render(json => {error => 'Cannot delete a reserved worker.'}, status => 400);
+    if ($worker->is_reserved) {
+        my $res = $worker->reservation;
+        if (($res->{scope} // '') eq 'host' && !$self->param('force')) {
+            return $self->render(
+                json => {error => 'Cannot delete a worker covered by active host reservation.'},
+                status => 400
+            );
+        }
+        if (!($self->param('force') && $self->current_user->is_admin)) {
+            return $self->render(json => {error => 'Cannot delete a reserved worker.'}, status => 400);
+        }
     }
     if ($worker->status ne 'dead' || $worker->unfinished_jobs->count) {
         $message = 'Worker ' . $worker->name . ' status is not offline.';
@@ -351,6 +360,88 @@ sub release ($self) {
 
     $self->emit_event('openqa_worker_release', {id => $worker->id, name => $worker->name, user => $user->username});
     $self->render(json => {message => 'Worker ' . $worker->name . ' reservation released successfully.'});
+}
+
+=over 4
+
+=item reserve_host()
+
+Reserves all worker instances on a host with a comment and a specified duration.
+Optionally accepts a C<worker_class> for verification jobs.
+
+=back
+
+=cut
+
+sub reserve_host ($self) {
+    my $host = $self->param('host');
+    my $user = $self->current_user;
+    my $comment = $self->param('comment');
+    my $worker_class = $self->param('worker_class');
+    my $workers = $self->schema->resultset('Workers');
+
+    my $worker_list;
+    return undef
+      unless $self->_apply_reservation(
+        sub {
+            $worker_list = $workers->reserve_host(
+                $host, $user,
+                comment => $comment,
+                duration => $self->param('duration'),
+                force => $self->param('force'),
+                worker_class => $worker_class,
+            );
+        });
+
+    # Emit openqa_worker_host_reserve audit event
+    my $first_worker = $worker_list->[0];
+    my $reservation = $first_worker->reservation;
+    $self->emit_event(
+        'openqa_worker_host_reserve',
+        {
+            host => $host,
+            instances => [map { $_->id } @$worker_list],
+            user => $user->username,
+            comment => $comment,
+            expires => $reservation->{t_expires},
+            (defined $worker_class && length $worker_class ? (worker_class => $worker_class) : ()),
+        });
+
+    $self->render(
+        json => {
+            message => "Worker host '$host' reserved successfully.",
+            instances => [map { $_->id } @$worker_list],
+        });
+}
+
+=over 4
+
+=item release_host()
+
+Releases reservations across all worker instances on a host.
+
+=back
+
+=cut
+
+sub release_host ($self) {
+    my $host = $self->param('host');
+    my $user = $self->current_user;
+    my $workers = $self->schema->resultset('Workers');
+
+    my $worker_list;
+    return undef unless $self->_apply_reservation(sub { $worker_list = $workers->release_host($host, $user) });
+
+    # Emit openqa_worker_host_release audit event
+    $self->emit_event(
+        'openqa_worker_host_release',
+        {
+            host => $host,
+            instances => [map { $_->id } @$worker_list],
+            user => $user->username,
+        });
+
+    $self->render(json => {message => "Worker host '$host' reservation released successfully."});
 }
 
 1;
