@@ -1,0 +1,148 @@
+% layout 'bootstrap';
+% title "Worker Host " . $worker_host;
+
+% content_for 'ready_function' => begin
+    is_operator = <%= (is_operator) ? 'true' : 'false' %>;
+    restart_url = "<%= url_for("apiv1_restart", jobid => 'REPLACEIT') %>";
+    cancel_url = "<%= url_for("apiv1_cancel", jobid => 'REPLACEIT') %>";
+    updateTimeago();
+    setupResultButtons();
+    setupWorkerNeedles();
+% end
+
+<div class="row">
+    <div class="col-sm-12">
+        <h2><%= title %></h2>
+
+    %= include 'layouts/info'
+
+    <div class="row my-3">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">Host Summary</div>
+                <div class="card-body">
+                    <div><span>Online slots: </span><%= $stats->{online} %> / <%= scalar @$workers %></div>
+                    <div><span>Busy slots: </span><%= $stats->{busy} %></div>
+                    <div><span>Idle slots: </span><%= $stats->{idle} %></div>
+                    <div><span>Reserved slots: </span><%= $stats->{reserved} %></div>
+                    <div><span>Offline/Dead slots: </span><%= $stats->{dead} %></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-secondary text-white">Host Reservation</div>
+                <div class="card-body" id="reservation">
+                    <p><strong>Reservation status:</strong> <span class="badge <%= $reservation_status eq 'fully reserved' ? 'bg-danger' : $reservation_status eq 'partially reserved' ? 'bg-warning' : 'bg-success' %>"><%= $reservation_status %></span></p>
+                    % if ($host_reservation) {
+                        <p><strong>Reserved by:</strong> <%= $host_reservation->{user} %></p>
+                        % if ($host_reservation->{worker_class}) {
+                        <p><strong>Specific class:</strong> <%= $host_reservation->{worker_class} %></p>
+                        % }
+                        <p><strong>Comment:</strong> <%= $host_reservation->{comment} %></p>
+                        <p><strong>Reserved at:</strong> <%= $host_reservation->{t_created} %></p>
+                        <p><strong>Expires:</strong> <%= $host_reservation->{t_expires} // 'Never (indefinite)' %></p>
+                        % if (is_operator) {
+                            <button class="btn btn-danger" onclick="releaseHost('<%= $worker_host %>')">Release complete host</button>
+                        % }
+                    % } else {
+                        <p>No active reservations on this host.</p>
+                        % if (is_operator) {
+                            <button class="btn btn-success" onclick="openHostReserveModal('<%= $worker_host %>', '<%= scalar @$workers %>')">Reserve complete host</button>
+                        % }
+                    % }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card my-3">
+        <div class="card-header">Worker Instances</div>
+        <div class="card-body">
+            <table class="table table-striped">
+                <thead>
+                    <th>Instance</th>
+                    <th>Status</th>
+                    <th>Last Seen</th>
+                </thead>
+                <tbody>
+                    % for my $w (@$workers) {
+                        <tr>
+                            <td><a href="<%= url_for('admin_worker_show', worker_id => $w->{id}) %>">:<%= $w->{instance} %></a></td>
+                            <td>
+                                % my $worker = $w;
+                                %= include 'admin/workers/worker_status'
+                            </td>
+                            <td><abbr class="timeago" title="<%= $w->{t_seen} %>"><%= $w->{t_seen} %></abbr></td>
+                        </tr>
+                    % }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    % if (is_operator) {
+        <div class="card my-3">
+            <div class="card-header">Distinct Worker Classes</div>
+            <div class="card-body">
+                % for my $class (@$worker_classes) {
+                    <span class="badge bg-secondary m-1"><%= $class %></span>
+                % }
+            </div>
+        </div>
+
+        <div class="card my-3">
+            <div class="card-header">Joint Configuration</div>
+            <div class="card-body">
+                <h4>Shared Properties (across all instances)</h4>
+                <table class="table table-striped table-sm my-2">
+                    <thead>
+                        <th>Key</th>
+                        <th>Value</th>
+                    </thead>
+                    <tbody>
+                        % for my $k (sort keys %$shared_properties) {
+                            <tr>
+                                <td><%= $k %></td>
+                                <td><%= $shared_properties->{$k} %></td>
+                            </tr>
+                        % }
+                    </tbody>
+                </table>
+
+                <h4 class="mt-4">Instance-specific Differences</h4>
+                <table class="table table-striped table-sm my-2">
+                    <thead>
+                        <th>Key</th>
+                        <th>Values (value => count)</th>
+                    </thead>
+                    <tbody>
+                        % for my $k (sort keys %$different_properties) {
+                            <tr>
+                                <td><%= $k %></td>
+                                <td>
+                                    % my $vals = $different_properties->{$k};
+                                    % for my $v (sort keys %$vals) {
+                                        <span class="badge bg-info text-dark m-1"><%= $v %> (<%= $vals->{$v} %>)</span>
+                                    % }
+                                </td>
+                            </tr>
+                        % }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    % }
+
+    <h3>Previous jobs</h3>
+    <table id="previous_host_jobs" class="table table-striped"
+      data-ajax-url="<%= url_for('admin_worker_host_previous_jobs_ajax', worker_host => $worker_host) %>">
+        <thead>
+            <th>Test</th>
+            <th>Slot</th>
+            <th>Result</th>
+            <th>Finished</th>
+        </thead>
+    </table>
+</div>
+</div>
