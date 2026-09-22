@@ -146,3 +146,5 @@
     </table>
 </div>
 </div>
+
+%= include 'admin/workers/reserve_modal' if is_operator
