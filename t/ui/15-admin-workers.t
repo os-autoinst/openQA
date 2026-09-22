@@ -295,6 +295,20 @@ subtest 'Worker host administration view and reservation scope' => sub {
     wait_for { !$workers->find(1)->is_reserved && !$workers->find($w2->id)->is_reserved }
     'All worker instances on the host are released';
 
+    $driver->find_element('#reservation button.btn-success')->click();
+    wait_for_element(
+        selector => '#reserveWorkerModal.show',
+        description => 'Reservation modal is displayed when reserving from host view'
+    );
+    is $driver->find_element('#reserveWorkerName')->get_value, 'All 2 instances on localhost',
+      'Modal title shows correct target instances count';
+
+    $driver->find_element('#reserveWorkerComment')->send_keys('host view maintenance');
+    $driver->find_element('#reserveWorkerForm button[type=submit]')->click();
+
+    wait_for { $workers->find(1)->is_reserved && $workers->find($w2->id)->is_reserved }
+    'All worker instances are reserved after host view reservation';
+
     $w2->delete;
 };
 
