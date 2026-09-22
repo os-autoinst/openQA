@@ -18,7 +18,13 @@
 
     <div class="card">
         <div class="card-body status-info">
-            <div><span>Host: </span><%= $worker->{host} %></div>
+            <div><span>Host: </span>
+                % if (exists $worker->{host} && $worker->{host} ne 'unknown' && $worker->{host} ne '') {
+                    <a href="<%= url_for('admin_worker_host_show', worker_host => $worker->{host}) %>"><%= $worker->{host} %></a>
+                % } else {
+                    <%= $worker->{host} // 'unknown' %>
+                % }
+            </div>
             <div><span>Instance: </span><%= $worker->{instance} %></div>
             <div><span>Seen: </span><abbr class="timeago" title="<%= $worker->{t_seen} %>"><%= $worker->{t_seen} %></abbr></div>
             <div><span>Status: </span><%= include 'admin/workers/worker_status' %></div>
@@ -42,7 +48,7 @@
             % } else {
                 <p>This worker is not reserved.</p>
                 % if (is_operator) {
-                    <button class="btn btn-success" data-worker-id="<%= $worker->{id} %>" data-worker-name="<%= $worker->{name} %>" onclick="openReserveModal(this)">Reserve worker</button>
+                    <button class="btn btn-success" data-worker-id="<%= $worker->{id} %>" data-worker-name="<%= $worker->{name} %>" data-worker-host="<%= $worker->{host} %>" onclick="openReserveModal(this)">Reserve worker</button>
                 % }
             % }
         </div>

@@ -255,5 +255,48 @@ subtest 'reserve and release a worker' => sub {
     wait_for_element(selector => '#reservation button.btn-success', description => 'reserve button is displayed again');
     is $workers->find(1)->reservation, undef, 'reservation is released again';
 };
+
+subtest 'Worker host administration view and reservation scope' => sub {
+    my $w2 = $workers->create({host => 'localhost', instance => 2});
+
+    $driver->get('/admin/workers?status=');
+    $driver->find_element('tr#worker_1 td.host a')->click();
+    $driver->title_is('openQA: Worker Host localhost', 'Navigate to host localhost page from workers list');
+
+    $driver->get('/admin/workers/1');
+    $driver->find_element_by_link_text('localhost')->click();
+    $driver->title_is('openQA: Worker Host localhost', 'Navigate to host localhost page from worker show page');
+
+    $driver->get('/admin/workers?status=');
+    $driver->find_element('tr#worker_1 td.action button.btn-outline-success')->click();
+    wait_for_element(
+        selector => '#reserveWorkerModal.show',
+        description => 'Reservation modal with scope selection is displayed'
+    );
+
+    is $driver->find_element('#reserveScopeContainer')->is_displayed(), 1,
+      'Scope selection is visible for workers on a host';
+    $driver->find_element('#reserveScopeHost')->click();
+
+    $driver->find_element('#reserveWorkerComment')->send_keys('host maintenance');
+    $driver->find_element('#reserveWorkerForm button[type=submit]')->click();
+
+    wait_for { $workers->find(1)->is_reserved && $workers->find($w2->id)->is_reserved }
+    'All worker instances on the host are reserved';
+    is $workers->find(1)->reservation->{scope}, 'host', 'Worker 1 reservation scope is set to host';
+    is $workers->find($w2->id)->reservation->{scope}, 'host', 'Worker 2 reservation scope is set to host';
+
+    $driver->get('/admin/worker_hosts/localhost');
+    $driver->title_is('openQA: Worker Host localhost', 'Navigate to host page to check reservation details');
+    like $driver->find_element('#reservation')->get_text,
+      qr/fully reserved.*Reserved by: Demo.*Comment: host maintenance/s, 'Host page shows fully reserved status';
+
+    $driver->find_element('#reservation button.btn-danger')->click();
+    wait_for { !$workers->find(1)->is_reserved && !$workers->find($w2->id)->is_reserved }
+    'All worker instances on the host are released';
+
+    $w2->delete;
+};
+
 kill_driver();
 done_testing();

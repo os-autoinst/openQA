@@ -5,7 +5,8 @@
 %     my $class = $reservation->{worker_class} ? '<br>Class: ' . b($reservation->{worker_class})->xml_escape : '';
 %     my $comment = b($reservation->{comment})->xml_escape;
 %     my $expires = b($reservation->{t_expires} // 'never')->xml_escape;
-%     $reservation_details = "Reserved by: $user$class<br>Comment: $comment<br>Expires: $expires";
+%     my $scope_label = ($reservation->{scope} // '') eq 'host' ? ' (whole host)' : '';
+%     $reservation_details = "Reserved by: $user$class<br>Comment: $comment<br>Expires: $expires$scope_label";
 % }
 % if($worker->{status} eq 'running') {
     <%= $reservation ? 'Working (Reserved)' : 'Working' %>

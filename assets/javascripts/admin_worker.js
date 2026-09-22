@@ -117,6 +117,50 @@ function openReserveModal(reserveBtn) {
   duration.value = duration.dataset.defaultDuration;
   const force = document.getElementById('reserveWorkerForce');
   if (force) force.checked = false;
+
+  const host = reserveBtn.dataset.workerHost;
+  const scopeContainer = document.getElementById('reserveScopeContainer');
+  const hostNameSpan = document.getElementById('reserveScopeHostName');
+  const reserveHostInput = document.getElementById('reserveHostName');
+  if (scopeContainer && host) {
+    hostNameSpan.textContent = host;
+    reserveHostInput.value = host;
+    document.getElementById('reserveScopeInstance').checked = true;
+    scopeContainer.style.display = 'block';
+  } else if (scopeContainer) {
+    scopeContainer.style.display = 'none';
+    reserveHostInput.value = '';
+  }
+
+  new bootstrap.Modal(document.getElementById('reserveWorkerModal')).show();
+}
+
+function openHostReserveModal(host, count) {
+  const duration = document.getElementById('reserveWorkerDuration');
+  document.getElementById('reserveWorkerId').value = '';
+  document.getElementById('reserveWorkerName').value = 'All ' + count + ' instances on ' + host;
+  document.getElementById('reserveWorkerComment').value = '';
+  const workerClass = document.getElementById('reserveWorkerClass');
+  if (workerClass) workerClass.value = '';
+  const modalFlash = document.getElementById('reserveModalFlash');
+  if (modalFlash) modalFlash.replaceChildren();
+  duration.value = duration.dataset.defaultDuration;
+  const force = document.getElementById('reserveWorkerForce');
+  if (force) force.checked = false;
+
+  const scopeContainer = document.getElementById('reserveScopeContainer');
+  const reserveHostInput = document.getElementById('reserveHostName');
+  if (scopeContainer) {
+    scopeContainer.style.display = 'none';
+  }
+  if (reserveHostInput) {
+    reserveHostInput.value = host;
+  }
+  const hostRadio = document.getElementById('reserveScopeHost');
+  if (hostRadio) {
+    hostRadio.checked = true;
+  }
+
   new bootstrap.Modal(document.getElementById('reserveWorkerModal')).show();
 }
 
@@ -132,17 +176,27 @@ function submitReserve(event) {
   });
   const options = {method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body};
 
-  // Clear any existing flash messages in the modal
   const modalFlash = document.getElementById('reserveModalFlash');
   if (modalFlash) modalFlash.replaceChildren();
 
+  const isHostScope = document.getElementById('reserveScopeHost')?.checked;
+  const hostName = document.getElementById('reserveHostName')?.value;
+  const url =
+    isHostScope && hostName
+      ? '/api/v1/worker_hosts/' + hostName + '/reservation'
+      : reservationUrl(document.getElementById('reserveWorkerId').value);
+
   requestWorkerChange(
-    reservationUrl(document.getElementById('reserveWorkerId').value),
+    url,
     options,
-    "The worker couldn't be reserved: ",
+    "The reservation couldn't be performed: ",
     () => window.location.reload(),
     error =>
-      addFlash('danger', "The worker couldn't be reserved: " + error, document.getElementById('reserveModalFlash'))
+      addFlash(
+        'danger',
+        "The reservation couldn't be performed: " + error,
+        document.getElementById('reserveModalFlash')
+      )
   );
 }
 
@@ -151,6 +205,15 @@ function releaseWorker(releaseBtn) {
     reservationUrl(releaseBtn.dataset.workerId),
     {method: 'DELETE'},
     "The worker reservation couldn't be released: ",
+    () => window.location.reload()
+  );
+}
+
+function releaseHost(host) {
+  requestWorkerChange(
+    '/api/v1/worker_hosts/' + host + '/reservation',
+    {method: 'DELETE'},
+    "The worker host reservation couldn't be released: ",
     () => window.location.reload()
   );
 }
