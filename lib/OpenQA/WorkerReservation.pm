@@ -10,14 +10,17 @@ use OpenQA::WorkerReservation::Error;
 use DateTime;
 
 our @EXPORT_OK = qw(RESERVATION_PROPERTIES RESERVATION_TIMESTAMP_FORMAT
-  reservation_active reservation_error reservation_error_status reservation_info reservation_class_valid);
+  reservation_active reservation_error reservation_error_status reservation_info reservation_class_valid
+  SCOPE_HOST SCOPE_INSTANCE);
 
 # worker properties holding the reservation, reused to avoid a dedicated table and migration
 use constant RESERVATION_PROPERTIES =>
-  qw(RESERVED_BY_ID RESERVED_COMMENT RESERVED_T_CREATED RESERVED_T_EXPIRES RESERVED_WORKER_CLASS);
+  qw(RESERVED_BY_ID RESERVED_COMMENT RESERVED_T_CREATED RESERVED_T_EXPIRES RESERVED_WORKER_CLASS RESERVED_SCOPE);
 use constant RESERVATION_TIMESTAMP_FORMAT => '%Y-%m-%dT%H:%M:%SZ';
+use constant SCOPE_HOST => 'host';
+use constant SCOPE_INSTANCE => 'instance';
 
-my %ERROR_STATUS = (invalid => 400, forbidden => 403, conflict => 409);
+my %ERROR_STATUS = (invalid => 400, forbidden => 403, conflict => 409, not_found => 404);
 
 # a reservation is active while an owner is assigned and the optional expiry has not passed yet
 sub reservation_active ($owner_id, $expires_epoch) { !!($owner_id && (!$expires_epoch || $expires_epoch > time)) }
@@ -43,6 +46,7 @@ sub reservation_info ($properties) {
         comment => $properties->{RESERVED_COMMENT},
         t_created => _iso_timestamp($properties->{RESERVED_T_CREATED}),
         t_expires => _iso_timestamp($properties->{RESERVED_T_EXPIRES}),
+        scope => $properties->{RESERVED_SCOPE} // 'instance',
     };
     $info->{worker_class} = $properties->{RESERVED_WORKER_CLASS}
       if defined $properties->{RESERVED_WORKER_CLASS} && length $properties->{RESERVED_WORKER_CLASS};
