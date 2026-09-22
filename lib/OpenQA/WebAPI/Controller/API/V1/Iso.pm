@@ -66,8 +66,8 @@ Returns job statistics about the most recent scheduled products matching the
 specified DISTRI, VERSION, FLAVOR, ARCH and BUILD parameters. Scheduled products
 that are cancelling/cancelled are not considered.
 
-This allows to determine whether all jobs that have been scheduled for a
-certain purpose are done and whether the jobs have passed. If jobs have been
+This allows determining whether all jobs that have been scheduled for a certain
+purpose are done and whether the jobs have passed. If jobs have been
 cloned/restarted then only the state/result of the latest job is taken into
 account.
 
@@ -85,6 +85,12 @@ One can check for the existence of keys in the returned JSON object to check
 whether certain states/results are present. The concrete job IDs and scheduled
 product IDs for each combination are mainly returned for easier retracing but
 could also be used to generate a more detailed report.
+
+If a scheduled product has a SUBMISSION_ID setting, additional jobs that have
+been created with that SUBMISSION_ID are returned as well.
+
+Jobs are deduplicated by their main settings like with `/jobs?latest` (see
+documentation of that route for details).
 
 =back
 
