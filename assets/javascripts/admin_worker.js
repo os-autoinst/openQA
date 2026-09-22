@@ -1,4 +1,32 @@
+function setupHostPreviousJobs() {
+  if (!$('#previous_host_jobs').length) return;
+  const table = $('#previous_host_jobs').DataTable({
+    ajax: $('#previous_host_jobs').data('ajax-url'),
+    deferRender: true,
+    columns: [{data: 'name'}, {data: 'worker'}, {data: 'result_stats'}, {data: 'finished'}],
+    processing: true,
+    serverSide: true,
+    order: [[3, 'desc']],
+    columnDefs: [
+      {
+        targets: 0,
+        className: 'test',
+        render: renderTestName
+      },
+      {
+        targets: 1,
+        render: data => (data ? ':' + data : '')
+      },
+      {targets: 2, render: renderTestResult},
+      {targets: 3, render: renderTimeAgo}
+    ]
+  });
+  table.on('draw.dt', setupTestButtons);
+  $('#previous_host_jobs_filter').hide();
+}
+
 function setupWorkerNeedles() {
+  setupHostPreviousJobs();
   const table = $('#previous_jobs').DataTable({
     ajax: $('#previous_jobs').data('ajax-url'),
     deferRender: true,

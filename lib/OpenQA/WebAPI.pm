@@ -266,6 +266,9 @@ sub startup ($self) {
     $pub_admin_r->get('/workers/<worker_id:num>')->name('admin_worker_show')->to('workers#show');
     $pub_admin_r->get('/workers/<worker_id:num>/ajax')->name('admin_worker_previous_jobs_ajax')
       ->to('workers#previous_jobs_ajax');
+    $pub_admin_r->get('/worker_hosts/<#worker_host>')->name('admin_worker_host_show')->to('workers#show_host');
+    $pub_admin_r->get('/worker_hosts/<#worker_host>/ajax')->name('admin_worker_host_previous_jobs_ajax')
+      ->to('workers#host_previous_jobs_ajax');
 
     $pub_admin_r->get('/productlog')->name('admin_product_log')->to('audit_log#productlog');
     $pub_admin_r->get('/productlog/ajax')->name('admin_product_log_ajax')->to('audit_log#productlog_ajax');
