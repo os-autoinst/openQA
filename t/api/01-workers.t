@@ -423,4 +423,55 @@ subtest 'worker reservation API' => sub {
     $other_operator->delete;
 };
 
+subtest 'worker registration reservation inheritance' => sub {
+    my $users = $schema->resultset('Users');
+    my $operator = $users->find(99903);
+
+    # Create worker 1 on 'inherit-host' and reserve the host
+    my $w1 = $workers->create({host => 'inherit-host', instance => 1});
+    $workers->reserve_host('inherit-host', $operator, comment => 'inherit comment', duration => '2h');
+
+    # Now, register a new worker (instance 2) on 'inherit-host' via the registration API
+    my %reg_params = (
+        host => 'inherit-host',
+        instance => 2,
+        cpu_arch => 'x86_64',
+        mem_max => 4096,
+        worker_class => 'qemu',
+        websocket_api_version => WEBSOCKET_API_VERSION,
+    );
+
+    $t->post_ok('/api/v1/workers', form => \%reg_params)
+      ->status_is(200, 'register new sibling worker on host-reserved machine');
+    my $w2_id = $t->tx->res->json->{id};
+    my $w2 = $workers->find($w2_id);
+    ok $w2->is_reserved, 'new sibling worker inherited the reservation';
+    is $w2->reservation->{comment}, 'inherit comment', 'reservation comment inherited correctly';
+    is $w2->reservation->{scope}, 'host', 'reservation scope is host';
+
+    # Release host
+    $workers->release_host('inherit-host', $operator);
+    $w2->delete;
+
+    # Set up expired host reservation on w1
+    # Note: To avoid issues, let's temporarily reserve it, then set expiry in the past
+    $workers->reserve_host('inherit-host', $operator, comment => 'expired comment', duration => '1h');
+    $w1->discard_changes;
+    $w1->set_property(RESERVED_T_EXPIRES => time - 10);
+    ok !$w1->is_reserved, 'w1 reservation is indeed expired';
+
+    # Now register instance 3
+    $reg_params{instance} = 3;
+    $t->post_ok('/api/v1/workers', form => \%reg_params)
+      ->status_is(200, 'register instance 3 with expired host reservation');
+    my $w3_id = $t->tx->res->json->{id};
+    my $w3 = $workers->find($w3_id);
+    ok !$w3->is_reserved, 'new worker did not inherit expired reservation';
+
+    # Clean up
+    $w1->delete_properties([RESERVATION_PROPERTIES]);
+    $w1->delete;
+    $w3->delete;
+};
+
 done_testing();

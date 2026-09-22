@@ -279,4 +279,98 @@ subtest 'unlimited admin reservations are capped once admin_max_duration is conf
     ok !$worker->is_reserved, 'worker stays unreserved when the admin duration is rejected';
 };
 
+subtest 'worker host reservation model' => sub {
+    my $users = $db->resultset('Users');
+    my ($admin, $non_operator, $operator) = map { $users->find($_) } 99901, 99902, 99903;
+    my $other_operator = $users->create({username => 'gawain', is_operator => 1, feature_version => 0});
+
+    # Create 3 workers on 'testhost'
+    my $w1 = $workers->create({host => 'testhost', instance => 1});
+    my $w2 = $workers->create({host => 'testhost', instance => 2});
+    my $w3 = $workers->create({host => 'testhost', instance => 3});
+
+    # 1. Reserve multi-instance host atomically; assert all instances reserved with scope=host
+    $workers->reserve_host('testhost', $operator, comment => 'host maintenance', duration => '2h');
+    for my $w ($w1, $w2, $w3) {
+        $w->discard_changes;
+        ok $w->is_reserved, 'instance ' . $w->name . ' is reserved';
+        is $w->reservation->{scope}, 'host', 'scope is host';
+    }
+
+    # Clean up reservation
+    $workers->release_host('testhost', $operator);
+
+    # 2. Conflict on one instance aborts entire reservation without partial state
+    # Reserve instance 2 with operator
+    $w2->reserve($operator, 'instance reservation', '1h');
+
+    # Attempt to reserve entire host with other_operator -> should fail and roll back
+    throws_ok {
+        $workers->reserve_host('testhost', $other_operator, comment => 'host maint', duration => '1h');
+    }
+    qr/already reserved/, 'refuse overlapping host reservation due to conflict';
+
+    # Ensure no other instances are partially reserved
+    $w1->discard_changes;
+    $w3->discard_changes;
+    ok !$w1->is_reserved, 'instance 1 was not reserved due to rollback';
+    ok !$w3->is_reserved, 'instance 3 was not reserved due to rollback';
+
+    # Clean up instance 2
+    $w2->release($operator);
+
+    # 3. Admin force overrides conflicts
+    $w2->reserve($operator, 'instance reservation', '1h');
+    $workers->reserve_host('testhost', $admin, comment => 'admin force', duration => '1h', force => 1);
+    for my $w ($w1, $w2, $w3) {
+        $w->discard_changes;
+        ok $w->is_reserved, 'instance ' . $w->name . ' is reserved after force';
+        is $w->reservation->{user}, $admin->username, 'owner is admin';
+    }
+
+    # 4. Releasing a host clears all instances; non-admin release fails when instances are foreign-owned.
+    # Currently reserved by admin. other_operator tries to release host -> should fail.
+    throws_ok {
+        $workers->release_host('testhost', $other_operator);
+    }
+    qr/Insufficient permissions/, 'non-admin release fails when instances are foreign-owned';
+
+    # Admin release clears all
+    $workers->release_host('testhost', $admin);
+    for my $w ($w1, $w2, $w3) {
+        $w->discard_changes;
+        ok !$w->is_reserved, 'instance ' . $w->name . ' is released';
+    }
+
+    # 5. Releasing single instance of a host reservation leaves remaining instances intact
+    $workers->reserve_host('testhost', $operator, comment => 'host maint', duration => '2h');
+    $w2->release($operator);
+    $w2->discard_changes;
+    $w1->discard_changes;
+    $w3->discard_changes;
+    ok !$w2->is_reserved, 'released instance 2 is no longer reserved';
+    ok $w1->is_reserved, 'instance 1 is still reserved';
+    ok $w3->is_reserved, 'instance 3 is still reserved';
+
+    # Clean up the rest
+    $workers->release_host('testhost', $operator);
+
+    # 6. Passing worker_class to reserve_host sets class across all instances
+    $workers->reserve_host(
+        'testhost', $operator,
+        comment => 'verification',
+        duration => '1h',
+        worker_class => 'poo167749'
+    );
+    for my $w ($w1, $w2, $w3) {
+        $w->discard_changes;
+        is $w->reservation->{worker_class}, 'poo167749', 'worker_class set on ' . $w->name;
+    }
+
+    # Clean up everything at the end of subtest
+    $workers->release_host('testhost', $operator);
+    $_->delete for ($w1, $w2, $w3);
+    $other_operator->delete;
+};
+
 done_testing();
