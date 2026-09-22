@@ -18,6 +18,31 @@ try:
 except ImportError:  # pragma: no cover
     BooleanOptionalAction = None
 
+_SEP = "=" * 72
+_ENDPOINTS = {
+    "Home/Overview": "/",
+    "Test Results": "/tests/overview",
+    "Sample Details": "/tests/99981",
+    "Admin Workers": "/admin/workers",
+}
+_SUMMARY_TEMPLATE = f"""
+{_SEP}
+  openQA interactive test environment has been initialized
+{_SEP}
+
+  Database resets and schema deployed onto '{{schema_name}}'.
+  Loaded fixtures matching: {{fixtures}}
+  Mock assets activated.
+
+  You can interact with the local Web UI using the following links:
+{{links}}
+
+  Authentication Info:
+    - Click 'Login' in the top-right corner to log in automatically
+      as the 'Demo' user (who has administrator/operator rights).
+{_SEP}
+"""
+
 
 def init(*, fixtures: str = "*.pl", reset: bool = True, silent: bool = False) -> None:
     """Initialize or reset the openQA test database with standard fixtures and mock assets."""
@@ -56,21 +81,8 @@ def init(*, fixtures: str = "*.pl", reset: bool = True, silent: bool = False) ->
         sys.exit(e.returncode)
 
     if not silent:
-        print("\n========================================================================")
-        print("  openQA interactive test environment has been initialized")
-        print("========================================================================\n")
-        print(f"  Database resets and schema deployed onto '{schema_name}'.")
-        print(f"  Loaded fixtures matching: {fixtures}")
-        print("  Mock assets activated.\n")
-        print("  You can interact with the local Web UI using the following links:")
-        print("    - Home/Overview:  http://localhost:9526/")
-        print("    - Test Results:   http://localhost:9526/tests/overview")
-        print("    - Sample Details:  http://localhost:9526/tests/99981")
-        print("    - Admin Workers:  http://localhost:9526/admin/workers\n")
-        print("  Authentication Info:")
-        print("    - Click 'Login' in the top-right corner to log in automatically")
-        print("      as the 'Demo' user (who has administrator/operator rights).\n")
-        print("========================================================================\n")
+        links = "\n".join(f"    - {name}:  http://localhost:9526{path}" for name, path in _ENDPOINTS.items())
+        print(_SUMMARY_TEMPLATE.format(schema_name=schema_name, fixtures=fixtures, links=links))
 
 
 def main() -> None:
