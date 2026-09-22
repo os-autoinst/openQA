@@ -37,7 +37,7 @@ sub _task_delete_needles ($app, $minion_job, $args) {
             push @errors,
               {
                 id => $needle_id,
-                message => "Unable to find needle with ID \"$needle_id\"",
+                message => qq{Unable to find needle with ID "$needle_id"},
               };
             next;
         }
