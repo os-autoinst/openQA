@@ -70,7 +70,7 @@
                         <tr>
                             <td><a href="<%= url_for('admin_worker_show', worker_id => $w->{id}) %>">:<%= $w->{instance} %></a></td>
                             <td>
-                                % my $worker = $w;
+                                % stash(worker => $w, workername => $w->{name});
                                 %= include 'admin/workers/worker_status'
                             </td>
                             <td><abbr class="timeago" title="<%= $w->{t_seen} %>"><%= $w->{t_seen} %></abbr></td>

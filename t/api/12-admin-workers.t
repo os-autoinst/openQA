@@ -46,4 +46,36 @@ subtest 'Worker host administration endpoints' => sub {
       ->json_has('/data', 'JSON response contains datatable data array');
 };
 
+subtest 'Worker status template rendering with reservation' => sub {
+    my $idle_worker = $t->app->schema->resultset('Workers')->create(
+        {
+            host => 'reserved_host',
+            instance => 1,
+            t_seen => DateTime->now(time_zone => 'UTC'),
+        });
+    $idle_worker->set_property(RESERVED_BY_ID => 1);
+    $idle_worker->set_property(RESERVED_WORKER_CLASS => 'special_class');
+    $idle_worker->set_property(RESERVED_T_EXPIRES => time + 3600);
+
+    $t->get_ok('/admin/workers', {Accept => 'text/html'})
+      ->status_is(200, 'GET on admin workers page with class reservation returns 200 OK')
+      ->content_like(qr/Reserved \(class special_class\)/, 'worker status includes reservation class');
+
+    $t->get_ok('/admin/workers/' . $idle_worker->id, {Accept => 'text/html'})
+      ->status_is(200, 'GET on admin worker show page returns 200 OK')
+      ->content_like(qr/Reserved \(class special_class\)/, 'worker status on show page includes reservation class');
+
+    $t->get_ok('/admin/worker_hosts/reserved_host', {Accept => 'text/html'})
+      ->status_is(200, 'GET on admin worker host show page returns 200 OK')
+      ->content_like(qr/Reserved \(class special_class\)/,
+        'worker status on host show page includes reservation class');
+
+    $idle_worker->delete_properties(['RESERVED_WORKER_CLASS']);
+    $t->get_ok('/admin/workers', {Accept => 'text/html'})
+      ->status_is(200, 'GET on admin workers page without class reservation returns 200 OK')
+      ->content_like(qr/Reserved\s*<a\s+class="help_popover/,
+        'worker status displays plain Reserved when worker class is unset')
+      ->content_unlike(qr/Reserved \(class/, 'worker status does not contain class when worker class is unset');
+};
+
 done_testing();

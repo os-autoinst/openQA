@@ -55,7 +55,11 @@
                             %= link_to( $workername => url_for('admin_worker_show', worker_id => $worker->{id}) )
                         </td>
                         <td class="host">
-                            <%= exists $worker->{host} ? $worker->{host} : 'unknown' %>
+                            % if (exists $worker->{host} && $worker->{host} ne 'unknown' && $worker->{host} ne '') {
+                                <a href="<%= url_for('admin_worker_host_show', worker_host => $worker->{host}) %>"><%= $worker->{host} %></a>
+                            % } else {
+                                unknown
+                            % }
                         </td>
                         <td class="class">
                             <%= exists $worker->{properties} && $worker->{properties}->{WORKER_CLASS} ? $worker->{properties}->{WORKER_CLASS} : 'unknown' %>
@@ -78,7 +82,7 @@
                                 % if ($worker->{reservation}) {
                                     <button class="btn btn-sm btn-outline-danger" title="Release reservation" data-worker-id="<%= $worker->{id} %>" onclick="releaseWorker(this)">Release</button>
                                 % } else {
-                                    <button class="btn btn-sm btn-outline-success" title="Reserve worker" data-worker-id="<%= $worker->{id} %>" data-worker-name="<%= $workername %>" onclick="openReserveModal(this)">Reserve</button>
+                                    <button class="btn btn-sm btn-outline-success" title="Reserve worker" data-worker-id="<%= $worker->{id} %>" data-worker-name="<%= $workername %>" data-worker-host="<%= $worker->{host} %>" onclick="openReserveModal(this)">Reserve</button>
                                 % }
                             % }
                             % if($is_admin == 1 && ($worker->{status} eq 'dead' && !$worker->{job})) {
