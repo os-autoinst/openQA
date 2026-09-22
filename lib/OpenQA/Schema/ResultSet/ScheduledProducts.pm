@@ -64,6 +64,22 @@ sub job_statistics ($self, $distri, $version, $flavor, $arch, $build, $group_ids
     my $sth = $self->result_source->schema->storage->dbh->prepare(
         <<~"END_SQL"
         WITH RECURSIVE
+        -- get the scheduled product
+        most_recent_scheduled_product AS (
+            SELECT
+                max(id) as id,
+                max(t_created) as t_created,
+                any_value(settings ->> 'SUBMISSION_ID') as submission_id
+            FROM
+                scheduled_products
+            WHERE
+                status in ('new', 'scheduling', 'scheduled') and distri = ? and version = ? and flavor = ? and arch = ? and build = ?
+            GROUP BY
+                arch
+            ORDER BY
+                id DESC
+            LIMIT 1
+        ),
         -- get the initial set of jobs in the scheduled product
         initial_job_ids AS (
             SELECT
@@ -72,16 +88,19 @@ sub job_statistics ($self, $distri, $version, $flavor, $arch, $build, $group_ids
             FROM
                 jobs
             WHERE
-                jobs.scheduled_product_id in (
-                    SELECT
-                        max(id)
-                    FROM
-                        scheduled_products
-                    WHERE
-                        status in ('new', 'scheduling', 'scheduled') and distri = ? and version = ? and flavor = ? and arch = ? and build = ?
-                    GROUP BY
-                        arch
-                )
+                jobs.scheduled_product_id in (SELECT id FROM most_recent_scheduled_product)
+            UNION ALL
+            SELECT
+                job_settings.job_id AS job_id,
+                null AS scheduled_product_id
+            FROM
+                job_settings
+            JOIN
+                jobs ON jobs.id = job_settings.job_id
+            WHERE
+                key = 'SUBMISSION_ID' and value = (SELECT submission_id FROM most_recent_scheduled_product)
+                and jobs.t_created >= (SELECT t_created FROM most_recent_scheduled_product)
+                and distri = ? and version = ? and flavor = ? and arch = ? and build = ?
         ),
         -- find more recent jobs for each initial job recursively
         latest_id_resolver AS (
@@ -130,7 +149,8 @@ sub job_statistics ($self, $distri, $version, $flavor, $arch, $build, $group_ids
             latest_job_state,
             latest_job_result,
             array_agg(latest_job_id) as job_ids,
-            array_agg(DISTINCT scheduled_product_id) as scheduled_product_ids
+            array_agg(DISTINCT scheduled_product_id) as scheduled_product_ids,
+            (SELECT submission_id from most_recent_scheduled_product)
         FROM
             most_recent_jobs
         WHERE
@@ -140,7 +160,7 @@ sub job_statistics ($self, $distri, $version, $flavor, $arch, $build, $group_ids
             latest_job_result
         END_SQL
     );
-    $sth->execute($distri, $version, $flavor, $arch, $build, @binds);
+    $sth->execute($distri, $version, $flavor, $arch, $build, $distri, $version, $flavor, $arch, $build, @binds);
     return $sth->fetchall_hashref([qw(latest_job_state latest_job_result)]);
 }
 
