@@ -13,7 +13,7 @@ use DBIx::Class::Timestamps 'now';
 use List::Util qw(min);
 use Feature::Compat::Try;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
-use OpenQA::WorkerReservation 'reservation_error_status';
+use OpenQA::WorkerReservation qw(reservation_error_status reservation_active RESERVATION_PROPERTIES);
 
 =pod
 
@@ -106,6 +106,22 @@ sub _register ($self, $schema, $host, $instance, $caps, $jobs_worker_says_it_wor
 
     # store worker's capabilities to database
     $worker->update_caps($caps) if $caps;
+
+    if (!$worker->is_reserved) {
+        my $siblings = $workers->search({host => $host, id => {'!=' => $worker->id}});
+        while (my $sibling = $siblings->next) {
+            my $properties = $sibling->_reservation_properties;
+            if (reservation_active($properties->{RESERVED_BY_ID}, $properties->{RESERVED_T_EXPIRES})
+                && ($properties->{RESERVED_SCOPE} // '') eq 'host')
+            {
+                $schema->txn_do(
+                    sub {
+                        $worker->set_property($_ => $properties->{$_}) for RESERVATION_PROPERTIES;
+                    });
+                last;
+            }
+        }
+    }
 
     # mark the jobs the worker is currently supposed to run as incomplete unless the worker claims
     # to still work on these jobs (which might be the case when the worker hasn't actually crashed but
