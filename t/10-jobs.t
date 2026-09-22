@@ -49,7 +49,7 @@ subtest 'handling of concurrent deletions in code updating jobs' => sub {
 
     # delete job "in the middle" via another schema
     my $schema2 = OpenQA::Schema->connect($ENV{TEST_PG} // 'DBI:Pg:dbname=openqa_test;host=/dev/shm/tpg');
-    $schema2->storage->on_connect_do("SET search_path TO \"$schema_name\"");
+    $schema2->storage->on_connect_do(qq{SET search_path TO "$schema_name"});
     $schema2->resultset('Jobs')->search({id => 99927})->delete;
 
     # update the job (so far only accounting the result size is covered)
