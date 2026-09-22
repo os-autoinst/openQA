@@ -176,6 +176,7 @@ subcommands:
       - duration|d=s           --Duration of the reservation (e.g. 5h, 30m, 2d, 0 for indefinite)
       - force|f                --Force reservation even if worker is already reserved
       - release|r              --Release an existing reservation
+      - worker-host=s          --Reserve or release an entire worker host instead of individual WORKER_ID
 
   schedule:
     summary: Schedules a set of jobs (via "isos post" creating a schedule product)

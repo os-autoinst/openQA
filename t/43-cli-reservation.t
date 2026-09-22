@@ -90,4 +90,42 @@ subtest 'Reserve and Release Worker via CLI' => sub {
     ($stdout, $stderr, @result) = capture sub { $cli->run('reservation', @auth_op, 2, '--release') };
 };
 
+subtest 'Reserve and Release Host via CLI' => sub {
+    my $workers = $app->schema->resultset('Workers');
+    my $w1 = $workers->create({host => 'cli-host', instance => 1});
+    my $w2 = $workers->create({host => 'cli-host', instance => 2});
+
+    throws_ok { $reservation->run() }
+    qr/Usage: openqa-cli reservation/,
+      'Command usage error is thrown when neither WORKER_ID nor --worker-host is supplied';
+
+    throws_ok { $reservation->run(2, '--worker-host=cli-host') }
+    qr/Usage: openqa-cli reservation/,
+      'Command usage error is thrown when both WORKER_ID and --worker-host are supplied';
+
+    my ($stdout, $stderr, @result) = capture sub {
+        $cli->run('reservation', @auth_op, '--worker-host=cli-host', '--comment=maint', '--duration=1h', '-C',
+            'poo167749');
+    };
+    is_deeply \@result, [0], 'Complete host reservation via CLI succeeds with exit code 0';
+    like $stdout, qr/reserved successfully/, 'CLI stdout response confirms success';
+    like $stdout, qr/"instances":/, 'CLI stdout response contains the list of reserved instances';
+
+    $w1->discard_changes;
+    ok $w1->is_reserved, 'Worker instance is successfully marked as reserved in the database';
+    is $w1->reservation->{worker_class}, 'poo167749', 'Worker class tag is correctly set in database';
+
+    ($stdout, $stderr, @result) = capture sub {
+        $cli->run('reservation', @auth_op, '--worker-host=cli-host', '--release');
+    };
+    is_deeply \@result, [0], 'Complete host release via CLI succeeds with exit code 0';
+    like $stdout, qr/released successfully/, 'CLI stdout response confirms host release';
+
+    $w1->discard_changes;
+    ok !$w1->is_reserved, 'Worker instance reservation is successfully removed from the database';
+
+    $w1->delete;
+    $w2->delete;
+};
+
 done_testing;

@@ -10,8 +10,12 @@ has usage => sub { OpenQA::CLI->_help('reservation') };
 sub command ($self, @args) {
     die $self->usage unless OpenQA::CLI::get_opt(reservation => \@args, [], \my %options);
     @args = $self->decode_args(@args);
-    die $self->usage unless my $workerid = shift @args;
-    my $url = $self->url_for("workers/$workerid/reservation");
+    my $workerid = shift @args;
+    my $host = $options{'worker-host'};
+    die $self->usage if defined $workerid && defined $host;
+    die $self->usage if !defined $workerid && !defined $host;
+    my $url
+      = $host ? $self->url_for("worker_hosts/$host/reservation") : $self->url_for("workers/$workerid/reservation");
     my $client = $self->client($url);
     my $tx;
     if ($options{release}) {
