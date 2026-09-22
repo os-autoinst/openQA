@@ -5,6 +5,7 @@ package OpenQA::Schema::ResultSet::ScheduledProducts;
 
 use Mojo::Base 'DBIx::Class::ResultSet', -signatures;
 use Mojo::JSON qw(encode_json);
+use OpenQA::Schema::Result::Jobs;
 use OpenQA::Schema::Result::ScheduledProducts qw(CANCELLED);
 use OpenQA::App;
 
@@ -52,6 +53,8 @@ sub update_note ($self, $distri, $version, $flavor, $arch, $build, $note) {
     $sth->execute;
     return {updated_product_id => $sth->fetchrow_arrayref->[0]};
 }
+
+my $MAIN_SETTINGS_GROUP_BY = join ',', OpenQA::Schema::Result::Jobs::MAIN_SETTINGS;
 
 sub job_statistics ($self, $distri, $version, $flavor, $arch, $build, $group_ids = undef, $include_null_groups = 0) {
     my $group_filter = '';
@@ -131,6 +134,7 @@ sub job_statistics ($self, $distri, $version, $flavor, $arch, $build, $group_ids
             SELECT DISTINCT ON (job_id)
                 job_id as initial_job_id,
                 latest_job_id,
+                $MAIN_SETTINGS_GROUP_BY,
                 mrj.state as latest_job_state,
                 mrj.result as latest_job_result,
                 mrj.scheduled_product_id as scheduled_product_id,
@@ -142,8 +146,19 @@ sub job_statistics ($self, $distri, $version, $flavor, $arch, $build, $group_ids
                 latest_job_id IS NOT NULL
                 $group_filter
             ORDER BY
-                job_id,
+                job_id DESC, $MAIN_SETTINGS_GROUP_BY,
                 level DESC
+        ),
+        -- deduplicated jobs by $MAIN_SETTINGS_GROUP_BY returning only the "latest"
+        deduplicated_jobs AS (
+            SELECT DISTINCT ON ($MAIN_SETTINGS_GROUP_BY)
+                latest_job_id,
+                latest_job_state,
+                latest_job_result,
+                scheduled_product_id,
+                $MAIN_SETTINGS_GROUP_BY
+            FROM most_recent_jobs
+            ORDER BY $MAIN_SETTINGS_GROUP_BY, latest_job_id DESC
         )
         SELECT
             latest_job_state,
@@ -152,7 +167,7 @@ sub job_statistics ($self, $distri, $version, $flavor, $arch, $build, $group_ids
             array_agg(DISTINCT scheduled_product_id) as scheduled_product_ids,
             (SELECT submission_id from most_recent_scheduled_product)
         FROM
-            most_recent_jobs
+            deduplicated_jobs
         WHERE
             latest_job_id IS NOT NULL
         GROUP BY

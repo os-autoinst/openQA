@@ -326,8 +326,8 @@ subtest 'job statistics can be queried about the scheduled product' => sub {
     my @params = (DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0091');
     $jobs->find(99985)->update({state => DONE, result => INCOMPLETE});
     $jobs->find(99988)->update({state => DONE, result => FAILED});
-    $jobs->find(99993)->update({state => DONE, result => PASSED});
-    $jobs->find(99994)->update({state => DONE, result => PASSED});
+    $jobs->find(99993)->update({state => DONE, result => PASSED, TEST => 'foo'});
+    $jobs->find(99994)->update({state => DONE, result => PASSED, TEST => 'foo'});
     $jobs->find(80000)->update({@params, t_created => $scheduled_product->t_created - $second});    # older than sp
     $jobs->find(99764)->update({@params, t_created => $scheduled_product->t_created + $second});    # newer than sp
     $job_settings->create({job_id => 80000, key => 'SUBMISSION_ID', value => 'increment:1234'});
@@ -339,7 +339,7 @@ subtest 'job statistics can be queried about the scheduled product' => sub {
     is_deeply [sort keys %{$json->{done}}], [FAILED, INCOMPLETE, PASSED], 'expected results present';
     is_deeply [sort @{$json->{done}->{failed}->{job_ids}}], [99988], 'failed jobs';
     is_deeply [sort @{$json->{done}->{incomplete}->{job_ids}}], [99985], 'incomplete jobs';
-    is_deeply [sort @{$json->{done}->{passed}->{job_ids}}], [99993, 99994], 'passed jobs';
+    is_deeply [sort @{$json->{done}->{passed}->{job_ids}}], [99994], 'passed jobs';
     is_deeply [sort @{$json->{scheduled}->{none}->{job_ids}}], [99986, 99987, 99989, 99990, 99991, 99992],
       'scheduled jobs';
 
@@ -349,7 +349,7 @@ subtest 'job statistics can be queried about the scheduled product' => sub {
         my $json = $t->tx->res->json;
         is_deeply [sort keys %$json], [DONE, SCHEDULED], 'expected states present';
         is_deeply [sort keys %{$json->{done}}], [FAILED, INCOMPLETE, PASSED], 'expected results present';
-        is_deeply [sort @{$json->{done}->{passed}->{job_ids}}], [99764, 99993, 99994],
+        is_deeply [sort @{$json->{done}->{passed}->{job_ids}}], [99764, 99994],
           'passed jobs: job newer than sp with matching SUBMISSION_ID included';
         is_deeply [sort @{$json->{done}->{failed}->{job_ids}}], [99988], 'failed jobs';
         is_deeply [sort @{$json->{done}->{incomplete}->{job_ids}}], [99985], 'incomplete jobs';
