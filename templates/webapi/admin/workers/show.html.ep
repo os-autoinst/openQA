@@ -40,8 +40,14 @@
                 <p><strong>Specific class:</strong> <%= $reservation->{worker_class} %></p>
                 % }
                 <p><strong>Comment:</strong> <%= $reservation->{comment} %></p>
-                <p><strong>Reserved at:</strong> <%= $reservation->{t_created} %></p>
-                <p><strong>Expires:</strong> <%= $reservation->{t_expires} // 'Never (indefinite)' %></p>
+                <p><strong>Reserved at:</strong> <abbr class="timeago" title="<%= $reservation->{t_created} %>"><%= $reservation->{t_created} %></abbr></p>
+                <p><strong>Expires:</strong>
+                    % if ($reservation->{t_expires}) {
+                        <abbr class="timeago" title="<%= $reservation->{t_expires} %>"><%= $reservation->{t_expires} %></abbr>
+                    % } else {
+                        Never (indefinite)
+                    % }
+                </p>
                 % if (is_operator) {
                     <button class="btn btn-danger" data-worker-id="<%= $worker->{id} %>" onclick="releaseWorker(this)">Release reservation</button>
                 % }

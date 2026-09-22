@@ -40,8 +40,14 @@
                         <p><strong>Specific class:</strong> <%= $host_reservation->{worker_class} %></p>
                         % }
                         <p><strong>Comment:</strong> <%= $host_reservation->{comment} %></p>
-                        <p><strong>Reserved at:</strong> <%= $host_reservation->{t_created} %></p>
-                        <p><strong>Expires:</strong> <%= $host_reservation->{t_expires} // 'Never (indefinite)' %></p>
+                        <p><strong>Reserved at:</strong> <abbr class="timeago" title="<%= $host_reservation->{t_created} %>"><%= $host_reservation->{t_created} %></abbr></p>
+                        <p><strong>Expires:</strong>
+                            % if ($host_reservation->{t_expires}) {
+                                <abbr class="timeago" title="<%= $host_reservation->{t_expires} %>"><%= $host_reservation->{t_expires} %></abbr>
+                            % } else {
+                                Never (indefinite)
+                            % }
+                        </p>
                         % if (is_operator) {
                             <button class="btn btn-danger" onclick="releaseHost('<%= $worker_host %>')">Release complete host</button>
                         % }
