@@ -17,6 +17,7 @@ use OpenQA::Resource::Locks;
 use OpenQA::Resource::Jobs;
 use OpenQA::Constants qw(WEBSOCKET_API_VERSION DB_TIMESTAMP_ACCURACY);
 use OpenQA::Jobs::Constants;
+use OpenQA::Events;
 require OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(setup_mojo_app_with_default_worker_timeout simulate_load);
 use OpenQA::Utils qw(assetdir storage_below_threshold resultdir assetdir archivedir);
@@ -637,11 +638,19 @@ subtest 'test job cancellation after max job scheduled time timeout' => sub {
     my $job5 = $jobs->create_from_settings(\%settings);
     $job5->update({t_created => $old_time, state => SCHEDULED, result => NONE});
     undef $ws_send_error;
+    my $cancelled_event_data;
+    OpenQA::Events->singleton->once(
+        openqa_job_cancel => sub ($events, $args) {
+            $cancelled_event_data = $args->[3];
+        });
     OpenQA::Scheduler::Model::Jobs->singleton->schedule();
     $job5->discard_changes;
     is $job5->state, CANCELLED, 'Job 5 is cancelled by scheduler';
     is $job5->result, TIMEOUT_EXCEEDED, 'Job5 result is TIMEOUT_EXCEEDED';
     is $job5->reason, 'scheduled for more than 7 days';
+    ok $cancelled_event_data, 'openqa_job_cancel event was emitted';
+    is $cancelled_event_data->{id}, $job5->id, 'event has correct job ID';
+    is $cancelled_event_data->{reason}, 'scheduled for more than 7 days', 'event has correct reason';
 };
 
 sub _get_job_networks ($job_networks) {
