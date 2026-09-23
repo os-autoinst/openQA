@@ -104,7 +104,8 @@ clean: ## Remove build artifacts
 .PHONY: generate-completions
 generate-completions: ## Regenerate shell completion scripts from public/openqa-cli.yaml
 	mkdir -p contrib/completions
-	tools/generate-cli-completions
+	(appspec completion public/openqa-cli.yaml --bash 2>/dev/null || echo "# No completion available") > contrib/completions/openqa-cli-completion.bash
+	(appspec completion public/openqa-cli.yaml --zsh 2>/dev/null || echo "# No completion available") > contrib/completions/openqa-cli-completion.zsh
 
 .PHONY: generate-assets
 generate-assets: ## Generate packed assets and copy to DESTDIR
