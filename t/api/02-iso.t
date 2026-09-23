@@ -357,6 +357,24 @@ subtest 'job statistics can be queried about the scheduled product' => sub {
           'scheduled jobs';
     };
 
+    subtest 'additional jobs can be pulled-in via custom setting using additional_jobs_by' => sub {
+        $scheduled_product->update_setting(SUBMISSION_ID => 'different_val');
+        $scheduled_product->update_setting(REQUEST_ID => 'req:42');
+        $job_settings->create({job_id => 99764, key => 'REQUEST_ID', value => 'req:42'});
+
+        # without additional_jobs_by, default SUBMISSION_ID is used and doesn't match
+        $t->get_ok("/api/v1/isos/job_stats?$params")->status_is(200);
+        my $json = $t->tx->res->json;
+        is_deeply [sort @{$json->{done}->{passed}->{job_ids}}], [99994],
+          'job 99764 not included because SUBMISSION_ID does not match';
+
+        # with additional_jobs_by=REQUEST_ID, REQUEST_ID matches
+        $t->get_ok("/api/v1/isos/job_stats?$params&additional_jobs_by=REQUEST_ID")->status_is(200);
+        $json = $t->tx->res->json;
+        is_deeply [sort @{$json->{done}->{passed}->{job_ids}}], [99764, 99994],
+          'passed jobs: job newer than sp with matching REQUEST_ID included via additional_jobs_by';
+    };
+
     $schema->txn_rollback;
 };
 

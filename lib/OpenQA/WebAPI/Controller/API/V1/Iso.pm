@@ -86,8 +86,9 @@ whether certain states/results are present. The concrete job IDs and scheduled
 product IDs for each combination are mainly returned for easier retracing but
 could also be used to generate a more detailed report.
 
-If a scheduled product has a SUBMISSION_ID setting, additional jobs that have
-been created with that SUBMISSION_ID are returned as well.
+If a scheduled product has a SUBMISSION_ID setting (or the setting specified via
+`additional_jobs_by`), additional jobs that have been created with that setting
+are returned as well.
 
 Jobs are deduplicated by their main settings like with `/jobs?latest` (see
 documentation of that route for details).
@@ -104,7 +105,11 @@ sub job_statistics ($self) {
     my $include_null_groups
       = ($self->validation->param('not_group_glob') && !$self->validation->param('group_glob')) ? 1 : 0;
     my $scheduled_products = $self->app->schema->resultset('ScheduledProducts');
-    $self->render(json => $scheduled_products->job_statistics(@$params, $group_ids, $include_null_groups));
+    $self->render(
+        json => $scheduled_products->job_statistics(
+            @$params, $self->param('additional_jobs_by') // 'SUBMISSION_ID',
+            $group_ids, $include_null_groups
+        ));
 }
 
 =over 4

@@ -56,7 +56,9 @@ sub update_note ($self, $distri, $version, $flavor, $arch, $build, $note) {
 
 my $MAIN_SETTINGS_GROUP_BY = join ',', OpenQA::Schema::Result::Jobs::MAIN_SETTINGS;
 
-sub job_statistics ($self, $distri, $version, $flavor, $arch, $build, $group_ids = undef, $include_null_groups = 0) {
+sub job_statistics ($self, $distri, $version, $flavor, $arch, $build, $additional_jobs_by, $group_ids,
+    $include_null_groups)
+{
     my $group_filter = '';
     my @binds;
     if ($group_ids && @$group_ids) {
@@ -72,7 +74,7 @@ sub job_statistics ($self, $distri, $version, $flavor, $arch, $build, $group_ids
             SELECT
                 max(id) as id,
                 max(t_created) as t_created,
-                any_value(settings ->> 'SUBMISSION_ID') as submission_id
+                any_value(settings ->> ?) as submission_id
             FROM
                 scheduled_products
             WHERE
@@ -101,7 +103,7 @@ sub job_statistics ($self, $distri, $version, $flavor, $arch, $build, $group_ids
             JOIN
                 jobs ON jobs.id = job_settings.job_id
             WHERE
-                key = 'SUBMISSION_ID' and value = (SELECT submission_id FROM most_recent_scheduled_product)
+                key = ? and value = (SELECT submission_id FROM most_recent_scheduled_product)
                 and jobs.t_created >= (SELECT t_created FROM most_recent_scheduled_product)
                 and distri = ? and version = ? and flavor = ? and arch = ? and build = ?
         ),
@@ -175,7 +177,8 @@ sub job_statistics ($self, $distri, $version, $flavor, $arch, $build, $group_ids
             latest_job_result
         END_SQL
     );
-    $sth->execute($distri, $version, $flavor, $arch, $build, $distri, $version, $flavor, $arch, $build, @binds);
+    my @query_params = ($additional_jobs_by, $distri, $version, $flavor, $arch, $build);
+    $sth->execute(@query_params, @query_params, @binds);
     return $sth->fetchall_hashref([qw(latest_job_state latest_job_result)]);
 }
 
