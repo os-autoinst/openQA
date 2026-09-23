@@ -72,7 +72,8 @@ use constant {
     PARALLEL_RESTARTED => 'parallel_restarted',    # parallel job was restarted, this job has to be restarted too
     USER_CANCELLED => 'user_cancelled',    # cancelled by user via job_cancel
     USER_RESTARTED => 'user_restarted',    # restarted by user via job_restart
-    TIMEOUT_EXCEEDED => 'timeout_exceeded',    # killed by the worker after MAX_JOB_TIME has been exceeded
+    TIMEOUT_EXCEEDED =>
+      'timeout_exceeded',    # cancelled/stopped after max_job_scheduled_time/MAX_JOB_TIME has been exceeded
 };
 use constant RESULTS => (
     NONE, PASSED, SOFTFAILED, FAILED, INCOMPLETE, SKIPPED,
