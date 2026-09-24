@@ -104,8 +104,10 @@ use constant VIDEO_FILE_NAME_REGEX => qr/^.*\/video\.[^\/]*$/;
 
 use constant FRAGMENT_REGEX => qr'(#([-?/:@.~!$&\'()*+,;=\w]|%[0-9a-fA-F]{2})*)*';
 
+use constant MAX_RESTART_FILTER_JOINS => 10;
+
 use constant JOBS_OVERVIEW_SEARCH_CRITERIA =>
-  (qw(distri version flavor arch build test machine modules modules_result module_re group groupid id));
+  (qw(distri version flavor arch build test machine modules modules_result module_re group groupid id min_restarts));
 
 # the build_version_sort column of job_groups and job_group_parents
 use constant {
@@ -133,6 +135,7 @@ our @EXPORT_OK = qw(
   DB_TIMESTAMP_ACCURACY
   VIDEO_FILE_NAME_START VIDEO_FILE_NAME_REGEX
   FRAGMENT_REGEX
+  MAX_RESTART_FILTER_JOINS
   JOBS_OVERVIEW_SEARCH_CRITERIA
   BUILD_SORT_BY_NAME BUILD_SORT_BY_NEWEST_JOB BUILD_SORT_BY_OLDEST_JOB
   VNCPORT_OFFSET VNC_PORT
