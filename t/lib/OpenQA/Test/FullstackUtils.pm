@@ -117,12 +117,18 @@ sub _match_regex_returning_index ($regex, $message, $start_index = 0) {
 
 # waits until the developer console content matches the specified regex
 # note: only considers the console output since the last successful call
-sub wait_for_developer_console_like ($driver, $message_regex, $diag_info, $timeout_s = ONE_MINUTE * 2) {
+sub wait_for_developer_console_like (
+    $driver, $message_regex, $diag_info,
+    $timeout_s = ONE_MINUTE * 2,
+    $start_offset = undef
+  )
+{
     my $js_erro_check_suffix = ', waiting for ' . $diag_info;
     ok(javascript_console_has_no_warnings_or_errors($js_erro_check_suffix), 'No unexpected js warnings');
 
     # get log
-    my $position_of_last_match = $driver->execute_script('return window.lastWaitForDevelConsoleMsgMatch;') // 0;
+    my $position_of_last_match = $start_offset
+      // $driver->execute_script('return window.lastWaitForDevelConsoleMsgMatch;') // 0;
     my $log_textarea = $driver->find_element('#log');
     my $log = $log_textarea->get_text();
     my $previous_log = '';
@@ -147,10 +153,12 @@ sub wait_for_developer_console_like ($driver, $message_regex, $diag_info, $timeo
         $previous_log = $log;
         $log = $log_textarea->get_text();
     }
-
-    $position_of_last_match += $match_index;
-    $driver->execute_script("window.lastWaitForDevelConsoleMsgMatch = $position_of_last_match;");
-    pass("found $diag_info at $position_of_last_match");
+    if (!defined $start_offset) {
+        $position_of_last_match += $match_index;
+        $driver->execute_script("window.lastWaitForDevelConsoleMsgMatch = $position_of_last_match;");
+        pass "found $diag_info at $position_of_last_match";
+    }
+    return $position_of_last_match;
 }
 
 sub wait_for_developer_console_available ($driver) {

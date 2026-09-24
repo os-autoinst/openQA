@@ -33,6 +33,7 @@ use POSIX '_exit';
 use Fcntl ':mode';
 use DBI;
 use File::Path qw(make_path remove_tree);
+use Time::Seconds;
 use Module::Load::Conditional 'can_load';
 use OpenQA::Utils qw(service_port);
 use OpenQA::Test::Utils qw(
@@ -230,9 +231,17 @@ subtest 'pause at assert_screen timeout' => sub {
         'response to set_assert_screen_timeout'
     );
 
+    # wait until paused and the upload has finished
+    # note: The "match=on_prompt timed out" message might be sent before or after "outstanding_images" so we specify 0
+    #       as start offset when checking for "outstanding_images" to consider also log output before
+    #       "match=on_prompt timed out" and thus not asserting a specific order of messages.
     wait_for_developer_console_like($driver, qr/match=on_prompt timed out/, 'paused on assert_screen timeout (again)');
-    wait_for_developer_console_like($driver, qr/\"(outstanding_images)\":[1-9]*/, 'progress of image upload received');
-    wait_for_developer_console_like($driver, qr/\"(outstanding_images)\":0/, 'image upload has finished');
+    wait_for_developer_console_like(
+        $driver,
+        qr/\"outstanding_images\":[1-9]*/,
+        'progress of image upload received', ONE_MINUTE
+    );
+    wait_for_developer_console_like($driver, qr/\"outstanding_images\":0/, 'image upload has finished', ONE_MINUTE);
 
     # open needle editor in 2nd tab
     my $needle_editor_url = '/tests/1/edit';
