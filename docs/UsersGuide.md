@@ -1095,18 +1095,22 @@ jobs from being assigned. A reservation expires automatically after its
 duration, releasing the worker again.
 
 Reservations are managed in the workers table of the admin area or via the more
-convenient `reservation` subcommand of `openqa-cli`:
+convenient `reservation` subcommand of `openqa-cli`. The worker can be specified
+either by its database ID or its `<host>:<instance>` identifier:
 
 ```bash
-openqa-cli api --pretty -X GET workers  # get worker ID
 openqa-cli reservation --comment="Manual testing" --duration=5h <id>
+# Or by host and instance format:
+openqa-cli reservation --comment="Manual testing" --duration=5h openqa-worker1:1
 openqa-cli reservation --release <id>
 ```
 
-Alternatively, reservations can be managed via the REST API directly:
+Alternatively, reservations can be managed via the REST API directly using
+either identifier:
 
 ```bash
 openqa-cli api -X POST workers/<id>/reservation comment="Manual testing" duration=5h
+openqa-cli api -X POST workers/<host>:<instance>/reservation comment="Manual testing" duration=5h
 openqa-cli api -X DELETE workers/<id>/reservation
 ```
 

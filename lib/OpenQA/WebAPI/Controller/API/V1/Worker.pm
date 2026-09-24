@@ -262,7 +262,12 @@ sub delete ($self) {
 
 # returns the addressed worker or renders a 404, the routes are already restricted to operators
 sub _reservation_worker ($self) {
-    my $worker = $self->schema->resultset('Workers')->find($self->param('workerid'));
+    my $workerid = $self->param('workerid');
+    my $workers = $self->schema->resultset('Workers');
+    my $worker
+      = $workerid =~ /^\d+$/ ? $workers->find($workerid)
+      : $workerid =~ /^(.*):(\d+)$/ ? $workers->find({host => $1, instance => int $2})
+      : undef;
     $self->render(json => {error => 'Worker not found.'}, status => 404) unless $worker;
     return $worker;
 }
