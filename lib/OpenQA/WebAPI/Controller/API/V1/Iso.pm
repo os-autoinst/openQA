@@ -105,11 +105,8 @@ sub job_statistics ($self) {
     my $include_null_groups
       = ($self->validation->param('not_group_glob') && !$self->validation->param('group_glob')) ? 1 : 0;
     my $scheduled_products = $self->app->schema->resultset('ScheduledProducts');
-    $self->render(
-        json => $scheduled_products->job_statistics(
-            @$params, $self->param('additional_jobs_by') // 'SUBMISSION_ID',
-            $group_ids, $include_null_groups
-        ));
+    unshift @$params, $self->param('additional_jobs_by') // 'SUBMISSION_ID';
+    $self->render(json => $scheduled_products->job_statistics($params, $group_ids, $include_null_groups));
 }
 
 =over 4

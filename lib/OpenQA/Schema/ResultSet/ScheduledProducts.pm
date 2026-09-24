@@ -56,9 +56,7 @@ sub update_note ($self, $distri, $version, $flavor, $arch, $build, $note) {
 
 my $MAIN_SETTINGS_GROUP_BY = join ',', OpenQA::Schema::Result::Jobs::MAIN_SETTINGS;
 
-sub job_statistics ($self, $distri, $version, $flavor, $arch, $build, $additional_jobs_by, $group_ids,
-    $include_null_groups)
-{
+sub job_statistics ($self, $params, $group_ids, $include_null_groups) {
     my $group_filter = '';
     my @binds;
     if ($group_ids && @$group_ids) {
@@ -177,8 +175,7 @@ sub job_statistics ($self, $distri, $version, $flavor, $arch, $build, $additiona
             latest_job_result
         END_SQL
     );
-    my @query_params = ($additional_jobs_by, $distri, $version, $flavor, $arch, $build);
-    $sth->execute(@query_params, @query_params, @binds);
+    $sth->execute((@$params) x 2, @binds);
     return $sth->fetchall_hashref([qw(latest_job_state latest_job_result)]);
 }
 
