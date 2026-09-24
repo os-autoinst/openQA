@@ -127,7 +127,7 @@ sub update_note ($self) {
     $validation->required('note');
     return undef unless my $params = $self->_get_iso_params_and_validate;
     my $scheduled_products = $self->app->schema->resultset('ScheduledProducts');
-    $self->render(json => $scheduled_products->update_note(@$params, $validation->param('note')));
+    $self->render(json => $scheduled_products->update_note($params, $validation->param('note')));
 }
 
 sub validate_create_parameters ($self) {

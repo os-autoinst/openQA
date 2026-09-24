@@ -32,7 +32,7 @@ sub cancel_by_webhook_id ($self, $webhook_id, $reason) {
     return {jobs_cancelled => $count};
 }
 
-sub update_note ($self, $distri, $version, $flavor, $arch, $build, $note) {
+sub update_note ($self, $params, $note) {
     my $sth = $self->result_source->schema->storage->dbh->prepare(
         <<~'END_SQL'
         UPDATE scheduled_products SET results['note'] = ? where id = (
@@ -44,13 +44,7 @@ sub update_note ($self, $distri, $version, $flavor, $arch, $build, $note) {
         ) RETURNING id;
         END_SQL
     );
-    $sth->bind_param(1, encode_json($note));
-    $sth->bind_param(2, $distri);
-    $sth->bind_param(3, $version);
-    $sth->bind_param(4, $flavor);
-    $sth->bind_param(5, $arch);
-    $sth->bind_param(6, $build);
-    $sth->execute;
+    $sth->execute(encode_json($note), @$params);
     return {updated_product_id => $sth->fetchrow_arrayref->[0]};
 }
 
