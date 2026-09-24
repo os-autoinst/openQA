@@ -66,8 +66,8 @@ Returns job statistics about the most recent scheduled products matching the
 specified DISTRI, VERSION, FLAVOR, ARCH and BUILD parameters. Scheduled products
 that are cancelling/cancelled are not considered.
 
-This allows to determine whether all jobs that have been scheduled for a
-certain purpose are done and whether the jobs have passed. If jobs have been
+This allows determining whether all jobs that have been scheduled for a certain
+purpose are done and whether the jobs have passed. If jobs have been
 cloned/restarted then only the state/result of the latest job is taken into
 account.
 
@@ -86,6 +86,13 @@ whether certain states/results are present. The concrete job IDs and scheduled
 product IDs for each combination are mainly returned for easier retracing but
 could also be used to generate a more detailed report.
 
+If a scheduled product has a SUBMISSION_ID setting (or the setting specified via
+`additional_jobs_by`), additional jobs that have been created with that setting
+are returned as well.
+
+Jobs are deduplicated by their main settings like with `/jobs?latest` (see
+documentation of that route for details).
+
 =back
 
 =cut
@@ -98,7 +105,8 @@ sub job_statistics ($self) {
     my $include_null_groups
       = ($self->validation->param('not_group_glob') && !$self->validation->param('group_glob')) ? 1 : 0;
     my $scheduled_products = $self->app->schema->resultset('ScheduledProducts');
-    $self->render(json => $scheduled_products->job_statistics(@$params, $group_ids, $include_null_groups));
+    unshift @$params, $self->param('additional_jobs_by') // 'SUBMISSION_ID';
+    $self->render(json => $scheduled_products->job_statistics($params, $group_ids, $include_null_groups));
 }
 
 =over 4
@@ -119,7 +127,7 @@ sub update_note ($self) {
     $validation->required('note');
     return undef unless my $params = $self->_get_iso_params_and_validate;
     my $scheduled_products = $self->app->schema->resultset('ScheduledProducts');
-    $self->render(json => $scheduled_products->update_note(@$params, $validation->param('note')));
+    $self->render(json => $scheduled_products->update_note($params, $validation->param('note')));
 }
 
 sub validate_create_parameters ($self) {

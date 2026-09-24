@@ -5,6 +5,7 @@ package OpenQA::Schema::ResultSet::ScheduledProducts;
 
 use Mojo::Base 'DBIx::Class::ResultSet', -signatures;
 use Mojo::JSON qw(encode_json);
+use OpenQA::Schema::Result::Jobs;
 use OpenQA::Schema::Result::ScheduledProducts qw(CANCELLED);
 use OpenQA::App;
 
@@ -31,7 +32,7 @@ sub cancel_by_webhook_id ($self, $webhook_id, $reason) {
     return {jobs_cancelled => $count};
 }
 
-sub update_note ($self, $distri, $version, $flavor, $arch, $build, $note) {
+sub update_note ($self, $params, $note) {
     my $sth = $self->result_source->schema->storage->dbh->prepare(
         <<~'END_SQL'
         UPDATE scheduled_products SET results['note'] = ? where id = (
@@ -43,17 +44,13 @@ sub update_note ($self, $distri, $version, $flavor, $arch, $build, $note) {
         ) RETURNING id;
         END_SQL
     );
-    $sth->bind_param(1, encode_json($note));
-    $sth->bind_param(2, $distri);
-    $sth->bind_param(3, $version);
-    $sth->bind_param(4, $flavor);
-    $sth->bind_param(5, $arch);
-    $sth->bind_param(6, $build);
-    $sth->execute;
+    $sth->execute(encode_json($note), @$params);
     return {updated_product_id => $sth->fetchrow_arrayref->[0]};
 }
 
-sub job_statistics ($self, $distri, $version, $flavor, $arch, $build, $group_ids = undef, $include_null_groups = 0) {
+my $MAIN_SETTINGS_GROUP_BY = join ',', OpenQA::Schema::Result::Jobs::MAIN_SETTINGS;
+
+sub job_statistics ($self, $params, $group_ids, $include_null_groups) {
     my $group_filter = '';
     my @binds;
     if ($group_ids && @$group_ids) {
@@ -64,6 +61,22 @@ sub job_statistics ($self, $distri, $version, $flavor, $arch, $build, $group_ids
     my $sth = $self->result_source->schema->storage->dbh->prepare(
         <<~"END_SQL"
         WITH RECURSIVE
+        -- get the scheduled product
+        most_recent_scheduled_product AS (
+            SELECT
+                max(id) as id,
+                max(t_created) as t_created,
+                any_value(settings ->> ?) as submission_id
+            FROM
+                scheduled_products
+            WHERE
+                status in ('new', 'scheduling', 'scheduled') and distri = ? and version = ? and flavor = ? and arch = ? and build = ?
+            GROUP BY
+                arch
+            ORDER BY
+                id DESC
+            LIMIT 1
+        ),
         -- get the initial set of jobs in the scheduled product
         initial_job_ids AS (
             SELECT
@@ -72,16 +85,19 @@ sub job_statistics ($self, $distri, $version, $flavor, $arch, $build, $group_ids
             FROM
                 jobs
             WHERE
-                jobs.scheduled_product_id in (
-                    SELECT
-                        max(id)
-                    FROM
-                        scheduled_products
-                    WHERE
-                        status in ('new', 'scheduling', 'scheduled') and distri = ? and version = ? and flavor = ? and arch = ? and build = ?
-                    GROUP BY
-                        arch
-                )
+                jobs.scheduled_product_id in (SELECT id FROM most_recent_scheduled_product)
+            UNION ALL
+            SELECT
+                job_settings.job_id AS job_id,
+                null AS scheduled_product_id
+            FROM
+                job_settings
+            JOIN
+                jobs ON jobs.id = job_settings.job_id
+            WHERE
+                key = ? and value = (SELECT submission_id FROM most_recent_scheduled_product)
+                and jobs.t_created >= (SELECT t_created FROM most_recent_scheduled_product)
+                and distri = ? and version = ? and flavor = ? and arch = ? and build = ?
         ),
         -- find more recent jobs for each initial job recursively
         latest_id_resolver AS (
@@ -112,6 +128,7 @@ sub job_statistics ($self, $distri, $version, $flavor, $arch, $build, $group_ids
             SELECT DISTINCT ON (job_id)
                 job_id as initial_job_id,
                 latest_job_id,
+                $MAIN_SETTINGS_GROUP_BY,
                 mrj.state as latest_job_state,
                 mrj.result as latest_job_result,
                 mrj.scheduled_product_id as scheduled_product_id,
@@ -123,16 +140,28 @@ sub job_statistics ($self, $distri, $version, $flavor, $arch, $build, $group_ids
                 latest_job_id IS NOT NULL
                 $group_filter
             ORDER BY
-                job_id,
+                job_id DESC, $MAIN_SETTINGS_GROUP_BY,
                 level DESC
+        ),
+        -- deduplicated jobs by $MAIN_SETTINGS_GROUP_BY returning only the "latest"
+        deduplicated_jobs AS (
+            SELECT DISTINCT ON ($MAIN_SETTINGS_GROUP_BY)
+                latest_job_id,
+                latest_job_state,
+                latest_job_result,
+                scheduled_product_id,
+                $MAIN_SETTINGS_GROUP_BY
+            FROM most_recent_jobs
+            ORDER BY $MAIN_SETTINGS_GROUP_BY, latest_job_id DESC
         )
         SELECT
             latest_job_state,
             latest_job_result,
             array_agg(latest_job_id) as job_ids,
-            array_agg(DISTINCT scheduled_product_id) as scheduled_product_ids
+            array_agg(DISTINCT scheduled_product_id) as scheduled_product_ids,
+            (SELECT submission_id from most_recent_scheduled_product)
         FROM
-            most_recent_jobs
+            deduplicated_jobs
         WHERE
             latest_job_id IS NOT NULL
         GROUP BY
@@ -140,7 +169,7 @@ sub job_statistics ($self, $distri, $version, $flavor, $arch, $build, $group_ids
             latest_job_result
         END_SQL
     );
-    $sth->execute($distri, $version, $flavor, $arch, $build, @binds);
+    $sth->execute((@$params) x 2, @binds);
     return $sth->fetchall_hashref([qw(latest_job_state latest_job_result)]);
 }
 

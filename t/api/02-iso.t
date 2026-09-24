@@ -10,6 +10,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
+use DateTime::Duration;
 use OpenQA::Jobs::Constants;
 use OpenQA::JobDependencies::Constants;
 use OpenQA::Test::TimeLimit '300';
@@ -27,6 +28,7 @@ my $job_templates = $schema->resultset('JobTemplates');
 my $products = $schema->resultset('Products');
 my $test_suites = $schema->resultset('TestSuites');
 my $jobs = $schema->resultset('Jobs');
+my $job_settings = $schema->resultset('JobSettings');
 my $scheduled_products = $schema->resultset('ScheduledProducts');
 my $gru_tasks = $schema->resultset('GruTasks');
 my $limits = $cfg->{misc_limits};
@@ -319,20 +321,61 @@ my $params = 'distri=opensuse&version=13.1&flavor=DVD&arch=i586&build=0091';
 subtest 'job statistics can be queried about the scheduled product' => sub {
     $schema->txn_begin;
     # assume some of the scheduled jobs are already done
+    my $scheduled_product = $scheduled_products->find(4);
+    my $second = DateTime::Duration->new(seconds => 1);
+    my @params = (DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0091');
     $jobs->find(99985)->update({state => DONE, result => INCOMPLETE});
     $jobs->find(99988)->update({state => DONE, result => FAILED});
-    $jobs->find(99993)->update({state => DONE, result => PASSED});
-    $jobs->find(99994)->update({state => DONE, result => PASSED});
+    $jobs->find(99993)->update({state => DONE, result => PASSED, TEST => 'foo'});
+    $jobs->find(99994)->update({state => DONE, result => PASSED, TEST => 'foo'});
+    $jobs->find(80000)->update({@params, t_created => $scheduled_product->t_created - $second});    # older than sp
+    $jobs->find(99764)->update({@params, t_created => $scheduled_product->t_created + $second});    # newer than sp
+    $job_settings->create({job_id => 80000, key => 'SUBMISSION_ID', value => 'increment:1234'});
+    $job_settings->create({job_id => 99764, key => 'SUBMISSION_ID', value => 'increment:1234'});
+
     $t->get_ok("/api/v1/isos/job_stats?$params")->status_is(200);
-    $schema->txn_rollback;
     my $json = $t->tx->res->json;
     is_deeply [sort keys %$json], [DONE, SCHEDULED], 'expected states present';
     is_deeply [sort keys %{$json->{done}}], [FAILED, INCOMPLETE, PASSED], 'expected results present';
     is_deeply [sort @{$json->{done}->{failed}->{job_ids}}], [99988], 'failed jobs';
     is_deeply [sort @{$json->{done}->{incomplete}->{job_ids}}], [99985], 'incomplete jobs';
-    is_deeply [sort @{$json->{done}->{passed}->{job_ids}}], [99993, 99994], 'passed jobs';
+    is_deeply [sort @{$json->{done}->{passed}->{job_ids}}], [99994], 'passed jobs';
     is_deeply [sort @{$json->{scheduled}->{none}->{job_ids}}], [99986, 99987, 99989, 99990, 99991, 99992],
       'scheduled jobs';
+
+    subtest 'additional jobs for submission are pulled-in via SUBMISSION_ID' => sub {
+        $scheduled_product->update_setting(SUBMISSION_ID => 'increment:1234');
+        $t->get_ok("/api/v1/isos/job_stats?$params")->status_is(200);
+        my $json = $t->tx->res->json;
+        is_deeply [sort keys %$json], [DONE, SCHEDULED], 'expected states present';
+        is_deeply [sort keys %{$json->{done}}], [FAILED, INCOMPLETE, PASSED], 'expected results present';
+        is_deeply [sort @{$json->{done}->{passed}->{job_ids}}], [99764, 99994],
+          'passed jobs: job newer than sp with matching SUBMISSION_ID included';
+        is_deeply [sort @{$json->{done}->{failed}->{job_ids}}], [99988], 'failed jobs';
+        is_deeply [sort @{$json->{done}->{incomplete}->{job_ids}}], [99985], 'incomplete jobs';
+        is_deeply [sort @{$json->{scheduled}->{none}->{job_ids}}], [99986, 99987, 99989, 99990, 99991, 99992],
+          'scheduled jobs';
+    };
+
+    subtest 'additional jobs can be pulled-in via custom setting using additional_jobs_by' => sub {
+        $scheduled_product->update_setting(SUBMISSION_ID => 'different_val');
+        $scheduled_product->update_setting(REQUEST_ID => 'req:42');
+        $job_settings->create({job_id => 99764, key => 'REQUEST_ID', value => 'req:42'});
+
+        # without additional_jobs_by, default SUBMISSION_ID is used and doesn't match
+        $t->get_ok("/api/v1/isos/job_stats?$params")->status_is(200);
+        my $json = $t->tx->res->json;
+        is_deeply [sort @{$json->{done}->{passed}->{job_ids}}], [99994],
+          'job 99764 not included because SUBMISSION_ID does not match';
+
+        # with additional_jobs_by=REQUEST_ID, REQUEST_ID matches
+        $t->get_ok("/api/v1/isos/job_stats?$params&additional_jobs_by=REQUEST_ID")->status_is(200);
+        $json = $t->tx->res->json;
+        is_deeply [sort @{$json->{done}->{passed}->{job_ids}}], [99764, 99994],
+          'passed jobs: job newer than sp with matching REQUEST_ID included via additional_jobs_by';
+    };
+
+    $schema->txn_rollback;
 };
 
 subtest 'job statistics can be filtered by job groups' => sub {
@@ -361,7 +404,6 @@ subtest 'job statistics can be filtered by job groups' => sub {
 
     $schema->txn_rollback;
 };
-
 
 subtest 'note can be updated by distri, version, flavor, arch and build parameters' => sub {
     $t->put_ok("/api/v1/experimental/isos/note?$params");
