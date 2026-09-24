@@ -105,7 +105,7 @@ sub run (@args) {
     $app->defaults->{service_pid} = $$;
 
     my $cmd_return_code = $app->start(@args);
-    return $app->exit_code // $cmd_return_code // 0;
+    return $app->exit_code // (ref $cmd_return_code ? 0 : $cmd_return_code) // 0;
 }
 
 1;
