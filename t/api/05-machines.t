@@ -356,7 +356,7 @@ subtest 'deprecation/lifecycle enforcement' => sub {
         rule_error => 'BAD_SETTING:=~foo:error:BAD_SETTING with foo is not allowed',
         rule_warn => 'BAD_SETTING:=~bar:warning:BAD_SETTING with bar is deprecated',
     };
-    delete $admin_t->app->config->{_job_settings_lifecycle_rules};
+    delete $admin_t->app->config->{misc_limits}->{job_settings_lifecycle_rules};
 
     $admin_t->post_ok(
         '/api/v1/machines',
@@ -382,7 +382,7 @@ subtest 'deprecation/lifecycle enforcement' => sub {
             }})->status_is(200);
 
     delete $admin_t->app->config->{job_settings_lifecycle};
-    delete $admin_t->app->config->{_job_settings_lifecycle_rules};
+    delete $admin_t->app->config->{misc_limits}->{job_settings_lifecycle_rules};
     client($t);
 };
 

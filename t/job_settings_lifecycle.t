@@ -6,6 +6,7 @@ use Test::Most;
 use Test::Warnings ':report_warnings';
 use Test::MockModule;
 use Test::MockObject;
+use Test::Output qw(combined_like);
 
 use FindBin;
 use lib "$FindBin::Bin/../lib";
@@ -35,7 +36,9 @@ subtest 'parse_lifecycle_rules' => sub {
             rule6 => 'SIGNED_PRIO:=~signed:warning:+15:Signed priority adjustment',
         }};
 
-    my $rules = parse_lifecycle_rules($config);
+    my $rules;
+    combined_like { $rules = parse_lifecycle_rules($config) } qr/Invalid lifecycle rule regex for 'rule4'/,
+      'warns about invalid regex';
     is scalar(@$rules), 5, 'Successfully parsed 5 valid rules, skipped 1 invalid regex';
 
     is $rules->[0]->{id}, 'rule1', 'rule1 id matches';
@@ -64,6 +67,14 @@ subtest 'parse_lifecycle_rules' => sub {
 
     my $cached_rules = parse_lifecycle_rules($config);
     is $cached_rules, $rules, 'Returns cached rules array ref';
+    is $config->{misc_limits}->{job_settings_lifecycle_rules}, $rules, 'Rules cached in misc_limits';
+
+    delete $config->{misc_limits}->{job_settings_lifecycle_rules};
+    my $reparsed_rules;
+    combined_like { $reparsed_rules = parse_lifecycle_rules($config) } qr/Invalid lifecycle rule regex for 'rule4'/,
+      'warns again when re-parsing after cache reset';
+    isnt $reparsed_rules, $rules, 'Re-parsed rules array ref is new after cache reset';
+    is_deeply $reparsed_rules, $rules, 'Re-parsed rules content matches';
 
     is_deeply parse_lifecycle_rules(undef), [], 'Undef config returns empty arrayref';
     is_deeply parse_lifecycle_rules({}), [], 'Empty config returns empty arrayref';
@@ -192,11 +203,7 @@ subtest 'controller settings and show actions' => sub {
         r_err => 'ERR_KEY:=~err_val:error:Error setting explanation',
     };
     $app->helper('reply.not_found' => sub { 'not_found' });
-    $app->helper(
-        lifecycle_matches => sub {
-            my ($c, $settings) = @_;
-            return lifecycle_matches($c->app->config, $settings);
-        });
+    $app->plugin('OpenQA::WebAPI::Plugin::Helpers');
 
     my $mock_job = Test::MockObject->new;
     $mock_job->mock(settings_hash => sub { {WARN_KEY => 'warn_val'} });
@@ -399,12 +406,57 @@ subtest 'worst_level data-driven' => sub {
             expected => 'warning',
             desc => 'Single match hashref handled and returns warning',
         },
+        {
+            matches => [{level => 'unknown'}],
+            expected => undef,
+            desc => 'Unknown level in matches returns undef',
+        },
     );
 
     for my $case (@test_cases) {
         my $res = worst_level($case->{matches});
         is $res, $case->{expected}, $case->{desc};
     }
+};
+
+subtest 'parse_lifecycle_rules invalid inputs and escaping' => sub {
+    my $config = {
+        job_settings_lifecycle => {
+            r_bad_format_no_colons => 'UEFI_PFLASH_CODE',
+            r_bad_format_one_colon => 'UEFI_PFLASH_CODE:=~unsupported',
+            r_bad_format_two_colons => 'UEFI_PFLASH_CODE:=~unsupported:warning',
+            r_bad_format_empty_pattern => 'UEFI_PFLASH_CODE::warning:explanation',
+            r_bad_format_empty_key => ':pattern:warning:explanation',
+            r_invalid_level => 'UEFI_PFLASH_CODE:=~unsupported:unknown_level:explanation',
+            r_invalid_regex => 'UEFI_PFLASH_CODE:=~(unclosed:warning:explanation',
+            r_escaped => 'COLON_KEY:=~a\:b:warning:explanation_with:colon',
+            r_info => 'INFO_KEY:=~info_val:info:info explanation',
+        }};
+
+    my $rules;
+    combined_like {
+        $rules = parse_lifecycle_rules($config);
+    }
+qr/Invalid lifecycle rule format for 'r_bad_format_empty_key'.*Invalid lifecycle rule format for 'r_bad_format_empty_pattern'.*Invalid lifecycle rule format for 'r_bad_format_no_colons'.*Invalid lifecycle rule format for 'r_bad_format_one_colon'.*Invalid lifecycle rule format for 'r_bad_format_two_colons'.*Invalid lifecycle rule level 'unknown_level' for 'r_invalid_level'.*Invalid lifecycle rule regex for 'r_invalid_regex'/s,
+      'logs correct warnings for invalid rules';
+
+    is scalar(@$rules), 2, 'Successfully parsed only the 2 valid/escaped/info rules';
+
+    subtest 'escaped colons are unescaped and matched literally' => sub {
+        is $rules->[0]->{id}, 'r_escaped', 'r_escaped id';
+        is $rules->[0]->{key}, 'COLON_KEY', 'r_escaped key';
+        is $rules->[0]->{regex_str}, 'a:b', 'regex string unescaped correctly';
+        is $rules->[0]->{level}, 'warning', 'r_escaped level';
+        is $rules->[0]->{explanation}, 'explanation_with:colon', 'explanation contains colon';
+        ok 'a:b' =~ $rules->[0]->{regex}, 'regex compiles and matches literal colon';
+    };
+
+    subtest 'info level rules are successfully parsed' => sub {
+        is $rules->[1]->{id}, 'r_info', 'r_info id';
+        is $rules->[1]->{key}, 'INFO_KEY', 'r_info key';
+        is $rules->[1]->{level}, 'info', 'r_info level is info';
+        is $rules->[1]->{explanation}, 'info explanation', 'r_info explanation';
+    };
 };
 
 done_testing();

@@ -19,6 +19,7 @@ use OpenQA::Jobs::Constants qw(
 use Text::Glob qw(glob_to_regex_string);
 use List::Util qw(any min);
 use Feature::Compat::Try;
+use OpenQA::JobSettings::Lifecycle qw(lifecycle_matches);
 
 sub register ($self, $app, $config) {
     $app->helper(label_from_const => sub ($c, $val) { ucfirst $val =~ tr/_/ /r });
@@ -176,8 +177,7 @@ sub register ($self, $app, $config) {
 
     $app->helper(
         lifecycle_matches => sub ($c, $settings) {
-            require OpenQA::JobSettings::Lifecycle;
-            return OpenQA::JobSettings::Lifecycle::lifecycle_matches($c->app->config, $settings);
+            return lifecycle_matches($c->app->config, $settings);
         });
 
     $app->helper(text_with_title => sub ($c, $text) { $c->tag('span', title => $text, $text) });

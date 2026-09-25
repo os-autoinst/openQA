@@ -1303,7 +1303,7 @@ subtest 'deprecation/lifecycle template enforcement' => sub {
 
     $t->app->config->{job_settings_lifecycle}
       = {rule_error => 'OBSOLETE_SETTING:=~.*:error:OBSOLETE_SETTING is deprecated with error',};
-    delete $t->app->config->{_job_settings_lifecycle_rules};
+    delete $t->app->config->{misc_limits}->{job_settings_lifecycle_rules};
 
     my %form = (schema => $schema_filename, template => dump_yaml($template_with_deprecated));
     $t->post_ok('/api/v1/job_templates_scheduling/' . $opensuse->id, form => \%form)->status_is(400);
@@ -1312,7 +1312,7 @@ subtest 'deprecation/lifecycle template enforcement' => sub {
       'error message contains deprecation explanation';
 
     delete $t->app->config->{job_settings_lifecycle};
-    delete $t->app->config->{_job_settings_lifecycle_rules};
+    delete $t->app->config->{misc_limits}->{job_settings_lifecycle_rules};
 };
 
 # switch to operator (default client) and try some modifications

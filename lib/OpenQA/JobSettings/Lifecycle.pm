@@ -6,6 +6,7 @@ package OpenQA::JobSettings::Lifecycle;
 use Mojo::Base -strict, -signatures;
 use Scalar::Util qw(looks_like_number);
 use Feature::Compat::Try;
+use OpenQA::Log qw(log_warning);
 
 use Exporter 'import';
 
@@ -19,14 +20,31 @@ our @EXPORT_OK = qw(
   worst_level
 );
 
+use constant ALLOWED_LEVELS => {info => 1, warning => 1, error => 1};
+
 sub _parse_rule ($rule_id, $rule_str) {
     return () unless defined $rule_str;
-    return () unless my ($key, $pattern, $level, $remaining) = $rule_str =~ /^([^:]+):([^:]+):([^:]+):(.*)$/;
+
+    my @parts = split /(?<!\\):/, $rule_str, 4;
+    if (@parts < 4 || grep { $_ eq '' } @parts[0 .. 2]) {
+        log_warning("Invalid lifecycle rule format for '$rule_id': '$rule_str'");
+        return ();
+    }
+
+    my ($key, $pattern, $level, $remaining) = @parts;
+    if (!ALLOWED_LEVELS->{$level}) {
+        log_warning("Invalid lifecycle rule level '$level' for '$rule_id': '$rule_str'");
+        return ();
+    }
 
     my ($op, $regex_str) = $pattern =~ /^(!~|=~)(.*)$/ ? ($1, $2) : ('=~', $pattern);
+    $regex_str =~ s/\\:/:/g;
     my $compiled_regex;
     try { $compiled_regex = qr/$regex_str/ }
-    catch ($e) { return () }
+    catch ($e) {
+        log_warning("Invalid lifecycle rule regex for '$rule_id': '$rule_str'");
+        return ();
+    }
 
     my ($prio, $explanation) = $remaining =~ /^([+-]?\d+):(.*)$/ ? (0 + $1, $2) : (undef, $remaining);
     return {
@@ -43,14 +61,19 @@ sub _parse_rule ($rule_id, $rule_str) {
 
 sub parse_lifecycle_rules ($config) {
     return [] unless $config && ref $config eq 'HASH';
-    return $config->{_job_settings_lifecycle_rules} if exists $config->{_job_settings_lifecycle_rules};
+    return $config->{misc_limits}->{job_settings_lifecycle_rules}
+      if ref $config->{misc_limits} eq 'HASH' && defined $config->{misc_limits}->{job_settings_lifecycle_rules};
 
     my $rules_hash = $config->{job_settings_lifecycle};
-    return $config->{_job_settings_lifecycle_rules} = [] unless ref $rules_hash eq 'HASH';
+    unless (ref $rules_hash eq 'HASH') {
+        $config->{misc_limits} = {} unless ref $config->{misc_limits} eq 'HASH';
+        return $config->{misc_limits}->{job_settings_lifecycle_rules} = [];
+    }
 
     my @parsed_rules = map { _parse_rule($_, $rules_hash->{$_}) } sort keys %$rules_hash;
 
-    $config->{_job_settings_lifecycle_rules} = \@parsed_rules;
+    $config->{misc_limits} = {} unless ref $config->{misc_limits} eq 'HASH';
+    $config->{misc_limits}->{job_settings_lifecycle_rules} = \@parsed_rules;
     return \@parsed_rules;
 }
 
