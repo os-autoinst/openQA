@@ -239,9 +239,10 @@ subtest 'pause at assert_screen timeout' => sub {
     wait_for_developer_console_like(
         $driver,
         qr/\"outstanding_images\":[1-9]*/,
-        'progress of image upload received', ONE_MINUTE
+        'progress of image upload received',
+        ONE_MINUTE, 0
     );
-    wait_for_developer_console_like($driver, qr/\"outstanding_images\":0/, 'image upload has finished', ONE_MINUTE);
+    wait_for_developer_console_like($driver, qr/\"outstanding_images\":0/, 'image upload has finished', ONE_MINUTE, 0);
 
     # open needle editor in 2nd tab
     my $needle_editor_url = '/tests/1/edit';
