@@ -352,6 +352,7 @@ sub default_config () {
         },
         carry_over => {%CARRY_OVER_DEFAULTS},
         test_settings => {},
+        job_settings_lifecycle => {},
         'test_preset example' => {
             title => 'Create example test',
             info => 'Parameters to create an example test have been pre-filled in the following form. '
