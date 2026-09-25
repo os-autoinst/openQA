@@ -38,6 +38,10 @@ $op->get(
     });
 my $pub = $app->routes->find('api_public');
 $pub->any(
+    '/test/pub/warnings' => sub ($c) {
+        $c->render(json => {warnings => ['Some warning message']});
+    });
+$pub->any(
     '/test/pub/http' => sub ($c) {
         my $req = $c->req;
         my $data = {
@@ -547,6 +551,12 @@ subtest 'Base URL with slash' => sub {
     is_deeply \@result, [0], 'zero exit code';
     unlike $stdout, qr/200 OK.*Content-Type:/s, 'not verbose';
     like $stdout, qr/Hello operator!/, 'operator response';
+};
+
+subtest 'Warnings in response' => sub {
+    my ($stdout, $stderr, @result) = capture sub { $api->run(@host, 'test/pub/warnings') };
+    is_deeply \@result, [0], 'zero exit code';
+    like $stderr, qr/Warning: Some warning message/, 'warning printed to stderr';
 };
 
 done_testing();

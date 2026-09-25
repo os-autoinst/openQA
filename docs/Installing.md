@@ -798,7 +798,7 @@ Where:
     settings tab) and stashes warnings.
   - `error`: Blocks and rejects the creation or update of settings in machine,
     product, test suite, and job template YAML schedules, returning a `400 Bad
-    Request` HTTP error with the explanation.
+Request` HTTP error with the explanation.
 - `PRIO_ADJUSTMENT` (optional): An integer value (e.g., `-100` or `+50`) that
   automatically adjusts the job priority (via priority throttling integration)
   when a matching warning, info, or error is encountered on jobs.
