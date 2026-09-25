@@ -10,12 +10,13 @@ use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
 use Test::Mojo;
 use Test::Warnings qw(:all :report_warnings);
+use Date::Format 'time2str';
 use Mojo::Base -signatures;
 use Mojo::JSON qw(decode_json encode_json);
 use Mojo::File qw(path);
 use Mojo::IOLoop;
 use Mojo::URL;
-use OpenQA::Test::TimeLimit '40';
+use OpenQA::Test::TimeLimit '60';
 use OpenQA::Test::Case;
 use OpenQA::Test::Utils qw(prepare_clean_needles_dir prepare_default_needle wait_for);
 use OpenQA::Client;
@@ -67,6 +68,19 @@ sub prepare_database () {
 
     my $assets = $schema->resultset('Assets');
     $assets->find({type => 'iso', name => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'})->update({size => 0});
+
+    $schema->resultset('Needles')->create(
+        {
+            dir_id => 1,
+            filename => 'inst-timezone.json',
+            last_seen_module_id => 10,
+            last_seen_time => time2str('%Y-%m-%d %H:%M:%S', time - 100000, 'UTC'),
+            last_matched_module_id => 9,
+            last_matched_time => time2str('%Y-%m-%d %H:%M:%S', time - 50000, 'UTC'),
+            file_present => 1,
+            t_created => time2str('%Y-%m-%d %H:%M:%S', time - 200000, 'UTC'),
+            t_updated => time2str('%Y-%m-%d %H:%M:%S', time - 200000, 'UTC'),
+        });
 }
 
 prepare_database;
@@ -172,9 +186,34 @@ subtest 'displaying audio result' => sub {
 };
 
 subtest 'displaying image result with candidates' => sub {
-    $driver->find_element('[href="#step/bootloader/1"]')->click();
+    my $step_el = $driver->find_element('[href="#step/bootloader/1"]');
+    $step_el->click();
     my $needles = find_candidate_needles;
-    is_deeply $needles, {'inst-bootmenu' => []}, 'correct tags displayed' or always_explain $needles;
+    is_deeply $needles, {'inst-bootmenu' => ['100%: bootmenu-dvd-12.3']}, 'correct tags displayed'
+      or always_explain $needles;
+    $step_el->click();
+};
+
+subtest 'displaying image result with deleted candidate' => sub {
+    my $step_el = $driver->find_element('[href="#step/installer_timezone/1"]');
+    $step_el->click();
+    my $needles = find_candidate_needles;
+    my $inst_timezone_list = $needles->{'inst-timezone'} // [];
+    is scalar @$inst_timezone_list, 1, 'exactly one candidate for inst-timezone';
+    like $inst_timezone_list->[0], qr/inst-timezone\s+deleted/, 'inst-timezone has deleted badge';
+    $step_el->click();
+};
+
+subtest 'displaying image result with present candidate' => sub {
+    $driver->get('/tests/99946');
+    my $step_el = $driver->find_element('[href="#step/installer_timezone/1"]');
+    $step_el->click();
+    my $needles = find_candidate_needles;
+    my $inst_timezone_list = $needles->{'inst-timezone'} // [];
+    is scalar @$inst_timezone_list, 1, 'exactly one candidate for inst-timezone';
+    like $inst_timezone_list->[0], qr/inst-timezone-text$/, 'inst-timezone-text candidate has no deleted badge';
+    unlike $inst_timezone_list->[0], qr/deleted/, 'inst-timezone-text candidate does not have deleted badge';
+    $driver->get('/tests/99937');
 };
 
 subtest 'filtering' => sub {

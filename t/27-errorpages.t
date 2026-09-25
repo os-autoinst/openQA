@@ -24,10 +24,41 @@ subtest '404 error page' => sub {
 };
 
 subtest 'error pages shown for OpenQA::WebAPI::Controller::Step' => sub {
+    my $schema = $t->app->schema;
+    my $job = $schema->resultset('Jobs')->find(99946);
+    my $real_needle_dir = Mojo::File->new($job->needle_dir)->realpath->to_string;
+    my $dir = $schema->resultset('NeedleDirs')->find_or_create(
+        {
+            path => $real_needle_dir,
+            name => 'fixtures'
+        });
+    $schema->resultset('Needles')->find_or_create(
+        {
+            dir_id => $dir->id,
+            filename => 'inst-timezone-text.json',
+        });
+
     my $existing_job = 99946;
     $t->get_ok("/tests/$existing_job/modules/installer_timezone/steps/1")->status_is(302, 'redirection');
+
+    my $needle_path = "$real_needle_dir/inst-timezone-text.json";
+    Mojo::File->new($real_needle_dir)->make_path;
+    Mojo::File->new('t/data/default-needle.json')->copy_to($needle_path);
+
     $t->get_ok("/tests/$existing_job/modules/installer_timezone/steps/1", {'X-Requested-With' => 'XMLHttpRequest'})
-      ->status_is(200);
+      ->status_is(200, 'step viewimg loads with needle present')
+      ->content_like(qr/inst-timezone-text/, 'needle name is shown')
+      ->content_unlike(qr/<span class="badge bg-danger text-light ms-1">deleted<\/span>/,
+        'needle is not marked deleted')
+      ->content_like(qr/inst-timezone-text.*show-needle-info/s, 'needle info action icon is displayed');
+
+    unlink $needle_path or die "Failed to remove needle: $!";
+
+    $t->get_ok("/tests/$existing_job/modules/installer_timezone/steps/1", {'X-Requested-With' => 'XMLHttpRequest'})
+      ->status_is(200, 'step viewimg loads with deleted needle')
+      ->content_like(qr/inst-timezone-text/, 'needle name is shown')
+      ->content_like(qr/<span class="badge bg-danger text-light ms-1">deleted<\/span>/, 'needle is marked deleted')
+      ->content_unlike(qr/inst-timezone-text.*show-needle-info/s, 'needle info action icon is hidden');
     $t->get_ok("/tests/$existing_job/modules/installer_timezone/steps/1/src")->status_is(200)
       ->content_type_is('text/html;charset=UTF-8');
     $t->get_ok("/tests/$existing_job/modules/installer_timezone/steps/1/src.txt")->status_is(200)
