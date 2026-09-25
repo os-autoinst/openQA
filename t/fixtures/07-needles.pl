@@ -19,6 +19,17 @@ use warnings;
         file_present => 1,
         t_created => time2str('%Y-%m-%d %H:%M:%S', time - 200000, 'UTC'),
         t_updated => time2str('%Y-%m-%d %H:%M:%S', time - 200000, 'UTC'),
+    },
+    Needles => {
+        dir_id => 1,
+        filename => 'inst-timezone.json',
+        last_seen_module_id => 10,
+        last_seen_time => time2str('%Y-%m-%d %H:%M:%S', time - 100000, 'UTC'),
+        last_matched_module_id => 9,
+        last_matched_time => time2str('%Y-%m-%d %H:%M:%S', time - 50000, 'UTC'),
+        file_present => 1,
+        t_created => time2str('%Y-%m-%d %H:%M:%S', time - 200000, 'UTC'),
+        t_updated => time2str('%Y-%m-%d %H:%M:%S', time - 200000, 'UTC'),
     }
 
 ]
