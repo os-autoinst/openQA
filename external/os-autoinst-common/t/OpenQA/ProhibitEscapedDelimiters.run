@@ -1,0 +1,18 @@
+## name Passing
+## failures 0
+## cut
+
+my $s1 = 'hello';
+my $s2 = "hello";
+my $s3 = q{hello "world" $var @arr};
+my $s4 = qq{hello "world" $var @arr};
+my $s5 = "hello world";
+my $s6 = "hello \\ world";
+
+## name Failing
+## failures 3
+## cut
+
+my $f1 = "hello \" world";
+my $f2 = "hello \$world";
+my $f3 = "hello \@array";

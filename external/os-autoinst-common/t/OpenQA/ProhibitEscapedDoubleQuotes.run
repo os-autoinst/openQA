@@ -1,0 +1,16 @@
+## name Passing
+## failures 0
+## cut
+
+my $sql = qq{DROP SCHEMA IF EXISTS "$schema_name" CASCADE};
+my $sql2 = qq{CREATE SCHEMA "$schema_name"};
+my $msg = "This has no escaped quotes";
+my $msg2 = "This has an escaped backslash \\\\ and a quote";
+my $msg3 = 'Single quotes are OK with \"';
+
+## name Failing
+## failures 2
+## cut
+
+my $sql3 = "DROP SCHEMA IF EXISTS \"$schema_name\" CASCADE";
+my $sql4 = "Another escaped quote \"";
