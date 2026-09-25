@@ -2090,5 +2090,33 @@ subtest 'redacted settings' => sub {
     $job->settings->find({key => '_SECRET_PASSWORD'})->delete;
 };
 
+subtest 'deprecation/lifecycle job creation enforcement' => sub {
+    $t->app->config->{job_settings_lifecycle} = {
+        rule_error => 'BAD_SETTING:=~foo:error:BAD_SETTING with foo is not allowed',
+        rule_warn => 'BAD_SETTING:=~bar:warning:BAD_SETTING with bar is deprecated',
+    };
+    delete $t->app->config->{misc_limits}->{job_settings_lifecycle_rules};
+
+    subtest 'Job with error level setting is rejected' => sub {
+        $t->post_ok('/api/v1/jobs', form => {TEST => 'test_err_lifecycle', BAD_SETTING => 'foo_val'})->status_is(400);
+        like $t->tx->res->body,
+          qr/Setting 'BAD_SETTING' has deprecated value 'foo_val': BAD_SETTING with foo is not allowed/,
+          'error message is returned';
+    };
+
+    subtest 'Job with warning level setting is created with warning response' => sub {
+        $t->post_ok('/api/v1/jobs', form => {TEST => 'test_warn_lifecycle', BAD_SETTING => 'bar_val'})->status_is(200);
+        my $warnings = $t->tx->res->json->{warnings};
+        is ref $warnings, 'ARRAY', 'warnings array in response JSON';
+        is scalar @$warnings, 1, 'contains one warning';
+        like $warnings->[0],
+          qr/Setting 'BAD_SETTING' has deprecated value 'bar_val': BAD_SETTING with bar is deprecated/,
+          'warning message is correct';
+    };
+
+    delete $t->app->config->{job_settings_lifecycle};
+    delete $t->app->config->{misc_limits}->{job_settings_lifecycle_rules};
+};
+
 done_testing;
 
