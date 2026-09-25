@@ -22,6 +22,7 @@ use OpenQA::JobGroupDefaults;
 use OpenQA::Jobs::Constants qw(OK_RESULTS);
 use OpenQA::Scheduler::DynamicLimit;
 use OpenQA::Task::Job::Limit;
+use OpenQA::JobSettings::Lifecycle qw(parse_lifecycle_rules);
 use Feature::Compat::Try;
 
 my %CARRY_OVER_DEFAULTS = (lookup_depth => 10, state_changes_limit => 3);
@@ -329,6 +330,7 @@ sub default_config () {
             prio_throttling_data => undef,
             prio_group_parameters => 'full_name:Development:50',
             prio_group_data => undef,
+            job_settings_lifecycle_rules => undef,
             job_group_overview_max_unauth_builds_limit => 400,
         },
         archiving => {
@@ -359,6 +361,7 @@ sub default_config () {
         },
         carry_over => {%CARRY_OVER_DEFAULTS},
         test_settings => {},
+        job_settings_lifecycle => {},
         'test_preset example' => {
             title => 'Create example test',
             info => 'Parameters to create an example test have been pre-filled in the following form. '
@@ -421,6 +424,7 @@ sub read_config ($app) {
     }
     $config->{misc_limits}->{prio_throttling_data} = _load_prio_throttling($app, $config);
     $config->{misc_limits}->{prio_group_data} = _load_prio_group_throttling($app, $config);
+    $config->{misc_limits}->{job_settings_lifecycle_rules} = parse_lifecycle_rules($config);
     my $results = delete $global_config->{parallel_children_collapsable_results};
     $global_config->{parallel_children_collapsable_results_sel}
       = ' .status' . (join '', map { ":not(.result_$_)" } split /\s+/, $results);
