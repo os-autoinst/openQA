@@ -46,6 +46,42 @@
       <link id="favicon-16" rel="icon" href="<%= favicon_url '-16.png' %>" sizes="16x16" type="image/png">
       <link id="favicon-svg" rel="icon" href="<%= favicon_url '.svg' %>" sizes="any" type="image/svg+xml">
 
+      <script>
+        let theme = '<%= current_theme %>';
+        
+        if (theme === 'detect') theme = window.matchMedia('(prefers-color-scheme: dark)').matches === true ? 'dark' : 'light';
+        
+        // Normalize theme name for comparison (lowercase, replace spaces with hyphens)
+        const normalizedTheme = theme.toLowerCase().replace(/\s+/g, '-');
+        
+        // Check if it's a Catppuccin variant (handle both catpuccin and catppuccin spellings)
+        const isCatppuccin = normalizedTheme.startsWith('catppuccin') || normalizedTheme.startsWith('catpuccin');
+        
+        // Set Bootstrap theme
+        if (isCatppuccin) {
+          // Latte is light, others are dark
+          const isLatte = normalizedTheme.includes('latte');
+          document.documentElement.dataset.bsTheme = isLatte ? 'light' : 'dark';
+          
+          // Add ONLY the specific variant class (not the base theme-catppuccin)
+          if (normalizedTheme.includes('latte')) {
+            document.documentElement.classList.add('theme-catppuccin-latte');
+          } else if (normalizedTheme.includes('frappe') || normalizedTheme.includes('frappé')) {
+            document.documentElement.classList.add('theme-catppuccin-frappe');
+          } else if (normalizedTheme.includes('macchiato')) {
+            document.documentElement.classList.add('theme-catppuccin-macchiato');
+          } else {
+            // Default to Mocha for any other catppuccin variant
+            document.documentElement.classList.add('theme-catppuccin');
+          }
+        } else {
+          document.documentElement.dataset.bsTheme = theme;
+          if (theme === 'dark') {
+            document.documentElement.classList.add('theme-dark');
+          }
+        }
+      </script>
+
   </head>
   <body>
       %= include 'layouts/navbar'
@@ -77,10 +113,5 @@
               </div>
             </div>
       </footer>
-      <script>
-        let theme = '<%= current_theme %>';
-        if (theme === 'detect') theme = window.matchMedia('(prefers-color-scheme: dark)').matches === true ? 'dark' : 'light';
-        document.documentElement.dataset.bsTheme = theme;
-      </script>
   </body>
 </html>
