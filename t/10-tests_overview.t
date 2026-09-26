@@ -11,6 +11,7 @@ use Test::Warnings ':report_warnings';
 use OpenQA::Test::Case;
 use OpenQA::Test::TimeLimit '18';
 use OpenQA::Jobs::Constants;
+use OpenQA::Constants qw(MAX_RESTART_FILTER_JOINS);
 use OpenQA::App;
 use Date::Format 'time2str';
 use Mojo::Parameters;
@@ -641,6 +642,27 @@ subtest 'restart counter' => sub {
     my $data = Mojo::JSON::decode_json($t->tx->res->body)->{data};
     my ($clone2_data) = grep { $_->{id} == $clone2->id } @$data;
     is $clone2_data->{restarts}, 2, 'AJAX list contains restart count 2';
+};
+
+subtest 'filter by min_restarts' => sub {
+    $t->get_ok('/tests/overview' => form => {build => '198077', min_restarts => 1})->status_is(200);
+    $t->element_exists('.restarts .fa-clock-rotate-left', 'Overview shows job with restarts when min_restarts=1');
+
+    $t->get_ok('/tests/overview' => form => {build => '198077', min_restarts => 2})->status_is(200);
+    $t->element_exists('.restarts .fa-clock-rotate-left', 'Overview shows job with restarts when min_restarts=2');
+    $t->element_exists('[title="Restarted 2 times"]', 'Expected job with 2 restarts found');
+
+    $t->get_ok('/tests/overview' => form => {build => '198077', min_restarts => 3})->status_is(200);
+    $t->element_exists_not('.restarts .fa-clock-rotate-left',
+        'Overview hides jobs without enough restarts when min_restarts=3');
+
+    $t->get_ok('/tests/overview' => form => {build => '198077', min_restarts => MAX_RESTART_FILTER_JOINS + 1})
+      ->status_is(200);
+    $t->element_exists_not('.restarts .fa-clock-rotate-left',
+        'Overview caps nested joins for min_restarts > ' . MAX_RESTART_FILTER_JOINS);
+
+    $t->get_ok('/tests/overview' => form => {build => '198077', min_restarts => 'invalid'})->status_is(200);
+    $t->element_exists('.restarts .fa-clock-rotate-left', 'Overview ignores invalid min_restarts values');
 };
 
 subtest 'advanced restart options' => sub {

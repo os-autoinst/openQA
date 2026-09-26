@@ -5,7 +5,7 @@ package OpenQA::WebAPI::Plugin::Helpers;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use Mojo::ByteStream;
-use OpenQA::Constants qw(JOBS_OVERVIEW_SEARCH_CRITERIA);
+use OpenQA::Constants qw(JOBS_OVERVIEW_SEARCH_CRITERIA MAX_RESTART_FILTER_JOINS);
 use OpenQA::Schema;
 use OpenQA::Utils qw(bugurl human_readable_size render_escaped_refs href_to_bugref);
 use OpenQA::Events;
@@ -394,6 +394,7 @@ sub _compose_job_overview_search_args ($c) {
     $v->optional($_, 'not_empty') for JOBS_OVERVIEW_SEARCH_CRITERIA;
     $v->optional('comment');
     $v->optional('groupid')->num(0, undef);
+    $v->optional('min_restarts')->num(1, undef);
     $v->optional('modules', 'comma_separated');
     $v->optional('flavor', 'comma_separated');
     $v->optional('limit', 'not_empty')->num(1, undef);
@@ -530,7 +531,19 @@ sub _compute_overview_filtering_params ($c) {
     my $archs = $c->every_non_empty_param('arch');
     my $machines = $c->every_non_empty_param('machine');
     my $failed_modules = $c->every_non_empty_param('failed_modules');
+    my $min_restarts = $c->validation->param('min_restarts');
     my @conds = (
+        (
+            $min_restarts
+            ? \[
+                'me.id IN (SELECT j1.clone_id FROM jobs j1'
+                  . join('',
+                    map { sprintf ' JOIN jobs j%d ON j%d.id = j%d.clone_id', $_, $_ - 1, $_ }
+                      2 .. ($min_restarts > MAX_RESTART_FILTER_JOINS ? MAX_RESTART_FILTER_JOINS : $min_restarts))
+                  . ' WHERE j1.clone_id IS NOT NULL)'
+              ]
+            : ()
+        ),
         (@$states ? {'me.state' => {-in => $states}} : ()),
         (@$results ? {'me.result' => {-in => $results}} : ()),
         (@$states_not ? {'me.state' => {-not_in => $states_not}} : ()),
