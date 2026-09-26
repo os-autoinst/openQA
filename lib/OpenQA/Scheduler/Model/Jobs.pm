@@ -9,6 +9,7 @@ use DateTime;
 use File::Temp 'tempdir';
 use Feature::Compat::Try;
 use OpenQA::Jobs::Constants;
+use OpenQA::Events;
 use OpenQA::Log qw(log_debug log_info log_warning);
 use OpenQA::Utils qw(random_string storage_below_threshold);
 use OpenQA::Constants qw(WEBSOCKET_API_VERSION WORKER_CLASS_LIMIT_REGEX);
@@ -513,7 +514,9 @@ sub _update_scheduled_jobs ($self) {
     while (my $job = $jobs->next) {
         # cancel jobs exceeding the max. time a job may be scheduled
         if (($cur_time - $job->t_created)->delta_days > $max_job_scheduled_time) {
-            $job->cancel(OpenQA::Jobs::Constants::OBSOLETED, "scheduled for more than $max_job_scheduled_time days");
+            my $reason = "scheduled for more than $max_job_scheduled_time days";
+            $job->cancel(OpenQA::Jobs::Constants::TIMEOUT_EXCEEDED, $reason);
+            OpenQA::Events->singleton->emit_event('openqa_job_cancel', data => {id => $job->id, reason => $reason});
             next;
         }
 
