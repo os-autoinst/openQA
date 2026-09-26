@@ -202,3 +202,4 @@ subcommands:
     options:
       - *poll_intervall
       - *follow
+      - scheduled-product-id|S=i --Monitor jobs scheduled under this scheduled product ID
