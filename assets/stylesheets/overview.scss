@@ -55,7 +55,7 @@
   .card-header {
     cursor: pointer;
   }
-  .card-body, .developer-mode-element {
+  .card-body:not(.collapse, .collapsing), .developer-mode-element {
     display: none;
   }
   #filter-form {
