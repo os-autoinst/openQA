@@ -18,7 +18,13 @@
 
     <div class="card">
         <div class="card-body status-info">
-            <div><span>Host: </span><%= $worker->{host} %></div>
+            <div><span>Host: </span>
+                % if (exists $worker->{host} && $worker->{host} ne 'unknown' && $worker->{host} ne '') {
+                    <a href="<%= url_for('admin_worker_host_show', worker_host => $worker->{host}) %>"><%= $worker->{host} %></a>
+                % } else {
+                    <%= $worker->{host} // 'unknown' %>
+                % }
+            </div>
             <div><span>Instance: </span><%= $worker->{instance} %></div>
             <div><span>Seen: </span><abbr class="timeago" title="<%= $worker->{t_seen} %>"><%= $worker->{t_seen} %></abbr></div>
             <div><span>Status: </span><%= include 'admin/workers/worker_status' %></div>
@@ -30,16 +36,25 @@
         <div class="card-body" id="reservation">
             % if (my $reservation = $worker->{reservation}) {
                 <p><strong>Reserved by:</strong> <%= $reservation->{user} %></p>
+                % if ($reservation->{worker_class}) {
+                <p><strong>Specific class:</strong> <%= $reservation->{worker_class} %></p>
+                % }
                 <p><strong>Comment:</strong> <%= $reservation->{comment} %></p>
-                <p><strong>Reserved at:</strong> <%= $reservation->{t_created} %></p>
-                <p><strong>Expires:</strong> <%= $reservation->{t_expires} // 'Never (indefinite)' %></p>
+                <p><strong>Reserved at:</strong> <abbr class="timeago" title="<%= $reservation->{t_created} %>"><%= $reservation->{t_created} %></abbr></p>
+                <p><strong>Expires:</strong>
+                    % if ($reservation->{t_expires}) {
+                        <abbr class="timeago" title="<%= $reservation->{t_expires} %>"><%= $reservation->{t_expires} %></abbr>
+                    % } else {
+                        Never (indefinite)
+                    % }
+                </p>
                 % if (is_operator) {
                     <button class="btn btn-danger" data-worker-id="<%= $worker->{id} %>" onclick="releaseWorker(this)">Release reservation</button>
                 % }
             % } else {
                 <p>This worker is not reserved.</p>
                 % if (is_operator) {
-                    <button class="btn btn-success" data-worker-id="<%= $worker->{id} %>" data-worker-name="<%= $worker->{name} %>" onclick="openReserveModal(this)">Reserve worker</button>
+                    <button class="btn btn-success" data-worker-id="<%= $worker->{id} %>" data-worker-name="<%= $worker->{name} %>" data-worker-host="<%= $worker->{host} %>" onclick="openReserveModal(this)">Reserve worker</button>
                 % }
             % }
         </div>

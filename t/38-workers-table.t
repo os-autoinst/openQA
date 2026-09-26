@@ -149,6 +149,11 @@ subtest 'worker reservation model' => sub {
         [[$operator, 'valid comment', 'soon'], qr/Invalid duration format 'soon'/, 'an unparsable duration'],
         [[$operator, 'valid comment', '10d'], qr/exceeds the maximum of 432000s/, 'a duration beyond the operator max'],
         [[$operator, 'valid comment', '0'], qr/only allowed for admins/, 'an indefinite duration as operator'],
+        [
+            [$operator, 'valid comment', '1h', 0, 'invalid tag!'],
+            qr/Invalid specific worker class/,
+            'an invalid specific class tag'
+        ],
     );
     throws_ok { $worker->reserve(@{$_->[0]}) } $_->[1], "refuse reservation with $_->[2]" for @rejected;
     ok !$worker->is_reserved, 'worker is not reserved after all rejected attempts';
@@ -161,7 +166,7 @@ subtest 'worker reservation model' => sub {
     is $worker->reservation->{comment}, 'operator reservation', 'reservation comment matches what was passed';
     like $worker->reservation->{t_created}, qr/^\d{4}(-\d\d){2}T(\d\d:){2}\d\dZ$/, 'reserved at ISO 8601 timestamp';
     is $workers->stats->{reserved_workers}, 1, 'statistics count exactly one reserved worker';
-    is_deeply [keys %{$workers->reserved_worker_ids}], [$worker->id], 'bulk lookup reports the reserved worker';
+    is_deeply [keys %{$workers->active_reservations}], [$worker->id], 'bulk lookup reports the reserved worker';
     ok !exists $worker->info->{properties}->{RESERVED_BY_ID}, 'raw reservation properties are not exposed via info';
 
     my @precedence = (['running', job_id => 99937], ['broken', error => 'some error'], ['dead', t_seen => undef]);
@@ -195,7 +200,7 @@ subtest 'worker reservation model' => sub {
     ok !$worker->is_reserved, 'reservation is inactive once the expiry has passed';
     is $worker->status, 'idle', 'expired reservation status goes back to idle';
     is $worker->reservation, undef, 'expired reservation is not reported despite left over properties';
-    is_deeply $workers->reserved_worker_ids, {}, 'bulk lookup ignores expired reservations';
+    is_deeply $workers->active_reservations, {}, 'bulk lookup ignores expired reservations';
 
     $worker->reserve($admin, 'indefinite reservation', '0');
     ok $worker->is_reserved, 'a duration of 0 reserves the worker indefinitely';
@@ -204,6 +209,63 @@ subtest 'worker reservation model' => sub {
     $worker->set_property(RESERVED_BY_ID => 999999);
     is $worker->reservation->{user}, 'unknown', 'reservation of a no longer existing user is reported as unknown';
     $worker->delete_properties([RESERVATION_PROPERTIES]);
+};
+
+subtest 'worker reservation class matching' => sub {
+    my $worker = $workers->first;
+    $worker->update({job_id => undef, error => undef, t_seen => DateTime->now(time_zone => 'UTC')});
+    $worker->delete_properties([RESERVATION_PROPERTIES]);
+    $worker->set_property(WORKER_CLASS => 'qemu_x86_64,tap');
+    my $admin = $db->resultset('Users')->find(99901);
+
+    # Set up some test cases for matching
+    my @cases = (
+        {
+            name => 'untagged reservation normal matches',
+            reserve_class => undef,
+            requests => [
+                {needed => ['qemu_x86_64'], expected => 1},
+                {needed => ['qemu_x86_64', 'tap'], expected => 1},
+                {needed => ['missing'], expected => 0},
+            ]
+        },
+        {
+            name => 'tagged with matching request accepts',
+            reserve_class => 'poo123',
+            requests => [{needed => ['poo123'], expected => 1}, {needed => ['qemu_x86_64', 'poo123'], expected => 1},]
+        },
+        {
+            name => 'tagged with non-matching request rejects',
+            reserve_class => 'poo123',
+            requests => [{needed => ['qemu_x86_64'], expected => 0}, {needed => ['poo999'], expected => 0},]
+        },
+        {
+            name => 'tag combined with a capability class that is missing rejects',
+            reserve_class => 'poo123',
+            requests => [{needed => ['missing_cap', 'poo123'], expected => 0},]
+        },
+    );
+
+    for my $case (@cases) {
+        if (defined $case->{reserve_class}) {
+            $worker->reserve($admin, 'test', '1h', 0, $case->{reserve_class});
+            is $workers->stats->{reserved_workers}, 1, "tagged worker counts as reserved in stats for: $case->{name}";
+        }
+        else {
+            $worker->reserve($admin, 'test', '1h', 0);
+            is $workers->stats->{reserved_workers}, 1, "untagged worker counts as reserved in stats for: $case->{name}";
+        }
+
+        my $reservation = $workers->active_reservations->{$worker->id};
+        for my $req (@{$case->{requests}}) {
+            my $needed = $req->{needed};
+            my $result = $worker->accepts_classes($needed, $reservation ? $reservation->{worker_class} : undef);
+            is !!$result, !!$req->{expected},
+              "matching expected $req->{expected} for needed [@$needed] in case: $case->{name}";
+        }
+
+        $worker->release($admin);
+    }
 };
 
 subtest 'unlimited admin reservations are capped once admin_max_duration is configured' => sub {
@@ -215,6 +277,100 @@ subtest 'unlimited admin reservations are capped once admin_max_duration is conf
     throws_ok { $worker->reserve($admin, 'too long for an admin', '2h') }
     qr/exceeds the maximum of 3600s/, 'admins are limited as well once a maximum is configured';
     ok !$worker->is_reserved, 'worker stays unreserved when the admin duration is rejected';
+};
+
+subtest 'worker host reservation model' => sub {
+    my $users = $db->resultset('Users');
+    my ($admin, $non_operator, $operator) = map { $users->find($_) } 99901, 99902, 99903;
+    my $other_operator = $users->create({username => 'gawain', is_operator => 1, feature_version => 0});
+
+    # Create 3 workers on 'testhost'
+    my $w1 = $workers->create({host => 'testhost', instance => 1});
+    my $w2 = $workers->create({host => 'testhost', instance => 2});
+    my $w3 = $workers->create({host => 'testhost', instance => 3});
+
+    # 1. Reserve multi-instance host atomically; assert all instances reserved with scope=host
+    $workers->reserve_host('testhost', $operator, comment => 'host maintenance', duration => '2h');
+    for my $w ($w1, $w2, $w3) {
+        $w->discard_changes;
+        ok $w->is_reserved, 'instance ' . $w->name . ' is reserved';
+        is $w->reservation->{scope}, 'host', 'scope is host';
+    }
+
+    # Clean up reservation
+    $workers->release_host('testhost', $operator);
+
+    # 2. Conflict on one instance aborts entire reservation without partial state
+    # Reserve instance 2 with operator
+    $w2->reserve($operator, 'instance reservation', '1h');
+
+    # Attempt to reserve entire host with other_operator -> should fail and roll back
+    throws_ok {
+        $workers->reserve_host('testhost', $other_operator, comment => 'host maint', duration => '1h');
+    }
+    qr/already reserved/, 'refuse overlapping host reservation due to conflict';
+
+    # Ensure no other instances are partially reserved
+    $w1->discard_changes;
+    $w3->discard_changes;
+    ok !$w1->is_reserved, 'instance 1 was not reserved due to rollback';
+    ok !$w3->is_reserved, 'instance 3 was not reserved due to rollback';
+
+    # Clean up instance 2
+    $w2->release($operator);
+
+    # 3. Admin force overrides conflicts
+    $w2->reserve($operator, 'instance reservation', '1h');
+    $workers->reserve_host('testhost', $admin, comment => 'admin force', duration => '1h', force => 1);
+    for my $w ($w1, $w2, $w3) {
+        $w->discard_changes;
+        ok $w->is_reserved, 'instance ' . $w->name . ' is reserved after force';
+        is $w->reservation->{user}, $admin->username, 'owner is admin';
+    }
+
+    # 4. Releasing a host clears all instances; non-admin release fails when instances are foreign-owned.
+    # Currently reserved by admin. other_operator tries to release host -> should fail.
+    throws_ok {
+        $workers->release_host('testhost', $other_operator);
+    }
+    qr/Insufficient permissions/, 'non-admin release fails when instances are foreign-owned';
+
+    # Admin release clears all
+    $workers->release_host('testhost', $admin);
+    for my $w ($w1, $w2, $w3) {
+        $w->discard_changes;
+        ok !$w->is_reserved, 'instance ' . $w->name . ' is released';
+    }
+
+    # 5. Releasing single instance of a host reservation leaves remaining instances intact
+    $workers->reserve_host('testhost', $operator, comment => 'host maint', duration => '2h');
+    $w2->release($operator);
+    $w2->discard_changes;
+    $w1->discard_changes;
+    $w3->discard_changes;
+    ok !$w2->is_reserved, 'released instance 2 is no longer reserved';
+    ok $w1->is_reserved, 'instance 1 is still reserved';
+    ok $w3->is_reserved, 'instance 3 is still reserved';
+
+    # Clean up the rest
+    $workers->release_host('testhost', $operator);
+
+    # 6. Passing worker_class to reserve_host sets class across all instances
+    $workers->reserve_host(
+        'testhost', $operator,
+        comment => 'verification',
+        duration => '1h',
+        worker_class => 'poo167749'
+    );
+    for my $w ($w1, $w2, $w3) {
+        $w->discard_changes;
+        is $w->reservation->{worker_class}, 'poo167749', 'worker_class set on ' . $w->name;
+    }
+
+    # Clean up everything at the end of subtest
+    $workers->release_host('testhost', $operator);
+    $_->delete for ($w1, $w2, $w3);
+    $other_operator->delete;
 };
 
 done_testing();

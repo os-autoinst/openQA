@@ -13,7 +13,7 @@ use DBIx::Class::Timestamps 'now';
 use List::Util qw(min);
 use Feature::Compat::Try;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
-use OpenQA::WorkerReservation 'reservation_error_status';
+use OpenQA::WorkerReservation qw(reservation_error_status reservation_active);
 
 =pod
 
@@ -59,7 +59,7 @@ sub list ($self) {
     my $reserved_param = $validation->param('reserved');
     my $condition
       = defined $reserved_param
-      ? {id => {($reserved_param ? '-in' : '-not_in') => [keys %{$workers->reserved_worker_ids}]}}
+      ? {id => {($reserved_param ? '-in' : '-not_in') => [keys %{$workers->active_reservations}]}}
       : {};
     my @paged = $workers->search($condition, {rows => $limit + 1, offset => $offset, order_by => 'id'})->all;
     pop @paged if my $has_more = @paged > $limit;
@@ -106,6 +106,28 @@ sub _register ($self, $schema, $host, $instance, $caps, $jobs_worker_says_it_wor
 
     # store worker's capabilities to database
     $worker->update_caps($caps) if $caps;
+
+# if the worker has no active reservation, copy active `scope=host` reservation properties from any sibling instance on the same host
+    if (!$worker->is_reserved) {
+        my $siblings = $workers->search({host => $host, id => {'!=' => $worker->id}});
+        while (my $sibling = $siblings->next) {
+            my $properties = $sibling->_reservation_properties;
+            if (reservation_active($properties->{RESERVED_BY_ID}, $properties->{RESERVED_T_EXPIRES})
+                && ($properties->{RESERVED_SCOPE} // '') eq 'host')
+            {
+                $schema->txn_do(
+                    sub {
+                        $worker->set_property(RESERVED_BY_ID => $properties->{RESERVED_BY_ID});
+                        $worker->set_property(RESERVED_COMMENT => $properties->{RESERVED_COMMENT});
+                        $worker->set_property(RESERVED_T_CREATED => $properties->{RESERVED_T_CREATED});
+                        $worker->set_property(RESERVED_T_EXPIRES => $properties->{RESERVED_T_EXPIRES});
+                        $worker->set_property(RESERVED_WORKER_CLASS => $properties->{RESERVED_WORKER_CLASS});
+                        $worker->set_property(RESERVED_SCOPE => 'host');
+                    });
+                last;
+            }
+        }
+    }
 
     # mark the jobs the worker is currently supposed to run as incomplete unless the worker claims
     # to still work on these jobs (which might be the case when the worker hasn't actually crashed but
@@ -245,8 +267,17 @@ sub delete ($self) {
     if (!$worker) {
         return $self->render(json => {error => 'Worker not found.'}, status => 404);
     }
-    if ($worker->is_reserved && !($self->param('force') && $self->current_user->is_admin)) {
-        return $self->render(json => {error => 'Cannot delete a reserved worker.'}, status => 400);
+    if ($worker->is_reserved) {
+        my $res = $worker->reservation;
+        if (($res->{scope} // '') eq 'host' && !$self->param('force')) {
+            return $self->render(
+                json => {error => 'Cannot delete a worker covered by active host reservation.'},
+                status => 400
+            );
+        }
+        if (!($self->param('force') && $self->current_user->is_admin)) {
+            return $self->render(json => {error => 'Cannot delete a reserved worker.'}, status => 400);
+        }
     }
     if ($worker->status ne 'dead' || $worker->unfinished_jobs->count) {
         $message = 'Worker ' . $worker->name . ' status is not offline.';
@@ -282,6 +313,7 @@ sub _apply_reservation ($self, $action) {
 =item reserve()
 
 Reserves a worker instance with a comment and a specified duration.
+Optionally accepts a C<worker_class> for verification jobs.
 
 =back
 
@@ -291,9 +323,10 @@ sub reserve ($self) {
     return undef unless my $worker = $self->_reservation_worker;
     my $user = $self->current_user;
     my $comment = $self->param('comment');
+    my $worker_class = $self->param('worker_class');
     return undef
       unless $self->_apply_reservation(
-        sub { $worker->reserve($user, $comment, $self->param('duration'), $self->param('force')) });
+        sub { $worker->reserve($user, $comment, $self->param('duration'), $self->param('force'), $worker_class) });
 
     my $reservation = $worker->reservation;
     $self->emit_event(
@@ -304,6 +337,7 @@ sub reserve ($self) {
             user => $user->username,
             comment => $comment,
             expires => $reservation->{t_expires},
+            (defined $worker_class && length $worker_class ? (worker_class => $worker_class) : ()),
         });
     $self->render(
         json => {message => 'Worker ' . $worker->name . ' reserved successfully.', reservation => $reservation});
@@ -326,6 +360,88 @@ sub release ($self) {
 
     $self->emit_event('openqa_worker_release', {id => $worker->id, name => $worker->name, user => $user->username});
     $self->render(json => {message => 'Worker ' . $worker->name . ' reservation released successfully.'});
+}
+
+=over 4
+
+=item reserve_host()
+
+Reserves all worker instances on a host with a comment and a specified duration.
+Optionally accepts a C<worker_class> for verification jobs.
+
+=back
+
+=cut
+
+sub reserve_host ($self) {
+    my $host = $self->param('host');
+    my $user = $self->current_user;
+    my $comment = $self->param('comment');
+    my $worker_class = $self->param('worker_class');
+    my $workers = $self->schema->resultset('Workers');
+
+    my $worker_list;
+    return undef
+      unless $self->_apply_reservation(
+        sub {
+            $worker_list = $workers->reserve_host(
+                $host, $user,
+                comment => $comment,
+                duration => $self->param('duration'),
+                force => $self->param('force'),
+                worker_class => $worker_class,
+            );
+        });
+
+    # Emit openqa_worker_host_reserve audit event
+    my $first_worker = $worker_list->[0];
+    my $reservation = $first_worker->reservation;
+    $self->emit_event(
+        'openqa_worker_host_reserve',
+        {
+            host => $host,
+            instances => [map { $_->id } @$worker_list],
+            user => $user->username,
+            comment => $comment,
+            expires => $reservation->{t_expires},
+            (defined $worker_class && length $worker_class ? (worker_class => $worker_class) : ()),
+        });
+
+    $self->render(
+        json => {
+            message => "Worker host '$host' reserved successfully.",
+            instances => [map { $_->id } @$worker_list],
+        });
+}
+
+=over 4
+
+=item release_host()
+
+Releases reservations across all worker instances on a host.
+
+=back
+
+=cut
+
+sub release_host ($self) {
+    my $host = $self->param('host');
+    my $user = $self->current_user;
+    my $workers = $self->schema->resultset('Workers');
+
+    my $worker_list;
+    return undef unless $self->_apply_reservation(sub { $worker_list = $workers->release_host($host, $user) });
+
+    # Emit openqa_worker_host_release audit event
+    $self->emit_event(
+        'openqa_worker_host_release',
+        {
+            host => $host,
+            instances => [map { $_->id } @$worker_list],
+            user => $user->username,
+        });
+
+    $self->render(json => {message => "Worker host '$host' reservation released successfully."});
 }
 
 1;

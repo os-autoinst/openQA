@@ -10,7 +10,7 @@ use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Constants 'DEFAULT_WORKER_TIMEOUT';
-use OpenQA::Test::TimeLimit '24';
+use OpenQA::Test::TimeLimit '40';
 use OpenQA::Test::Case;
 use OpenQA::Test::Utils qw(assume_all_assets_exist embed_server_for_testing wait_for);
 use Date::Format 'time2str';
@@ -65,29 +65,25 @@ subtest 'offline status' => sub {
       'worker just shown as offline';
 
     $workers->find($offline_worker_id)->update({error => 'graceful disconnect at foo', t_seen => $online_timestamp});
-    $driver->get("/admin/workers/$offline_worker_id");
+    $driver->refresh;
     like
       $driver->find_element_by_class('status-info')->get_text,
       qr/Seen: foo.*Status: Offline \(graceful disconnect\)$/s,
       'worker shown as offline with graceful disconnect';
 
+    my $old_timestamp = time2str('%Y-%m-%d %H:%M:%S', time - 86400 * 7, 'UTC');
+    $workers->find($offline_worker_id)->update({t_seen => $old_timestamp, error => undef});
+    $driver->refresh;
+    my $seen_text = $driver->find_element_by_class('status-info')->get_text;
+    like $seen_text, qr/Seen: .*ago.*Status: Offline$/s, 'old worker shows relative time (not just now)';
+    unlike $seen_text, qr/just now/, 'old worker does NOT show "just now"';
+
     $workers->find($offline_worker_id)->update({t_seen => undef, error => undef});
-    $driver->get("/admin/workers/$offline_worker_id");
+    $driver->refresh;
     like
       $driver->find_element_by_class('status-info')->get_text,
       qr/Seen: never.*Status: Offline$/s,
       'worker with t_seen not set yet shown as "never"';
-};
-
-subtest 'timeago shows correct relative time for old timestamps' => sub {
-    my $old_timestamp = time2str('%Y-%m-%d %H:%M:%S', time - 86400 * 7, 'UTC');
-    my $old_worker_id = 10;
-    $workers->create({id => $old_worker_id, host => 'old_test', instance => 1, t_seen => $old_timestamp});
-    $driver->get("/admin/workers/$old_worker_id");
-    my $seen_text = $driver->find_element_by_class('status-info')->get_text;
-    like $seen_text, qr/Seen: .*ago.*Status: Offline$/s, 'old worker shows relative time (not just now)';
-    unlike $seen_text, qr/just now/, 'old worker does NOT show "just now"';
-    $workers->find($old_worker_id)->delete;
 };
 
 # without loggin we hide properties of worker
@@ -95,10 +91,9 @@ $driver->get('/admin/workers/1');
 $driver->title_is('openQA: Worker localhost:1', 'on worker 1');
 is scalar @{$driver->find_elements('h3', 'css')}, 1, 'table properties hidden';
 
-$driver->find_element_by_class('navbar-brand')->click();
 $driver->find_element_by_link_text('Login')->click();
-# we're back on the main page
-$driver->title_is('openQA', 'back on main page');
+# we're back on the worker page
+$driver->title_is('openQA: Worker localhost:1', 'back on worker 1 page');
 # but ...
 
 is $driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', 'logged in as demo';
@@ -107,6 +102,7 @@ subtest 'worker overview' => sub {
     $driver->find_element('#user-action a')->click();
     $driver->find_element_by_link_text('Workers')->click();
     $driver->title_is('openQA: Workers', 'on workers overview');
+    disable_bootstrap_animations;
     $driver->find_element('#summary')->text_like(qr/Online: 4.*Idle: 1.*Total: 5/s, 'correct statistics');
     $driver->find_element('#workers_info')->text_like(qr/1 to 1 of 1.*filtered from 5 total/, 'correct number shown');
 
@@ -139,7 +135,6 @@ subtest 'worker overview' => sub {
 
     # check worker 2
     is $driver->find_element('tr#worker_2 .worker')->get_text(), 'remotehost:1', 'remotehost:1 shown';
-    disable_bootstrap_animations;
     $driver->find_element('tr#worker_2 .help_popover')->click();
     wait_for_element(selector => '.popover', description => 'worker status popover is displayed');
     like $driver->find_element('.popover')->get_text(), qr/Worker status\nJob: 99961/, 'working 99961';
@@ -230,15 +225,25 @@ subtest 'table persistence' => sub {
 
 subtest 'reserve and release a worker' => sub {
     $driver->get('/admin/workers/1');
+    disable_bootstrap_animations;
     $driver->find_element('#reservation button.btn-success')->click();
     wait_for_element(selector => '#reserveWorkerModal.show', description => 'reservation modal is displayed');
     is $driver->find_element('#reserveWorkerName')->get_value, 'localhost:1', 'modal is prefilled with the worker';
     is $driver->find_element('#reserveWorkerDuration')->get_value, '5h', 'modal defaults to the configured duration';
+
+    $driver->find_element('#reserveWorkerClass')->send_keys('invalid,tag');
     $driver->find_element('#reserveWorkerComment')->send_keys('maintenance <script>');
     $driver->find_element('#reserveWorkerForm button[type=submit]')->click();
 
+    is $driver->find_element('#reserveWorkerClass')->get_value, 'invalid,tag', 'value is invalid,tag';
+
+    $driver->find_element('#reserveWorkerClass')->clear();
+    $driver->find_element('#reserveWorkerClass')->send_keys('poo123');
+    $driver->find_element('#reserveWorkerForm button[type=submit]')->click();
+
     wait_for_element(selector => '#reservation button.btn-danger', description => 'release button is displayed');
-    like $driver->find_element('#reservation')->get_text, qr/Reserved by: Demo.*Comment: maintenance <script>/s,
+    like $driver->find_element('#reservation')->get_text,
+      qr/Reserved by: Demo.*Specific class: poo123.*Comment: maintenance <script>/s,
       'reservation details are shown escaped';
     is $workers->find(1)->reservation->{comment}, 'maintenance <script>', 'reservation is persisted';
 
@@ -246,5 +251,64 @@ subtest 'reserve and release a worker' => sub {
     wait_for_element(selector => '#reservation button.btn-success', description => 'reserve button is displayed again');
     is $workers->find(1)->reservation, undef, 'reservation is released again';
 };
+
+subtest 'Worker host administration view and reservation scope' => sub {
+    my $w2 = $workers->create({host => 'localhost', instance => 2});
+
+    $driver->get('/admin/workers?status=');
+    $driver->find_element('tr#worker_1 td.host a')->click();
+    $driver->title_is('openQA: Worker Host localhost', 'Navigate to host localhost page from workers list');
+
+    $driver->get('/admin/workers/1');
+    $driver->find_element_by_link_text('localhost')->click();
+    $driver->title_is('openQA: Worker Host localhost', 'Navigate to host localhost page from worker show page');
+
+    $driver->get('/admin/workers?status=');
+    disable_bootstrap_animations;
+    $driver->find_element('tr#worker_1 td.action button.btn-outline-success')->click();
+    wait_for_element(
+        selector => '#reserveWorkerModal.show',
+        description => 'Reservation modal with scope selection is displayed'
+    );
+
+    is $driver->find_element('#reserveScopeContainer')->is_displayed(), 1,
+      'Scope selection is visible for workers on a host';
+    $driver->find_element('#reserveScopeHost')->click();
+
+    $driver->find_element('#reserveWorkerComment')->send_keys('host maintenance');
+    $driver->find_element('#reserveWorkerForm button[type=submit]')->click();
+
+    wait_for { $workers->find(1)->is_reserved && $workers->find($w2->id)->is_reserved }
+    'All worker instances on the host are reserved';
+    is $workers->find(1)->reservation->{scope}, 'host', 'Worker 1 reservation scope is set to host';
+    is $workers->find($w2->id)->reservation->{scope}, 'host', 'Worker 2 reservation scope is set to host';
+
+    $driver->get('/admin/worker_hosts/localhost');
+    disable_bootstrap_animations;
+    $driver->title_is('openQA: Worker Host localhost', 'Navigate to host page to check reservation details');
+    like $driver->find_element('#reservation')->get_text,
+      qr/fully reserved.*Reserved by: Demo.*Comment: host maintenance/s, 'Host page shows fully reserved status';
+
+    $driver->find_element('#reservation button.btn-danger')->click();
+    wait_for { !$workers->find(1)->is_reserved && !$workers->find($w2->id)->is_reserved }
+    'All worker instances on the host are released';
+
+    $driver->find_element('#reservation button.btn-success')->click();
+    wait_for_element(
+        selector => '#reserveWorkerModal.show',
+        description => 'Reservation modal is displayed when reserving from host view'
+    );
+    is $driver->find_element('#reserveWorkerName')->get_value, 'All 2 instances on localhost',
+      'Modal title shows correct target instances count';
+
+    $driver->find_element('#reserveWorkerComment')->send_keys('host view maintenance');
+    $driver->find_element('#reserveWorkerForm button[type=submit]')->click();
+
+    wait_for { $workers->find(1)->is_reserved && $workers->find($w2->id)->is_reserved }
+    'All worker instances are reserved after host view reservation';
+
+    $w2->delete;
+};
+
 kill_driver();
 done_testing();
