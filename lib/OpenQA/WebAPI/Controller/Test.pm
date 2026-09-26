@@ -5,6 +5,7 @@ package OpenQA::WebAPI::Controller::Test;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
 use Feature::Compat::Try;
 
+use OpenQA::JobSettings::Lifecycle qw(worst_level);
 use OpenQA::App;
 use OpenQA::Utils;
 use OpenQA::Jobs::Constants;
@@ -496,7 +497,17 @@ sub downloads ($self) {
 }
 
 sub settings ($self) {
-    $self->_stash_job({prefetch => 'settings'}) or return $self->reply->not_found;
+    my $job = $self->_stash_job({prefetch => 'settings'}) or return $self->reply->not_found;
+    my @matches = $self->lifecycle_matches($job->settings_hash);
+    my %deprecated_by_key;
+    for my $match (@matches) {
+        my $k = $match->{key};
+        $deprecated_by_key{$k} = $match if !$deprecated_by_key{$k} || $match->{level} eq 'error';
+    }
+    $self->stash(
+        deprecated_settings => \%deprecated_by_key,
+        has_deprecated_settings => @matches ? 1 : 0,
+    );
     $self->render('test/settings');
 }
 
@@ -604,6 +615,10 @@ sub show ($self) { $self->_show($self->_get_current_job(1)) }
 sub _show ($self, $job = undef) {
     return $self->reply->not_found unless $job;
 
+    my @matches = $self->lifecycle_matches($job->settings_hash);
+    my $has_deprecated = @matches ? 1 : 0;
+    my $deprecated_level = worst_level(\@matches);
+
     $self->stash(
         {
             job => $job,
@@ -618,6 +633,8 @@ sub _show ($self, $job = undef) {
             show_autoinst_log => $job->should_show_autoinst_log,
             show_investigation => $job->should_show_investigation,
             show_live_tab => $job->state ne DONE,
+            has_deprecated_settings => $has_deprecated,
+            deprecated_level => $deprecated_level,
         });
     $self->stash(gru_dependencies => $self->_gru_tasks_items($job));
     $self->_stash_clone_info($job);
