@@ -603,7 +603,7 @@ subtest 'cgroup slice detection on pure cgroup v2 hosts (poo#205902)' => sub {
         $file_mock->redefine(
             slurp => sub ($self, @args) {
                 return $self =~ m{/cgroup$}
-                  ? "0::/system.slice/openqa-worker-auto-restart\@16.service\n"
+                  ? qq{0::/system.slice/openqa-worker-auto-restart\@16.service\n}
                   : $orig_slurp->($self, @args);
             });
         combined_like { OpenQA::Worker::Engines::isotovideo::_configure_cgroupv2({id => 42}) }

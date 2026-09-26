@@ -118,9 +118,9 @@ is $state->get_attribute('title'), 'Done: passed', 'the latest job 99947 was pas
 is +(shift @tds)->get_text(), '0092', 'build of 99947 is 0092';
 is scalar @{$driver->find_elements('#job_next_previous_table #job_result_99945')},
   1, 'found nearest previous job 99945';
-is scalar @{$driver->find_elements("//*[\@title='Done: incomplete']", 'xpath')}, 6, 'include 6 incomletes in page 1';
+is scalar @{$driver->find_elements(q{//*[@title='Done: incomplete']}, 'xpath')}, 6, 'include 6 incomletes in page 1';
 $driver->find_element('[aria-label="Next"]')->click();
-is scalar @{$driver->find_elements("//*[\@title='Done: incomplete']", 'xpath')}, 2, 'include 2 incomletes in page 2';
+is scalar @{$driver->find_elements(q{//*[@title='Done: incomplete']}, 'xpath')}, 2, 'include 2 incomletes in page 2';
 is scalar @{$driver->find_elements('#job_next_previous_table #job_result_99901')},
   1, 'found farmost previous job 99901';
 
@@ -130,7 +130,7 @@ goto_next_previous_tab;
 
 ($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) entries$/;
 is $entries, 19, '19 entries found for 99901';
-my $init_page = $driver->find_element_by_xpath("//*[\@class='dt-paging-button page-item active']")->get_text();
+my $init_page = $driver->find_element_by_xpath(q{//*[@class='dt-paging-button page-item active']})->get_text();
 is $init_page, 2, 'init page is 2 for 99901';
 my $job99901 = $driver->find_element('#job_next_previous_table #job_result_99901');
 @tds = $driver->find_child_elements($job99901, 'td');
@@ -243,7 +243,7 @@ $driver->get('/tests/99901?next_limit=10#next_previous');
 wait_for_ajax();
 ($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) (entries|entry)$/;
 is $entries, 13, '10 next of 99901, 99901 itself, the latest and the note about the limit shown';
-$init_page = $driver->find_element_by_xpath("//*[\@class='dt-paging-button page-item active']")->get_text();
+$init_page = $driver->find_element_by_xpath(q{//*[@class='dt-paging-button page-item active']})->get_text();
 is $init_page, 2, 'init page is 2 for 99901';
 is scalar @{$driver->find_elements('#job_next_previous_table #job_result_99901')}, 1, 'found current job 99901';
 $driver->find_element('[aria-label="Previous"]')->click();

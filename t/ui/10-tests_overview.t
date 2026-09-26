@@ -248,7 +248,7 @@ sub apply_filter ($filter) {
     #       possible race conditions where querying the element text/visibility would run into an error because the
     #       element got stale.
     $driver->find_element('#filter-panel button[type="submit"]')->click();
-    my $s = "//*[\@id='filter-panel']/*[\@class='card-header']/span[text()='current: $filter']";
+    my $s = qq{//*[\@id='filter-panel']/*[\@class='card-header']/span[text()='current: $filter']};
     wait_for_element(selector => $s, method => 'xpath', desc => "filter '$filter' visible on form header");
 }
 

@@ -69,7 +69,7 @@ subtest 'Validation errors' => sub {
       ->content_like(qr/Erroneous parameters.*comments_page/);
     $t->get_ok("/parent_group_overview/$id?comments_limit=a")->status_is(400)
       ->content_like(qr/Erroneous parameters.*comments_limit/);
-    $t->get_ok("/parent_group_overview/$id?group=\$*")->status_is(400)
+    $t->get_ok(qq{/parent_group_overview/$id?group=\$*})->status_is(400)
       ->content_like(qr/group parameter is invalid.*matches null string many times/i);
 
     my $groups_mock = Test::MockModule->new('OpenQA::Schema::Result::JobGroups');

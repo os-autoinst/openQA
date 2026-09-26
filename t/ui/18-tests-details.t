@@ -185,10 +185,10 @@ subtest 'filtering' => sub {
     # define test helper
     my $count_steps = sub {
         my ($result) = @_;
-        return $driver->execute_script("return \$('#results .result${result}:visible').length;");
+        return $driver->execute_script(qq{return \$('#results .result${result}:visible').length;});
     };
     my $count_headings = sub {
-        return $driver->execute_script(qq{return \$('#results td[colspan="3"]:visible').length;});
+        return $driver->execute_script(q{return $('#results td[colspan="3"]:visible').length;});
     };
 
     # check initial state (no filters enabled)
@@ -574,17 +574,17 @@ subtest 'arrow key navigation between steps' => sub {
     my $first_step_url = $driver->get_current_url();
     like $first_step_url, qr/#step\/bootloader\/1/, 'first step selected';
 
-    $driver->execute_script("\$(window).trigger(\$.Event('keydown', {key: 'ArrowRight'}))");
+    $driver->execute_script(q{$(window).trigger($.Event('keydown', {key: 'ArrowRight'}))});
     wait_for_ajax(msg => 'arrow right pressed via jQuery');
     my $second_step_url = $driver->get_current_url();
     like $second_step_url, qr/#step\/bootloader\/2/, 'second step selected after right arrow';
 
-    $driver->execute_script("\$(window).trigger(\$.Event('keydown', {key: 'ArrowLeft'}))");
+    $driver->execute_script(q{$(window).trigger($.Event('keydown', {key: 'ArrowLeft'}))});
     wait_for_ajax(msg => 'arrow left pressed via jQuery');
     my $back_to_first_url = $driver->get_current_url();
     like $back_to_first_url, qr/#step\/bootloader\/1/, 'back to first step after left arrow';
 
-    $driver->execute_script("\$(window).trigger(\$.Event('keydown', {key: 'Escape'}))");
+    $driver->execute_script(q{$(window).trigger($.Event('keydown', {key: 'Escape'}))});
     wait_for_ajax(msg => 'escape pressed to close preview');
 };
 
@@ -891,39 +891,38 @@ subtest 'test module flags are displayed correctly' => sub {
     # for this job we have exactly each flag set once, so check that not to rely on the order of the test modules
     $driver->get('/tests/99764');
     wait_for_ajax(msg => 'details tab for job 99764 loaded');
-    my $flags
-      = $driver->find_elements("//div[\@class='flags']/i[(starts-with(\@class, 'flag fa-solid fa-'))]", 'xpath');
+    my $flags = $driver->find_elements(q{//div[@class='flags']/i[(starts-with(@class, 'flag fa-solid fa-'))]}, 'xpath');
     is scalar(@{$flags}), 4, 'Expect 4 flags in the job 99764';
 
-    my $flag = $driver->find_element("//div[\@class='flags']/i[\@class='flag fa-solid fa-minus']", 'xpath');
+    my $flag = $driver->find_element(q{//div[@class='flags']/i[@class='flag fa-solid fa-minus']}, 'xpath');
     ok $flag, 'Ignore failure flag is displayed for test modules which are not important, neither fatal';
     is
       $flag->get_attribute('title'),
       'Ignore failure: failure or soft failure of this test does not impact overall job result',
       'Description of Ignore failure flag is correct';
 
-    $flag = $driver->find_element("//div[\@class='flags']/i[\@class='flag fa-solid fa-rotate-left']", 'xpath');
+    $flag = $driver->find_element(q{//div[@class='flags']/i[@class='flag fa-solid fa-rotate-left']}, 'xpath');
     ok $flag, 'Always rollback flag is displayed correctly';
     is
       $flag->get_attribute('title'),
       'Always rollback: revert to the last milestone snapshot even if test module is successful',
       'Description of always_rollback flag is correct';
 
-    $flag = $driver->find_element("//div[\@class='flags']/i[\@class='flag fa-solid fa-anchor']", 'xpath');
+    $flag = $driver->find_element(q{//div[@class='flags']/i[@class='flag fa-solid fa-anchor']}, 'xpath');
     ok $flag, 'Milestone flag is displayed correctly';
     is
       $flag->get_attribute('title'),
       'Milestone: snapshot the state after this test for restoring',
       'Description of milestone flag is correct';
 
-    $flag = $driver->find_element("//div[\@class='flags']/i[\@class='flag fa-solid fa-plug']", 'xpath');
+    $flag = $driver->find_element(q{//div[@class='flags']/i[@class='flag fa-solid fa-plug']}, 'xpath');
     ok $flag, 'Fatal flag is displayed correctly';
     is
       $flag->get_attribute('title'),
       'Fatal: testsuite is aborted if this test fails',
       'Description of fatal flag is correct';
 
-    $flag = $driver->find_element("//div[\@class='flags']/i[\@class='flag fa fa-play']", 'xpath');
+    $flag = $driver->find_element(q{//div[@class='flags']/i[@class='flag fa fa-play']}, 'xpath');
     ok $flag, 'Always run flag is displayed correctly';
     is
       $flag->get_attribute('title'),
@@ -969,15 +968,15 @@ subtest 'alert box shown if not already on first bad' => sub {
     $driver->get('/tests/99940');
     wait_for_ajax(msg => 'details tab for job 99940 loaded to test investigation');
     $driver->find_element_by_link_text('Investigation')->click;
-    $driver->find_element("//div[\@class='alert alert-info']", 'xpath')
+    $driver->find_element(q{//div[@class='alert alert-info']}, 'xpath')
       ->text_like(qr/Investigate the first bad test directly: 99938/);
 
-    $driver->find_element_by_xpath("//div[\@class='alert alert-info']/a[\@class='alert-link']")->click;
+    $driver->find_element_by_xpath(q{//div[@class='alert alert-info']/a[@class='alert-link']})->click;
     wait_for_ajax(msg => 'details tab for job 99938 loaded to test investigation');
     $driver->find_element('#investigation_status_entry')
       ->text_like(qr/error\nNo previous job in this scenario, cannot provide hints/,
         'linked to investigation tab directly');
-    $driver->find_element_by_xpath("//div[\@class='tab-content']")
+    $driver->find_element_by_xpath(q{//div[@class='tab-content']})
       ->text_unlike(qr/Investigate the first bad test/, 'no alert shown for first bad itself');
 };
 

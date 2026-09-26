@@ -85,7 +85,7 @@ wait_for_or_bail_out { defined $ua->get($host)->res->code } 'worker';
 sub stop_server () { $server_instance->stop() }
 
 subtest 'Not found' => sub {
-    my $from = "$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-404\@64bit.qcow2";
+    my $from = qq{$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-404\@64bit.qcow2};
     like $downloader->download($from, $to), qr/Download of "$to" failed: 404 Not Found/, 'Failed';
 
     ok !-e $to, 'File not downloaded';
@@ -97,7 +97,7 @@ subtest 'Not found' => sub {
 };
 
 subtest 'Success' => sub {
-    my $from = "$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-200\@64bit.qcow2";
+    my $from = qq{$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-200\@64bit.qcow2};
     is $downloader->download($from, $to), undef, 'Success';
 
     ok -e $to, 'File downloaded';
@@ -110,7 +110,7 @@ subtest 'Success' => sub {
 };
 
 subtest 'Connection closed early' => sub {
-    my $from = "$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-200_close\@64bit.qcow2";
+    my $from = qq{$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-200_close\@64bit.qcow2};
     like $downloader->download($from, $to), qr/Download of "$to" failed: Premature connection close/, 'Failed';
 
     ok !-e $to, 'File not downloaded';
@@ -123,7 +123,7 @@ subtest 'Connection closed early' => sub {
 };
 
 subtest 'Server error' => sub {
-    my $from = "$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-200_server_error\@64bit.qcow2";
+    my $from = qq{$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-200_server_error\@64bit.qcow2};
     like $downloader->download($from, $to), qr/Download of "$to" failed: 500 Internal Server Error/, 'Failed';
 
     ok !-e $to, 'File not downloaded';
@@ -136,7 +136,7 @@ subtest 'Server error' => sub {
 };
 
 subtest 'Size differs' => sub {
-    my $from = "$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-589\@64bit.qcow2";
+    my $from = qq{$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-589\@64bit.qcow2};
     like $downloader->download($from, $to), qr/Size of .* differs, expected \d+ Byte but downloaded \d+ Byte/, 'Failed';
 
     ok !-e $to, 'File not downloaded';

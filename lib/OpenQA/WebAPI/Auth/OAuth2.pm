@@ -89,7 +89,7 @@ sub update_user ($controller, $main_config, $provider_config, $data) {
     return _render_error($controller, $details) unless $id && $nick;
     my $provider_name = $main_config->{provider};
     $provider_name = $provider_config->{unique_name} || $provider_name if $provider_name eq 'custom';
-    my $provider = "oauth2\@$provider_name";
+    my $provider = qq{oauth2\@$provider_name};
     my $users = $controller->schema->resultset('Users');
     my $user = $users->create_user($id, provider => $provider, nickname => $nick, fullname => $full, email => $email);
 

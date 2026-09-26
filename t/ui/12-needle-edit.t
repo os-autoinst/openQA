@@ -493,7 +493,7 @@ subtest 'Verify new needle\'s JSON' => sub {
 
 sub assert_needle_appears_in_selection ($selection_id, $needlename) {
     my $selection = $driver->find_element_by_id($selection_id);
-    my $new_needle_options = $driver->find_child_elements($selection, "./option[\@value='$needlename']", 'xpath');
+    my $new_needle_options = $driver->find_child_elements($selection, qq{./option[\@value='$needlename']}, 'xpath');
     is scalar @$new_needle_options, 1, "needle appears in $selection_id selection";
     is
       OpenQA::Test::Case::trim_whitespace($new_needle_options->[0]->get_text()),

@@ -461,7 +461,7 @@ hash maps. It is also used to refer to a job in dependency specifications.
 
 sub _job_ref ($job_settings) {
     my ($test, $machine) = ($job_settings->{TEST}, $job_settings->{MACHINE});
-    return $machine ? "$test\@$machine" : $test;
+    return $machine ? qq{$test\@$machine} : $test;
 }
 
 =over 4
@@ -657,7 +657,7 @@ sub _create_dependencies_for_job ($self, $job, $job_ids_mapping, $created_jobs, 
         my $might_be_skipped = $skip_chained_deps && $deptype != PARALLEL;
         for my $testsuite (_parse_dep_variable($depvalue, $settings)) {
             my ($test, $machine) = @$testsuite;
-            my $key = "$test\@$machine";
+            my $key = qq{$test\@$machine};
 
             for my $parent_job (keys %$job_ids_mapping) {
                 my @parents = split /@/, $parent_job;
