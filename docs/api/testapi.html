@@ -722,9 +722,11 @@ available.</em></p>
 through the MD5 algorithm and taking the first characters.</p>
 <h1 id="keyboard-support">keyboard support</h1>
 <h2 id="send_key">send_key</h2>
-<pre><code>send_key($key [, wait_screen_change =&gt; $wait_screen_change]);</code></pre>
-<p>Send one <code>$key</code> to SUT keyboard input. Waits for the
-screen to change when <code>$wait_screen_change</code> is true.</p>
+<pre><code>send_key($key [, hold_duration =&gt; $seconds] [, wait_screen_change =&gt; $wait_screen_change]);</code></pre>
+<p>Send one <code>$key</code> to SUT keyboard input. If
+<code>hold_duration</code> in seconds is specified, the key is held for
+that duration before being released. Waits for the screen to change when
+<code>$wait_screen_change</code> is true.</p>
 <p>Special characters naming:</p>
 <pre><code>&#39;esc&#39;, &#39;down&#39;, &#39;right&#39;, &#39;up&#39;, &#39;left&#39;, &#39;equal&#39;, &#39;spc&#39;,  &#39;minus&#39;, &#39;shift&#39;, &#39;ctrl&#39;
 &#39;caps&#39;, &#39;meta&#39;, &#39;alt&#39;, &#39;ret&#39;, &#39;tab&#39;, &#39;backspace&#39;, &#39;end&#39;, &#39;delete&#39;, &#39;home&#39;, &#39;insert&#39;
