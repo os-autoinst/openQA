@@ -49,6 +49,7 @@ use OpenQA::Test::Utils
 use OpenQA::Test::TimeLimit '90';
 use Mojo::Util qw(md5_sum);
 use OpenQA::CacheService;
+use Test::MockModule;
 use OpenQA::CacheService::Request;
 use OpenQA::CacheService::Client;
 use Time::Seconds;
@@ -677,6 +678,24 @@ subtest 'OpenQA::CacheService::Task::Sync' => sub {
         is $cache_client->status($rsync_request)->result, 'exit code 0', 'Sync successful with missing parent';
         ok -e $to->child('tests')->child('testfile'), 'File synced correctly';
     };
+};
+
+subtest 'CacheService::run exit code handling' => sub {
+    my $mock = Test::MockModule->new('OpenQA::CacheService');
+    for my $case (
+        [prefork => Mojo::Log->new, undef, 0, 'sanitize Mojo::Log to 0'],
+        [run => bless({}, 'Minion::Worker'), undef, 0, 'sanitize Minion::Worker to 0'],
+        [run => 5, undef, 5, 'preserve numeric scalar exit code'],
+        [run => undef, undef, 0, 'default undefined to 0'],
+        [prefork => Mojo::Log->new, 3, 3, 'preserve explicit non-zero exit_code'],
+      )
+    {
+        my $app = OpenQA::CacheService->new;
+        $app->exit_code($case->[2]) if defined $case->[2];
+        $mock->mock(new => sub { $app });
+        $mock->mock(start => sub { $case->[1] });
+        is OpenQA::CacheService::run($case->[0]), $case->[3], $case->[4];
+    }
 };
 
 done_testing;
