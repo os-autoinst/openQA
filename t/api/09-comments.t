@@ -138,9 +138,6 @@ sub test_comments ($in, $id) {
           ->json_is('/error' => 'Erroneous parameters (text invalid)');
     };
     test_get_comment($in, $id, $new_comment_id, $edited_test_message);
-
-    $t->delete_ok("/api/v1/$in/$id/comments/$new_comment_id")
-      ->status_is(403, 'comment can not be deleted by unauthorized user');
 }
 
 subtest 'job comments' => sub {
@@ -235,9 +232,13 @@ subtest 'delete many comments' => sub {
 
 $t->app->schema->txn_rollback;
 
+client($t);
+
 subtest 'can not edit comment by other user' => sub {
+    client($t, apikey => 'LANCELOTKEY01', apisecret => 'MANYPEOPLEKNOW');
     $t->put_ok('/api/v1/jobs/99981/comments/1' => form => {text => $edited_test_message . $another_test_message})
       ->status_is(403, 'editing comments by other users is forbidden');
+    client($t);
     test_get_comment(jobs => 99981, 1, $edited_test_message);
 };
 
@@ -303,6 +304,24 @@ subtest 'unauthorized users can only read' => sub {
     $t->post_ok('/api/v1/comments?job_id=80000&text=batch-comment')->status_is(403);
     $t->delete_ok('/api/v1/comments?id=1')->status_is(403);
     ok $comments->find(1), 'comment still exists';
+};
+
+subtest 'delete comment permissions' => sub {
+    client($t);
+    my $cid = test_create_comment('jobs', 99981, 'permission test comment');
+
+    client($t, apikey => 'LANCELOTKEY01', apisecret => 'MANYPEOPLEKNOW');
+    $t->delete_ok("/api/v1/jobs/99981/comments/$cid")
+      ->status_is(403, 'unauthorized user cannot delete other\'s comment');
+
+    client($t);
+    $t->delete_ok("/api/v1/jobs/99981/comments/$cid")->status_is(200, 'author can delete their own comment');
+
+    my $cid2 = test_create_comment('jobs', 99981, 'admin permission test comment');
+    client($t, apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR');
+    $t->delete_ok("/api/v1/jobs/99981/comments/$cid2")->status_is(200, 'administrator can delete comments');
+
+    client($t);
 };
 
 done_testing();

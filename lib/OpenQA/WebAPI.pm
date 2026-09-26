@@ -471,14 +471,14 @@ sub startup ($self) {
     $api_public_r->get('/jobs/<job_id:num>/comments/<comment_id:num>')->name('apiv1_get_comment')->to('comment#text');
     $api_ru->post('/jobs/<job_id:num>/comments')->name('apiv1_post_comment')->to('comment#create');
     $api_ru->put('/jobs/<job_id:num>/comments/<comment_id:num>')->name('apiv1_put_comment')->to('comment#update');
-    $api_ra->delete('/jobs/<job_id:num>/comments/<comment_id:num>')->name('apiv1_delete_comment')->to('comment#delete');
+    $api_ru->delete('/jobs/<job_id:num>/comments/<comment_id:num>')->name('apiv1_delete_comment')->to('comment#delete');
     $api_public_r->get('/groups/<group_id:num>/comments')->name('apiv1_list_group_comment')->to('comment#list');
     $api_public_r->get('/groups/<group_id:num>/comments/<comment_id:num>')->name('apiv1_get_group_comment')
       ->to('comment#text');
     $api_ru->post('/groups/<group_id:num>/comments')->name('apiv1_post_group_comment')->to('comment#create');
     $api_ru->put('/groups/<group_id:num>/comments/<comment_id:num>')->name('apiv1_put_group_comment')
       ->to('comment#update');
-    $api_ra->delete('/groups/<group_id:num>/comments/<comment_id:num>')->name('apiv1_delete_group_comment')
+    $api_ru->delete('/groups/<group_id:num>/comments/<comment_id:num>')->name('apiv1_delete_group_comment')
       ->to('comment#delete');
     $api_public_r->get('/parent_groups/<parent_group_id:num>/comments')->name('apiv1_list_parent_group_comment')
       ->to('comment#list');
@@ -488,7 +488,7 @@ sub startup ($self) {
       ->to('comment#create');
     $api_ru->put('/parent_groups/<parent_group_id:num>/comments/<comment_id:num>')
       ->name('apiv1_put_parent_group_comment')->to('comment#update');
-    $api_ra->delete('/parent_groups/<parent_group_id:num>/comments/<comment_id:num>')
+    $api_ru->delete('/parent_groups/<parent_group_id:num>/comments/<comment_id:num>')
       ->name('apiv1_delete_parent_group_comment')->to('comment#delete');
     $api_ru->post('/comments')->name('apiv1_post_comments')->to('comment#create_many');
     $api_ra->delete('/comments')->name('apiv1_delete_comments')->to('comment#delete_many');
