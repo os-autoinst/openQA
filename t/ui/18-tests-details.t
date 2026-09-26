@@ -188,7 +188,7 @@ subtest 'filtering' => sub {
         return $driver->execute_script("return \$('#results .result${result}:visible').length;");
     };
     my $count_headings = sub {
-        return $driver->execute_script("return \$('#results td[colspan=\"3\"]:visible').length;");
+        return $driver->execute_script(qq{return \$('#results td[colspan="3"]:visible').length;});
     };
 
     # check initial state (no filters enabled)
@@ -944,11 +944,11 @@ subtest 'helper functions of investigation tab' => sub {
         {link => '<a href="test/9b8aaf060">9b8aaf060</a>', msg => 'Containers: Inc…', stat => [' stat1', ' stat2']},
         {link => '<a href="test/a54a4bb34">a54a4bb34</a>', msg => 'Remove select…', stat => [' stat3', ' stat4']},
     );
-    my $links = $driver->execute_script("return githashToLink(\"$value\", 'test/')");
+    my $links = $driver->execute_script(qq{return githashToLink("$value", 'test/')});
     is_deeply $links, \@expected_links, 'links returned for valid value' or always_explain $links;
 
     $value = '9b8aaf060 Containers: Inc…\n stat1\n stat2\na54a4bb34Remove select…\n stat3\n stat4\n';
-    $links = $driver->execute_script("return githashToLink(\"$value\", 'test/')");
+    $links = $driver->execute_script(qq{return githashToLink("$value", 'test/')});
     is_deeply $links, undef, 'null returned as second line is invalid' or always_explain $links;
 };
 

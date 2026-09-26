@@ -260,10 +260,10 @@ subtest 'Parameters' => sub {
     is_deeply $data->{params}, {FOO => 'bar', BAR => 'baz'}, 'params';
     is $data->{body}, 'BAR=baz&FOO=bar', 'request body';
 
-    ($stdout, @result) = capture_stdout sub { $api->run(@params, 'FOO=bar', "BAR=baz\n  ya\"d\"a\n1 2 3") };
+    ($stdout, @result) = capture_stdout sub { $api->run(@params, 'FOO=bar', qq{BAR=baz\n  ya"d"a\n1 2 3}) };
     $data = decode_json $stdout;
     is $data->{method}, 'POST', 'POST request';
-    is_deeply $data->{params}, {FOO => 'bar', BAR => "baz\n  ya\"d\"a\n1 2 3"}, 'params';
+    is_deeply $data->{params}, {FOO => 'bar', BAR => qq{baz\n  ya"d"a\n1 2 3}}, 'params';
     is $data->{body}, 'BAR=baz%0A++ya%22d%22a%0A1+2+3&FOO=bar', 'request body';
 
     ($stdout, @result) = capture_stdout sub { $api->run(@host, $path, 'invalid') };

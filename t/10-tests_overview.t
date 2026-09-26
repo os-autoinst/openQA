@@ -262,7 +262,7 @@ subtest 'clickable summary buttons' => sub {
     like $none_link->attr('href'), qr/state__not=.+/, 'none filters for all unknown states';
     $t->get_ok($none_link->attr('href'), 'filtering for "None"')->status_is(200);
     my $dom = $t->tx->res->dom;
-    ok $dom->at("#res-$_"), "job $_ present in filtering for \"None\"" for @none_job_ids;
+    ok $dom->at("#res-$_"), qq{job $_ present in filtering for "None"} for @none_job_ids;
 
     $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1'})->status_is(200);
     $summary = $t->tx->res->dom->at('#summary .card-body');

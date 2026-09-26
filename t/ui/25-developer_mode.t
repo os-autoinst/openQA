@@ -73,7 +73,7 @@ sub fake_state ($variable, $state) {
 
 # invokes the handler for messages from ws connection
 sub fake_message_from_ws_connection ($message) {
-    inject_java_script("handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: \"$message\" });");
+    inject_java_script(qq{handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "$message" });});
 }
 
 # checks whether the commands sent by the JavaScript since the last call matches the expected commands

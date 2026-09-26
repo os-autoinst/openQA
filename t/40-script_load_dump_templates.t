@@ -170,7 +170,7 @@ subtest 'dump_templates tests' => sub {
     dump_templates $args, $expected, 'dump_templates with options', 0, 'dump_templates success with options';
     # this test intends to hit job_templates_scheduling/openSUSE Leap 42
     # and find it doesn't exist; we need --convert to use that endpoint
-    $args = "$base_args --convert --group \"openSUSE Leap 42\"";
+    $args = qq{$base_args --convert --group "openSUSE Leap 42"};
     $expected = qr/ERROR requesting.*404 - Not Found/;
     dump_templates $args, $expected, 'dump_templates fails on wrong group', 1, 'dump_templates handles error';
 };

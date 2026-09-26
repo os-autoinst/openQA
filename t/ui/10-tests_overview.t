@@ -411,7 +411,7 @@ subtest 'filtering by module' => sub {
         $driver->get("/tests/overview?arch=&distri=opensuse&modules=$module");
         my @jobs = $driver->find_elements($JOB_ICON_SELECTOR);
         # Assert that all the jobs with the specified module are shown in the results
-        is scalar @jobs, $number_of_found_jobs, "$number_of_found_jobs jobs with \"$module\" module found";
+        is scalar @jobs, $number_of_found_jobs, qq{$number_of_found_jobs jobs with "$module" module found};
         element_visible('#res_DVD_i586_kde');
         element_visible('#res_DVD_x86_64_kde');
         element_visible('#res_DVD_x86_64_doc');
@@ -422,7 +422,7 @@ subtest 'filtering by module' => sub {
         $driver->get("/tests/overview?arch=&distri=opensuse&modules=$module&modules_result=$result");
         my @jobs = $driver->find_elements($JOB_ICON_SELECTOR);
         # Assert that all the jobs with the specified module and result are shown in the results
-        is scalar @jobs, $number_of_found_jobs, "$number_of_found_jobs jobs with \"$module\" module found";
+        is scalar @jobs, $number_of_found_jobs, qq{$number_of_found_jobs jobs with "$module" module found};
         element_visible('#res_DVD_i586_kde');
     };
     subtest 'jobs containing all the modules with the specified result are present' => sub {
@@ -431,7 +431,7 @@ subtest 'filtering by module' => sub {
         my @jobs = $driver->find_elements($JOB_ICON_SELECTOR);
         # Assert that all the jobs with the specified result are shown in the results
         is scalar @jobs, $number_of_found_jobs,
-          "$number_of_found_jobs jobs where modules with \"$result\" result found";
+          qq{$number_of_found_jobs jobs where modules with "$result" result found};
         element_visible('#res_DVD_i586_kde');
         element_visible('#res_DVD_x86_64_kde');
         element_visible('#res_DVD_i586_textmode');
@@ -443,7 +443,7 @@ subtest 'filtering by module' => sub {
         $driver->get("/tests/overview?arch=&distri=opensuse&modules=$modules&modules_result=$result");
         my @jobs = $driver->find_elements($JOB_ICON_SELECTOR);
         # Assert that all the jobs with the specified modules and result are shown in the results
-        is scalar @jobs, $number_of_found_jobs, "$number_of_found_jobs jobs with \"$modules\" modules found";
+        is scalar @jobs, $number_of_found_jobs, qq{$number_of_found_jobs jobs with "$modules" modules found};
         element_visible('#res_DVD_i586_kde');
         element_visible('#res_DVD_i586_textmode');
     };
@@ -464,7 +464,7 @@ subtest 'filtering by module_re' => sub {
         $driver->get("/tests/overview?arch=&distri=opensuse&module_re=$module_re");
         my @jobs = $driver->find_elements($job_icon_selector);
         # Assert that all the jobs with the specified module are shown in the results
-        is scalar @jobs, $number_of_found_jobs, "$number_of_found_jobs jobs with \"$module_re\" regexp module found";
+        is scalar @jobs, $number_of_found_jobs, qq{$number_of_found_jobs jobs with "$module_re" regexp module found};
         element_visible('#res_DVD_i586_kde');
         element_visible('#res_DVD_x86_64_kde');
         element_visible('#res_DVD_x86_64_doc');
@@ -475,7 +475,7 @@ subtest 'filtering by module_re' => sub {
         $driver->get("/tests/overview?arch=&distri=opensuse&module_re=$module_re&modules_result=$result");
         my @jobs = $driver->find_elements($job_icon_selector);
         # Assert that all the jobs with the specified module and result are shown in the results
-        is scalar @jobs, $number_of_found_jobs, "$number_of_found_jobs jobs with \"$module_re\" module regexp found";
+        is scalar @jobs, $number_of_found_jobs, qq{$number_of_found_jobs jobs with "$module_re" module regexp found};
         element_visible('#res_DVD_i586_kde');
     };
 

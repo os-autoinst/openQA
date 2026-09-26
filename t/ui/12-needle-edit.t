@@ -122,7 +122,7 @@ sub add_needle_tag ($tagname = 'test-newtag') {
     $elem->send_keys($tagname);
     $driver->find_element_by_id('tag_add_button')->click();
     wait_for_ajax(with_minion => $minion);
-    is $driver->find_element_by_xpath("//input[\@value=\"$tagname\"]")->is_selected(),
+    is $driver->find_element_by_xpath(qq{//input[\@value="$tagname"]})->is_selected(),
       1, 'new tag found and was checked';
 }
 
