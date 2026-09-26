@@ -11,6 +11,7 @@ import argparse
 import os
 import subprocess  # ruff: ignore[suspicious-subprocess-import]
 import sys
+import textwrap
 from pathlib import Path
 
 try:
@@ -56,21 +57,30 @@ def init(*, fixtures: str = "*.pl", reset: bool = True, silent: bool = False) ->
         sys.exit(e.returncode)
 
     if not silent:
-        print("\n========================================================================")
-        print("  openQA interactive test environment has been initialized")
-        print("========================================================================\n")
-        print(f"  Database resets and schema deployed onto '{schema_name}'.")
-        print(f"  Loaded fixtures matching: {fixtures}")
-        print("  Mock assets activated.\n")
-        print("  You can interact with the local Web UI using the following links:")
-        print("    - Home/Overview:  http://localhost:9526/")
-        print("    - Test Results:   http://localhost:9526/tests/overview")
-        print("    - Sample Details:  http://localhost:9526/tests/99981")
-        print("    - Admin Workers:  http://localhost:9526/admin/workers\n")
-        print("  Authentication Info:")
-        print("    - Click 'Login' in the top-right corner to log in automatically")
-        print("      as the 'Demo' user (who has administrator/operator rights).\n")
-        print("========================================================================\n")
+        print(
+            textwrap.dedent(
+                f"""
+                ========================================================================
+                  openQA interactive test environment has been initialized
+                ========================================================================
+
+                  Database resets and schema deployed onto '{schema_name}'.
+                  Loaded fixtures matching: {fixtures}
+                  Mock assets activated.
+
+                  You can interact with the local Web UI using the following links:
+                    - Home/Overview:  http://localhost:9526/
+                    - Test Results:   http://localhost:9526/tests/overview
+                    - Sample Details:  http://localhost:9526/tests/99981
+                    - Admin Workers:  http://localhost:9526/admin/workers
+
+                  Authentication Info:
+                    - Click 'Login' in the top-right corner to log in automatically
+                      as the 'Demo' user (who has administrator/operator rights).
+                ========================================================================
+                """
+            )
+        )
 
 
 def main() -> None:
