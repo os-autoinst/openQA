@@ -264,6 +264,7 @@ sub create ($self) {
             count => $created_job_count,
             ids => $successful_job_ids,
             failed => $failed_job_info,
+            $scheduled_jobs->{warnings} ? (warnings => $scheduled_jobs->{warnings}) : (),
         });
 }
 

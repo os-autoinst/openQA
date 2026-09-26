@@ -325,6 +325,10 @@ sub handle_tx ($tx, $url_handler, $options, $jobs) {
     my $json = $res->json;
     if (!$tx->error && ref $json eq 'HASH' && ref $json->{ids} eq 'HASH') {
         my $cloned_jobs = $json->{ids};
+        if (ref $json->{warnings} eq 'ARRAY' && @{$json->{warnings}}) {
+            my @warning_list = map { " - $_\n" } @{$json->{warnings}};
+            warn "Warnings:\n" . join '', @warning_list;
+        }
         print Cpanel::JSON::XS->new->pretty->encode($cloned_jobs) and return $cloned_jobs if $options->{'json-output'};
         if (my $job_count = keys %$cloned_jobs) {
             my $base_url = openqa_baseurl($url_handler->{local_url});
