@@ -111,7 +111,7 @@ subtest 'worker overview' => sub {
     $driver->find_element('#workers_info')->text_like(qr/1 to 1 of 1.*filtered from 5 total/, 'correct number shown');
 
     # show all worker regardless of their state
-    $driver->find_element_by_xpath("//select[\@id='workers_online']/option[1]")->click();
+    $driver->find_element_by_xpath(q{//select[@id='workers_online']/option[1]})->click();
 
     # check delete link only shown on offline worker
     my %not_deletable = (
@@ -206,10 +206,10 @@ subtest 'table persistence' => sub {
         is $driver->find_element('#workers_online')->get_value, 'Working', 'working status selected from URL';
     };
     subtest 'change select filter and check URL updates' => sub {
-        $driver->find_element_by_xpath("//select[\@id='workers_online']/option[\@value='Idle']")->click;
+        $driver->find_element_by_xpath(q{//select[@id='workers_online']/option[@value='Idle']})->click;
         wait_for { $driver->get_current_url !~ qr/status=/ } 'URL updated with status removed for default';
         unlike $driver->get_current_url, qr/status=/, 'URL updated with status removed for default';
-        $driver->find_element_by_xpath("//select[\@id='workers_online']/option[\@value='Offline']")->click;
+        $driver->find_element_by_xpath(q{//select[@id='workers_online']/option[@value='Offline']})->click;
         wait_for_url qr/status=Offline/;
     };
     subtest 'enter search query and check URL updates' => sub {

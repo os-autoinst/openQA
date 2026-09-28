@@ -293,7 +293,7 @@ sub name ($self) {
 sub label ($self) {
     my $test = $self->TEST;
     my $machine = $self->MACHINE;
-    return $machine ? "$test\@$machine" : $test;
+    return $machine ? qq{$test\@$machine} : $test;
 }
 
 sub scenario ($self) {

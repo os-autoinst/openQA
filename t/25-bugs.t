@@ -26,7 +26,7 @@ $bugs->find(1)->update({refreshed => 1, title => 'foo bar < " & ß'});
 $bug = $bugs->get_bug('poo#200');
 ok $bug->refreshed, 'bug refreshed';
 ok $bug->bugid, 'bugid matched';
-is $c->bugtitle_for('poo#200', $bug), "Bug referenced: poo#200\nfoo bar < \" & ß", 'bug title not already escaped';
+is $c->bugtitle_for('poo#200', $bug), qq{Bug referenced: poo#200\nfoo bar < " & ß}, 'bug title not already escaped';
 
 subtest 'Unreferenced bugs cleanup job works' => sub {
     # create some more bugs

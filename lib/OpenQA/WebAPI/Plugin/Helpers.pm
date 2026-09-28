@@ -315,7 +315,7 @@ sub _current_job_group ($c) {
         $overview_text = 'Build ' . $job->BUILD;
     }
     else {
-        $overview_text = "Build $build\@$distri $version";
+        $overview_text = qq{Build $build\@$distri $version};
     }
     my $overview_url = $c->url_for('tests_overview')->query(%query);
 

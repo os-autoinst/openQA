@@ -122,7 +122,7 @@ sub add_needle_tag ($tagname = 'test-newtag') {
     $elem->send_keys($tagname);
     $driver->find_element_by_id('tag_add_button')->click();
     wait_for_ajax(with_minion => $minion);
-    is $driver->find_element_by_xpath("//input[\@value=\"$tagname\"]")->is_selected(),
+    is $driver->find_element_by_xpath(qq{//input[\@value="$tagname"]})->is_selected(),
       1, 'new tag found and was checked';
 }
 
@@ -493,7 +493,7 @@ subtest 'Verify new needle\'s JSON' => sub {
 
 sub assert_needle_appears_in_selection ($selection_id, $needlename) {
     my $selection = $driver->find_element_by_id($selection_id);
-    my $new_needle_options = $driver->find_child_elements($selection, "./option[\@value='$needlename']", 'xpath');
+    my $new_needle_options = $driver->find_child_elements($selection, qq{./option[\@value='$needlename']}, 'xpath');
     is scalar @$new_needle_options, 1, "needle appears in $selection_id selection";
     is
       OpenQA::Test::Case::trim_whitespace($new_needle_options->[0]->get_text()),

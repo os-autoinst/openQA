@@ -407,7 +407,7 @@ subtest 'Small assets causes racing when releasing locks' => sub {
 
 subtest 'Asset download with default usage' => sub {
     my $tot_proc = $ENV{STRESS_TEST} ? 100 : 3;
-    test_default_usage(922756, "sle-12-SP3-x86_64-0368-200_$_\@64bit.qcow2") for 1 .. $tot_proc;
+    test_default_usage(922756, qq{sle-12-SP3-x86_64-0368-200_$_\@64bit.qcow2}) for 1 .. $tot_proc;
 };
 
 subtest 'Multiple minion workers (parallel downloads, almost simulating real scenarios)' => sub {
@@ -425,7 +425,7 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
     }
     '3 minion workers';
 
-    my @assets = map { "sle-12-SP3-x86_64-0368-200_$_\@64bit.qcow2" } 1 .. $tot_proc;
+    my @assets = map { qq{"sle-12-SP3-x86_64-0368-200_$_\@64bit.qcow2} } 1 .. $tot_proc;
     unlink path($cachedir, 'localhost')->child($_) for @assets;
     my %requests
       = map { $_ => $cache_client->asset_request(id => 922756, asset => $_, type => 'hdd', host => $host) } @assets;

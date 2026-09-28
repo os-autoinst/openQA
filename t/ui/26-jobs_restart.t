@@ -222,11 +222,11 @@ subtest 'check single job restart in /tests page' => sub {
         is $td->get_text() =~ s/\s+\d+$//r, 'minimalx@32bit', '99926 is minimalx@32bit';
         $driver->find_child_element($td, '.restart', 'css')->click();
         wait_until(sub { $td->get_text() =~ qr/minimalx\@32bit \(restarted\)/ }, 'job is marked as restarted');
-        like $driver->find_child_element($td, "./a[\@title='new test']", 'xpath')->get_attribute('href'),
+        like $driver->find_child_element($td, q{./a[@title='new test']}, 'xpath')->get_attribute('href'),
           expected_job_id_regex, 'restart link is correct';
 
         # open restart link then verify its test name
-        $driver->find_child_element($td, "./a[\@title='new test']", 'xpath')->click();
+        $driver->find_child_element($td, q{./a[@title='new test']}, 'xpath')->click();
         like $driver->find_element('#info_box .card-header')->get_text(),
           qr/minimalx\@32bit/, 'restarted job is correct';
     };
@@ -254,9 +254,9 @@ subtest 'check cluster jobs restart in /tests page' => sub {
 
     # Check if restart links are correct
     my $parent_restart_link
-      = $driver->find_child_element($chained_parent, "./a[\@title='new test']", 'xpath')->get_attribute('href');
+      = $driver->find_child_element($chained_parent, q{./a[@title='new test']}, 'xpath')->get_attribute('href');
     my $child_restart_link
-      = $driver->find_child_element($chained_child, "./a[\@title='new test']", 'xpath')->get_attribute('href');
+      = $driver->find_child_element($chained_child, q{./a[@title='new test']}, 'xpath')->get_attribute('href');
     like $parent_restart_link, expected_job_id_regex(1), 'restart link is correct';
     like $child_restart_link, expected_job_id_regex(2), 'restart link is correct';
 
@@ -301,11 +301,11 @@ subtest 'check cluster jobs restart in /tests page' => sub {
 
     # Check if restart links are correct
     my $master_node_link
-      = $driver->find_child_element($master_node, "./a[\@title='new test']", 'xpath')->get_attribute('href');
+      = $driver->find_child_element($master_node, q{./a[@title='new test']}, 'xpath')->get_attribute('href');
     my $slave_node_link
-      = $driver->find_child_element($slave_node, "./a[\@title='new test']", 'xpath')->get_attribute('href');
+      = $driver->find_child_element($slave_node, q{./a[@title='new test']}, 'xpath')->get_attribute('href');
     my $support_server_link
-      = $driver->find_child_element($support_server, "./a[\@title='new test']", 'xpath')->get_attribute('href');
+      = $driver->find_child_element($support_server, q{./a[@title='new test']}, 'xpath')->get_attribute('href');
     like $master_node_link, expected_job_id_regex(2), 'restart link is correct';
     like $slave_node_link, expected_job_id_regex(3), 'restart link is correct';
     like $support_server_link, expected_job_id_regex(1), 'restart link is correct';

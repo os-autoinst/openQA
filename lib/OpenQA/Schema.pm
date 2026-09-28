@@ -41,8 +41,8 @@ sub set_user ($user) {
 
 sub set_search_path ($self, $search_path) {
     my $storage = $self->storage;
-    $storage->dbh->do("SET search_path TO \"$search_path\"");
-    $storage->on_connect_do("SET search_path TO \"$search_path\"");    # handle reconnects
+    $storage->dbh->do(qq{SET search_path TO "$search_path"});
+    $storage->on_connect_do(qq{SET search_path TO "$search_path"});    # handle reconnects
 }
 
 sub connect_db (%args) {

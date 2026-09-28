@@ -43,7 +43,7 @@ sub init ($self, $page_name = undef) {
 
     # render a 404 error page for other routes
     my $test_name = $job->name;
-    my $what = $page_name ? "the page \"$page_name\"" : 'this route';
+    my $what = $page_name ? qq{the page "$page_name"} : 'this route';
     $self->render_specific_not_found($page_name // 'Page not found',
         "The test $test_name has no worker assigned so $what is not available.");
     return 0;

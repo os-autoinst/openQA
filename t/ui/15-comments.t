@@ -362,7 +362,7 @@ EOM
         $driver->find_element('#current-build-overview a')->click();
         is
           $driver->find_element('#res_DVD_x86_64_doc .fa-solid.fa-bug')->get_attribute('title'),
-          "Bug referenced: bsc#1234\nsome title with \"quotes\" and <html>elements</html>",
+          qq{Bug referenced: bsc#1234\nsome title with "quotes" and <html>elements</html>},
           'bug icon shown for bsc#1234, title rendered with new-line, HTML code is rendered as text';
         is
           $driver->find_element('#res_DVD_x86_64_doc .fa-solid.fa-bolt')->get_attribute('title'),

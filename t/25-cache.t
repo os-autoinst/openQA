@@ -149,7 +149,7 @@ ok -e $pending_asset, 'Not so old asset (3.qcow2) was preserved (despite not bei
 $cache_log = '';
 
 $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-textmode@64bit.qcow2');
-my $from = "http://$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-textmode\@64bit.qcow2";
+my $from = qq{http://$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-textmode\@64bit.qcow2};
 like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-textmode\@64bit.qcow2" from "$from"/, 'Asset download attempt';
 like $cache_log, qr/failed: Connection refused/, 'Asset download fails with: Connection refused';
 $cache_log = '';

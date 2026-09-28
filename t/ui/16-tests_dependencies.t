@@ -83,7 +83,7 @@ $dependencies->create({child_job_id => 99927, parent_job_id => 99961, dependency
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 sub get_tooltip ($job_id) {
-    $driver->execute_script("return \$('#nodeTable$job_id').closest('.node').data('bs-original-title');");
+    $driver->execute_script(qq{return \$('#nodeTable$job_id').closest('.node').data('bs-original-title');});
 }
 
 sub node_name ($name, $a, $d, $as_child, $pd) {
