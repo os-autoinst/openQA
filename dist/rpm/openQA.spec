@@ -413,11 +413,6 @@ rm \
     t/43-scheduling-and-worker-scalability.t \
     t/ui/*.t
 
-%if 0%{?suse_version} <= 1500
-# Python 3.6 on older SLE versions does not support capture_output used by init-test-fixtures
-rm t/44-init-test-fixtures.t
-%endif
-
 # "CI" set with longer timeouts as needed for higher performance variations
 # within CI systems, e.g. OBS. See t/lib/OpenQA/Test/TimeLimit.pm
 export CI=1

@@ -44,7 +44,7 @@ subtest 'run with custom fixtures subset' => sub {
 subtest 'run with help option' => sub {
     my $output = qx{"$cmd" --help 2>&1};
     is $?, 0, 'command exited with zero return code';
-    like $output, qr/Usage:/i, 'usage information displayed';
+    like $output, qr/$cmd \[-fh\]/i, 'usage information displayed';
     like $output, qr/--fixtures/i, 'fixtures option documented';
 };
 
