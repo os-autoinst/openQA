@@ -392,6 +392,13 @@ subtest 'worker reservation API' => sub {
       ->status_is(200, 'admin force override on an existing reservation is allowed with 200')
       ->json_is('/reservation/comment' => 'admin override')->json_is('/reservation/user' => $admin->username);
 
+    $t_admin->delete_ok('/api/v1/workers/remotehost:1/reservation')
+      ->status_is(200, 'release via host:instance identifier is allowed with 200');
+    $t->post_ok('/api/v1/workers/remotehost:1/reservation',
+        form => {comment => 'host:instance reservation', duration => '1h'})
+      ->status_is(200, 'reserve via host:instance identifier is allowed with 200')
+      ->json_is('/reservation/comment' => 'host:instance reservation');
+
     $t->get_ok('/api/v1/workers?reserved=1')->status_is(200, 'list only reserved workers when reserved filter is 1')
       ->json_is('/workers/0/id' => 2)->json_has('/workers/0/reservation')->json_hasnt('/workers/1');
     $t->get_ok('/api/v1/workers?reserved=0')->status_is(200, 'list only unreserved workers when reserved filter is 0')

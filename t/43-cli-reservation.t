@@ -74,6 +74,16 @@ subtest 'Reserve and Release Worker via CLI' => sub {
     ($stdout, $stderr, @result) = capture sub { $cli->run('reservation', @auth_op, 2, '--release') };
     is_deeply \@result, [0], 'Releasing the active reservation by the same operator succeeds with exit code 0';
     like $stdout, qr/released successfully/, 'The response on stdout confirms the reservation is released successfully';
+
+    ($stdout, $stderr, @result)
+      = capture
+      sub { $cli->run('reservation', @auth_op, 'remotehost:1', '--comment=CLI HostInstance', '--duration=1h') };
+    is_deeply \@result, [0], 'A valid reservation with a comment and a duration on remotehost:1 succeeds';
+    like $stdout, qr/reserved successfully/, 'The response confirms reservation of remotehost:1';
+
+    ($stdout, $stderr, @result) = capture sub { $cli->run('reservation', @auth_op, 'remotehost:1', '--release') };
+    is_deeply \@result, [0], 'Releasing the active reservation on remotehost:1 succeeds';
+    like $stdout, qr/released successfully/, 'The response confirms release of remotehost:1';
 };
 
 done_testing;
