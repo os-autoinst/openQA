@@ -51,6 +51,10 @@ sub _git_clone_all ($job, $clones) {
     # iterate clones sorted by path length to ensure that a needle dir is always cloned after the corresponding casedir
     for my $path (sort { length($a) <=> length($b) || $a cmp $b } keys %$clones) {
         die "Don't even think about putting '..' into '$path'." if $path =~ /\.\./;
+        unless (-d $path || defined $clones->{$path}) {
+            $ctx->info("Skipping Git clone to new path '$path' as repo URL is not defined.");
+            next;
+        }
 
         my $git = OpenQA::Git->new(app => $app, dir => $path);
         my $origin_url = -d $path ? $git->get_origin_url : undef;

@@ -160,6 +160,35 @@ subtest 'git clone' => sub {
         like $res->{result}, qr/Unable to determine Git server host/, 'error message';
     };
 
+    subtest 'skip git clone when path does not exist and repo URL is undef' => sub {
+        @mocked_git_calls = ();
+        %$clone_dirs = ("$git_clones/does_not_exist" => undef);
+        combined_like { $res = run_gru_job(@gru_args) }
+        qr(Skipping Git clone to new path '\Q$git_clones/does_not_exist\E' as repo URL is not defined),
+          'skip non-existent path without repo URL logged';
+        is $res->{state}, 'finished', 'minion job finished';
+        is $res->{result}, 'Job successfully executed', 'minion job result indicates success';
+        is scalar @mocked_git_calls, 0, 'no git calls performed';
+    };
+
+    subtest 'skip non-existent path without repo URL and proceed with subsequent paths' => sub {
+        @mocked_git_calls = ();
+        %$clone_dirs = (
+            "$git_clones/a" => undef,
+            "$git_clones/this_directory_does_not_exist/" => 'http://localhost/bar.git',
+        );
+        combined_like { $res = run_gru_job(@gru_args) }
+        qr(Skipping Git clone to new path '\Q$git_clones/a\E' as repo URL is not defined),
+          'skipped non-existent path without repo URL logged';
+        is $res->{state}, 'finished', 'minion job finished';
+        is $res->{result}, 'Job successfully executed', 'minion job result indicates success';
+        is_deeply \@mocked_git_calls,
+          [
+"env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS= GIT_TERMINAL_PROMPT=false git clone http://localhost/bar.git /this_directory_does_not_exist/"
+          ],
+          'subsequent path git clone executed';
+    };
+
     subtest 'no default remote branch' => sub {
         $ENV{OPENQA_GIT_CLONE_RETRIES} = 0;
         %$clone_dirs = ("$git_clones/nodefault" => 'http://localhost/nodefault.git');
