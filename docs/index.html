@@ -4129,14 +4129,18 @@ it only prevents new jobs from being assigned. A reservation expires
 automatically after its duration, releasing the worker again.</p>
 <p>Reservations are managed in the workers table of the admin area or
 via the more convenient <code>reservation</code> subcommand of
-<code>openqa-cli</code>:</p>
-<div class="sourceCode" id="cb124"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb124-1"><a href="#cb124-1" aria-hidden="true" tabindex="-1"></a><span class="ex">openqa-cli</span> api <span class="at">--pretty</span> <span class="at">-X</span> GET workers  <span class="co"># get worker ID</span></span>
-<span id="cb124-2"><a href="#cb124-2" aria-hidden="true" tabindex="-1"></a><span class="ex">openqa-cli</span> reservation <span class="at">--comment</span><span class="op">=</span><span class="st">&quot;Manual testing&quot;</span> <span class="at">--duration</span><span class="op">=</span>5h <span class="op">&lt;</span>id<span class="op">&gt;</span></span>
-<span id="cb124-3"><a href="#cb124-3" aria-hidden="true" tabindex="-1"></a><span class="ex">openqa-cli</span> reservation <span class="at">--release</span> <span class="op">&lt;</span>id<span class="op">&gt;</span></span></code></pre></div>
-<p>Alternatively, reservations can be managed via the REST API
-directly:</p>
+<code>openqa-cli</code>. The worker can be specified either by its
+database ID or its <code>&lt;host&gt;:&lt;instance&gt;</code>
+identifier:</p>
+<div class="sourceCode" id="cb124"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb124-1"><a href="#cb124-1" aria-hidden="true" tabindex="-1"></a><span class="ex">openqa-cli</span> reservation <span class="at">--comment</span><span class="op">=</span><span class="st">&quot;Manual testing&quot;</span> <span class="at">--duration</span><span class="op">=</span>5h <span class="op">&lt;</span>id<span class="op">&gt;</span></span>
+<span id="cb124-2"><a href="#cb124-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Or by host and instance format:</span></span>
+<span id="cb124-3"><a href="#cb124-3" aria-hidden="true" tabindex="-1"></a><span class="ex">openqa-cli</span> reservation <span class="at">--comment</span><span class="op">=</span><span class="st">&quot;Manual testing&quot;</span> <span class="at">--duration</span><span class="op">=</span>5h openqa-worker1:1</span>
+<span id="cb124-4"><a href="#cb124-4" aria-hidden="true" tabindex="-1"></a><span class="ex">openqa-cli</span> reservation <span class="at">--release</span> <span class="op">&lt;</span>id<span class="op">&gt;</span></span></code></pre></div>
+<p>Alternatively, reservations can be managed via the REST API directly
+using either identifier:</p>
 <div class="sourceCode" id="cb125"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb125-1"><a href="#cb125-1" aria-hidden="true" tabindex="-1"></a><span class="ex">openqa-cli</span> api <span class="at">-X</span> POST workers/<span class="op">&lt;</span>id<span class="op">&gt;</span>/reservation comment=<span class="st">&quot;Manual testing&quot;</span> duration=5h</span>
-<span id="cb125-2"><a href="#cb125-2" aria-hidden="true" tabindex="-1"></a><span class="ex">openqa-cli</span> api <span class="at">-X</span> DELETE workers/<span class="op">&lt;</span>id<span class="op">&gt;</span>/reservation</span></code></pre></div>
+<span id="cb125-2"><a href="#cb125-2" aria-hidden="true" tabindex="-1"></a><span class="ex">openqa-cli</span> api <span class="at">-X</span> POST workers/<span class="op">&lt;</span>host<span class="op">&gt;</span>:<span class="op">&lt;</span>instance<span class="op">&gt;</span>/reservation comment=<span class="st">&quot;Manual testing&quot;</span> duration=5h</span>
+<span id="cb125-3"><a href="#cb125-3" aria-hidden="true" tabindex="-1"></a><span class="ex">openqa-cli</span> api <span class="at">-X</span> DELETE workers/<span class="op">&lt;</span>id<span class="op">&gt;</span>/reservation</span></code></pre></div>
 <p>The duration accepts a plain number of seconds or a value with a unit
 suffix such as <code>30m</code>, <code>5h</code> or <code>2d</code>.
 Only admins may use <code>0</code> for an indefinite reservation,
