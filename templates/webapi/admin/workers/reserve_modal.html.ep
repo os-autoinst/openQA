@@ -8,6 +8,7 @@
       <form id="reserveWorkerForm" onsubmit="submitReserve(event)">
         <input type="hidden" id="reserveWorkerId">
         <div class="modal-body">
+          <div id="reserveModalFlash"></div>
           <p>A reservation prevents new jobs from being assigned to this worker, taking it out of the scheduling rotation without interrupting any currently running job.</p>
           <div class="mb-3">
             <label for="reserveWorkerName" class="form-label">Worker</label>
@@ -21,6 +22,11 @@
             <label for="reserveWorkerDuration" class="form-label">Duration (e.g. 5h, 2d, 3600; 0 for indefinite)</label>
             <input type="text" class="form-control" id="reserveWorkerDuration"
                    data-default-duration="<%= $reservation_default_duration %>">
+          </div>
+          <div class="mb-3">
+            <label for="reserveWorkerClass" class="form-label">Specific worker class (Optional)</label>
+            <input type="text" class="form-control" id="reserveWorkerClass" pattern="[a-zA-Z0-9_#.:-]+" title="Only alphanumeric, hashes, dots, colons, and hyphens allowed">
+            <div class="form-text">Jobs must explicitly request this class to run on the reserved worker, in addition to the worker's regular capability classes.</div>
           </div>
           % if (is_admin) {
             <div class="form-check mb-3">

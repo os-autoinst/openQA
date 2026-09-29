@@ -33,6 +33,7 @@ my $reservation = OpenQA::CLI::reservation->new;
 subtest 'Help' => sub {
     my ($stdout, $stderr, @result) = capture sub { $cli->run('help', 'reservation') };
     like $stdout, qr/Usage: openqa-cli reservation/, 'help';
+    like $stdout, qr/--class/, 'help describes class option';
     like $stdout, qr/--comment/, 'help describes comment option';
     like $stdout, qr/--duration/, 'help describes duration option';
     like $stdout, qr/--force/, 'help describes force option';
@@ -84,6 +85,19 @@ subtest 'Reserve and Release Worker via CLI' => sub {
     ($stdout, $stderr, @result) = capture sub { $cli->run('reservation', @auth_op, 'remotehost:1', '--release') };
     is_deeply \@result, [0], 'Releasing the active reservation on remotehost:1 succeeds';
     like $stdout, qr/released successfully/, 'The response confirms release of remotehost:1';
+
+    ($stdout, $stderr, @result)
+      = capture
+      sub { $cli->run('reservation', @auth_op, 2, '--comment=Testing', '--duration=1h', '--class=invalid tag') };
+    is_deeply \@result, [1], 'A reservation attempt with an invalid tag fails with a non-zero exit code';
+    like $stdout, qr/Invalid specific worker class/, 'The error details on stdout describe the invalid tag';
+
+    ($stdout, $stderr, @result)
+      = capture sub { $cli->run('reservation', @auth_op, 2, '--comment=Testing', '--duration=1h', '-C', 'poo123') };
+    is_deeply \@result, [0], 'A valid reservation with a valid class tag succeeds';
+    like $stdout, qr/"worker_class":\s*"poo123"/, 'The response JSON contains the expected worker_class';
+
+    ($stdout, $stderr, @result) = capture sub { $cli->run('reservation', @auth_op, 2, '--release') };
 };
 
 done_testing;
