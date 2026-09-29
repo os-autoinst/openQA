@@ -21,7 +21,7 @@ use Data::Dump 'pp';
 use Feature::Compat::Try;
 use IPC::Run qw(start);
 use Mojo::Server::Daemon;
-use Time::HiRes qw(time sleep);
+use Time::HiRes qw(sleep clock_gettime CLOCK_MONOTONIC);
 use OpenQA::WebAPI;
 use OpenQA::Log qw(log_info log_warning);
 use OpenQA::Utils;
@@ -118,12 +118,21 @@ sub start_driver ($mojoport) {
 #  * does not switch to the new tab, use $driver->switch_to_window() for that
 #  * see 33-developer_mode.t for an example
 sub open_new_tab ($url) {
-    # open new window using JavaScript API (Selenium::Remote::Driver doesn't seem to provide a method)
+    my %old_handles = map { $_ => 1 } @{$_DRIVER->get_window_handles()};
     $url = $url ? qq{"$url"} : 'window.location';
     $_DRIVER->execute_script("window.open($url);");
 
-    # assume the last window handle is the one of the newly created window
-    return $_DRIVER->get_window_handles()->[-1];
+    my $new_handle;
+    wait_until(
+        sub {
+            ($new_handle) = grep { !$old_handles{$_} } @{$_DRIVER->get_window_handles()};
+            return defined $new_handle;
+        },
+        'new window handle created',
+        10,
+        0.1
+    );
+    return $new_handle;
 }
 
 sub check_driver_modules () {
@@ -152,9 +161,11 @@ sub wait_for_ajax (%args) {
     my $timeout = OpenQA::Test::TimeLimit::scale_timeout($args{timeout} // 30);
     my $slept = 0;
     my $msg = $args{msg} ? (': ' . $args{msg}) : '';
+    my $start_time = clock_gettime(CLOCK_MONOTONIC);
 
-    while (!$_DRIVER->execute_script('return window.jQuery && jQuery.active === 0 && !window.runningFetchRequests')) {
-        if ($timeout <= 0) {
+    while (!$_DRIVER->execute_script('return (!window.jQuery || jQuery.active === 0) && !window.runningFetchRequests'))
+    {
+        if (clock_gettime(CLOCK_MONOTONIC) - $start_time >= $timeout) {
             #<<< no perltidy
             my $s = 'return `(jQuery: ${window.jQuery && jQuery.active}, fetch: ${window.runningFetchRequests})`'; # uncoverable statement
             #>>> no perltidy
@@ -165,7 +176,6 @@ sub wait_for_ajax (%args) {
 
         $args{with_minion}->perform_jobs_in_foreground if $args{with_minion};
 
-        $timeout -= $check_interval;
         sleep $check_interval;
         $slept = 1;
     }
@@ -309,16 +319,16 @@ sub map_elements ($selector, $mapping) {
 sub wait_until ($check_function, $check_description, $timeout = undef, $check_interval = undef) {
     $timeout = OpenQA::Test::TimeLimit::scale_timeout($timeout // 100);
     $check_interval //= .1;
+    my $start_time = clock_gettime(CLOCK_MONOTONIC);
     while (1) {
         if ($check_function->()) {
             pass($check_description);
             return 1;
         }
-        if ($timeout <= 0) {
+        if (clock_gettime(CLOCK_MONOTONIC) - $start_time >= $timeout) {
             fail($check_description);    # uncoverable statement
             return 0;    # uncoverable statement
         }
-        $timeout -= $check_interval;
         wait_for_ajax(msg => $check_description) or sleep $check_interval;
     }
 }
@@ -340,21 +350,29 @@ sub wait_for_element (%args) {
     my $method = $args{method} // FIND_METHOD;
 
     my $element;
-    wait_until(
-        sub {
-            $trigger_function->() if $trigger_function;
-            my @elements = $_DRIVER->find_elements($selector, $method);
-            if (scalar @elements >= 1
-                && (!defined $expected_is_displayed || $elements[0]->is_displayed == $expected_is_displayed))
-            {
-                $element = $elements[0];
-            }
-            return defined $element;
-        },
-        $args{description} // $args{desc} // ($selector . ' present'),
-        $args{timeout},
-        $args{check_interval},
-    );
+    disable_timeout();
+    try {
+        wait_until(
+            sub {
+                $trigger_function->() if $trigger_function;
+                my @elements = $_DRIVER->find_elements($selector, $method);
+                if (scalar @elements >= 1
+                    && (!defined $expected_is_displayed || $elements[0]->is_displayed == $expected_is_displayed))
+                {
+                    $element = $elements[0];
+                }
+                return defined $element;
+            },
+            $args{description} // $args{desc} // ($selector . ' present'),
+            $args{timeout},
+            $args{check_interval},
+        );
+    }
+    catch ($e) {
+        enable_timeout();    # uncoverable statement
+        die $e;    # uncoverable statement
+    }
+    enable_timeout();
     like $element->get_text, $args{like}, "$selector text" if $element && $args{like};
     return $element;
 }
