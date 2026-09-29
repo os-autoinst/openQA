@@ -237,6 +237,14 @@ subtest 'check cluster jobs restart in /tests page' => sub {
     wait_for_ajax();
     my $first_tab = $driver->get_current_window_handle();
 
+    my $check_restarted_tab = sub ($link, $expected_qr, $desc) {
+        my $tab = open_new_tab($link);
+        $driver->switch_to_window($tab);
+        like wait_for_element(selector => '#info_box .card-header')->get_text(), $expected_qr, $desc;
+        $driver->close();
+        $driver->switch_to_window($first_tab);
+    };
+
     # Check chain jobs restart
     my $chained_parent = $driver->find_element('#job_99937 td.test');
     my $chained_child = $driver->find_element('#job_99938 td.test');
@@ -260,19 +268,8 @@ subtest 'check cluster jobs restart in /tests page' => sub {
     like $parent_restart_link, expected_job_id_regex(1), 'restart link is correct';
     like $child_restart_link, expected_job_id_regex(2), 'restart link is correct';
 
-    # Open tab for each restart link then verify its test name
-    my $second_tab = open_new_tab($parent_restart_link);
-    $driver->switch_to_window($second_tab);
-    like $driver->find_element('#info_box .card-header')->get_text(),
-      qr/kde\@32bit/, 'restarted chained parent is correct';
-    $driver->close();
-    $driver->switch_to_window($first_tab);
-    $second_tab = open_new_tab($child_restart_link);
-    $driver->switch_to_window($second_tab);
-    like $driver->find_element('#info_box .card-header')->get_text(),
-      qr/doc\@64bit/, 'restarted chained child is correct';
-    $driver->close();
-    $driver->switch_to_window($first_tab);
+    $check_restarted_tab->($parent_restart_link, qr/kde\@32bit/, 'restarted chained parent is correct');
+    $check_restarted_tab->($child_restart_link, qr/doc\@64bit/, 'restarted chained child is correct');
     is $driver->get_title(), 'openQA: Test results', 'back to /tests page';
 
     # Check parallel jobs restart in page 2 of finished jobs
@@ -310,25 +307,9 @@ subtest 'check cluster jobs restart in /tests page' => sub {
     like $slave_node_link, expected_job_id_regex(3), 'restart link is correct';
     like $support_server_link, expected_job_id_regex(1), 'restart link is correct';
 
-    # Open tab for each restart link then verify its test name
-    $second_tab = open_new_tab($master_node_link);
-    $driver->switch_to_window($second_tab);
-    like $driver->find_element('#info_box .card-header')->get_text(),
-      qr/master_node\@32bit/, 'restarted parallel child is correct';
-    $driver->close();
-    $driver->switch_to_window($first_tab);
-    $second_tab = open_new_tab($slave_node_link);
-    $driver->switch_to_window($second_tab);
-    like $driver->find_element('#info_box .card-header')->get_text(),
-      qr/slave_node\@32bit/, 'restarted parallel child is correct';
-    $driver->close();
-    $driver->switch_to_window($first_tab);
-    $second_tab = open_new_tab($support_server_link);
-    $driver->switch_to_window($second_tab);
-    like $driver->find_element('#info_box .card-header')->get_text(),
-      qr/support_server\@32bit/, 'restarted parallel parent is correct';
-    $driver->close();
-    $driver->switch_to_window($first_tab);
+    $check_restarted_tab->($master_node_link, qr/master_node\@32bit/, 'restarted parallel child is correct');
+    $check_restarted_tab->($slave_node_link, qr/slave_node\@32bit/, 'restarted parallel child is correct');
+    $check_restarted_tab->($support_server_link, qr/support_server\@32bit/, 'restarted parallel parent is correct');
     is $driver->get_title(), 'openQA: Test results', 'back to /tests page';
 };
 
@@ -357,6 +338,16 @@ subtest 'check cluster jobs restart in test overview page' => sub {
           expected_job_id_regex(++$i), "restarted link for $_ is correct"
           for @cluster_jobs;
     };
+};
+
+subtest 'wait_for_element error handling' => sub {
+    throws_ok {
+        wait_for_element(
+            trigger_function => sub { die "simulated error\n" },
+            selector => '#info_box',
+        );
+    }
+    qr/simulated error/, 'wait_for_element re-throws exception from trigger function';
 };
 
 kill_driver();

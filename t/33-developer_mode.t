@@ -7,7 +7,7 @@
 #  * a qemu instance is still running (maybe leftover from last failed test
 #    execution)
 
-use Test::Most;
+use Test::Most 'bail';
 use Test::Warnings ':report_warnings';
 use OpenQA::Utils;
 
@@ -202,7 +202,8 @@ subtest 'pause at assert_screen timeout' => sub {
     );
 
     # clear console so subsequent wait_for_developer_console_like calls don't see old output
-    $driver->execute_script('document.getElementById("log").value = ""');
+    $driver->execute_script(
+        '$("#log").empty(); document.getElementById("log").value = ""; window.lastWaitForDevelConsoleMsgMatch = 0;');
 
     # try to resume
     enter_developer_console_cmd $driver, '{"cmd":"resume_test_execution"}';
@@ -225,31 +226,36 @@ subtest 'pause at assert_screen timeout' => sub {
 
     # skip timeout (again)
     enter_developer_console_cmd $driver, '{"cmd":"set_assert_screen_timeout","timeout":0}';
-    wait_for_developer_console_like(
+    my $pause_start = wait_for_developer_console_like(
         $driver,
         qr/\"set_assert_screen_timeout\":0/,
         'response to set_assert_screen_timeout'
     );
 
     # wait until paused and the upload has finished
-    # note: The "match=on_prompt timed out" message might be sent before or after "outstanding_images" so we specify 0
-    #       as start offset when checking for "outstanding_images" to consider also log output before
+    # note: The "match=on_prompt timed out" message might be sent before or after "outstanding_images" so we specify
+    #       $pause_start as start offset when checking for "outstanding_images" to consider also log output before
     #       "match=on_prompt timed out" and thus not asserting a specific order of messages.
     wait_for_developer_console_like($driver, qr/match=on_prompt timed out/, 'paused on assert_screen timeout (again)');
     wait_for_developer_console_like(
         $driver,
         qr/\"outstanding_images\":[1-9]*/,
         'progress of image upload received',
-        ONE_MINUTE, 0
+        ONE_MINUTE, $pause_start
     );
-    wait_for_developer_console_like($driver, qr/\"outstanding_images\":0/, 'image upload has finished', ONE_MINUTE, 0);
+    my $upload_done_pos
+      = wait_for_developer_console_like($driver, qr/\"outstanding_images\":0/, 'image upload has finished',
+        ONE_MINUTE, $pause_start);
+    $driver->execute_script(
+"window.lastWaitForDevelConsoleMsgMatch = Math.max(window.lastWaitForDevelConsoleMsgMatch || 0, $upload_done_pos);"
+    );
 
     # open needle editor in 2nd tab
     my $needle_editor_url = '/tests/1/edit';
     $second_tab = open_new_tab($needle_editor_url);
     $driver->switch_to_window($second_tab);
-    $driver->title_is('openQA: Needle Editor');
-    my $content = $driver->find_element_by_id('content')->get_text();
+    my $content = wait_for_element(selector => '#content')->get_text();
+    $driver->title_is('openQA: Needle Editor', 'needle editor page title');
     unlike $content, qr/upload.*still in progress/, 'needle editor not available but should be according to progress';
     # check whether screenshot is present
     my $screenshot_url = $driver->execute_script('return nEditor.bgImage.src;');

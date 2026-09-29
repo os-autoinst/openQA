@@ -15,7 +15,7 @@ our @EXPORT_OK = qw(get_connect_args client_output client_call
 
 use Mojolicious;
 use Mojo::Home;
-use Time::HiRes 'sleep';
+use Time::HiRes qw(sleep clock_gettime CLOCK_MONOTONIC);
 use Time::Seconds;
 use OpenQA::SeleniumTest;
 use OpenQA::Scheduler::Model::Jobs;
@@ -135,30 +135,30 @@ sub wait_for_developer_console_like (
     # poll less frequently when waiting for paused (might take a minute for the first test module to pass)
     my $check_interval = $diag_info eq 'paused' ? 5 : 1;
     my $timeout = OpenQA::Test::TimeLimit::scale_timeout($timeout_s);
+    my $start_time = clock_gettime(CLOCK_MONOTONIC);
 
     my $match_index;
     while (($match_index = _match_regex_returning_index($message_regex, $log, $position_of_last_match)) < 0) {
-        if ($timeout <= 0) {
+        my $elapsed = clock_gettime(CLOCK_MONOTONIC) - $start_time;
+        if ($elapsed >= $timeout) {
             diag("Developer console log contains:\n$log");    # uncoverable statement
             return fail("Wait for $message_regex timed out");    # uncoverable statement
         }
 
-        $timeout -= $check_interval;
         sleep $check_interval;
 
         # print updated log so we see what's going on
         note("waiting for $diag_info, developer console contains:\n$log") if $log ne $previous_log;
-        wait_for_ajax(msg => $message_regex . " remaining wait time ${timeout}s");
+        my $remaining_wait_time = int($timeout - (clock_gettime(CLOCK_MONOTONIC) - $start_time));
+        wait_for_ajax(msg => $message_regex . " remaining wait time ${remaining_wait_time}s");
         javascript_console_has_no_warnings_or_errors($js_erro_check_suffix) or return undef;
         $previous_log = $log;
         $log = $log_textarea->get_text();
     }
-    if (!defined $start_offset) {
-        $position_of_last_match += $match_index;
-        $driver->execute_script("window.lastWaitForDevelConsoleMsgMatch = $position_of_last_match;");
-        pass "found $diag_info at $position_of_last_match";
-    }
-    return $position_of_last_match;
+    my $end_pos = $position_of_last_match + $match_index;
+    $driver->execute_script("window.lastWaitForDevelConsoleMsgMatch = $end_pos;") unless defined $start_offset;
+    pass "found $diag_info at $end_pos";
+    return $end_pos;
 }
 
 sub wait_for_developer_console_available ($driver) {
