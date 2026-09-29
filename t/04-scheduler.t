@@ -640,7 +640,7 @@ subtest 'test job cancellation after max job scheduled time timeout' => sub {
     OpenQA::Scheduler::Model::Jobs->singleton->schedule();
     $job5->discard_changes;
     is $job5->state, CANCELLED, 'Job 5 is cancelled by scheduler';
-    is $job5->result, OBSOLETED, 'Job5 result is OBSOLETED';
+    is $job5->result, TIMEOUT_EXCEEDED, 'Job5 result is TIMEOUT_EXCEEDED';
     is $job5->reason, 'scheduled for more than 7 days';
 };
 
