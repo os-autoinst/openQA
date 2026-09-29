@@ -100,6 +100,20 @@ function checkPreviewVisible(stepPreviewContainer, preview) {
   }
 }
 
+function checkLineBreaks(text, threshold) {
+  for (let lineBreaks = 0, offset = 0; (offset = text.indexOf('\n', offset + 1)) >= 0;)
+    if (++lineBreaks >= threshold) return true;
+  return false;
+}
+
+function showActionButtonsVertically() {
+  const pre = document.querySelector('.preview_container_inner pre');
+  const actions = document.querySelector('.preview_container_inner .step_actions_text');
+  if (pre && actions && !actions.style.width && checkLineBreaks(pre.textContent, 3)) {
+    actions.style.width = '30px';
+  }
+}
+
 function previewSuccess(stepPreviewContainer, data, force) {
   // skip if preview has been dismissed
   if (!stepPreviewContainer.hasClass('current_preview')) {
@@ -124,6 +138,8 @@ function previewSuccess(stepPreviewContainer, data, force) {
   } else {
     pout.css('top', '');
   }
+
+  showActionButtonsVertically();
 
   if (!(pin.find('pre').length || pin.find('audio').length)) {
     const imageSource = pin.find('#step_view').data('image');
