@@ -1,4 +1,4 @@
-<span class="step_actions" style="float: right;">
+<span class="step_actions step_actions_text">
     %= bug_report_actions
 </span>
 <pre><%== rendered_refs_no_shortening $textresult %></pre>
