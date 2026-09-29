@@ -380,7 +380,10 @@ Podman Quadlet configuration to automatically manage the server.
 %prep
 %setup -q
 sed -e 's,/bin/env python,/bin/python,' -i script/openqa-label-all
-local-npm-registry %{_sourcedir} install --omit=dev --legacy-peer-deps --no-package-lock --ignore-scripts
+# Depending on whether we run in OBS or from a gitea repo, there is a
+# node_modules directory or not
+TARGET="%{_sourcedir}"; [ -d "$TARGET/node_modules" ] && TARGET="$TARGET/node_modules"
+local-npm-registry "$TARGET" install --omit=dev --legacy-peer-deps --no-package-lock --ignore-scripts
 
 %build
 %make_build
