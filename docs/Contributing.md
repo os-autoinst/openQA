@@ -443,6 +443,21 @@ that specific database (ignoring the configuration from `database.ini`). Be awar
 Also find more details in
 [Run tests without Container](Contributing.md#run-tests-without-container).
 
+#### Local web UI with mock data
+
+To start a local web UI pre-loaded with mock fixtures and mock assets
+without needing to manually set up and populate a database, run:
+
+```sh
+make run-webui-mock-env
+```
+
+This starts the web UI daemon listening at <http://localhost:9526>.
+
+You can customize the fixtures loaded by setting `FIXTURES_GLOB` (e.g.
+`FIXTURES_GLOB='01-jobs.pl 03-users.pl' make run-webui-mock-env`) or preserve
+an existing schema between runs with `RESET_SCHEMA=0`.
+
 #### Further tips
 
 - It is also useful to start openQA with morbo which allows applying changes
