@@ -237,7 +237,7 @@ subtest 'pause at assert_screen timeout' => sub {
     #       $pause_start as start offset when checking for "outstanding_images" to consider also log output before
     #       "match=on_prompt timed out" and thus not asserting a specific order of messages.
     wait_for_developer_console_like($driver, qr/match=on_prompt timed out/, 'paused on assert_screen timeout (again)');
-    wait_for_developer_console_like(
+    my $upload_started_pos = wait_for_developer_console_like(
         $driver,
         qr/\"outstanding_images\":[1-9]*/,
         'progress of image upload received',
@@ -245,15 +245,24 @@ subtest 'pause at assert_screen timeout' => sub {
     );
     my $upload_done_pos
       = wait_for_developer_console_like($driver, qr/\"outstanding_images\":0/, 'image upload has finished',
-        ONE_MINUTE, $pause_start);
+        ONE_MINUTE, $upload_started_pos);
     $driver->execute_script(
 "window.lastWaitForDevelConsoleMsgMatch = Math.max(window.lastWaitForDevelConsoleMsgMatch || 0, $upload_done_pos);"
     );
 
     # open needle editor in 2nd tab
     my $needle_editor_url = '/tests/1/edit';
-    $second_tab = open_new_tab($needle_editor_url);
+    $second_tab = open_new_tab('about:blank');
     $driver->switch_to_window($second_tab);
+    wait_until(
+        sub {
+            $driver->get($needle_editor_url);
+            return $driver->get_title() eq 'openQA: Needle Editor';
+        },
+        'needle editor loaded',
+        30,
+        1
+    );
     my $content = wait_for_element(selector => '#content')->get_text();
     $driver->title_is('openQA: Needle Editor', 'needle editor page title');
     unlike $content, qr/upload.*still in progress/, 'needle editor not available but should be according to progress';

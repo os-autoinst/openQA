@@ -116,10 +116,11 @@ sub start_driver ($mojoport) {
 # opens a new tab/window for the specified URL and returns its handle
 # remarks:
 #  * does not switch to the new tab, use $driver->switch_to_window() for that
+#  * to reliably load a page, switch to the new tab and use $driver->get($url)
 #  * see 33-developer_mode.t for an example
-sub open_new_tab ($url) {
+sub open_new_tab ($url = 'about:blank') {
     my %old_handles = map { $_ => 1 } @{$_DRIVER->get_window_handles()};
-    $url = $url ? qq{"$url"} : 'window.location';
+    $url = $url ? qq{"$url"} : '"about:blank"';
     $_DRIVER->execute_script("window.open($url);");
 
     my $new_handle;
