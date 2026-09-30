@@ -34,6 +34,7 @@ subtest 'MIME types' => sub {
     is $t->app->types->type('yaml'), 'text/yaml;charset=UTF-8', 'right type';
     is $t->app->types->type('bz2'), 'application/x-bzip2', 'right type';
     is $t->app->types->type('xz'), 'application/x-xz', 'right type';
+    is $t->app->types->type('rss'), 'application/rss+xml;charset=UTF-8', 'right type';
 };
 
 # regular job groups shown
@@ -58,6 +59,10 @@ subtest 'Validation errors' => sub {
     $t->get_ok('/group_overview/1002?comments_limit=a')->status_is(400)
       ->content_like(qr/Erroneous parameters.*comments_limit/);
     $t->get_ok('/group_overview/1002?group=$*')->status_is(400)
+      ->content_like(qr/group parameter is invalid.*matches null string many times/i);
+    $t->get_ok('/group_overview/1002.rss?limit_builds=a')->status_is(400)->content_type_like(qr{application/rss\+xml})
+      ->content_like(qr/Erroneous parameters.*limit_builds/);
+    $t->get_ok('/group_overview/1002.rss?group=$*')->status_is(400)
       ->content_like(qr/group parameter is invalid.*matches null string many times/i);
 
     my $id = $test_parent->id;
@@ -693,6 +698,66 @@ subtest 'Parent group overview JSON' => sub {
       ->json_is('/limit_exceeded' => 2);
 };
 
+subtest 'RSS feed for job groups' => sub {
+    $t->get_ok('/group_overview/999999.rss')->status_is(404);
+
+    $t->get_ok('/group_overview/1001.rss')->status_is(200)->content_type_is('application/rss+xml;charset=UTF-8');
+    my $dom = Mojo::DOM->new->xml(1)->parse($t->tx->res->body);
+    is $dom->at('rss')->attr('version'), '2.0', 'RSS 2.0 root';
+    like $dom->at('channel > title')->text, qr/opensuse/, 'channel title has group name';
+    like $dom->at('channel > link')->text, qr{/group_overview/1001$}, 'channel link is group overview URL';
+    like $dom->at('channel > atom\:link')->attr('href'), qr{^https?://.+/group_overview/1001\.rss$}, 'self atom link';
+    like $dom->at('channel > description')->text, qr/opensuse/, 'channel description';
+
+    my @items = $dom->find('channel > item')->each;
+    ok scalar @items > 0, 'items returned';
+    is $dom->at('channel > lastBuildDate')->text, $items[0]->at('pubDate')->text, 'lastBuildDate matches latest item';
+
+    for my $item (@items) {
+        ok $item->at('title')->text, 'item has title';
+        like $item->at('link')->text, qr{/tests/overview\?}, 'item has tests overview link';
+        like $item->at('link')->text, qr{groupid=1001}, 'item link has groupid';
+        like $item->at('guid')->text, qr{^1001-}, 'item has guid';
+        is $item->at('guid')->attr('isPermaLink'), 'false', 'guid is not permalink';
+        like $item->at('pubDate')->text, qr/^\w{3}, \d{2} \w{3} \d{4} \d{2}:\d{2}:\d{2} \+0000$/,
+          'valid RFC-822 pubDate';
+    }
+
+    $t->get_ok('/group_overview/1001.rss?limit_builds=1')->status_is(200);
+    my $dom_limit1 = Mojo::DOM->new->xml(1)->parse($t->tx->res->body);
+    is scalar $dom_limit1->find('channel > item')->each, 1, 'only latest build returned with limit_builds=1';
+
+    my $empty_group = $job_groups->create({name => 'empty_feed_group'});
+    $t->get_ok('/group_overview/' . $empty_group->id . '.rss')->status_is(200);
+    my $dom_empty = Mojo::DOM->new->xml(1)->parse($t->tx->res->body);
+    is scalar $dom_empty->find('channel > item')->each, 0, 'empty group has 0 items';
+    ok !$dom_empty->at('channel > lastBuildDate'), 'empty group has no lastBuildDate';
+    $empty_group->delete;
+};
+
+subtest 'RSS feed for parent groups' => sub {
+    $t->get_ok('/parent_group_overview/1.rss')->status_is(200)->content_type_is('application/rss+xml;charset=UTF-8');
+    my $dom = Mojo::DOM->new->xml(1)->parse($t->tx->res->body);
+    is $dom->at('rss')->attr('version'), '2.0', 'RSS 2.0 root';
+    like $dom->at('channel > link')->text, qr{/parent_group_overview/1$}, 'channel link is parent group overview URL';
+    like $dom->at('channel > atom\:link')->attr('href'), qr{^https?://.+/parent_group_overview/1\.rss$},
+      'self atom link';
+    my @items = $dom->find('channel > item')->each;
+    if (@items) {
+        like $items[0]->at('link')->text, qr{groupid=}, 'parent group item link has child group query';
+    }
+};
+
+subtest 'RSS feed discoverability' => sub {
+    $t->get_ok('/group_overview/1001')->status_is(200)
+      ->element_exists('link[rel="alternate"][type="application/rss+xml"][href$="/group_overview/1001.rss"]')
+      ->element_exists('a#rss-feed-link[href$="/group_overview/1001.rss"]');
+
+    $t->get_ok('/parent_group_overview/1')->status_is(200)
+      ->element_exists('link[rel="alternate"][type="application/rss+xml"][href$="/parent_group_overview/1.rss"]')
+      ->element_exists('a#rss-feed-link[href$="/parent_group_overview/1.rss"]');
+};
+
 subtest 'dashboard_build_results coverage' => sub {
     my $build_results_mock = Test::MockModule->new('OpenQA::BuildResults');
     $build_results_mock->redefine(
@@ -867,6 +932,8 @@ subtest 'always_show_version toggle overview display' => sub {
     $t->get_ok('/group_overview/1001?time_limit_days=99999')->status_is(200)
       ->content_like(qr{13\.1-BuildCOVERAGE_BUILD});
     $t->get_ok('/dashboard_build_results?time_limit_days=99999')->status_is(200)
+      ->content_like(qr{13\.1-BuildCOVERAGE_BUILD});
+    $t->get_ok('/group_overview/1001.rss?time_limit_days=99999')->status_is(200)
       ->content_like(qr{13\.1-BuildCOVERAGE_BUILD});
 
     $group->update({always_show_version => undef});

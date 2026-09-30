@@ -3,6 +3,11 @@
 
 %= include 'layouts/info'
 
+% content_for 'head' => begin
+    <link rel="alternate" type="application/rss+xml" title="<%= $group->{full_name} %> builds"
+          href="<%= url_for('group_overview', groupid => $group->{id}, format => 'rss') %>">
+% end
+
 % content_for 'ready_function' => begin
     updateTimeago();
     toggleFullscreenMode(<%= $fullscreen %>);
@@ -19,6 +24,12 @@
         </button>
     </form>
 % }
+<div class="corner-buttons">
+    <a id="rss-feed-link" class="btn btn-light" title="Subscribe to the RSS feed of this job group"
+       href="<%= url_for('group_overview', groupid => $group->{id}, format => 'rss') %>">
+        <i class="fa-solid fa-rss"></i> RSS
+    </a>
+</div>
 <h2>
     Last Builds for
     % if ($group->{parent_id}) {
