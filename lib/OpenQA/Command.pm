@@ -134,18 +134,19 @@ sub retry_tx ($self, $client, $tx, $retries = undef, $delay = undef) {
     for (;; --$retries) {
         my $new_tx = $client->start(Mojo::Transaction::HTTP->new(req => $tx->req));
         my $res_code = $new_tx->res->code // 0;
-        return $self->handle_result($new_tx, $tx) if $res_code !~ /^(?:50[23]|0)$/ || $retries <= 0;
+        return $self->handle_result($new_tx, $tx) if $res_code !~ /^(?:408|429|50[0234]|0)$/ || $retries <= 0;
         my $waited = time - $start;
         my $error = $new_tx->error;
         my $error_msg = $error ? " ($error->{message})" : '';
         my $error_info = $res_code == 0 ? "connection error$error_msg" : "error $res_code$error_msg";
+        my $sleep_duration = $client->evaluate_retry_after($new_tx) // $delay;
         my $url = $new_tx->req->url;
         my $port = $url->port // ($url->scheme && $url->scheme eq 'https' ? 443 : 80);
         my $target = ($url->host || 'localhost') . ":$port";
         print STDERR encode('UTF-8',
-"Request to $target failed, hit $error_info, retrying up to $retries more times after waiting … (delay: $delay; waited ${waited}s)\n"
+"Request to $target failed, hit $error_info, retrying up to $retries more times after waiting … (delay: $sleep_duration; waited ${waited}s)\n"
         );
-        sleep $delay;
+        sleep $sleep_duration;
         $delay *= $factor;
     }
 }
