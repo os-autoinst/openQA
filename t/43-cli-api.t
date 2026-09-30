@@ -14,6 +14,7 @@ use Mojo::JSON qw(decode_json);
 use Mojo::File qw(tempfile);
 use Mojo::Util qw(encode);
 use Test::MockModule;
+use Test::Mock::Time;
 use OpenQA::CLI;
 use OpenQA::CLI::api;
 use OpenQA::Test::Case;
@@ -52,6 +53,8 @@ $pub->any(
     '/test/pub/error' => [format => ['json']] => {format => 'html'} => sub ($c) {
         my $status_for_error_count = $c->param('status' . ++$error_count);
         my $status = $status_for_error_count // $c->param('status') // 500;
+        my $retry_after = $c->param('retry_after');
+        $c->res->headers->header('Retry-After' => $retry_after) if defined $retry_after;
         note "returning status $status response (error count is $error_count)";
         $c->respond_to(
             json => {status => $status, json => {error => $status}},
@@ -464,6 +467,12 @@ EOF
     like $stdout, qr/Error: 200/s, '(stdout) request can succeed after failing before';
     like $stderr, qr/failed, hit error 502.*retrying/s, '(stderr) request can succeed after failing before';
     is $result[0], 0, 'exited with zero return code after success on 2nd attempt';
+
+    $error_count = 0;
+    @params = (@host, 'test/pub/error', 'status=429', 'retry_after=0', 'status2=200');
+    ($stdout, $stderr, @result) = capture sub { $api->run('--retries', '1', @params) };
+    like $stderr, qr/failed, hit error 429.*retrying.*delay: 0/s, 'requests on 429 are retried respecting Retry-After';
+    is $result[0], 0, 'exited with zero return code after 429 success on 2nd attempt';
 
     @params = ('--host', 'http://localhost:123456', '--retries', 1, 'api', 'test');
     ($stdout, $stderr, @result) = capture sub { $api->run(@params) };
