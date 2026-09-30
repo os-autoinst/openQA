@@ -630,6 +630,23 @@ Example screenshot:
 
 Related issue: <a href="https://progress.opensuse.org/issues/11052" id="11052">https://progress.opensuse.org/issues/11052</a>
 
+### RSS news feed for job groups
+
+An RSS feed is available for each job group and parent group by appending `.rss`
+to the overview URL:
+
+    http://openqa/group_overview/1.rss
+    http://openqa/parent_group_overview/1.rss
+
+The feed provides build updates (build label, timestamp, and a link to the test
+overview for that build). Query parameters like `limit_builds` can be passed to
+control how many builds are returned in the feed (defaulting to 10):
+
+    http://openqa/group_overview/1.rss?limit_builds=1
+
+Group overview pages also provide an "RSS" button and autodiscovery tags for
+browsers and feed readers.
+
 ### Test result badges <a href="https://github.com/os-autoinst/openQA/pull/5022" id="5022">gh</a>
 
 For build results or individual job results including the latest job result
