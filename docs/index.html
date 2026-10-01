@@ -8470,7 +8470,18 @@ from <code>database.ini</code>). Be aware that this may cause unwanted
 changes in the <code>t/data</code> directory.</p>
 <p>Also find more details in <a href="#run-tests-without-container">Run
 tests without Container</a>.</p>
-<h4 data-number="9.7.5.1" id="further-tips"><span class="header-section-number">9.7.5.1</span> Further tips</h4>
+<h4 data-number="9.7.5.1" id="local-web-ui-with-mock-data"><span class="header-section-number">9.7.5.1</span> Local web UI with mock
+data</h4>
+<p>To start a local web UI pre-loaded with mock fixtures and mock assets
+without needing to manually set up and populate a database, run:</p>
+<div class="sourceCode" id="cb302"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb302-1"><a href="#cb302-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> run-webui-mock-env</span></code></pre></div>
+<p>This starts the web UI daemon listening at <a href="http://localhost:9526">http://localhost:9526</a>.</p>
+<p>You can customize the fixtures loaded by setting
+<code>FIXTURES_GLOB</code> (e.g.
+<code>FIXTURES_GLOB=&#39;01-jobs.pl 03-users.pl&#39; make run-webui-mock-env</code>)
+or preserve an existing schema between runs with
+<code>RESET_SCHEMA=0</code>.</p>
+<h4 data-number="9.7.5.2" id="further-tips"><span class="header-section-number">9.7.5.2</span> Further tips</h4>
 <ul>
 <li>It is also useful to start openQA with morbo which allows applying
 changes without restarting the server:
@@ -8524,151 +8535,151 @@ network, home directory, permissions, and graphical environment.</p>
 <p>Create a file that you can <code>source</code> whenever you want to
 work in this environment:</p>
 <p>File: <code>~/localopenqa.leap.sh</code>:</p>
-<div class="sourceCode" id="cb302"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb302-1"><a href="#cb302-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!/bin/bash</span></span>
-<span id="cb302-2"><a href="#cb302-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb302-3"><a href="#cb302-3" aria-hidden="true" tabindex="-1"></a><span class="co"># The directory where openQA operates in and creates everything in:</span></span>
-<span id="cb302-4"><a href="#cb302-4" aria-hidden="true" tabindex="-1"></a><span class="co"># * git repos</span></span>
-<span id="cb302-5"><a href="#cb302-5" aria-hidden="true" tabindex="-1"></a><span class="co"># * openQA assets, pool directory, testresults</span></span>
-<span id="cb302-6"><a href="#cb302-6" aria-hidden="true" tabindex="-1"></a><span class="co"># * configuration</span></span>
-<span id="cb302-7"><a href="#cb302-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb302-8"><a href="#cb302-8" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">OPENQA_BASEDIR</span><span class="op">=</span><span class="va">$HOME</span>/openqadev.leap</span>
-<span id="cb302-9"><a href="#cb302-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb302-10"><a href="#cb302-10" aria-hidden="true" tabindex="-1"></a><span class="co"># The rest of the variables can likely stay like this</span></span>
-<span id="cb302-11"><a href="#cb302-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb302-12"><a href="#cb302-12" aria-hidden="true" tabindex="-1"></a><span class="co"># If you want to import database dumps from elsewhere</span></span>
-<span id="cb302-13"><a href="#cb302-13" aria-hidden="true" tabindex="-1"></a><span class="co">#export SQL_DUMP_DIR=$HOME/sqldumps</span></span>
-<span id="cb302-14"><a href="#cb302-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb302-15"><a href="#cb302-15" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">OPENQA_CONFIG</span><span class="op">=</span><span class="va">$OPENQA_BASEDIR</span>/config</span>
-<span id="cb302-16"><a href="#cb302-16" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">OPENQA_REPOS</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$OPENQA_BASEDIR</span><span class="st">/git&quot;</span></span>
-<span id="cb302-17"><a href="#cb302-17" aria-hidden="true" tabindex="-1"></a><span class="va">PATH</span><span class="op">=</span><span class="va">$OPENQA_REPOS</span>/openQA/script:<span class="va">$PATH</span></span>
-<span id="cb302-18"><a href="#cb302-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb302-19"><a href="#cb302-19" aria-hidden="true" tabindex="-1"></a><span class="co"># ----------- CPAN ------------</span></span>
-<span id="cb302-20"><a href="#cb302-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Whenever necessary, you can install additional modules from CPAN like:</span></span>
-<span id="cb302-21"><a href="#cb302-21" aria-hidden="true" tabindex="-1"></a><span class="co"># cpanm -l $OPENQA_BASEDIR/perl5 Some::Module@1.23</span></span>
-<span id="cb302-22"><a href="#cb302-22" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">PERL5LIB</span><span class="op">=</span><span class="va">$OPENQA_BASEDIR</span>/perl5/lib/perl5</span>
-<span id="cb302-23"><a href="#cb302-23" aria-hidden="true" tabindex="-1"></a><span class="va">PATH</span><span class="op">=</span><span class="va">$OPENQA_BASEDIR</span>/perl5/bin:<span class="va">$PATH</span></span>
-<span id="cb302-24"><a href="#cb302-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb302-25"><a href="#cb302-25" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">OPENQA_KEY</span><span class="op">=</span>1234567890ABCDEF</span>
-<span id="cb302-26"><a href="#cb302-26" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">OPENQA_SECRET</span><span class="op">=</span>1234567890ABCDEF</span></code></pre></div>
+<div class="sourceCode" id="cb303"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb303-1"><a href="#cb303-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!/bin/bash</span></span>
+<span id="cb303-2"><a href="#cb303-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb303-3"><a href="#cb303-3" aria-hidden="true" tabindex="-1"></a><span class="co"># The directory where openQA operates in and creates everything in:</span></span>
+<span id="cb303-4"><a href="#cb303-4" aria-hidden="true" tabindex="-1"></a><span class="co"># * git repos</span></span>
+<span id="cb303-5"><a href="#cb303-5" aria-hidden="true" tabindex="-1"></a><span class="co"># * openQA assets, pool directory, testresults</span></span>
+<span id="cb303-6"><a href="#cb303-6" aria-hidden="true" tabindex="-1"></a><span class="co"># * configuration</span></span>
+<span id="cb303-7"><a href="#cb303-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb303-8"><a href="#cb303-8" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">OPENQA_BASEDIR</span><span class="op">=</span><span class="va">$HOME</span>/openqadev.leap</span>
+<span id="cb303-9"><a href="#cb303-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb303-10"><a href="#cb303-10" aria-hidden="true" tabindex="-1"></a><span class="co"># The rest of the variables can likely stay like this</span></span>
+<span id="cb303-11"><a href="#cb303-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb303-12"><a href="#cb303-12" aria-hidden="true" tabindex="-1"></a><span class="co"># If you want to import database dumps from elsewhere</span></span>
+<span id="cb303-13"><a href="#cb303-13" aria-hidden="true" tabindex="-1"></a><span class="co">#export SQL_DUMP_DIR=$HOME/sqldumps</span></span>
+<span id="cb303-14"><a href="#cb303-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb303-15"><a href="#cb303-15" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">OPENQA_CONFIG</span><span class="op">=</span><span class="va">$OPENQA_BASEDIR</span>/config</span>
+<span id="cb303-16"><a href="#cb303-16" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">OPENQA_REPOS</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$OPENQA_BASEDIR</span><span class="st">/git&quot;</span></span>
+<span id="cb303-17"><a href="#cb303-17" aria-hidden="true" tabindex="-1"></a><span class="va">PATH</span><span class="op">=</span><span class="va">$OPENQA_REPOS</span>/openQA/script:<span class="va">$PATH</span></span>
+<span id="cb303-18"><a href="#cb303-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb303-19"><a href="#cb303-19" aria-hidden="true" tabindex="-1"></a><span class="co"># ----------- CPAN ------------</span></span>
+<span id="cb303-20"><a href="#cb303-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Whenever necessary, you can install additional modules from CPAN like:</span></span>
+<span id="cb303-21"><a href="#cb303-21" aria-hidden="true" tabindex="-1"></a><span class="co"># cpanm -l $OPENQA_BASEDIR/perl5 Some::Module@1.23</span></span>
+<span id="cb303-22"><a href="#cb303-22" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">PERL5LIB</span><span class="op">=</span><span class="va">$OPENQA_BASEDIR</span>/perl5/lib/perl5</span>
+<span id="cb303-23"><a href="#cb303-23" aria-hidden="true" tabindex="-1"></a><span class="va">PATH</span><span class="op">=</span><span class="va">$OPENQA_BASEDIR</span>/perl5/bin:<span class="va">$PATH</span></span>
+<span id="cb303-24"><a href="#cb303-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb303-25"><a href="#cb303-25" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">OPENQA_KEY</span><span class="op">=</span>1234567890ABCDEF</span>
+<span id="cb303-26"><a href="#cb303-26" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">OPENQA_SECRET</span><span class="op">=</span>1234567890ABCDEF</span></code></pre></div>
 <h4 data-number="9.7.6.4" id="postgres-container"><span class="header-section-number">9.7.6.4</span> Postgres Container</h4>
 <p>To be able to reuse the database later when stopping the container,
 we create a named volume. We are using a Debian postgres container here,
 but it doesn&#39;t matter what you use.</p>
-<div class="sourceCode" id="cb303"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb303-1"><a href="#cb303-1" aria-hidden="true" tabindex="-1"></a><span class="co">### host </span><span class="al">###</span></span>
-<span id="cb303-2"><a href="#cb303-2" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> volume create mypostgres</span>
-<span id="cb303-3"><a href="#cb303-3" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> run <span class="at">-it</span> <span class="at">--rm</span> <span class="at">--name</span> postgres-openqa <span class="dt">\</span></span>
-<span id="cb303-4"><a href="#cb303-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">-v</span> mypostgres:/var/lib/postgresql <span class="dt">\</span></span>
-<span id="cb303-5"><a href="#cb303-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">-p</span> 5432:5432 <span class="dt">\</span></span>
-<span id="cb303-6"><a href="#cb303-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">-e</span> POSTGRES_PASSWORD=<span class="st">&quot;x&quot;</span> <span class="dt">\</span></span>
-<span id="cb303-7"><a href="#cb303-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">-d</span> <span class="dt">\</span></span>
-<span id="cb303-8"><a href="#cb303-8" aria-hidden="true" tabindex="-1"></a>    docker.io/library/postgres</span>
-<span id="cb303-9"><a href="#cb303-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb303-10"><a href="#cb303-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Optionally add this to mount a directory for sql dumps to import</span></span>
-<span id="cb303-11"><a href="#cb303-11" aria-hidden="true" tabindex="-1"></a><span class="co">#    -v &quot;$SQL_DUMP_DIR:/sqldumps&quot; \</span></span></code></pre></div>
+<div class="sourceCode" id="cb304"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb304-1"><a href="#cb304-1" aria-hidden="true" tabindex="-1"></a><span class="co">### host </span><span class="al">###</span></span>
+<span id="cb304-2"><a href="#cb304-2" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> volume create mypostgres</span>
+<span id="cb304-3"><a href="#cb304-3" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> run <span class="at">-it</span> <span class="at">--rm</span> <span class="at">--name</span> postgres-openqa <span class="dt">\</span></span>
+<span id="cb304-4"><a href="#cb304-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">-v</span> mypostgres:/var/lib/postgresql <span class="dt">\</span></span>
+<span id="cb304-5"><a href="#cb304-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">-p</span> 5432:5432 <span class="dt">\</span></span>
+<span id="cb304-6"><a href="#cb304-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">-e</span> POSTGRES_PASSWORD=<span class="st">&quot;x&quot;</span> <span class="dt">\</span></span>
+<span id="cb304-7"><a href="#cb304-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">-d</span> <span class="dt">\</span></span>
+<span id="cb304-8"><a href="#cb304-8" aria-hidden="true" tabindex="-1"></a>    docker.io/library/postgres</span>
+<span id="cb304-9"><a href="#cb304-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb304-10"><a href="#cb304-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Optionally add this to mount a directory for sql dumps to import</span></span>
+<span id="cb304-11"><a href="#cb304-11" aria-hidden="true" tabindex="-1"></a><span class="co">#    -v &quot;$SQL_DUMP_DIR:/sqldumps&quot; \</span></span></code></pre></div>
 <p>For the next step you need to execute commands in the container:</p>
-<div class="sourceCode" id="cb304"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb304-1"><a href="#cb304-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create the role and database</span></span>
-<span id="cb304-2"><a href="#cb304-2" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> exec <span class="at">-it</span> postgres-openqa su <span class="at">-</span> postgres</span>
-<span id="cb304-3"><a href="#cb304-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb304-4"><a href="#cb304-4" aria-hidden="true" tabindex="-1"></a><span class="co">### postgres container </span><span class="al">###</span></span>
-<span id="cb304-5"><a href="#cb304-5" aria-hidden="true" tabindex="-1"></a><span class="ex">createuser</span> <span class="at">--no-createdb</span> <span class="at">--pwprompt</span> geekotest</span>
-<span id="cb304-6"><a href="#cb304-6" aria-hidden="true" tabindex="-1"></a><span class="co"># enter password (&#39;x&#39; in this example)</span></span>
-<span id="cb304-7"><a href="#cb304-7" aria-hidden="true" tabindex="-1"></a><span class="ex">createdb</span> <span class="at">-O</span> geekotest openqa-local</span></code></pre></div>
+<div class="sourceCode" id="cb305"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb305-1"><a href="#cb305-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create the role and database</span></span>
+<span id="cb305-2"><a href="#cb305-2" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> exec <span class="at">-it</span> postgres-openqa su <span class="at">-</span> postgres</span>
+<span id="cb305-3"><a href="#cb305-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb305-4"><a href="#cb305-4" aria-hidden="true" tabindex="-1"></a><span class="co">### postgres container </span><span class="al">###</span></span>
+<span id="cb305-5"><a href="#cb305-5" aria-hidden="true" tabindex="-1"></a><span class="ex">createuser</span> <span class="at">--no-createdb</span> <span class="at">--pwprompt</span> geekotest</span>
+<span id="cb305-6"><a href="#cb305-6" aria-hidden="true" tabindex="-1"></a><span class="co"># enter password (&#39;x&#39; in this example)</span></span>
+<span id="cb305-7"><a href="#cb305-7" aria-hidden="true" tabindex="-1"></a><span class="ex">createdb</span> <span class="at">-O</span> geekotest openqa-local</span></code></pre></div>
 <h4 data-number="9.7.6.5" id="distrobox"><span class="header-section-number">9.7.6.5</span> Distrobox</h4>
 <p>You can use a Leap container and install the requirements, but you
 can also build your own container with the requirements already
 installed.</p>
-<div class="sourceCode" id="cb305"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb305-1"><a href="#cb305-1" aria-hidden="true" tabindex="-1"></a><span class="co">### host </span><span class="al">###</span></span>
-<span id="cb305-2"><a href="#cb305-2" aria-hidden="true" tabindex="-1"></a><span class="ex">distrobox</span> create <span class="at">-i</span> registry.opensuse.org/opensuse/leap:16.0 <span class="at">-n</span> box-openqadev-leap</span>
-<span id="cb305-3"><a href="#cb305-3" aria-hidden="true" tabindex="-1"></a><span class="ex">distrobox</span> enter box-openqadev-leap</span>
-<span id="cb305-4"><a href="#cb305-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Tumbleweed:</span></span>
-<span id="cb305-5"><a href="#cb305-5" aria-hidden="true" tabindex="-1"></a><span class="co">#distrobox create -i registry.opensuse.org/opensuse/tumbleweed:latest -n box-openqadev-tw</span></span>
-<span id="cb305-6"><a href="#cb305-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb305-7"><a href="#cb305-7" aria-hidden="true" tabindex="-1"></a><span class="co">### distrobox container </span><span class="al">###</span></span>
-<span id="cb305-8"><a href="#cb305-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb305-9"><a href="#cb305-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Leap 16.0</span></span>
-<span id="cb305-10"><a href="#cb305-10" aria-hidden="true" tabindex="-1"></a><span class="ex">zypper</span> addrepo <span class="at">-G</span> <span class="at">-p</span> 95 https://download.opensuse.org/repositories/devel:/openQA/16.0 devel-openqa <span class="dt">\</span></span>
-<span id="cb305-11"><a href="#cb305-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">&amp;&amp;</span> <span class="ex">zypper</span> addrepo <span class="at">-G</span> <span class="at">-p</span> 95 https://download.opensuse.org/repositories/devel:/openQA:/Leap:/16.0/16.0/ devel-openqa-leap</span>
-<span id="cb305-12"><a href="#cb305-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb305-13"><a href="#cb305-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Tumbleweed</span></span>
-<span id="cb305-14"><a href="#cb305-14" aria-hidden="true" tabindex="-1"></a><span class="co">#zypper addrepo -G -p 95 https://download.opensuse.org/repositories/devel:/openQA/openSUSE_Tumbleweed devel-openqa</span></span>
-<span id="cb305-15"><a href="#cb305-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb305-16"><a href="#cb305-16" aria-hidden="true" tabindex="-1"></a><span class="ex">zypper</span> <span class="at">-n</span> ref <span class="kw">&amp;&amp;</span> <span class="ex">zypper</span> <span class="at">-n</span> install <span class="dt">\</span></span>
-<span id="cb305-17"><a href="#cb305-17" aria-hidden="true" tabindex="-1"></a>        os-autoinst-devel openQA-devel <span class="dt">\</span></span>
-<span id="cb305-18"><a href="#cb305-18" aria-hidden="true" tabindex="-1"></a>        os-autoinst-scripts-deps <span class="dt">\</span></span>
-<span id="cb305-19"><a href="#cb305-19" aria-hidden="true" tabindex="-1"></a>        os-autoinst-scripts-deps-devel <span class="dt">\</span></span>
-<span id="cb305-20"><a href="#cb305-20" aria-hidden="true" tabindex="-1"></a>        crudini</span>
-<span id="cb305-21"><a href="#cb305-21" aria-hidden="true" tabindex="-1"></a><span class="co"># plus your favourite dev tools, e.g. tmux</span></span></code></pre></div>
+<div class="sourceCode" id="cb306"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb306-1"><a href="#cb306-1" aria-hidden="true" tabindex="-1"></a><span class="co">### host </span><span class="al">###</span></span>
+<span id="cb306-2"><a href="#cb306-2" aria-hidden="true" tabindex="-1"></a><span class="ex">distrobox</span> create <span class="at">-i</span> registry.opensuse.org/opensuse/leap:16.0 <span class="at">-n</span> box-openqadev-leap</span>
+<span id="cb306-3"><a href="#cb306-3" aria-hidden="true" tabindex="-1"></a><span class="ex">distrobox</span> enter box-openqadev-leap</span>
+<span id="cb306-4"><a href="#cb306-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Tumbleweed:</span></span>
+<span id="cb306-5"><a href="#cb306-5" aria-hidden="true" tabindex="-1"></a><span class="co">#distrobox create -i registry.opensuse.org/opensuse/tumbleweed:latest -n box-openqadev-tw</span></span>
+<span id="cb306-6"><a href="#cb306-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb306-7"><a href="#cb306-7" aria-hidden="true" tabindex="-1"></a><span class="co">### distrobox container </span><span class="al">###</span></span>
+<span id="cb306-8"><a href="#cb306-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb306-9"><a href="#cb306-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Leap 16.0</span></span>
+<span id="cb306-10"><a href="#cb306-10" aria-hidden="true" tabindex="-1"></a><span class="ex">zypper</span> addrepo <span class="at">-G</span> <span class="at">-p</span> 95 https://download.opensuse.org/repositories/devel:/openQA/16.0 devel-openqa <span class="dt">\</span></span>
+<span id="cb306-11"><a href="#cb306-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">&amp;&amp;</span> <span class="ex">zypper</span> addrepo <span class="at">-G</span> <span class="at">-p</span> 95 https://download.opensuse.org/repositories/devel:/openQA:/Leap:/16.0/16.0/ devel-openqa-leap</span>
+<span id="cb306-12"><a href="#cb306-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb306-13"><a href="#cb306-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Tumbleweed</span></span>
+<span id="cb306-14"><a href="#cb306-14" aria-hidden="true" tabindex="-1"></a><span class="co">#zypper addrepo -G -p 95 https://download.opensuse.org/repositories/devel:/openQA/openSUSE_Tumbleweed devel-openqa</span></span>
+<span id="cb306-15"><a href="#cb306-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb306-16"><a href="#cb306-16" aria-hidden="true" tabindex="-1"></a><span class="ex">zypper</span> <span class="at">-n</span> ref <span class="kw">&amp;&amp;</span> <span class="ex">zypper</span> <span class="at">-n</span> install <span class="dt">\</span></span>
+<span id="cb306-17"><a href="#cb306-17" aria-hidden="true" tabindex="-1"></a>        os-autoinst-devel openQA-devel <span class="dt">\</span></span>
+<span id="cb306-18"><a href="#cb306-18" aria-hidden="true" tabindex="-1"></a>        os-autoinst-scripts-deps <span class="dt">\</span></span>
+<span id="cb306-19"><a href="#cb306-19" aria-hidden="true" tabindex="-1"></a>        os-autoinst-scripts-deps-devel <span class="dt">\</span></span>
+<span id="cb306-20"><a href="#cb306-20" aria-hidden="true" tabindex="-1"></a>        crudini</span>
+<span id="cb306-21"><a href="#cb306-21" aria-hidden="true" tabindex="-1"></a><span class="co"># plus your favourite dev tools, e.g. tmux</span></span></code></pre></div>
 <p>Note: <a href="https://github.com/pixelb/crudini"><code>crudini</code></a> is a
 tool for manipulating values in ini files.</p>
 <h4 data-number="9.7.6.6" id="git"><span class="header-section-number">9.7.6.6</span> Git</h4>
-<div class="sourceCode" id="cb306"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb306-1"><a href="#cb306-1" aria-hidden="true" tabindex="-1"></a><span class="co">### distrobox container </span><span class="al">###</span></span>
-<span id="cb306-2"><a href="#cb306-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Remember to source this file</span></span>
-<span id="cb306-3"><a href="#cb306-3" aria-hidden="true" tabindex="-1"></a><span class="bu">source</span> ~/localopenqa.leap.sh</span>
-<span id="cb306-4"><a href="#cb306-4" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="va">$OPENQA_BASEDIR</span></span>
-<span id="cb306-5"><a href="#cb306-5" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="va">$OPENQA_REPOS</span></span>
-<span id="cb306-6"><a href="#cb306-6" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="va">$OPENQA_BASEDIR</span>/openqa <span class="va">$OPENQA_CONFIG</span> <span class="va">$OPENQA_BASEDIR</span>/perl5 <span class="va">$OPENQA_BASEDIR</span>/openqa/db</span>
-<span id="cb306-7"><a href="#cb306-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb306-8"><a href="#cb306-8" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone git@github.com:os-autoinst/openQA <span class="va">$OPENQA_REPOS</span>/openQA</span>
-<span id="cb306-9"><a href="#cb306-9" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone git@github.com:os-autoinst/os-autoinst <span class="va">$OPENQA_REPOS</span>/os-autoinst</span>
-<span id="cb306-10"><a href="#cb306-10" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone git@github.com:os-autoinst/os-autoinst-scripts <span class="va">$OPENQA_REPOS</span>/scripts</span></code></pre></div>
-<h4 data-number="9.7.6.7" id="config-files"><span class="header-section-number">9.7.6.7</span> Config Files</h4>
 <div class="sourceCode" id="cb307"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb307-1"><a href="#cb307-1" aria-hidden="true" tabindex="-1"></a><span class="co">### distrobox container </span><span class="al">###</span></span>
-<span id="cb307-2"><a href="#cb307-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> <span class="op">&gt;&gt;</span> <span class="va">$OPENQA_CONFIG</span>/client.conf <span class="op">&lt;&lt; EOM</span></span>
-<span id="cb307-3"><a href="#cb307-3" aria-hidden="true" tabindex="-1"></a><span class="st">[localhost]</span></span>
-<span id="cb307-4"><a href="#cb307-4" aria-hidden="true" tabindex="-1"></a><span class="st">key = 1234567890ABCDEF</span></span>
-<span id="cb307-5"><a href="#cb307-5" aria-hidden="true" tabindex="-1"></a><span class="st">secret = 1234567890ABCDEF</span></span>
-<span id="cb307-6"><a href="#cb307-6" aria-hidden="true" tabindex="-1"></a><span class="op">EOM</span></span>
+<span id="cb307-2"><a href="#cb307-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Remember to source this file</span></span>
+<span id="cb307-3"><a href="#cb307-3" aria-hidden="true" tabindex="-1"></a><span class="bu">source</span> ~/localopenqa.leap.sh</span>
+<span id="cb307-4"><a href="#cb307-4" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="va">$OPENQA_BASEDIR</span></span>
+<span id="cb307-5"><a href="#cb307-5" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="va">$OPENQA_REPOS</span></span>
+<span id="cb307-6"><a href="#cb307-6" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="va">$OPENQA_BASEDIR</span>/openqa <span class="va">$OPENQA_CONFIG</span> <span class="va">$OPENQA_BASEDIR</span>/perl5 <span class="va">$OPENQA_BASEDIR</span>/openqa/db</span>
 <span id="cb307-7"><a href="#cb307-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb307-8"><a href="#cb307-8" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>  <span class="op">&gt;&gt;</span> <span class="va">$OPENQA_CONFIG</span>/database.ini <span class="op">&lt;&lt; EOM</span></span>
-<span id="cb307-9"><a href="#cb307-9" aria-hidden="true" tabindex="-1"></a><span class="st">[production]</span></span>
-<span id="cb307-10"><a href="#cb307-10" aria-hidden="true" tabindex="-1"></a><span class="st">dsn = dbi:Pg:dbname=openqa-local;host=127.0.0.1;port=5432</span></span>
-<span id="cb307-11"><a href="#cb307-11" aria-hidden="true" tabindex="-1"></a><span class="st">user = geekotest</span></span>
-<span id="cb307-12"><a href="#cb307-12" aria-hidden="true" tabindex="-1"></a><span class="st">password = x</span></span>
-<span id="cb307-13"><a href="#cb307-13" aria-hidden="true" tabindex="-1"></a><span class="op">EOM</span></span>
-<span id="cb307-14"><a href="#cb307-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb307-15"><a href="#cb307-15" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> <span class="va">$OPENQA_REPOS</span>/openQA/etc/openqa/workers.ini <span class="va">$OPENQA_CONFIG</span>/workers.ini</span>
-<span id="cb307-16"><a href="#cb307-16" aria-hidden="true" tabindex="-1"></a><span class="ex">crudini</span> <span class="at">--set</span> <span class="va">$OPENQA_CONFIG</span>/workers.ini global HOST http://localhost:9526</span>
-<span id="cb307-17"><a href="#cb307-17" aria-hidden="true" tabindex="-1"></a><span class="ex">crudini</span> <span class="at">--set</span> <span class="va">$OPENQA_CONFIG</span>/workers.ini global WORKER_HOSTNAME 127.0.0.1</span>
-<span id="cb307-18"><a href="#cb307-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb307-19"><a href="#cb307-19" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> <span class="va">$OPENQA_REPOS</span>/openQA/etc/openqa/openqa.ini <span class="va">$OPENQA_CONFIG</span>/openqa.ini</span>
-<span id="cb307-20"><a href="#cb307-20" aria-hidden="true" tabindex="-1"></a><span class="ex">crudini</span> <span class="at">--set</span> <span class="va">$OPENQA_CONFIG</span>/openqa.ini auth method Fake</span></code></pre></div>
-<h4 data-number="9.7.6.8" id="build-openqa"><span class="header-section-number">9.7.6.8</span> Build openQA</h4>
+<span id="cb307-8"><a href="#cb307-8" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone git@github.com:os-autoinst/openQA <span class="va">$OPENQA_REPOS</span>/openQA</span>
+<span id="cb307-9"><a href="#cb307-9" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone git@github.com:os-autoinst/os-autoinst <span class="va">$OPENQA_REPOS</span>/os-autoinst</span>
+<span id="cb307-10"><a href="#cb307-10" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone git@github.com:os-autoinst/os-autoinst-scripts <span class="va">$OPENQA_REPOS</span>/scripts</span></code></pre></div>
+<h4 data-number="9.7.6.7" id="config-files"><span class="header-section-number">9.7.6.7</span> Config Files</h4>
 <div class="sourceCode" id="cb308"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb308-1"><a href="#cb308-1" aria-hidden="true" tabindex="-1"></a><span class="co">### distrobox container </span><span class="al">###</span></span>
-<span id="cb308-2"><a href="#cb308-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Build steps</span></span>
-<span id="cb308-3"><a href="#cb308-3" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> <span class="va">$OPENQA_REPOS</span>/os-autoinst</span>
-<span id="cb308-4"><a href="#cb308-4" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span></span>
-<span id="cb308-5"><a href="#cb308-5" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> <span class="va">$OPENQA_REPOS</span>/openQA</span>
-<span id="cb308-6"><a href="#cb308-6" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> node_modules</span>
+<span id="cb308-2"><a href="#cb308-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> <span class="op">&gt;&gt;</span> <span class="va">$OPENQA_CONFIG</span>/client.conf <span class="op">&lt;&lt; EOM</span></span>
+<span id="cb308-3"><a href="#cb308-3" aria-hidden="true" tabindex="-1"></a><span class="st">[localhost]</span></span>
+<span id="cb308-4"><a href="#cb308-4" aria-hidden="true" tabindex="-1"></a><span class="st">key = 1234567890ABCDEF</span></span>
+<span id="cb308-5"><a href="#cb308-5" aria-hidden="true" tabindex="-1"></a><span class="st">secret = 1234567890ABCDEF</span></span>
+<span id="cb308-6"><a href="#cb308-6" aria-hidden="true" tabindex="-1"></a><span class="op">EOM</span></span>
 <span id="cb308-7"><a href="#cb308-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb308-8"><a href="#cb308-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Optionally check if you can access the database</span></span>
-<span id="cb308-9"><a href="#cb308-9" aria-hidden="true" tabindex="-1"></a><span class="co">#psql -U geekotest -h 127.0.0.1 -p 5432 openqa-local</span></span>
-<span id="cb308-10"><a href="#cb308-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb308-11"><a href="#cb308-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Initialize the database schema. This is using the database.ini you</span></span>
-<span id="cb308-12"><a href="#cb308-12" aria-hidden="true" tabindex="-1"></a><span class="co"># created above.</span></span>
-<span id="cb308-13"><a href="#cb308-13" aria-hidden="true" tabindex="-1"></a><span class="va">$OPENQA_REPOS</span><span class="ex">/openQA/script/initdb</span> <span class="at">--init_database</span></span></code></pre></div>
+<span id="cb308-8"><a href="#cb308-8" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>  <span class="op">&gt;&gt;</span> <span class="va">$OPENQA_CONFIG</span>/database.ini <span class="op">&lt;&lt; EOM</span></span>
+<span id="cb308-9"><a href="#cb308-9" aria-hidden="true" tabindex="-1"></a><span class="st">[production]</span></span>
+<span id="cb308-10"><a href="#cb308-10" aria-hidden="true" tabindex="-1"></a><span class="st">dsn = dbi:Pg:dbname=openqa-local;host=127.0.0.1;port=5432</span></span>
+<span id="cb308-11"><a href="#cb308-11" aria-hidden="true" tabindex="-1"></a><span class="st">user = geekotest</span></span>
+<span id="cb308-12"><a href="#cb308-12" aria-hidden="true" tabindex="-1"></a><span class="st">password = x</span></span>
+<span id="cb308-13"><a href="#cb308-13" aria-hidden="true" tabindex="-1"></a><span class="op">EOM</span></span>
+<span id="cb308-14"><a href="#cb308-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb308-15"><a href="#cb308-15" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> <span class="va">$OPENQA_REPOS</span>/openQA/etc/openqa/workers.ini <span class="va">$OPENQA_CONFIG</span>/workers.ini</span>
+<span id="cb308-16"><a href="#cb308-16" aria-hidden="true" tabindex="-1"></a><span class="ex">crudini</span> <span class="at">--set</span> <span class="va">$OPENQA_CONFIG</span>/workers.ini global HOST http://localhost:9526</span>
+<span id="cb308-17"><a href="#cb308-17" aria-hidden="true" tabindex="-1"></a><span class="ex">crudini</span> <span class="at">--set</span> <span class="va">$OPENQA_CONFIG</span>/workers.ini global WORKER_HOSTNAME 127.0.0.1</span>
+<span id="cb308-18"><a href="#cb308-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb308-19"><a href="#cb308-19" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> <span class="va">$OPENQA_REPOS</span>/openQA/etc/openqa/openqa.ini <span class="va">$OPENQA_CONFIG</span>/openqa.ini</span>
+<span id="cb308-20"><a href="#cb308-20" aria-hidden="true" tabindex="-1"></a><span class="ex">crudini</span> <span class="at">--set</span> <span class="va">$OPENQA_CONFIG</span>/openqa.ini auth method Fake</span></code></pre></div>
+<h4 data-number="9.7.6.8" id="build-openqa"><span class="header-section-number">9.7.6.8</span> Build openQA</h4>
+<div class="sourceCode" id="cb309"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb309-1"><a href="#cb309-1" aria-hidden="true" tabindex="-1"></a><span class="co">### distrobox container </span><span class="al">###</span></span>
+<span id="cb309-2"><a href="#cb309-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Build steps</span></span>
+<span id="cb309-3"><a href="#cb309-3" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> <span class="va">$OPENQA_REPOS</span>/os-autoinst</span>
+<span id="cb309-4"><a href="#cb309-4" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span></span>
+<span id="cb309-5"><a href="#cb309-5" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> <span class="va">$OPENQA_REPOS</span>/openQA</span>
+<span id="cb309-6"><a href="#cb309-6" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> node_modules</span>
+<span id="cb309-7"><a href="#cb309-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb309-8"><a href="#cb309-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Optionally check if you can access the database</span></span>
+<span id="cb309-9"><a href="#cb309-9" aria-hidden="true" tabindex="-1"></a><span class="co">#psql -U geekotest -h 127.0.0.1 -p 5432 openqa-local</span></span>
+<span id="cb309-10"><a href="#cb309-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb309-11"><a href="#cb309-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Initialize the database schema. This is using the database.ini you</span></span>
+<span id="cb309-12"><a href="#cb309-12" aria-hidden="true" tabindex="-1"></a><span class="co"># created above.</span></span>
+<span id="cb309-13"><a href="#cb309-13" aria-hidden="true" tabindex="-1"></a><span class="va">$OPENQA_REPOS</span><span class="ex">/openQA/script/initdb</span> <span class="at">--init_database</span></span></code></pre></div>
 <h4 data-number="9.7.6.9" id="run-openqa"><span class="header-section-number">9.7.6.9</span> Run openQA</h4>
 <p>Ready!</p>
 <p>For playing with the web UI, you just need to run the
 <code>openqa-webui-daemon</code>. For running openQA jobs, you need all
 daemons.</p>
-<div class="sourceCode" id="cb309"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb309-1"><a href="#cb309-1" aria-hidden="true" tabindex="-1"></a><span class="co">### distrobox container </span><span class="al">###</span></span>
-<span id="cb309-2"><a href="#cb309-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Main web UI (required for web interface and web API)</span></span>
-<span id="cb309-3"><a href="#cb309-3" aria-hidden="true" tabindex="-1"></a><span class="ex">openqa-webui-daemon</span></span>
-<span id="cb309-4"><a href="#cb309-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb309-5"><a href="#cb309-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Websockets (for workers to connect so they can receive job assignments)</span></span>
-<span id="cb309-6"><a href="#cb309-6" aria-hidden="true" tabindex="-1"></a><span class="ex">openqa-websockets</span> daemon</span>
-<span id="cb309-7"><a href="#cb309-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb309-8"><a href="#cb309-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Scheduler (assigns jobs to workers)</span></span>
-<span id="cb309-9"><a href="#cb309-9" aria-hidden="true" tabindex="-1"></a><span class="ex">openqa-scheduler</span> daemon</span>
-<span id="cb309-10"><a href="#cb309-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb309-11"><a href="#cb309-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Gru (for running background tasks as Minion jobs)</span></span>
-<span id="cb309-12"><a href="#cb309-12" aria-hidden="true" tabindex="-1"></a><span class="ex">openqa</span> gru run</span>
-<span id="cb309-13"><a href="#cb309-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb309-14"><a href="#cb309-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Livehandler (for the developer mode on the web UI)</span></span>
-<span id="cb309-15"><a href="#cb309-15" aria-hidden="true" tabindex="-1"></a><span class="ex">openqa-livehandler</span> daemon</span>
-<span id="cb309-16"><a href="#cb309-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb309-17"><a href="#cb309-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Worker</span></span>
-<span id="cb309-18"><a href="#cb309-18" aria-hidden="true" tabindex="-1"></a><span class="ex">worker</span> <span class="at">--isotovideo</span> <span class="st">&quot;</span><span class="va">$OPENQA_REPOS</span><span class="st">/os-autoinst/isotovideo&quot;</span> <span class="at">--instance</span> 1 <span class="at">--verbose</span> <span class="at">--apikey</span> <span class="va">$OPENQA_KEY</span> <span class="at">--apisecret</span> <span class="va">$OPENQA_SECRET</span></span></code></pre></div>
+<div class="sourceCode" id="cb310"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb310-1"><a href="#cb310-1" aria-hidden="true" tabindex="-1"></a><span class="co">### distrobox container </span><span class="al">###</span></span>
+<span id="cb310-2"><a href="#cb310-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Main web UI (required for web interface and web API)</span></span>
+<span id="cb310-3"><a href="#cb310-3" aria-hidden="true" tabindex="-1"></a><span class="ex">openqa-webui-daemon</span></span>
+<span id="cb310-4"><a href="#cb310-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb310-5"><a href="#cb310-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Websockets (for workers to connect so they can receive job assignments)</span></span>
+<span id="cb310-6"><a href="#cb310-6" aria-hidden="true" tabindex="-1"></a><span class="ex">openqa-websockets</span> daemon</span>
+<span id="cb310-7"><a href="#cb310-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb310-8"><a href="#cb310-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Scheduler (assigns jobs to workers)</span></span>
+<span id="cb310-9"><a href="#cb310-9" aria-hidden="true" tabindex="-1"></a><span class="ex">openqa-scheduler</span> daemon</span>
+<span id="cb310-10"><a href="#cb310-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb310-11"><a href="#cb310-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Gru (for running background tasks as Minion jobs)</span></span>
+<span id="cb310-12"><a href="#cb310-12" aria-hidden="true" tabindex="-1"></a><span class="ex">openqa</span> gru run</span>
+<span id="cb310-13"><a href="#cb310-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb310-14"><a href="#cb310-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Livehandler (for the developer mode on the web UI)</span></span>
+<span id="cb310-15"><a href="#cb310-15" aria-hidden="true" tabindex="-1"></a><span class="ex">openqa-livehandler</span> daemon</span>
+<span id="cb310-16"><a href="#cb310-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb310-17"><a href="#cb310-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Worker</span></span>
+<span id="cb310-18"><a href="#cb310-18" aria-hidden="true" tabindex="-1"></a><span class="ex">worker</span> <span class="at">--isotovideo</span> <span class="st">&quot;</span><span class="va">$OPENQA_REPOS</span><span class="st">/os-autoinst/isotovideo&quot;</span> <span class="at">--instance</span> 1 <span class="at">--verbose</span> <span class="at">--apikey</span> <span class="va">$OPENQA_KEY</span> <span class="at">--apisecret</span> <span class="va">$OPENQA_SECRET</span></span></code></pre></div>
 <p>For running unit tests, see <a href="#testing">Conducting
 tests</a>.</p>
 <h2 data-number="9.8" id="handling-of-dependencies"><span class="header-section-number">9.8</span> Handling of dependencies</h2>
@@ -8758,7 +8769,7 @@ So be sure <strong>to backup your database</strong> before restarting to
 be able to downgrade again if something goes wrong or you just need to
 continue working on another branch. To do so, the following command can
 be used to create a copy:</p>
-<div class="sourceCode" id="cb310"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb310-1"><a href="#cb310-1" aria-hidden="true" tabindex="-1"></a><span class="ex">createdb</span> <span class="at">-O</span> ownername <span class="at">-T</span> originaldb newdb</span></code></pre></div>
+<div class="sourceCode" id="cb311"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb311-1"><a href="#cb311-1" aria-hidden="true" tabindex="-1"></a><span class="ex">createdb</span> <span class="at">-O</span> ownername <span class="at">-T</span> originaldb newdb</span></code></pre></div>
 <p>To initialize or update the database manually before restarting the
 web UI you can run either <code>./script/initdb --init_database</code>
 or <code>./script/upgradedb --upgrade_database</code>.</p>
@@ -8788,7 +8799,7 @@ upgrading a database. Note that those files (and directories) have to be
 created manually.</p>
 <p>Executed SQL statements can be traced by setting the
 <code>DBIC_TRACE</code> environment variable.</p>
-<div class="sourceCode" id="cb311"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb311-1"><a href="#cb311-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">DBIC_TRACE</span><span class="op">=</span>1</span></code></pre></div>
+<div class="sourceCode" id="cb312"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb312-1"><a href="#cb312-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">DBIC_TRACE</span><span class="op">=</span>1</span></code></pre></div>
 <h2 data-number="9.10" id="adding-new-authentication-module"><span class="header-section-number">9.10</span> Adding new authentication
 module</h2>
 <p>openQA comes with two authentication modules providing authentication
@@ -8807,13 +8818,13 @@ is imported on demand.</p>
 <p>Currently there is no login page because all implemented methods use
 either 3rd party page or none.</p>
 <p>Authentication module is expected to return HASH:</p>
-<div class="sourceCode" id="cb312"><pre class="sourceCode perl"><code class="sourceCode perl"><span id="cb312-1"><a href="#cb312-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb312-2"><a href="#cb312-2" aria-hidden="true" tabindex="-1"></a><span class="dt">%res</span> = (</span>
-<span id="cb312-3"><a href="#cb312-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># error = 1 signals auth error</span></span>
-<span id="cb312-4"><a href="#cb312-4" aria-hidden="true" tabindex="-1"></a>    error =&gt; <span class="dv">0</span>|<span class="dv">1</span></span>
-<span id="cb312-5"><a href="#cb312-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># where to redirect the user</span></span>
-<span id="cb312-6"><a href="#cb312-6" aria-hidden="true" tabindex="-1"></a>    redirect =&gt; <span class="ot">&#39;&#39;</span></span>
-<span id="cb312-7"><a href="#cb312-7" aria-hidden="true" tabindex="-1"></a>);</span></code></pre></div>
+<div class="sourceCode" id="cb313"><pre class="sourceCode perl"><code class="sourceCode perl"><span id="cb313-1"><a href="#cb313-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb313-2"><a href="#cb313-2" aria-hidden="true" tabindex="-1"></a><span class="dt">%res</span> = (</span>
+<span id="cb313-3"><a href="#cb313-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># error = 1 signals auth error</span></span>
+<span id="cb313-4"><a href="#cb313-4" aria-hidden="true" tabindex="-1"></a>    error =&gt; <span class="dv">0</span>|<span class="dv">1</span></span>
+<span id="cb313-5"><a href="#cb313-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># where to redirect the user</span></span>
+<span id="cb313-6"><a href="#cb313-6" aria-hidden="true" tabindex="-1"></a>    redirect =&gt; <span class="ot">&#39;&#39;</span></span>
+<span id="cb313-7"><a href="#cb313-7" aria-hidden="true" tabindex="-1"></a>);</span></code></pre></div>
 <p>Authentication module is expected to create or update user entry in
 openQA database after user validation. See included modules for
 inspiration.</p>
@@ -8988,7 +8999,7 @@ circleci local execute --job testfullstack
 circleci local execute --job testdeveloperfullstack</code></pre>
 <h3 data-number="9.11.6" id="changing-configcnf"><span class="header-section-number">9.11.6</span> Changing config.cnf</h3>
 <p>Command to verify the YAML with the <code>circleci</code> tool:</p>
-<div class="sourceCode" id="cb319"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb319-1"><a href="#cb319-1" aria-hidden="true" tabindex="-1"></a><span class="ex">circleci</span> config process .circleci/config.yml</span></code></pre></div>
+<div class="sourceCode" id="cb320"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb320-1"><a href="#cb320-1" aria-hidden="true" tabindex="-1"></a><span class="ex">circleci</span> config process .circleci/config.yml</span></code></pre></div>
 <h2 data-number="9.12" id="building-plugins"><span class="header-section-number">9.12</span> Building plugins</h2>
 <p>Not all code needs to be included in openQA itself. openQA also
 supports the use of 3rd party plugins that follow the standards for
@@ -9003,40 +9014,40 @@ inside the web server.</p>
 <p>Plugin
 Hello<code>, you would install it in one of the include directories of the Perl used to run openQA, and then configure it in </code>openqa.ini<code>. The </code>plugins<code>setting in the</code>global`
 section will tell openQA what plugins to load.</p>
-<div class="sourceCode" id="cb320"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb320-1"><a href="#cb320-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Tell openQA to load the plugin</span></span>
-<span id="cb320-2"><a href="#cb320-2" aria-hidden="true" tabindex="-1"></a><span class="kw">[global]</span></span>
-<span id="cb320-3"><a href="#cb320-3" aria-hidden="true" tabindex="-1"></a><span class="dt">plugins </span><span class="ot">=</span><span class="st"> Hello</span></span>
-<span id="cb320-4"><a href="#cb320-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb320-5"><a href="#cb320-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Plugin specific configuration (optional)</span></span>
-<span id="cb320-6"><a href="#cb320-6" aria-hidden="true" tabindex="-1"></a><span class="kw">[hello_plugin]</span></span>
-<span id="cb320-7"><a href="#cb320-7" aria-hidden="true" tabindex="-1"></a><span class="dt">some </span><span class="ot">=</span><span class="st"> value</span></span></code></pre></div>
+<div class="sourceCode" id="cb321"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb321-1"><a href="#cb321-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Tell openQA to load the plugin</span></span>
+<span id="cb321-2"><a href="#cb321-2" aria-hidden="true" tabindex="-1"></a><span class="kw">[global]</span></span>
+<span id="cb321-3"><a href="#cb321-3" aria-hidden="true" tabindex="-1"></a><span class="dt">plugins </span><span class="ot">=</span><span class="st"> Hello</span></span>
+<span id="cb321-4"><a href="#cb321-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb321-5"><a href="#cb321-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Plugin specific configuration (optional)</span></span>
+<span id="cb321-6"><a href="#cb321-6" aria-hidden="true" tabindex="-1"></a><span class="kw">[hello_plugin]</span></span>
+<span id="cb321-7"><a href="#cb321-7" aria-hidden="true" tabindex="-1"></a><span class="dt">some </span><span class="ot">=</span><span class="st"> value</span></span></code></pre></div>
 <p>The plugin specific configuration is optional, but if defined would
 be available in <code>$app-&gt;config-&gt;{hello_plugin}</code>.</p>
 <p>To extend the UI or HTTP API there are various named routes already
 defined that will take care of authentication for your plugin. You just
 attach the plugin routes to them and only authenticated requests will
 get through.</p>
-<div class="sourceCode" id="cb321"><pre class="sourceCode perl"><code class="sourceCode perl"><span id="cb321-1"><a href="#cb321-1" aria-hidden="true" tabindex="-1"></a><span class="kw">package</span> <span class="fu">OpenQA::WebAPI</span>::<span class="fu">Plugin</span>::<span class="fu">Hello</span>;</span>
-<span id="cb321-2"><a href="#cb321-2" aria-hidden="true" tabindex="-1"></a><span class="fu">use</span> <span class="fu">Mojo::Base</span> <span class="ot">&#39;</span><span class="ss">Mojolicious::Plugin</span><span class="ot">&#39;</span>;</span>
-<span id="cb321-3"><a href="#cb321-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb321-4"><a href="#cb321-4" aria-hidden="true" tabindex="-1"></a><span class="kw">sub </span><span class="fu">register</span> {</span>
-<span id="cb321-5"><a href="#cb321-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">my</span> (<span class="dt">$self</span>, <span class="dt">$app</span>, <span class="dt">$config</span>) = <span class="dt">@_</span>;</span>
-<span id="cb321-6"><a href="#cb321-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb321-7"><a href="#cb321-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Only operators may use our plugin</span></span>
-<span id="cb321-8"><a href="#cb321-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">my</span> <span class="dt">$ensure_operator</span> = <span class="dt">$app</span>-&gt;<span class="dt">routes</span>-&gt;<span class="dt">find</span>(<span class="ot">&#39;</span><span class="ss">ensure_operator</span><span class="ot">&#39;</span>);</span>
-<span id="cb321-9"><a href="#cb321-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">my</span> <span class="dt">$plugin_prefix</span> = <span class="dt">$ensure_operator</span>-&gt;<span class="dt">any</span>(<span class="ot">&#39;</span><span class="ss">/hello_plugin</span><span class="ot">&#39;</span>);</span>
-<span id="cb321-10"><a href="#cb321-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb321-11"><a href="#cb321-11" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Plain text response (under &quot;/admin/hello_plugin/&quot;)</span></span>
-<span id="cb321-12"><a href="#cb321-12" aria-hidden="true" tabindex="-1"></a>    <span class="dt">$plugin_prefix</span>-&gt;<span class="dt">get</span>(<span class="ot">&#39;</span><span class="ss">/</span><span class="ot">&#39;</span> =&gt; <span class="kw">sub </span>{</span>
-<span id="cb321-13"><a href="#cb321-13" aria-hidden="true" tabindex="-1"></a>      <span class="kw">my</span> <span class="dt">$c</span> = <span class="fu">shift</span>;</span>
-<span id="cb321-14"><a href="#cb321-14" aria-hidden="true" tabindex="-1"></a>      <span class="dt">$c</span>-&gt;<span class="dt">render</span>(text =&gt; <span class="ot">&#39;</span><span class="ss">Hello openQA!</span><span class="ot">&#39;</span>);</span>
-<span id="cb321-15"><a href="#cb321-15" aria-hidden="true" tabindex="-1"></a>    })-&gt;name(<span class="ot">&#39;</span><span class="ss">hello_plugin_index</span><span class="ot">&#39;</span>);</span>
-<span id="cb321-16"><a href="#cb321-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb321-17"><a href="#cb321-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Add a link to the UI menu</span></span>
-<span id="cb321-18"><a href="#cb321-18" aria-hidden="true" tabindex="-1"></a>    <span class="dt">$app</span>-&gt;<span class="dt">config</span>-&gt;{plugin_links}{operator}{<span class="ot">&#39;</span><span class="ss">Hello</span><span class="ot">&#39;</span>} = <span class="ot">&#39;</span><span class="ss">hello_plugin_index</span><span class="ot">&#39;</span>;</span>
-<span id="cb321-19"><a href="#cb321-19" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb321-20"><a href="#cb321-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb321-21"><a href="#cb321-21" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb322"><pre class="sourceCode perl"><code class="sourceCode perl"><span id="cb322-1"><a href="#cb322-1" aria-hidden="true" tabindex="-1"></a><span class="kw">package</span> <span class="fu">OpenQA::WebAPI</span>::<span class="fu">Plugin</span>::<span class="fu">Hello</span>;</span>
+<span id="cb322-2"><a href="#cb322-2" aria-hidden="true" tabindex="-1"></a><span class="fu">use</span> <span class="fu">Mojo::Base</span> <span class="ot">&#39;</span><span class="ss">Mojolicious::Plugin</span><span class="ot">&#39;</span>;</span>
+<span id="cb322-3"><a href="#cb322-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb322-4"><a href="#cb322-4" aria-hidden="true" tabindex="-1"></a><span class="kw">sub </span><span class="fu">register</span> {</span>
+<span id="cb322-5"><a href="#cb322-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">my</span> (<span class="dt">$self</span>, <span class="dt">$app</span>, <span class="dt">$config</span>) = <span class="dt">@_</span>;</span>
+<span id="cb322-6"><a href="#cb322-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb322-7"><a href="#cb322-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Only operators may use our plugin</span></span>
+<span id="cb322-8"><a href="#cb322-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">my</span> <span class="dt">$ensure_operator</span> = <span class="dt">$app</span>-&gt;<span class="dt">routes</span>-&gt;<span class="dt">find</span>(<span class="ot">&#39;</span><span class="ss">ensure_operator</span><span class="ot">&#39;</span>);</span>
+<span id="cb322-9"><a href="#cb322-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">my</span> <span class="dt">$plugin_prefix</span> = <span class="dt">$ensure_operator</span>-&gt;<span class="dt">any</span>(<span class="ot">&#39;</span><span class="ss">/hello_plugin</span><span class="ot">&#39;</span>);</span>
+<span id="cb322-10"><a href="#cb322-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb322-11"><a href="#cb322-11" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Plain text response (under &quot;/admin/hello_plugin/&quot;)</span></span>
+<span id="cb322-12"><a href="#cb322-12" aria-hidden="true" tabindex="-1"></a>    <span class="dt">$plugin_prefix</span>-&gt;<span class="dt">get</span>(<span class="ot">&#39;</span><span class="ss">/</span><span class="ot">&#39;</span> =&gt; <span class="kw">sub </span>{</span>
+<span id="cb322-13"><a href="#cb322-13" aria-hidden="true" tabindex="-1"></a>      <span class="kw">my</span> <span class="dt">$c</span> = <span class="fu">shift</span>;</span>
+<span id="cb322-14"><a href="#cb322-14" aria-hidden="true" tabindex="-1"></a>      <span class="dt">$c</span>-&gt;<span class="dt">render</span>(text =&gt; <span class="ot">&#39;</span><span class="ss">Hello openQA!</span><span class="ot">&#39;</span>);</span>
+<span id="cb322-15"><a href="#cb322-15" aria-hidden="true" tabindex="-1"></a>    })-&gt;name(<span class="ot">&#39;</span><span class="ss">hello_plugin_index</span><span class="ot">&#39;</span>);</span>
+<span id="cb322-16"><a href="#cb322-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb322-17"><a href="#cb322-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Add a link to the UI menu</span></span>
+<span id="cb322-18"><a href="#cb322-18" aria-hidden="true" tabindex="-1"></a>    <span class="dt">$app</span>-&gt;<span class="dt">config</span>-&gt;{plugin_links}{operator}{<span class="ot">&#39;</span><span class="ss">Hello</span><span class="ot">&#39;</span>} = <span class="ot">&#39;</span><span class="ss">hello_plugin_index</span><span class="ot">&#39;</span>;</span>
+<span id="cb322-19"><a href="#cb322-19" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb322-20"><a href="#cb322-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb322-21"><a href="#cb322-21" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span>;</span></code></pre></div>
 <p>The <code>plugin_links</code> configuration setting can be modified
 by plugins to add links to the <code>operator</code> and
 <code>admin</code> sections of the openQA UI menu. Route names or fully
@@ -9044,10 +9055,10 @@ qualified URLs can be used as link targets. If your plugin uses
 templates, you should reuse the <code>bootstrap</code> layout provided
 by openQA. This will ensure a consistent look, and make the UI menu
 available everywhere.</p>
-<div class="sourceCode" id="cb322"><pre class="sourceCode perl"><code class="sourceCode perl"><span id="cb322-1"><a href="#cb322-1" aria-hidden="true" tabindex="-1"></a>% layout <span class="ot">&#39;</span><span class="ss">bootstrap</span><span class="ot">&#39;</span>;</span>
-<span id="cb322-2"><a href="#cb322-2" aria-hidden="true" tabindex="-1"></a>% title <span class="ot">&#39;</span><span class="ss">Hello openQA!</span><span class="ot">&#39;</span>;</span>
-<span id="cb322-3"><a href="#cb322-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb322-4"><a href="#cb322-4" aria-hidden="true" tabindex="-1"></a>  &lt;h2&gt;Hello openQA!&lt;/h2&gt;</span></code></pre></div>
+<div class="sourceCode" id="cb323"><pre class="sourceCode perl"><code class="sourceCode perl"><span id="cb323-1"><a href="#cb323-1" aria-hidden="true" tabindex="-1"></a>% layout <span class="ot">&#39;</span><span class="ss">bootstrap</span><span class="ot">&#39;</span>;</span>
+<span id="cb323-2"><a href="#cb323-2" aria-hidden="true" tabindex="-1"></a>% title <span class="ot">&#39;</span><span class="ss">Hello openQA!</span><span class="ot">&#39;</span>;</span>
+<span id="cb323-3"><a href="#cb323-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb323-4"><a href="#cb323-4" aria-hidden="true" tabindex="-1"></a>  &lt;h2&gt;Hello openQA!&lt;/h2&gt;</span></code></pre></div>
 <p>For UI plugins there are two named authentication routes defined:</p>
 <ol type="1">
 <li><code>ensure_operator</code>: under <code>/admin/</code>, only
@@ -9070,21 +9081,21 @@ allows authenticated nusers with <code>admin</code> privileges</li>
 <p>To generate a minimal installable plugin with a CPAN distribution
 directory structure you can use the Mojolicious tools. It can be
 packaged just like any other Perl module from CPAN.</p>
-<div class="sourceCode" id="cb323"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb323-1"><a href="#cb323-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> mojo generate plugin <span class="at">-f</span> OpenQA::WebAPI::Plugin::Hello</span>
-<span id="cb323-2"><a href="#cb323-2" aria-hidden="true" tabindex="-1"></a><span class="ex">...</span></span>
-<span id="cb323-3"><a href="#cb323-3" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> cd OpenQA-WebAPI-Plugin-Hello/</span>
-<span id="cb323-4"><a href="#cb323-4" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> perl Makefile.PL</span>
-<span id="cb323-5"><a href="#cb323-5" aria-hidden="true" tabindex="-1"></a><span class="ex">...</span></span>
-<span id="cb323-6"><a href="#cb323-6" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> make test</span>
-<span id="cb323-7"><a href="#cb323-7" aria-hidden="true" tabindex="-1"></a><span class="ex">...</span></span></code></pre></div>
+<div class="sourceCode" id="cb324"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb324-1"><a href="#cb324-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> mojo generate plugin <span class="at">-f</span> OpenQA::WebAPI::Plugin::Hello</span>
+<span id="cb324-2"><a href="#cb324-2" aria-hidden="true" tabindex="-1"></a><span class="ex">...</span></span>
+<span id="cb324-3"><a href="#cb324-3" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> cd OpenQA-WebAPI-Plugin-Hello/</span>
+<span id="cb324-4"><a href="#cb324-4" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> perl Makefile.PL</span>
+<span id="cb324-5"><a href="#cb324-5" aria-hidden="true" tabindex="-1"></a><span class="ex">...</span></span>
+<span id="cb324-6"><a href="#cb324-6" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> make test</span>
+<span id="cb324-7"><a href="#cb324-7" aria-hidden="true" tabindex="-1"></a><span class="ex">...</span></span></code></pre></div>
 <p>And if you need code examples, there are some plugins <a href="https://github.com/os-autoinst/openQA/tree/master/lib/OpenQA/WebAPI/Plugin">included
 with openQA</a>.</p>
 <h2 data-number="9.13" id="checking-for-javascript-problems"><span class="header-section-number">9.13</span> Checking for JavaScript
 problems</h2>
 <p>One can use the tool <code>jshint</code> to check for problems within
 JavaScript code. It can be installed easily via <code>npm</code>.</p>
-<div class="sourceCode" id="cb324"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb324-1"><a href="#cb324-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install <span class="at">--no-save</span> <span class="at">--ignore-scripts</span> jshint</span>
-<span id="cb324-2"><a href="#cb324-2" aria-hidden="true" tabindex="-1"></a><span class="ex">node_modules/jshint/bin/jshint</span> path/to/javascript.js</span></code></pre></div>
+<div class="sourceCode" id="cb325"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb325-1"><a href="#cb325-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install <span class="at">--no-save</span> <span class="at">--ignore-scripts</span> jshint</span>
+<span id="cb325-2"><a href="#cb325-2" aria-hidden="true" tabindex="-1"></a><span class="ex">node_modules/jshint/bin/jshint</span> path/to/javascript.js</span></code></pre></div>
 <h2 data-number="9.14" id="profiling-the-web-ui"><span class="header-section-number">9.14</span> Profiling the web UI</h2>
 <ol type="1">
 <li>Install NYTProf, under openSUSE Tumbleweed:
