@@ -209,7 +209,7 @@ function renderModuleRow(module, snippets) {
     }
     if (step.text && title !== 'Soft Failed') {
       hasTextResults = true;
-      const stepActions = E('span', [], {class: 'step_actions', style: 'float: right'});
+      const stepActions = E('span', [], {class: 'step_actions step_actions_text'});
       stepActions.innerHTML = renderTemplate(snippets.bug_actions, {MODULE: module.name, STEP: step.num});
 
       stepActions.append(createLogLink(module, step));
