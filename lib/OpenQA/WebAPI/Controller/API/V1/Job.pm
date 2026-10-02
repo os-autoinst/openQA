@@ -73,6 +73,22 @@ Clones are excluded from the results.
 
 Limit the number of jobs.
 
+=item strict
+
+  strict => 1
+
+If latest=1 is specified, setting strict=1 isolates the latest
+de-duplication using the history isolation keys declared for each job
+(e.g. keeping different Pull Request latest jobs separate).
+
+=item isolation_keys
+
+  isolation_keys => "PR,BRANCH"
+
+If latest=1 is specified, lists de-duplicated jobs isolating specifically
+on this comma-separated list of keys instead of all declared isolation
+keys.
+
 =back
 
 =back
@@ -88,6 +104,8 @@ sub list ($self) {
     $validation->optional('groupid')->num;
     $validation->optional('not_groupid')->num;
     $validation->optional('job_setting', 'not_empty')->like(qr/.+=.*/);
+    $validation->optional('strict')->num(0, 1);
+    $validation->optional('isolation_keys')->like(qr/^[a-zA-Z0-9_, ]*$/);
 
     my $limits = OpenQA::App->singleton->config->{misc_limits};
     my $limit = min($limits->{generic_max_limit}, $validation->param('limit') // $limits->{generic_default_limit});
@@ -128,7 +146,15 @@ sub list ($self) {
     my $latest = $validation->param('latest');
     my $schema = $self->schema;
     my $rs = $schema->resultset('Jobs')->complex_query(%args);
-    my @jobarray = defined $latest ? $rs->latest_jobs : $rs->all;
+    my @jobarray;
+    if (defined $latest) {
+        my $strict = $validation->param('strict');
+        my $isolation_keys = [grep { length } split /\s*,\s*/, $validation->param('isolation_keys') // ''];
+        @jobarray = $rs->latest_jobs(undef, strict => $strict, isolation_keys => $isolation_keys);
+    }
+    else {
+        @jobarray = $rs->all;
+    }
 
     # Pagination
     pop @jobarray if my $has_more = @jobarray > $limit;
@@ -219,8 +245,24 @@ sub list ($self) {
 
 =item overview()
 
-Returns the latest jobs matching the specified arch, build, distri, version, flavor and groupid.
+Returns the latest jobs matching the specified arch, build, distri,
+version, flavor and groupid.
 So this works in the same way as the test results overview in the GUI.
+
+=item strict
+
+  strict => 1
+
+If set to 1, isolates the overview de-duplication using the history
+isolation keys declared for each job (e.g. keeping different Pull Request
+latest jobs separate).
+
+=item isolation_keys
+
+  isolation_keys => "PR,BRANCH"
+
+Isolates de-duplication specifically on this comma-separated list of keys
+instead of all declared isolation keys.
 
 =back
 
