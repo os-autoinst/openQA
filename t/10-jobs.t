@@ -1323,6 +1323,32 @@ subtest 'history isolation keys separate the scenario history' => sub {
         $t->get_ok('/tests/' . $cur->id . '/investigation_ajax?strict=0')->status_is(200);
         $t->json_is('/last_good/link' => '/tests/' . $good_other->id);
     };
+
+    subtest 'history API endpoint handles isolation parameters' => sub {
+        my $cur_id = $cur->id;
+        $t->get_ok("/api/v1/jobs/$cur_id/history")
+          ->status_is(200, 'history API returns successful response for valid job');
+
+        my $res_all = $t->tx->res->json;
+        my $ids_all = [sort { $a <=> $b } map { $_->{id} } @{$res_all->{jobs}}];
+        my @expected_all = sort { $a <=> $b } ($pr1a->id, $pr1b->id, $pr2->id, $cur->id);
+        is_deeply $ids_all, \@expected_all,
+          'non-strict/generalized history API returns all jobs from all PRs and current job';
+
+        $t->get_ok("/api/v1/jobs/$cur_id/history?strict=1")
+          ->status_is(200, 'strict history API returns successful response');
+        my $res_strict = $t->tx->res->json;
+        my $ids_strict = [sort { $a <=> $b } map { $_->{id} } @{$res_strict->{jobs}}];
+        my @expected_strict = sort { $a <=> $b } ($pr1a->id, $pr1b->id, $cur->id);
+        is_deeply $ids_strict, \@expected_strict, 'strict history API filters out jobs from other PRs';
+
+        $t->get_ok("/api/v1/jobs/$cur_id/history?strict=0&isolation_keys=PR_ID")
+          ->status_is(200, 'history API with custom isolation keys returns successful response');
+        my $res_custom = $t->tx->res->json;
+        my $ids_custom = [sort { $a <=> $b } map { $_->{id} } @{$res_custom->{jobs}}];
+        is_deeply $ids_custom, \@expected_strict,
+          'history API with explicit PR_ID isolation key matches same-PR results';
+    };
 };
 
 done_testing();
