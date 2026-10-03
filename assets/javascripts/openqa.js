@@ -20,7 +20,7 @@ function setupForAll() {
   document.querySelectorAll('[data-bs-toggle="popover"]').forEach(e => new bootstrap.Popover(e, {html: true}));
   document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(e => new bootstrap.Tooltip(e, {html: true}));
 
-  window.jQuery?.ajaxSetup({
+  /* no:style:jquery */ window.jQuery?.ajaxSetup({
     headers: {'X-CSRF-TOKEN': getCSRFToken()}
   });
 }
@@ -28,6 +28,39 @@ function setupForAll() {
 function getCSRFToken() {
   return document.querySelector('meta[name="csrf-token"]').content;
 }
+
+window.runningFetchRequests = 0;
+function updateFetchTracking(delta) {
+  window.runningFetchRequests = Math.max(0, (window.runningFetchRequests || 0) + delta);
+}
+const originalFetch = window.fetch;
+window.fetch = function () {
+  updateFetchTracking(1);
+  return originalFetch.apply(this, arguments).finally(() => {
+    updateFetchTracking(-1);
+  });
+};
+
+const originalXHR = window.XMLHttpRequest;
+window.XMLHttpRequest = function () {
+  const xhr = new originalXHR();
+  const originalSend = xhr.send;
+  xhr.send = function () {
+    updateFetchTracking(1);
+    let decremented = false;
+    const decrement = () => {
+      if (!decremented) {
+        updateFetchTracking(-1);
+        decremented = true;
+      }
+    };
+    xhr.addEventListener('load', decrement);
+    xhr.addEventListener('error', decrement);
+    xhr.addEventListener('abort', decrement);
+    return originalSend.apply(xhr, arguments);
+  };
+  return xhr;
+};
 
 function fetchWithCSRF(resource, options) {
   options ??= {};
@@ -40,13 +73,23 @@ function handleJSONResponseOrThrow(response) {
   return response
     .json()
     .then(json => {
-      // Attach the parsed JSON to the response object for further use
+      if (!response.ok) {
+        throw json?.error || `Server returned ${response.status}: ${response.statusText}`;
+      }
       return {response, json};
     })
-    .catch(() => {
-      // If parsing fails, handle it as a non-JSON response
+    .catch(error => {
+      if (typeof error === 'string') throw error;
       throw `Server returned ${response.status}: ${response.statusText}`;
     });
+}
+
+function handleJSONResponse(response) {
+  return response
+    .clone()
+    .json()
+    .then(json => ({response, json}))
+    .catch(() => response.text().then(text => ({response, text})));
 }
 
 function makeFlashElement(text) {
@@ -128,15 +171,25 @@ function updateQueryParams(params) {
   const search = [];
   const hash = document.location.hash;
   Object.entries(params).forEach(([key, values]) => {
-    values.forEach(value => {
-      if (value === undefined) {
+    if (Array.isArray(values)) {
+      values.forEach(value => {
+        if (value === undefined) {
+          search.push(encodeURIComponent(key));
+        } else {
+          search.push(encodeURIComponent(key) + '=' + encodeURIComponent(value));
+        }
+      });
+    } else {
+      if (values === undefined) {
         search.push(encodeURIComponent(key));
       } else {
-        search.push(encodeURIComponent(key) + '=' + encodeURIComponent(value));
+        search.push(encodeURIComponent(key) + '=' + encodeURIComponent(values));
       }
-    });
+    }
   });
-  history.replaceState({}, document.title, `?${search.join('&')}${hash}`);
+  const searchString = search.length > 0 ? '?' + search.join('&') : '';
+  const url = window.location.pathname + searchString + hash;
+  history.replaceState({}, document.title, url);
 }
 
 function setupTablePersistence(table, options = {}) {
@@ -272,7 +325,8 @@ function makeUrlPort(servicePortDelta) {
     // don't put a port in the URL if there's no explicit port
     port = '';
   } else {
-    if (port !== 80 || port !== 443) port += servicePortDelta;
+    const delta = Number.parseInt(servicePortDelta || 0);
+    if (port !== 80 || port !== 443) port += delta;
     port = ':' + port;
   }
   return port;
@@ -294,7 +348,7 @@ function makeWsUrlAbsolute(url, servicePortDelta) {
   const location = window.location;
   const port = makeUrlPort(servicePortDelta);
   return (
-    (location.protocol == 'https:' ? 'wss://' : 'ws:/') +
+    (location.protocol == 'https:' ? 'wss://' : 'ws://') +
     location.hostname +
     port +
     (url.indexOf('/') !== 0 ? '/' : '') +
@@ -418,18 +472,7 @@ function restartJob(ajaxUrl, jobIds, comment) {
     body.append('comment', comment);
   }
   return fetchWithCSRF(ajaxUrl, {method: 'POST', body: body})
-    .then(response => {
-      return response
-        .json()
-        .then(json => {
-          // Attach the parsed JSON to the response object for further use
-          return {response, json};
-        })
-        .catch(() => {
-          // If parsing fails, handle it as a non-JSON response
-          throw `Server returned ${response.status}: ${response.statusText}`;
-        });
-    })
+    .then(handleJSONResponseOrThrow)
     .then(({response, json}) => {
       if (!response.ok || json.error)
         throw `Server returned ${response.status}: ${response.statusText}\n${json.error || ''}`;
@@ -488,88 +531,83 @@ function htmlEscape(str) {
 function renderSearchResults(query, url) {
   const spinner = document.getElementById('progress-indication');
   spinner.style.display = 'block';
-  const request = new XMLHttpRequest();
-  request.open('GET', urlWithBase('/api/v1/experimental/search?q=' + encodeURIComponent(query)));
-  request.setRequestHeader('Accept', 'application/json');
-  request.onload = function () {
-    // Make sure we have valid JSON here
-    // And check that we have valid data, errors are not valid data
-    let json;
-    try {
-      json = JSON.parse(this.responseText);
+  fetch(urlWithBase('/api/v1/experimental/search?q=' + encodeURIComponent(query)), {
+    headers: {Accept: 'application/json'}
+  })
+    .then(response => {
+      if (!response.ok) throw response;
+      return response.json();
+    })
+    .then(json => {
       if (!json.data) {
         throw 'Invalid search results';
       }
-    } catch (error) {
-      request.onerror();
-      return;
-    }
-    spinner.style.display = 'none';
-    const heading = document.getElementById('results-heading');
-    heading.appendChild(document.createTextNode(': ' + json.data.total_count + ' matches found'));
-    const results = document.createElement('div');
-    results.id = 'results';
-    results.className = 'list-group';
-    const types = {code: 'Test modules', modules: 'Job modules', templates: 'Job Templates'};
+      spinner.style.display = 'none';
+      const heading = document.getElementById('results-heading');
+      heading.appendChild(document.createTextNode(': ' + json.data.total_count + ' matches found'));
+      const results = document.createElement('div');
+      results.id = 'results';
+      results.className = 'list-group';
+      const types = {code: 'Test modules', modules: 'Job modules', templates: 'Job Templates'};
 
-    Object.keys(types).forEach(function (searchtype) {
-      const searchresults = json.data.results[searchtype];
-      if (searchresults.length > 0) {
-        const item = document.createElement('div');
-        item.className = 'list-group-item';
-        const header = document.createElement('h3');
-        item.appendChild(header);
-        header.id = searchtype;
-        const bold = document.createElement('strong');
-        const textnode = document.createTextNode(types[searchtype] + ': ' + searchresults.length);
-        bold.appendChild(textnode);
-        header.appendChild(bold);
-        results.append(item);
-      }
-      searchresults.forEach(function (value, index) {
-        const item = document.createElement('div');
-        item.className = 'list-group-item';
-        const header = document.createElement('div');
-        header.className = 'd-flex w-100 justify-content-between';
-        const title = document.createElement('h5');
-        title.className = 'occurrence mb-1';
-        title.appendChild(document.createTextNode(value.occurrence));
-        header.appendChild(title);
-        item.appendChild(header);
-        if (value.contents) {
-          const contents = document.createElement('pre');
-          contents.className = 'contents mb-1';
-          contents.appendChild(document.createTextNode(value.contents));
-          item.appendChild(contents);
+      Object.keys(types).forEach(function (searchtype) {
+        const searchresults = json.data.results[searchtype];
+        if (searchresults.length > 0) {
+          const item = document.createElement('div');
+          item.className = 'list-group-item';
+          const header = document.createElement('h3');
+          item.appendChild(header);
+          header.id = searchtype;
+          const bold = document.createElement('strong');
+          const textnode = document.createTextNode(types[searchtype] + ': ' + searchresults.length);
+          bold.appendChild(textnode);
+          header.appendChild(bold);
+          results.append(item);
         }
-        if (value.job_id) {
-          const link = document.createElement('a');
-          link.href = urlWithBase('/tests/' + value.job_id);
-          link.text = 'Go to job';
-          item.appendChild(link);
-        }
-        results.append(item);
+        searchresults.forEach(function (value, index) {
+          const item = document.createElement('div');
+          item.className = 'list-group-item';
+          const header = document.createElement('div');
+          header.className = 'd-flex w-100 justify-content-between';
+          const title = document.createElement('h5');
+          title.className = 'occurrence mb-1';
+          title.appendChild(document.createTextNode(value.occurrence));
+          header.appendChild(title);
+          item.appendChild(header);
+          if (value.contents) {
+            const contents = document.createElement('pre');
+            contents.className = 'contents mb-1';
+            contents.appendChild(document.createTextNode(value.contents));
+            item.appendChild(contents);
+          }
+          if (value.job_id) {
+            const link = document.createElement('a');
+            link.href = urlWithBase('/tests/' + value.job_id);
+            link.text = 'Go to job';
+            item.appendChild(link);
+          }
+          results.append(item);
+        });
       });
-    });
-    const oldResults = document.getElementById('results');
-    oldResults.parentElement.replaceChild(results, oldResults);
-  };
-  request.onerror = function () {
-    spinner.style.display = 'none';
-    let msg = this.statusText;
-    try {
-      const json = JSON.parse(this.responseText);
-      if (json && json.error) {
-        msg = json.error.split(/\n/)[0];
-      } else if (json && json.error_status) {
-        msg = json.error_status;
+      const oldResults = document.getElementById('results');
+      oldResults.parentElement.replaceChild(results, oldResults);
+    })
+    .catch(error => {
+      spinner.style.display = 'none';
+      let msg = error.statusText || error;
+      if (error.json) {
+        error.json().then(json => {
+          if (json && json.error) {
+            msg = json.error.split(/\n/)[0];
+          } else if (json && json.error_status) {
+            msg = json.error_status;
+          }
+          addFlash('danger', 'Search resulted in error: ' + msg);
+        });
+      } else {
+        addFlash('danger', 'Search resulted in error: ' + msg);
       }
-    } catch (error) {
-      msg = error;
-    }
-    addFlash('danger', 'Search resulted in error: ' + msg);
-  };
-  request.send();
+    });
 }
 
 function testStateHTML(job) {
@@ -627,126 +665,107 @@ function updateTestState(job, name, timeElem, reason) {
 }
 
 function renderJobStatus(item, id) {
-  const request = new XMLHttpRequest();
-  request.open('GET', urlWithBase('/api/v1/jobs/' + id));
-  request.setRequestHeader('Accept', 'application/json');
-  request.onload = function () {
-    // Make sure we have valid JSON here
-    // And check that we have valid data, errors are not valid data
-    let json;
-    try {
-      json = JSON.parse(this.responseText);
+  fetch(urlWithBase('/api/v1/jobs/' + id), {headers: {Accept: 'application/json'}})
+    .then(response => {
+      if (!response.ok) throw response;
+      return response.json();
+    })
+    .then(json => {
       if (!json.job) {
         throw 'Invalid job details returned';
       }
-    } catch (error) {
-      request.onerror();
-      return;
-    }
-    const header = document.createElement('div');
-    header.className = 'd-flex w-100 justify-content-between';
-    const title = document.createElement('h5');
-    title.className = 'event_name mb-1';
-    const name = document.createElement('a');
-    header.appendChild(name);
-    header.appendChild(title);
-    const timeElem = document.createElement('abbr');
-    timeElem.className = 'timeago';
-    header.appendChild(timeElem);
-    item.appendChild(header);
-    const details = document.createElement('pre');
-    details.className = 'details mb-1';
-    const reason = document.createTextNode('');
-    details.appendChild(reason);
-    item.appendChild(details);
-    updateTestState(json.job, name, timeElem, reason);
-  };
-  request.onerror = function () {
-    let msg = this.statusText;
-    try {
-      const json = JSON.parse(this.responseText);
-      if (json && json.error) {
-        msg = json.error.split(/\n/)[0];
-      } else if (json && json.error_status) {
-        msg = json.error_status;
+      const header = document.createElement('div');
+      header.className = 'd-flex w-100 justify-content-between';
+      const title = document.createElement('h5');
+      title.className = 'event_name mb-1';
+      const name = document.createElement('a');
+      header.appendChild(name);
+      header.appendChild(title);
+      const timeagoElem = document.createElement('abbr');
+      timeagoElem.className = 'timeago';
+      header.appendChild(timeagoElem);
+      item.appendChild(header);
+      const details = document.createElement('pre');
+      details.className = 'details mb-1';
+      const reason = document.createTextNode('');
+      details.appendChild(reason);
+      item.appendChild(details);
+      updateTestState(json.job, name, timeagoElem, reason);
+    })
+    .catch(error => {
+      let msg = error.statusText || error;
+      if (error.json) {
+        error.json().then(json => {
+          if (json && json.error) {
+            msg = json.error.split(/\n/)[0];
+          } else if (json && json.error_status) {
+            msg = json.error_status;
+          }
+          item.appendChild(document.createTextNode(msg));
+        });
+      } else {
+        item.appendChild(document.createTextNode(msg));
       }
-    } catch (error) {
-      msg = error;
-    }
-    item.appendChild(document.createTextNode(msg));
-  };
-  request.send();
+    });
 }
 
 function renderActivityView(ajaxUrl) {
   const spinner = document.getElementById('progress-indication');
   spinner.style.display = 'block';
-  const request = new XMLHttpRequest();
   const query = new URLSearchParams();
   query.append('search[value]', 'event:job_');
   query.append('order[0][column]', '1'); // t_created
   query.append('order[0][dir]', 'desc');
-  request.open('GET', ajaxUrl + '?' + query.toString());
-  request.setRequestHeader('Accept', 'application/json');
-  request.onload = function () {
-    // Make sure we have valid JSON here
-    // And check that we have valid data, errors are not valid data
-    let json;
-    try {
-      json = JSON.parse(this.responseText);
+  fetch(ajaxUrl + '?' + query.toString(), {headers: {Accept: 'application/json'}})
+    .then(response => {
+      if (!response.ok) throw response;
+      return response.json();
+    })
+    .then(json => {
       if (!json.data) {
         throw 'Invalid events returned';
       }
-    } catch (error) {
-      request.onerror();
-      return;
-    }
-    spinner.style.display = 'none';
-    const results = document.createElement('div');
-    results.id = 'results';
-    results.className = 'list-group';
-    const uniqueJobs = new Set();
-    json.data.forEach(function (value, index) {
-      // The audit log interprets _ as a wildcard so we enforce the prefix here
-      if (!/job_/.test(value.event)) {
-        return;
-      }
-      // We want only the latest result of each job
-      let id;
-      try {
-        id = JSON.parse(value.event_data || 'null')?.id;
-      } catch (e) {
-        return;
-      }
-      if (!id || uniqueJobs.has(id)) {
-        return;
-      }
-      uniqueJobs.add(id);
+      spinner.style.display = 'none';
+      const results = document.createElement('div');
+      results.id = 'results';
+      results.className = 'list-group';
+      const uniqueJobs = new Set();
+      json.data.forEach(function (value, index) {
+        // The audit log interprets _ as a wildcard so we enforce the prefix here
+        if (!/job_/.test(value.event)) {
+          return;
+        }
+        // We want only the latest result of each job
+        const id = JSON.parse(value.event_data).id;
+        if (uniqueJobs.has(id)) {
+          return;
+        }
+        uniqueJobs.add(id);
 
-      const item = document.createElement('div');
-      item.className = 'list-group-item';
-      renderJobStatus(item, id);
-      results.append(item);
-    });
-    const oldResults = document.getElementById('results');
-    oldResults.parentElement.replaceChild(results, oldResults);
-  };
-  request.onerror = function () {
-    spinner.style.display = 'none';
-    let msg = this.statusText;
-    try {
-      const json = JSON.parse(this.responseText);
-      if (json && json.error) {
-        msg = json.error.split(/\n/)[0];
-      } else if (json && json.error_status) {
-        msg = json.error_status;
+        const item = document.createElement('div');
+        item.className = 'list-group-item';
+        renderJobStatus(item, id);
+        results.append(item);
+      });
+      const oldResults = document.getElementById('results');
+      oldResults.parentElement.replaceChild(results, oldResults);
+    })
+    .catch(error => {
+      spinner.style.display = 'none';
+      let msg = error.statusText || error;
+      if (error.json) {
+        error.json().then(json => {
+          if (json && json.error) {
+            msg = json.error.split(/\n/)[0];
+          } else if (json && json.error_status) {
+            msg = json.error_status;
+          }
+          addFlash('danger', 'Search resulted in error: ' + msg);
+        });
+      } else {
+        addFlash('danger', 'Search resulted in error: ' + msg);
       }
-    } catch (error) {
-      msg = error;
-    }
-    addFlash('danger', 'Search resulted in error: ' + msg);
-  };
-  request.send();
+    });
 }
 
 function renderComments(row) {
@@ -844,172 +863,157 @@ function updateTimeago() {
   }
 }
 
-if (typeof window !== 'undefined' && window.jQuery) {
-  (function ($) {
-    // jQuery 4.0.0 removed several deprecated APIs. These shims maintain compatibility
-    // with 3rd-party plugins (chosen) that still rely on these methods.
-    // See: https://github.com/jquery/jquery/issues/4884
-    //
-    // NOTE: timeago has been replaced with timeago.js (vanilla JS, no jQuery dependency).
-
-    // $.active: Removed in jQuery 4. Required by Selenium wait_for_ajax in t/lib/OpenQA/SeleniumTest.pm.
-    // Note: Only tracks jQuery $.ajax calls, not fetch(). SeleniumTest.pm checks runningFetchRequests separately.
-    if ($.active === undefined) {
-      $.active = 0;
-      const originalAjax = $.ajax;
-      $.ajax = function (url, options) {
-        $.active++;
-        const jqXHR = originalAjax.apply(this, arguments);
-        jqXHR.always(() => {
-          $.active = Math.max(0, $.active - 1);
-        });
-        return jqXHR;
-      };
-    }
-
-    // $.trim: Removed in jQuery 4. Used by chosen-js/chosen.jquery.js
-    if ($.trim === undefined) {
-      $.trim = function (str) {
-        return String(str).trim();
-      };
-    }
-
-    // $.isFunction: Removed in jQuery 4. Required by some 3rd-party plugins.
-    if ($.isFunction === undefined) {
-      $.isFunction = function (obj) {
-        return typeof obj === 'function';
-      };
-    }
-
-    // $.isArray: Removed in jQuery 4. Used by chosen-js/chosen.jquery.js
-    if ($.isArray === undefined) {
-      $.isArray = Array.isArray;
-    }
-
-    // $.isPlainObject: Removed in jQuery 4. Used by chosen-js/chosen.jquery.js
-    if ($.isPlainObject === undefined) {
-      $.isPlainObject = function (obj) {
-        return obj !== null && typeof obj === 'object' && Object.getPrototypeOf(obj) === Object.prototype;
-      };
-    }
-
-    // $.isEmptyObject: Removed in jQuery 4. Used by chosen-js/chosen.jquery.js
-    if ($.isEmptyObject === undefined) {
-      $.isEmptyObject = function (obj) {
-        return Object.keys(obj).length === 0;
-      };
-    }
-
-    // $.inArray: Behavior changed in jQuery 4 (now delegates to Array.prototype.indexOf).
-    // Used by chosen-js/chosen.jquery.js. Shim for compatibility.
-    if ($.inArray === undefined) {
-      $.inArray = function (elem, arr, i) {
-        return arr ? Array.prototype.indexOf.call(arr, elem, i) : -1;
-      };
-    }
-
-    // $.fn.timeago: Maintain compatibility with templates using the old jQuery plugin API.
-    if ($.fn.timeago === undefined) {
-      $.fn.timeago = function () {
-        if (typeof timeago !== 'undefined') {
-          this.each(function () {
-            const val = this.getAttribute('datetime') || this.getAttribute('title') || this.textContent;
-            if (!val || val === 'never' || val === 'not yet') return;
-            const date = new Date(val);
-            if (isNaN(date.getTime()) && !/^\d+$/.test(val)) return;
-            if (!this.getAttribute('datetime')) {
-              this.setAttribute('datetime', val);
-            }
-            timeago.render(this);
-          });
+document.addEventListener('click', function (event) {
+  const button = event.target.closest('.copy-badge-btn');
+  if (!button) return;
+  event.preventDefault();
+  const text = button.dataset.clipboardText;
+  if (text) {
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        const icon = button.querySelector('i');
+        if (icon) {
+          icon.classList.remove('fa-image');
+          icon.classList.add('fa-check', 'text-success');
+          setTimeout(() => {
+            icon.classList.remove('fa-check', 'text-success');
+            icon.classList.add('fa-image');
+          }, 2000);
         }
-        return this;
-      };
+        const tooltip = bootstrap.Tooltip.getInstance(button);
+        if (tooltip) {
+          const originalTitle = button.getAttribute('data-bs-original-title') || button.getAttribute('title');
+          tooltip.setContent({'.tooltip-inner': 'Copied!'});
+          tooltip.show();
+          setTimeout(() => {
+            tooltip.setContent({'.tooltip-inner': originalTitle});
+            tooltip.hide();
+          }, 2000);
+        }
+      })
+      .catch(err => {
+        console.error('Failed to copy text: ', err);
+      });
+  }
+});
+
+function handleRemote(element) {
+  const method = (element.getAttribute('data-method') || 'GET').toUpperCase();
+  const url = element.getAttribute('href') || element.getAttribute('action');
+  const data = new FormData();
+  if (element.tagName === 'FORM') {
+    const formData = new FormData(element);
+    for (const [key, value] of formData.entries()) {
+      data.append(key, value);
     }
+  }
 
-    // Bootstrap 5 jQuery integration might fail with jQuery 4. Add shims if needed.
-    if (typeof bootstrap !== 'undefined') {
-      if ($.fn.popover === undefined && bootstrap.Popover) {
-        $.fn.popover = function (options) {
-          return this.each(function () {
-            new bootstrap.Popover(this, options);
-          });
-        };
-      }
-      if ($.fn.tooltip === undefined && bootstrap.Tooltip) {
-        $.fn.tooltip = function (options) {
-          return this.each(function () {
-            new bootstrap.Tooltip(this, options);
-          });
-        };
-      }
+  const options = {
+    method: method,
+    headers: {
+      Accept: '*/*;q=0.5, text/javascript, application/javascript, application/ecmascript, application/x-ecmascript'
     }
+  };
 
-    document.addEventListener('click', function (event) {
-      const button = event.target.closest('.copy-badge-btn');
-      if (!button) return;
-      event.preventDefault();
-      const text = button.dataset.clipboardText;
-      if (text) {
-        navigator.clipboard
-          .writeText(text)
-          .then(() => {
-            const icon = button.querySelector('i');
-            if (icon) {
-              icon.classList.remove('fa-image');
-              icon.classList.add('fa-check', 'text-success');
-              setTimeout(() => {
-                icon.classList.remove('fa-check', 'text-success');
-                icon.classList.add('fa-image');
-              }, 2000);
-            }
-            const tooltip = bootstrap.Tooltip.getInstance(button);
-            if (tooltip) {
-              const originalTitle = button.getAttribute('data-bs-original-title') || button.getAttribute('title');
-              tooltip.setContent({'.tooltip-inner': 'Copied!'});
-              tooltip.show();
-              setTimeout(() => {
-                tooltip.setContent({'.tooltip-inner': originalTitle});
-                tooltip.hide();
-              }, 2000);
-            }
-          })
-          .catch(err => {
-            console.error('Failed to copy text: ', err);
-          });
-      }
-    });
-  })(window.jQuery);
+  if (method !== 'GET' && method !== 'HEAD') {
+    options.body = data;
+  }
 
-  $(document).ready(function () {
-    updateTimeago();
-    setTimeout(function () {
-      const $dropdownToggle = $('.dropdown-menu a.dropdown-toggle');
-      if ($dropdownToggle.length) {
-        $dropdownToggle.off('click');
-        $dropdownToggle.on('click', function (e) {
-          const $el = $(this);
-          const $parent = $(this).offsetParent('.dropdown-menu');
-          if (!$(this).next().hasClass('show')) {
-            $(this).parents('.dropdown-menu').first().find('.show').removeClass('show');
-          }
-          const $subMenu = $(this).next('.dropdown-menu');
-          $subMenu.toggleClass('show');
-          $(this).parent('li').toggleClass('show');
-
-          if (!$parent.parent().hasClass('navbar-nav')) {
-            $el.next().css({top: $el[0].offsetTop + 'px', left: $parent.outerWidth() - 4 + 'px'});
-          }
-
-          return false;
+  fetchWithCSRF(url, options)
+    .then(response => {
+      const contentType = response.headers.get('content-type');
+      if (contentType && (contentType.includes('application/javascript') || contentType.includes('text/javascript'))) {
+        return response.text().then(text => {
+          eval(text);
+          return {response, data: text};
         });
       }
-
-      const $dropdown = $('.nav-item.dropdown');
-      $dropdown.off('hidden.bs.dropdown');
-      $dropdown.on('hidden.bs.dropdown', function (e) {
-        $(this).find('.dropdown-menu .show').removeClass('show');
-      });
-    }, 0);
-  });
+      return response
+        .json()
+        .then(json => ({response, data: json}))
+        .catch(() => response.text().then(text => ({response, data: text})));
+    })
+    .then(({response, data}) => {
+      if (response.ok) {
+        element.dispatchEvent(
+          new CustomEvent('ajax:success', {
+            bubbles: true,
+            cancelable: true,
+            detail: [data, response.statusText, response]
+          })
+        );
+      } else {
+        element.dispatchEvent(
+          new CustomEvent('ajax:error', {
+            bubbles: true,
+            cancelable: true,
+            detail: [response, response.statusText, data]
+          })
+        );
+      }
+    })
+    .catch(error => {
+      element.dispatchEvent(
+        new CustomEvent('ajax:error', {bubbles: true, cancelable: true, detail: [null, 'error', error]})
+      );
+    })
+    .finally(() => {
+      element.dispatchEvent(new CustomEvent('ajax:complete', {bubbles: true, cancelable: true}));
+    });
 }
+
+function handleMethod(element) {
+  const method = element.getAttribute('data-method').toUpperCase();
+  const url = element.getAttribute('href');
+  const csrfParam = document.querySelector('meta[name="csrf-param"]')?.content || 'csrf_token';
+  const csrfToken = getCSRFToken();
+
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = url;
+  form.style.display = 'none';
+
+  if (method !== 'POST') {
+    const methodInput = document.createElement('input');
+    methodInput.type = 'hidden';
+    methodInput.name = '_method';
+    methodInput.value = method;
+    form.appendChild(methodInput);
+  }
+
+  const csrfInput = document.createElement('input');
+  csrfInput.type = 'hidden';
+  csrfInput.name = csrfParam;
+  csrfInput.value = csrfToken;
+  form.appendChild(csrfInput);
+
+  const submit = document.createElement('input');
+  submit.type = 'submit';
+  form.appendChild(submit);
+
+  document.body.appendChild(form);
+  submit.click();
+}
+
+document.addEventListener('click', event => {
+  const element = event.target.closest(
+    'a[data-method], a[data-confirm], a[data-remote], button[data-remote], input[data-remote]'
+  );
+  if (!element) return;
+
+  const confirmMsg = element.getAttribute('data-confirm');
+  if (confirmMsg && !window.confirm(confirmMsg)) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    return;
+  }
+
+  if (element.getAttribute('data-remote')) {
+    event.preventDefault();
+    handleRemote(element);
+  } else if (element.getAttribute('data-method')) {
+    event.preventDefault();
+    handleMethod(element);
+  }
+});

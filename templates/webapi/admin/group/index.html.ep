@@ -2,7 +2,7 @@
 % title 'Job groups';
 
 % content_for 'ready_function' => begin
-  $('#groups').DataTable();
+  new DataTable('#groups');
 % end
 
 <div class="modal fade" id="add_group_modal" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
