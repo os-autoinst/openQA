@@ -1323,6 +1323,66 @@ subtest 'history isolation keys separate the scenario history' => sub {
         $t->get_ok('/tests/' . $cur->id . '/investigation_ajax?strict=0')->status_is(200);
         $t->json_is('/last_good/link' => '/tests/' . $good_other->id);
     };
+
+    subtest 'history API endpoint handles isolation parameters' => sub {
+        my $cur_id = $cur->id;
+        $t->get_ok("/api/v1/jobs/$cur_id/history")
+          ->status_is(200, 'history API returns successful response for valid job');
+
+        my $res_all = $t->tx->res->json;
+        my $ids_all = [sort { $a <=> $b } map { $_->{id} } @{$res_all->{jobs}}];
+        my @expected_all = sort { $a <=> $b } ($pr1a->id, $pr1b->id, $pr2->id, $cur->id);
+        is_deeply $ids_all, \@expected_all,
+          'non-strict/generalized history API returns all jobs from all PRs and current job';
+
+        $t->get_ok("/api/v1/jobs/$cur_id/history?strict=1")
+          ->status_is(200, 'strict history API returns successful response');
+        my $res_strict = $t->tx->res->json;
+        my $ids_strict = [sort { $a <=> $b } map { $_->{id} } @{$res_strict->{jobs}}];
+        my @expected_strict = sort { $a <=> $b } ($pr1a->id, $pr1b->id, $cur->id);
+        is_deeply $ids_strict, \@expected_strict, 'strict history API filters out jobs from other PRs';
+
+        $t->get_ok("/api/v1/jobs/$cur_id/history?strict=0&isolation_keys=PR_ID")
+          ->status_is(200, 'history API with custom isolation keys returns successful response');
+        my $res_custom = $t->tx->res->json;
+        my $ids_custom = [sort { $a <=> $b } map { $_->{id} } @{$res_custom->{jobs}}];
+        is_deeply $ids_custom, \@expected_strict,
+          'history API with explicit PR_ID isolation key matches same-PR results';
+    };
+
+    subtest 'jobs list and overview API handle latest de-duplication with isolation' => sub {
+        $t->get_ok('/api/v1/jobs?latest=1&distri=iso-distri&test=isolation')
+          ->status_is(200, 'list latest without isolation returns successfully');
+        my $res_no_iso = $t->tx->res->json;
+        is scalar @{$res_no_iso->{jobs}}, 1, 'list latest without isolation collapses all jobs to a single latest job';
+
+        $t->get_ok('/api/v1/jobs?latest=1&distri=iso-distri&test=isolation&strict=1')
+          ->status_is(200, 'list latest with strict isolation returns successfully');
+        my $res_strict = $t->tx->res->json;
+        my $ids_strict = [sort { $a <=> $b } map { $_->{id} } @{$res_strict->{jobs}}];
+        my @expected_strict = sort { $a <=> $b } ($pr2->id, $cur->id);
+        is_deeply $ids_strict, \@expected_strict,
+          'list latest with strict isolation keeps distinct jobs for different PR_IDs';
+
+        $t->get_ok('/api/v1/jobs?latest=1&distri=iso-distri&test=isolation&isolation_keys=PR_ID')
+          ->status_is(200, 'list latest with explicit isolation keys returns successfully');
+        my $res_custom = $t->tx->res->json;
+        my $ids_custom = [sort { $a <=> $b } map { $_->{id} } @{$res_custom->{jobs}}];
+        is_deeply $ids_custom, \@expected_strict,
+          'list latest with explicit PR_ID isolation matches strict isolation results';
+
+        $t->get_ok('/api/v1/jobs/overview?distri=iso-distri&test=isolation')
+          ->status_is(200, 'overview latest without isolation returns successfully');
+        my $res_ov_no_iso = $t->tx->res->json;
+        is scalar @$res_ov_no_iso, 1, 'overview latest without isolation collapses all jobs to a single latest job';
+
+        $t->get_ok('/api/v1/jobs/overview?distri=iso-distri&test=isolation&strict=1')
+          ->status_is(200, 'overview latest with strict isolation returns successfully');
+        my $res_ov_strict = $t->tx->res->json;
+        my $ids_ov_strict = [sort { $a <=> $b } map { $_->{id} } @$res_ov_strict];
+        is_deeply $ids_ov_strict, \@expected_strict,
+          'overview latest with strict isolation keeps distinct jobs for different PR_IDs';
+    };
 };
 
 done_testing();
