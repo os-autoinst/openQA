@@ -15,7 +15,7 @@ use OpenQA::Utils qw(find_video_files usleep_backoff);
 
 use Digest::MD5;
 use Fcntl;
-use POSIX 'strftime';
+use POSIX qw(strftime SIGKILL);
 use File::Basename 'basename';
 use File::stat;
 use File::Which 'which';
@@ -291,9 +291,19 @@ sub _handle_engine_startup ($self, $engine, $max_job_time) {
     $self->_set_status(running => {});
 }
 
-sub kill ($self) {
+# sends SIGKILL to the whole process group of isotovideo
+sub _kill_process_group ($self, $pid) { kill SIGKILL, -$pid }
+
+sub kill ($self, $force = 0) {
     return undef unless my $engine = $self->engine;
-    if (my $child = $engine->{child}) { $child->stop }
+    my $child = $engine->{child} or return undef;
+    my $pid = $child->pid or return undef;
+
+    if ($force) { $self->_kill_pgrp($pid); return undef }
+
+    # graceful stop
+    $child->stop;
+    $self->_kill_process_group($pid);
     return undef;
 }
 
@@ -312,7 +322,10 @@ sub stop ($self, $reason = undef) {
 
     # ignore calls to stop if already stopped or stopping
     # note: This method might be called at any time (including when an interrupted happens).
-    return undef if $self->is_stopped_or_stopping;
+    if ($self->is_stopped_or_stopping) {
+        $self->kill(1) if $self->status eq 'stopping';
+        return undef;
+    }
 
     my $status = $self->status;
     $self->_set_status(stopped => {reason => $reason}) and return undef
