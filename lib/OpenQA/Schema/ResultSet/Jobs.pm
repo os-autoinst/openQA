@@ -4,6 +4,7 @@
 package OpenQA::Schema::ResultSet::Jobs;
 
 use Mojo::Base 'DBIx::Class::ResultSet', -signatures;
+use OpenQA::JobSettings::Lifecycle qw(apply_lifecycle_prio parse_lifecycle_rules);
 use DBIx::Class::Timestamps 'now';
 use Date::Format 'time2str';
 use Encode qw(decode_utf8);
@@ -222,6 +223,10 @@ sub _apply_prio_throttling ($self, $settings, $new_job_args, $group = undef) {
     my $base_prio = $new_job_args->{priority} // 0;
     my @throttling_info;
     my $config = OpenQA::App->singleton && OpenQA::App->singleton->config;
+    if ($config) {
+        my $lifecycle_rules = parse_lifecycle_rules($config);
+        apply_lifecycle_prio($settings, $new_job_args, \@throttling_info, $lifecycle_rules);
+    }
     if ($config && (my $throttling = $config->{misc_limits}->{prio_throttling_data})) {
         my @timeout_settings = ($settings->{TIMEOUT_SCALE}, $settings->{MAX_JOB_TIME});
         for my $mjt_rule (@{$throttling->{MAX_JOB_TIME} // []}) {
