@@ -196,6 +196,16 @@
                     </div>
                     <div class="col-5">
                         <div class="mb-3">
+                            <label class="form-label" for="filter-min-restarts"><strong>Minimum restarts</strong></label>
+                            <%= help_popover('Help for the <em>Minimum restarts</em> filter' => '
+                            <p>Shows jobs that have been restarted at least this many times</p>') %>
+                            <input type="number" class="form-control" name="min_restarts" id="filter-min-restarts" min="1" placeholder="e.g. 1">
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-5">
+                        <div class="mb-3">
                             <strong>Misc</strong>
                             <input value="1" name="todo" type="checkbox" id="filter-todo">
                             <label class="form-label" for="filter-todo">TODO</label>

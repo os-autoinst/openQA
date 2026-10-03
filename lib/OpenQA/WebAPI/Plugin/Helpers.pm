@@ -5,7 +5,7 @@ package OpenQA::WebAPI::Plugin::Helpers;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use Mojo::ByteStream;
-use OpenQA::Constants qw(JOBS_OVERVIEW_SEARCH_CRITERIA);
+use OpenQA::Constants qw(JOBS_OVERVIEW_SEARCH_CRITERIA MAX_RESTART_FILTER_JOINS);
 use OpenQA::Schema;
 use OpenQA::Utils qw(bugurl human_readable_size render_escaped_refs href_to_bugref);
 use OpenQA::Events;
@@ -394,6 +394,7 @@ sub _compose_job_overview_search_args ($c) {
     $v->optional($_, 'not_empty') for JOBS_OVERVIEW_SEARCH_CRITERIA;
     $v->optional('comment');
     $v->optional('groupid')->num(0, undef);
+    $v->optional('min_restarts')->num(1, undef);
     $v->optional('modules', 'comma_separated');
     $v->optional('flavor', 'comma_separated');
     $v->optional('limit', 'not_empty')->num(1, undef);
@@ -530,7 +531,29 @@ sub _compute_overview_filtering_params ($c) {
     my $archs = $c->every_non_empty_param('arch');
     my $machines = $c->every_non_empty_param('machine');
     my $failed_modules = $c->every_non_empty_param('failed_modules');
+    my $min_restarts = $c->validation->param('min_restarts');
+    my $capped_restarts = $min_restarts ? min($min_restarts, MAX_RESTART_FILTER_JOINS) : 0;
     my @conds = (
+        (
+            $min_restarts
+            ? \[
+                'EXISTS (
+                    WITH RECURSIVE job_restart_chain AS (
+                        SELECT id AS ancestor_id, 1 AS level
+                        FROM jobs
+                        WHERE clone_id = me.id
+                        UNION ALL
+                        SELECT j.id AS ancestor_id, c.level + 1 AS level
+                        FROM jobs j
+                        JOIN job_restart_chain c ON j.clone_id = c.ancestor_id
+                        WHERE c.level < ?
+                    )
+                    SELECT 1 FROM job_restart_chain WHERE level >= ? LIMIT 1
+                )',
+                ($capped_restarts) x 2
+              ]
+            : ()
+        ),
         (@$states ? {'me.state' => {-in => $states}} : ()),
         (@$results ? {'me.result' => {-in => $results}} : ()),
         (@$states_not ? {'me.state' => {-not_in => $states_not}} : ()),
