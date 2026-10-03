@@ -233,8 +233,10 @@ sub enqueue_download_jobs ($self, $downloads, $minion_ids = undef) {
     # array of hashrefs job_id => id; this is what create needs
     # to create entries in a related table (gru_dependencies)
     for my $url (keys %$downloads) {
-        my ($path, $do_extract, $block_job_ids) = @{$downloads->{$url}};
-        my $job = $self->enqueue('download_asset', [$url, $path, $do_extract], {priority => 10}, $block_job_ids);
+        my ($path, $do_extract, $block_job_ids, $options) = @{$downloads->{$url}};
+        my @job_args = ($url, $path, $do_extract);
+        push @job_args, $options if $options && %$options;
+        my $job = $self->enqueue('download_asset', \@job_args, {priority => 10}, $block_job_ids);
         push @$minion_ids, $job->{minion_id} if $minion_ids;
     }
 }
