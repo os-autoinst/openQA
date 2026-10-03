@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title><%= $appname %>: <%= $group->{full_name} %></title>
+    <link><%= $feed_link %></link>
+    <atom:link href="<%= $feed_self_link %>" rel="self" type="application/rss+xml"/>
+    <description>Recent builds of <%= $group->{full_name} %></description>
+% if (my $first = $feed_items->[0]) {
+    <lastBuildDate><%= $first->{date} %></lastBuildDate>
+% }
+% for my $item (@$feed_items) {
+    <item>
+      <title><%= $item->{title} %></title>
+      <link><%= $item->{link} %></link>
+      <guid isPermaLink="false"><%= $item->{guid} %></guid>
+      <pubDate><%= $item->{date} %></pubDate>
+    </item>
+% }
+  </channel>
+</rss>

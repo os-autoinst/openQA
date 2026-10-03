@@ -98,7 +98,44 @@ sub _respond_error_for_group_overview ($self, $error) {
     $self->stash(error_message => $error);
     $self->respond_to(
         json => {json => {error => $error}, status => 400},
-        html => {template => 'main/specific_not_found', status => 400},
+        any => sub ($self) { $self->render(template => 'main/specific_not_found', format => 'html', status => 400) },
+    );
+}
+
+sub _render_group_feed ($self, $group, $build_results, $children = []) {
+    my $group_id = $group->{id};
+    my @group_query = @$children ? (map { (groupid => $_->{id}) } @$children) : (groupid => $group_id);
+    my @items;
+    for my $build_res (@$build_results) {
+        my ($version, $build) = ($build_res->{version}, $build_res->{build});
+        my $label
+          = ($build_res->{version_count} > 1 || $group->{always_show_version})
+          ? "$version-Build$build"
+          : "Build$build";
+
+        # Build the link for the result. A single Build can contain multiple distris, but only one version
+        my $link = $self->url_for('tests_overview')->query(
+            distri => [sort keys %{$build_res->{distris}}],
+            version => $version,
+            build => $build,
+            @group_query,
+        )->to_abs->to_string;
+
+        push @items,
+          {
+            title => $label,
+            link => $link,
+            guid => "$group_id-$build_res->{key}",
+            date => time2str('%a, %d %b %Y %T +0000', $build_res->{date}->epoch, 'UTC'),
+          };
+    }
+    my $route = $group->{is_parent} ? 'parent_group_overview' : 'group_overview';
+    $self->render(
+        template => 'main/group_feed',
+        format => 'rss',
+        feed_items => \@items,
+        feed_link => $self->url_for($route, groupid => $group_id)->to_abs->to_string,
+        feed_self_link => $self->url_for($route, groupid => $group_id, format => 'rss')->to_abs->to_string,
     );
 }
 
@@ -250,6 +287,9 @@ sub _group_overview ($self, $resultset, $template) {
                     comments => \@comments_hashes,
                     pinned_comments => \@pinned_comments_hashes,
                 });
+        },
+        rss => sub ($self) {
+            $self->_render_group_feed($group_hash, $build_results, $children);
         },
         html => sub ($self) {
             $self->render(template => $template);
