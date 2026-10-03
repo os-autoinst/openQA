@@ -24,10 +24,33 @@ subtest '404 error page' => sub {
 };
 
 subtest 'error pages shown for OpenQA::WebAPI::Controller::Step' => sub {
+    my $schema = $t->app->schema;
+    my $job = $schema->resultset('Jobs')->find(99946);
+    my $real_needle_dir = Mojo::File->new($job->needle_dir)->realpath->to_string;
+    my $dir = $schema->resultset('NeedleDirs')->find_or_create(
+        {
+            path => $real_needle_dir,
+            name => 'fixtures'
+        });
+    $schema->resultset('Needles')->find_or_create(
+        {
+            dir_id => $dir->id,
+            filename => 'inst-timezone-text.json',
+        });
+
     my $existing_job = 99946;
     $t->get_ok("/tests/$existing_job/modules/installer_timezone/steps/1")->status_is(302, 'redirection');
+
+    my $needle_path = "$real_needle_dir/inst-timezone-text.json";
+    my $backup_path = "$real_needle_dir/inst-timezone-text.json.bak";
+    rename $needle_path, $backup_path or die "Failed to rename needle: $!";
+
     $t->get_ok("/tests/$existing_job/modules/installer_timezone/steps/1", {'X-Requested-With' => 'XMLHttpRequest'})
-      ->status_is(200);
+      ->status_is(200)->content_like(qr/inst-timezone-text/)
+      ->content_like(qr/<span class="badge bg-danger text-light ms-1">deleted<\/span>/)
+      ->content_unlike(qr/show-needle-info.*inst-timezone-text/);
+
+    rename $backup_path, $needle_path or die "Failed to restore needle: $!";
     $t->get_ok("/tests/$existing_job/modules/installer_timezone/steps/1/src")->status_is(200)
       ->content_type_is('text/html;charset=UTF-8');
     $t->get_ok("/tests/$existing_job/modules/installer_timezone/steps/1/src.txt")->status_is(200)

@@ -15,7 +15,7 @@ use Mojo::JSON qw(decode_json encode_json);
 use Mojo::File qw(path);
 use Mojo::IOLoop;
 use Mojo::URL;
-use OpenQA::Test::TimeLimit '40';
+use OpenQA::Test::TimeLimit '60';
 use OpenQA::Test::Case;
 use OpenQA::Test::Utils qw(prepare_clean_needles_dir prepare_default_needle wait_for);
 use OpenQA::Client;
@@ -172,9 +172,22 @@ subtest 'displaying audio result' => sub {
 };
 
 subtest 'displaying image result with candidates' => sub {
-    $driver->find_element('[href="#step/bootloader/1"]')->click();
+    my $step_el = $driver->find_element('[href="#step/bootloader/1"]');
+    $step_el->click();
     my $needles = find_candidate_needles;
-    is_deeply $needles, {'inst-bootmenu' => []}, 'correct tags displayed' or always_explain $needles;
+    is_deeply $needles, {'inst-bootmenu' => ['100%: bootmenu-dvd-12.3']}, 'correct tags displayed'
+      or always_explain $needles;
+    $step_el->click();
+};
+
+subtest 'displaying image result with deleted candidate' => sub {
+    my $step_el = $driver->find_element('[href="#step/installer_timezone/1"]');
+    $step_el->click();
+    my $needles = find_candidate_needles;
+    my $inst_timezone_list = $needles->{'inst-timezone'} // [];
+    is scalar @$inst_timezone_list, 1, 'exactly one candidate for inst-timezone';
+    like $inst_timezone_list->[0], qr/inst-timezone\s+deleted/, 'inst-timezone has deleted badge';
+    $step_el->click();
 };
 
 subtest 'filtering' => sub {
