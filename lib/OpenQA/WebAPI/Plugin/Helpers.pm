@@ -174,6 +174,12 @@ sub register ($self, $app, $config) {
             return OpenQA::Events->singleton->emit($event, [$user, $c->tx->connection, $event, $data]);
         });
 
+    $app->helper(
+        lifecycle_matches => sub ($c, $settings) {
+            require OpenQA::JobSettings::Lifecycle;
+            return OpenQA::JobSettings::Lifecycle::lifecycle_matches($c->app->config, $settings);
+        });
+
     $app->helper(text_with_title => sub ($c, $text) { $c->tag('span', title => $text, $text) });
 
     my %progress_bar_query_by_key = (
