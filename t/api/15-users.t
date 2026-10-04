@@ -38,6 +38,7 @@ is $app->schema->resultset('Users')->find(99902)->feature_version, 42, 'feature 
 my $res = $t->post_ok('/api/v1/users/me/api_keys')->status_is(200, 'create api key')->tx->res->json;
 ok $res->{key}, 'key returned';
 ok $res->{secret}, 'secret returned and non-empty';
+is $res->{comment}, '', 'comment is empty string when not provided on creation';
 my $expected_year = time2str('%Y', time + ONE_YEAR, 'UTC');
 like $res->{t_expiration}, qr/^$expected_year-/, 'default expiration is set to 1 year from now';
 my $key1 = $res->{key};
@@ -45,14 +46,16 @@ my $key1 = $res->{key};
 my $new_key = $app->schema->resultset('ApiKeys')->find({key => $res->{key}});
 ok $new_key, 'key found in DB';
 is $new_key->user_id, 99902, 'key belongs to correct user';
+is $new_key->comment, '', 'comment in DB is empty string when not provided';
 
 subtest 'create_api_key with expiration' => sub {
     my $expiration_time = time + ONE_YEAR;
     my $expiration = time2str('%Y-%m-%d %H:%M:%S', $expiration_time, 'UTC');
-    $res = $t->post_ok('/api/v1/users/me/api_keys' => form => {expiration => $expiration})
-      ->status_is(200, 'create api key with expiration')->tx->res->json;
+    $res = $t->post_ok('/api/v1/users/me/api_keys' => form => {expiration => $expiration, comment => 'my bot key'})
+      ->status_is(200, 'create api key with expiration and comment')->tx->res->json;
     ok $res->{key}, 'key returned';
     ok $res->{secret}, 'secret returned on key creation with expiration';
+    is $res->{comment}, 'my bot key', 'comment matches submitted form value';
     my $expected_year = time2str('%Y', $expiration_time, 'UTC');
     like $res->{t_expiration}, qr/^$expected_year-/, 'expiration matches expected year';
 };
@@ -62,14 +65,35 @@ subtest 'create_api_key with invalid expiration' => sub {
       ->status_is(400, 'invalid expiration rejected');
 };
 
+subtest 'create_api_key comment handling' => sub {
+    $res = $t->post_ok('/api/v1/users/me/api_keys' => form => {comment => '   '})
+      ->status_is(200, 'create api key with whitespace-only comment succeeds')->tx->res->json;
+    is $res->{comment}, '', 'whitespace comment is normalized to empty string';
+
+    $res = $t->post_ok('/api/v1/users/me/api_keys' => form => {comment => '  trimmed key  '})
+      ->status_is(200, 'create api key with surrounding whitespace succeeds')->tx->res->json;
+    is $res->{comment}, 'trimmed key', 'surrounding whitespace is trimmed';
+
+    $res = $t->post_ok('/api/v1/users/me/api_keys' => form => {comment => '<escaped&untrusted>'})
+      ->status_is(200, 'create api key with special characters succeeds')->tx->res->json;
+    is $res->{comment}, '<escaped&untrusted>', 'special characters in comment preserved in JSON response';
+
+    $t->post_ok('/api/v1/users/me/api_keys' => form => {comment => 'x' x 256})
+      ->status_is(400, 'comment longer than 255 characters rejected');
+};
+
 subtest 'test list_api_keys' => sub {
     my $key2 = $res->{key};
     $res = $t->get_ok('/api/v1/users/me/api_keys')->status_is(200, 'list api keys')->tx->res->json;
     my $api_keys = $res->{keys};
     ok scalar @$api_keys >= 2, 'at least two keys found';
-    ok +(grep { $_->{key} eq $key1 } @$api_keys), "key $key1 found in list";
-    ok +(grep { $_->{key} eq $key2 } @$api_keys), "key $key2 found in list";
-    ok !exists $api_keys->[0]{secret}, 'secret is not returned in list';
+    my ($found_key1) = grep { $_->{key} eq $key1 } @$api_keys;
+    ok $found_key1, "key $key1 found in list";
+    is $found_key1->{comment}, '', 'comment is empty string in list when not provided';
+    my ($found_key2) = grep { $_->{key} eq $key2 } @$api_keys;
+    ok $found_key2, "key $key2 found in list";
+    is $found_key2->{comment}, '<escaped&untrusted>', 'comment is present in listed key';
+    ok !(grep { exists $_->{secret} } @$api_keys), 'secret is not present in any returned key';
 };
 
 subtest 'test delete_api_key' => sub {

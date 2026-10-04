@@ -4,6 +4,7 @@
 package OpenQA::Schema::Result::ApiKeys;
 use Mojo::Base 'DBIx::Class::Core', -signatures;
 
+use Mojo::Util 'trim';
 use OpenQA::Utils 'random_hex';
 
 __PACKAGE__->table('api_keys');
@@ -27,6 +28,11 @@ __PACKAGE__->add_columns(
         data_type => 'timestamp',
         is_nullable => 1,
     },
+    comment => {
+        data_type => 'text',
+        default_value => '',
+        is_nullable => 0,
+    },
 );
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
@@ -36,6 +42,7 @@ __PACKAGE__->belongs_to(user => 'OpenQA::Schema::Result::Users', 'user_id');
 sub new ($class, $attrs) {
     $attrs->{key} = random_hex() unless $attrs->{key};
     $attrs->{secret} = random_hex() unless $attrs->{secret};
+    $attrs->{comment} = trim($attrs->{comment} // '');
 
     my $new = $class->next::method($attrs);
     return $new;

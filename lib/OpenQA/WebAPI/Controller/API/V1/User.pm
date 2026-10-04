@@ -5,6 +5,7 @@ package OpenQA::WebAPI::Controller::API::V1::User;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
 use DateTime::Format::Pg;
 use Feature::Compat::Try;
+use OpenQA::Constants 'API_KEY_COMMENT_MAX_LENGTH';
 
 =pod
 
@@ -65,8 +66,8 @@ sub delete_self ($self) {
 
 =item create_api_key()
 
-Create a new API key.
-Returns the key, secret, and expiration.
+Create a new API key. Accepts optional C<expiration> datetime and optional
+C<comment> as form params. Returns the key, secret, comment, and expiration.
 
 =back
 
@@ -77,6 +78,7 @@ sub create_api_key ($self) {
     my $expiration;
     my $validation = $self->validation;
     $validation->optional('expiration', 'seconds_optional')->datetime;
+    $validation->optional('comment')->size(0, API_KEY_COMMENT_MAX_LENGTH);
     return $self->render(
         json => {error => 'Date must be in format ' . DateTime::Format::Pg->format_datetime(DateTime->now())},
         status => 400
@@ -85,12 +87,13 @@ sub create_api_key ($self) {
       = $validation->is_valid('expiration')
       ? DateTime::Format::Pg->parse_datetime($validation->param('expiration'))
       : DateTime->now->add(years => 1);
-    my $apikey = $user->api_keys->create({t_expiration => $expiration});
+    my $apikey = $user->api_keys->create({t_expiration => $expiration, comment => $validation->param('comment')});
     $self->render(
         json => {
             id => $apikey->id,
             key => $apikey->key,
             secret => $apikey->secret,
+            comment => $apikey->comment,
             t_expiration => $apikey->t_expiration
         });
 }
@@ -99,7 +102,7 @@ sub create_api_key ($self) {
 
 =item list_api_keys()
 
-List API keys of the current user.
+List API keys of the current user. Includes C<comment> for each key; the secret is omitted.
 
 =back
 
@@ -110,6 +113,7 @@ sub list_api_keys ($self) {
     my @keys = map {
         {
             key => $_->key,
+            comment => $_->comment,
             t_expiration => $_->t_expiration,
             t_created => $_->t_created,
             t_updated => $_->t_updated,
