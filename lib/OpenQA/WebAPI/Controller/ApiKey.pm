@@ -17,6 +17,7 @@ sub create ($self) {
     my $expiration;
     my $validation = $self->validation;
     $validation->optional('t_expiration', 'seconds_optional')->datetime;
+    $validation->optional('comment');
 
     my $error;
     if ($validation->has_error) {
@@ -28,7 +29,22 @@ sub create ($self) {
         catch ($e) { $error = $e }    # uncoverable statement
     }
     unless ($error) {
-        try { $self->schema->resultset('ApiKeys')->create({user_id => $user->id, t_expiration => $expiration}) }
+        my $comment = $validation->param('comment');
+        if (defined $comment && !ref $comment) {
+            $comment =~ s/^\s+|\s+$//g;
+            $comment = undef unless length $comment;
+        }
+        else {
+            $comment = undef;
+        }
+        try {
+            $self->schema->resultset('ApiKeys')->create(
+                {
+                    user_id => $user->id,
+                    t_expiration => $expiration,
+                    comment => $comment,
+                });
+        }
         catch ($e) { $error = $e }    # uncoverable statement
     }
     if ($error) {
