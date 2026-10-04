@@ -107,6 +107,9 @@ subtest 'filesystem removal' => sub {
 my $core72iso_path = assetdir() . '/iso/Core-7.2.iso';
 Mojo::File->new($core72iso_path)->spew('foo') unless (-f $core72iso_path);
 
+# touch all files to ensure they are "new" for the tests
+path(assetdir())->list_tree({dir => 1})->each(sub { utime undef, undef, $_->to_string });
+
 # scan initially for untracked assets and refresh
 $schema->resultset('Assets')->scan_for_untracked_assets();
 $schema->resultset('Assets')->refresh_assets();
