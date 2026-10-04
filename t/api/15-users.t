@@ -136,11 +136,23 @@ subtest 'create_api_key with expiration' => sub {
     is $res->{comment}, 'my bot key', 'comment matches submitted form value';
     my $expected_year = time2str('%Y', $expiration_time, 'UTC');
     like $res->{t_expiration}, qr/^$expected_year-/, 'expiration matches expected year';
+
+    my $json_expiration_time = time + 2 * ONE_YEAR;
+    my $json_expiration = time2str('%Y-%m-%d %H:%M:%S', $json_expiration_time, 'UTC');
+    $res = $t->post_ok('/api/v1/users/me/api_keys' => json => {expiration => $json_expiration})
+      ->status_is(200, 'create api key with JSON payload succeeds')->tx->res->json;
+    ok $res->{key}, 'key returned for JSON payload';
+    ok $res->{secret}, 'secret returned for JSON payload';
+    my $expected_json_year = time2str('%Y', $json_expiration_time, 'UTC');
+    like $res->{t_expiration}, qr/^$expected_json_year-/, 'JSON payload expiration is used instead of the default';
 };
 
 subtest 'create_api_key with invalid expiration' => sub {
     $t->post_ok('/api/v1/users/me/api_keys' => form => {expiration => 'invalid'})
       ->status_is(400, 'invalid expiration rejected');
+
+    $t->post_ok('/api/v1/users/me/api_keys' => json => {expiration => 'invalid'})
+      ->status_is(400, 'invalid expiration in JSON payload rejected');
 };
 
 subtest 'create_api_key comment handling' => sub {

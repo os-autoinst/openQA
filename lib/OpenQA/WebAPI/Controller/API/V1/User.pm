@@ -136,6 +136,8 @@ sub create_api_key ($self) {
     my $user = $self->current_user;
     my $expiration;
     my $validation = $self->validation;
+    my $json = $self->req->json;
+    $validation->input($json) if ref $json eq 'HASH';
     $validation->optional('expiration', 'seconds_optional')->datetime;
     $validation->optional('comment')->size(0, API_KEY_COMMENT_MAX_LENGTH);
     return $self->render(
