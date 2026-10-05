@@ -551,7 +551,7 @@ sub missing_assets ($self) {
     # ignore UEFI_PFLASH_VARS; to keep scheduling simple it is present in lots of jobs which actually don't need it
     delete $assets_settings->{UEFI_PFLASH_VARS};
 
-    my $parent_job_ids = $self->_parent_job_ids;
+    my $parent_job_ids = $self->parent_job_ids;
     # ignore repos, as they're not really clonable: see
     # https://github.com/os-autoinst/openQA/pull/2676#issuecomment-616312026
     my @relevant_assets
@@ -1522,8 +1522,9 @@ sub update_status ($self, $status) {
 
 my %CHAINED_DEPENDENCY_QUERY = (dependency => {-in => [OpenQA::JobDependencies::Constants::CHAINED_DEPENDENCIES]});
 
-sub _parent_job_ids ($self) {
-    my @parents = $self->parents->search(\%CHAINED_DEPENDENCY_QUERY, {columns => ['parent_job_id']});
+sub parent_job_ids ($self) {
+    my @parents
+      = $self->parents->search(\%CHAINED_DEPENDENCY_QUERY, {columns => ['parent_job_id'], order_by => 'parent_job_id'});
     return [map { $_->parent_job_id } @parents];
 }
 
@@ -1534,7 +1535,7 @@ sub register_assets_from_settings ($self) {
 
     return undef unless keys %assets;
 
-    my $parent_job_ids = $self->_parent_job_ids;
+    my $parent_job_ids = $self->parent_job_ids;
 
     # updated settings with actual file names
     my %updated;

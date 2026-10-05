@@ -23,6 +23,7 @@ my $fixtures = '01-jobs.pl 06-job_dependencies.pl';
 my $schema = $test_case->init_data(schema_name => $schema_name, fixtures_glob => $fixtures);
 my $jobs = $schema->resultset('Jobs');
 my $job_deps = $schema->resultset('JobDependencies');
+my $assets = $schema->resultset('Assets');
 
 sub prepare_database () {
     # Populate more cluster jobs
@@ -95,6 +96,17 @@ $driver->find_element_by_link_text('Login')->click();
 
 sub flash_messages () { $driver->find_element('#flash-messages')->get_text }
 
+sub ensure_asset_exists ($name) { $assets->find_or_create({name => $name, type => 'iso', size => 0}) }
+
+sub verify_parent_skip_ok_button (%args) {
+    my $button = $driver->find_element('#flash-messages .restart-parent-skip-ok');
+    ok $button, 'restart parent skipping OK children button is present' or return undef;
+    is $button->get_text, 'Restart parent job skipping passed/softfailed children', 'button text';
+    $button->click if $args{click};    # click the button to restart parent job skipping OK children
+    return $button;
+}
+
+
 subtest 'restart job from info panel in test results' => sub {
     subtest 'parent job shows options for advanced restart' => sub {
         $driver->get_ok('/tests/99900', 'go to job 99900');
@@ -133,8 +145,30 @@ subtest 'restart job from info panel in test results' => sub {
         $job_deps->create({child_job_id => 99939, parent_job_id => 99947, dependency => CHAINED});
         is $driver->get('/tests/99939'), 1, 'go to job 99939';
         $driver->find_element('#restart-result')->click();
-        wait_until(sub { flash_messages =~ m/Job 99939 misses.*\.iso.*You may try to retrigger the parent job/s },
+        wait_until(sub { flash_messages =~ m/Job 99939 misses.*\.iso.*You may try to retrigger the parent job 99947/s },
             'restarting job with missing asset results in an error', 20);
+        verify_parent_skip_ok_button;
+    };
+    subtest 'restart parent skipping OK children option on regularly chained dependency error' => sub {
+        # cleanup after leaving subtest (not using txn here as the forked process needs to see changes)
+        my $cleanup = scope_guard sub {
+            $jobs->search({id => 99947})->update({clone_id => undef});
+            $jobs->search({id => 99983})->delete;
+            $schema->storage->dbh->do('ALTER SEQUENCE jobs_id_seq RESTART WITH 99983');
+        };
+
+        # ensure parent job's asset exists so it can be restarted
+        ensure_asset_exists('openSUSE-13.1-DVD-i586-Build0092-Media.iso');
+
+        is $driver->get('/tests/99939'), 1, 'go to job 99939 (regularly chained child)';
+        $driver->find_element('#restart-result')->click();
+        wait_for_ajax(msg => 'fail to restart job because of regularly chained parent');
+        wait_until(sub { flash_messages =~ m/You may try to retrigger the parent job 99947/s },
+            'regularly chained parent error shown', 20);
+        verify_parent_skip_ok_button(click => 1) or return;
+        wait_for_ajax(msg => 'parent job restarted skipping OK children');
+        wait_until(sub { $driver->get_current_url =~ qr{/tests/(\d+)} && $1 != 99939 },
+            'redirects to successfully restarted parent job');
     };
     subtest 'restart parent skipping OK children option on directly chained dependency error' => sub {
         # cleanup after leaving subtest (not using txn here as the forked process needs to see changes)
@@ -147,12 +181,7 @@ subtest 'restart job from info panel in test results' => sub {
         };
 
         # create a parent-prefixed asset to satisfy the missing asset check, change dependency to directly chained
-        $schema->resultset('Assets')->find_or_create(
-            {
-                name => '00099937-openSUSE-Factory-DVD-x86_64-Build0048-Media.iso',
-                type => 'iso',
-                size => 0,
-            });
+        ensure_asset_exists('00099937-openSUSE-Factory-DVD-x86_64-Build0048-Media.iso');
         $job_deps->search($job_deps_search)->update({dependency => DIRECTLY_CHAINED});
 
         is $driver->get('/tests/99938'), 1, 'go to job 99938 (directly chained child)';
@@ -160,16 +189,10 @@ subtest 'restart job from info panel in test results' => sub {
         wait_for_ajax(msg => 'fail to restart job because of directly chained parent');
         wait_until(sub { flash_messages =~ m/Direct parent 99937 needs to be cloned as well/s },
             'direct parent error shown', 20);
-
-        my $button = $driver->find_element('#flash-messages .restart-parent-skip-ok');
-        ok $button, 'restart parent skipping OK children button is present' or return;
-        is $button->get_text, 'Restart parent job skipping passed/softfailed children', 'button text';
-        $button->click;    # click the button to restart parent job skipping OK children
-
-        # since it successfully restarts, it should redirect to the newly cloned parent job.
+        verify_parent_skip_ok_button(click => 1) or return;
         wait_for_ajax(msg => 'parent job restarted skipping OK children');
         wait_until(sub { $driver->get_current_url =~ qr{/tests/(\d+)} && $1 != 99938 },
-            'redirects to restarted parent job');
+            'redirects to successfully restarted parent job');
     };
     subtest 'force restart' => sub {
         is $driver->get('/tests/99939'), 1, 'go to job 99939';
