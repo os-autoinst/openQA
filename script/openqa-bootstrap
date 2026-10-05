@@ -62,6 +62,8 @@ start-worker() {
 
 start-daemons() {
     if [[ -z $running_systemd ]]; then
+        # without systemd nothing processes tmpfiles.d, e.g. apache2 relies on it for /srv/www/htdocs
+        systemd-tmpfiles --create || true
         pgrep -f openqa-scheduler-daemon > /dev/null || su geekotest -c "$OPENQA_DIR/script/openqa-scheduler-daemon" &
         pgrep -f openqa-websockets-daemon > /dev/null || su geekotest -c "$OPENQA_DIR/script/openqa-websockets-daemon" &
         pgrep -f openqa-gru > /dev/null || su geekotest -c "$OPENQA_DIR/script/openqa-gru" &
