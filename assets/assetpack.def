@@ -149,6 +149,7 @@
 < javascripts/fullscreen.js
 < javascripts/obs_rsync.js
 < javascripts/parent_group_overview.js
+< javascripts/job_impact.js
 < ../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js
 < ../node_modules/chosen-js/chosen.jquery.js
 < ../node_modules/jquery-ujs/src/rails.js
