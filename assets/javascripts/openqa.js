@@ -327,7 +327,9 @@ function showJobRestartResults(responseJSON, newJobUrl, retryFunction, targetEle
     let parentId;
     if (Array.isArray(errors)) {
       for (const error of errors) {
-        const match = error.match(/Direct parent (\d+) needs to be cloned as well/);
+        const match =
+          error.match(/Direct parent (\d+) needs to be cloned as well/) ||
+          error.match(/You may try to retrigger the parent jobs? (\d+)/);
         if (match) {
           parentId = match[1];
           break;

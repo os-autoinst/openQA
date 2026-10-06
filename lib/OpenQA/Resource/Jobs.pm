@@ -55,9 +55,12 @@ sub job_restart ($jobids, %args) {
         my $missing_assets = $job->missing_assets;
         if (@$missing_assets) {
             my $message = "Job $job_id misses the following mandatory assets: " . (join ', ', @$missing_assets);
-            if ($job->count_related('parents')) {
+            my @parent_ids = @{$job->parent_job_ids};
+            if (@parent_ids) {
+                my $parent_text
+                  = @parent_ids == 1 ? "parent job $parent_ids[0]" : ('parent jobs ' . join ', ', @parent_ids);
                 $message
-                  .= "\nYou may try to retrigger the parent job that should create the assets and will implicitly retrigger this job as well.";
+                  .= "\nYou may try to retrigger the $parent_text that should create the assets and will implicitly retrigger this job as well.";
             }
             else {
                 $message .= "\nEnsure to provide mandatory assets and/or force retriggering if necessary.";

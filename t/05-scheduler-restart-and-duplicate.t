@@ -221,6 +221,30 @@ subtest 'restart with (directly) chained child' => sub {
     $current_jobs = $jobs;
 };
 
+subtest 'restart prevented by missing assets' => sub {
+    $schema->txn_begin;
+    my $job_deps = $schema->resultset('JobDependencies');
+    my $res = OpenQA::Resource::Jobs::job_restart([99939]);
+    like $res->{errors}->[0], qr/Ensure to provide mandatory assets/, 'no parents message';
+    is $res->{enforceable}, 1, 'enforceable';
+
+    $job_deps->create(
+        {child_job_id => 99939, parent_job_id => 99947, dependency => OpenQA::JobDependencies::Constants::CHAINED});
+    $res = OpenQA::Resource::Jobs::job_restart([99939]);
+    like $res->{errors}->[0], qr/You may try to retrigger the parent job 99947 that should create the assets/,
+      'single parent message';
+    is $res->{enforceable}, 1, 'enforceable';
+
+    $job_deps->create(
+        {child_job_id => 99939, parent_job_id => 99926, dependency => OpenQA::JobDependencies::Constants::CHAINED});
+    $res = OpenQA::Resource::Jobs::job_restart([99939]);
+    like $res->{errors}->[0], qr/You may try to retrigger the parent jobs 99926, 99947 that should create the assets/,
+      'multiple parents message';
+    is $res->{enforceable}, 1, 'enforceable';
+
+    $schema->txn_rollback;
+};
+
 # check state before restarting job with parallel dependencies (that dependency is set in fixtures)
 is_deeply
   job_get_rs(99963)->cluster_jobs,
