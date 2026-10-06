@@ -81,7 +81,8 @@
                     % if (app->config->{job_impact}->{enabled} && (my $impact = $job->impact)) {
                         <br><span id="job-impact-info">Estimated impact: <b><%= format_job_impact($impact) %></b>
                         % my $doc_url = app->config->{job_impact}->{methodology_url} || 'https://open.qa/docs/#jobimpact';
-                        % my $content = sprintf('<p>Energy: %.3f kWh (%.1f W)<br>Carbon: %.1f g CO₂e<br>Cost: energy %.4f %s, hardware %.4f %s (total: %.4f %s)<br>Model version: %d</p>', $impact->energy_kwh, $impact->power_w, $impact->carbon_g, $impact->cost_energy, $impact->currency, $impact->cost_hardware, $impact->currency, $impact->cost_total, $impact->currency, $impact->model_version);
+                        % my $human_str = defined $impact->cost_human ? sprintf(', reviewer %.4f %s', $impact->cost_human, $impact->currency) : '';
+                        % my $content = sprintf('<p>Energy: %.3f kWh (%.1f W)<br>Carbon: %.1f g CO₂e<br>Cost: energy %.4f %s, hardware %.4f %s%s (total: %.4f %s)<br>Model version: %d</p>', $impact->energy_kwh, $impact->power_w, $impact->carbon_g, $impact->cost_energy, $impact->currency, $impact->cost_hardware, $impact->currency, $human_str, $impact->cost_total, $impact->currency, $impact->model_version);
                         %= help_popover 'Estimated impact breakdown' => $content, $doc_url => 'methodology'
                         </span>
                     % }

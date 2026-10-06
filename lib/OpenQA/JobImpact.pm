@@ -164,6 +164,17 @@ sub assess (%args) {
     my $cost_hardware = $hw_eur_per_slot_hour * $hours;
     my $cost_total = $cost_energy + $cost_hardware;
 
+    my $cost_human;
+    if (   defined $factors->{reviewer_eur_per_hour}
+        && looks_like_number($factors->{reviewer_eur_per_hour})
+        && $factors->{reviewer_eur_per_hour} > 0)
+    {
+        my $res = lc($args{result} // '');
+        my $mins = $factors->{"review_minutes_$res"} // 0;
+        $cost_human = ($mins * $factors->{reviewer_eur_per_hour}) / 60.0;
+        $cost_total += $cost_human;
+    }
+
     my $model_version = $factors->{model_version} // 1;
 
     return {
@@ -173,6 +184,7 @@ sub assess (%args) {
         cost => {
             energy => $cost_energy,
             hardware => $cost_hardware,
+            human => $cost_human,
             total => $cost_total,
         },
         model_version => $model_version + 0,

@@ -2546,6 +2546,7 @@ sub compute_impact ($self) {
         seconds => $seconds,
         resources => $resources,
         factors => $factors,
+        result => $self->result,
     );
     return undef unless $assessment;
 
@@ -2558,7 +2559,7 @@ sub compute_impact ($self) {
         carbon_g => $assessment->{carbon_g},
         cost_energy => $assessment->{cost}->{energy},
         cost_hardware => $assessment->{cost}->{hardware},
-        cost_human => undef,
+        cost_human => $assessment->{cost}->{human},
         cost_total => $assessment->{cost}->{total},
         currency => $factors->{currency} // 'EUR',
         model_version => $assessment->{model_version},

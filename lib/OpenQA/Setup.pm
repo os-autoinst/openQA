@@ -353,6 +353,11 @@ sub default_config () {
             confirm_restart_above_carbon_g => '',
             confirm_restart_after_manual_restarts => '',
             influxdb_window_hours => 24,
+            reviewer_eur_per_hour => '',
+            review_minutes_failed => 10,
+            review_minutes_incomplete => 5,
+            review_minutes_softfailed => 2,
+            review_minutes_passed => 0,
         },
         job_details_archive => {
             job_details_archive_cache_dir => undef,
@@ -446,6 +451,10 @@ my %JOB_IMPACT_NUMERIC_DEFAULTS = (
     history_runs => 10,
     model_version => 1,
     influxdb_window_hours => 24,
+    review_minutes_failed => 10,
+    review_minutes_incomplete => 5,
+    review_minutes_softfailed => 2,
+    review_minutes_passed => 0,
 );
 
 sub _validate_job_impact_section ($app, $cfg, $name, $defaults) {
@@ -461,6 +470,15 @@ sub _validate_job_impact_section ($app, $cfg, $name, $defaults) {
         if (!looks_like_number($cfg->{slot_power_w}) || $cfg->{slot_power_w} < 0) {
             $app->log->warn("Invalid $name slot_power_w specified, defaulting to ''");
             $cfg->{slot_power_w} = '';
+        }
+    }
+    if (   exists $cfg->{reviewer_eur_per_hour}
+        && defined $cfg->{reviewer_eur_per_hour}
+        && $cfg->{reviewer_eur_per_hour} ne '')
+    {
+        if (!looks_like_number($cfg->{reviewer_eur_per_hour}) || $cfg->{reviewer_eur_per_hour} < 0) {
+            $app->log->warn("Invalid $name reviewer_eur_per_hour specified, defaulting to ''");
+            $cfg->{reviewer_eur_per_hour} = '';
         }
     }
     for my $bool_key (qw(enabled allow_job_setting_overrides)) {

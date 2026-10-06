@@ -129,6 +129,14 @@ to present a confirmation nudge in the web UI before expensive or repeated manua
 These thresholds act as an informational nudge in the web UI. API, CLI, and automated
 triggers remain unblocked.
 
+### Human Review Cost (Opt-in)
+
+Optionally, administrators can account for human reviewer attention in the cost
+calculation by setting `reviewer_eur_per_hour` in `openqa.ini`. When enabled,
+time spent reviewing test outcomes (e.g. `review_minutes_failed = 10`,
+`review_minutes_incomplete = 5`, `review_minutes_softfailed = 2`) is included
+as reviewer cost and shown as an itemized breakdown.
+
 ### workers.ini
 
 Workers can advertise specific power parameters based on local host hardware:

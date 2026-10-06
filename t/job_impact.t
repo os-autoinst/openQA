@@ -389,4 +389,45 @@ subtest 'formatting and unit boundary transitions' => sub {
     };
 };
 
+subtest 'human review cost calculation in assess' => sub {
+    my $factors_no_human = {
+        cpu_w => 10,
+        mem_w => 0.392,
+        slot_base_w => 20,
+        pue => 1.5,
+        grid_g_per_kwh => 300,
+        eur_per_kwh => 0.20,
+        hw_eur_per_slot_hour => 0.01,
+        embodied_g_per_slot_hour => 1,
+    };
+    my $res_no_human = assess(seconds => 3600, factors => $factors_no_human, result => 'failed');
+    is $res_no_human->{cost}->{human}, undef, 'human cost undef when reviewer_eur_per_hour not set';
+
+    my $factors_with_human = {
+        %$factors_no_human,
+        reviewer_eur_per_hour => 60,
+        review_minutes_failed => 10,
+        review_minutes_incomplete => 5,
+        review_minutes_softfailed => 2,
+        review_minutes_passed => 0,
+    };
+
+    my $failed_res = assess(seconds => 3600, factors => $factors_with_human, result => 'failed');
+    is $failed_res->{cost}->{human}, 10, 'failed job adds 10 minutes human cost (10 EUR)';
+    is $failed_res->{cost}->{total}, $failed_res->{cost}->{energy} + $failed_res->{cost}->{hardware} + 10,
+      'human cost included in total cost';
+
+    my $passed_res = assess(seconds => 3600, factors => $factors_with_human, result => 'passed');
+    is $passed_res->{cost}->{human}, 0, 'passed job has 0 human cost';
+
+    my $incomplete_res = assess(seconds => 3600, factors => $factors_with_human, result => 'incomplete');
+    is $incomplete_res->{cost}->{human}, 5, 'incomplete job adds 5 minutes human cost (5 EUR)';
+
+    my $softfailed_res = assess(seconds => 3600, factors => $factors_with_human, result => 'softfailed');
+    is $softfailed_res->{cost}->{human}, 2, 'softfailed job adds 2 minutes human cost (2 EUR)';
+
+    my $unknown_res = assess(seconds => 3600, factors => $factors_with_human, result => 'other');
+    is $unknown_res->{cost}->{human}, 0, 'unconfigured result gives 0 human cost';
+};
+
 done_testing();
