@@ -349,6 +349,8 @@ sub startup ($self) {
     $api_maybe_auth_r->any('/jobs/<jobid:num>')->name('apiv1_job')->to('job#show');
     $api_public_r->get('/experimental/jobs/<jobid:num>/status')->name('apiv1_get_status')->to('job#get_status');
     $api_maybe_auth_r->any('/jobs/<jobid:num>/details')->name('apiv1_job')->to('job#show', details => 1);
+    $api_maybe_auth_r->get('/jobs/<jobid:num>/restart_estimate')->name('apiv1_restart_estimate')
+      ->to('job#restart_estimate');
 
     $job_r->put('/')->name('apiv1_put_job')->to('job#update');
     $job_r->delete('/')->name('apiv1_delete_job')->to('job#destroy');

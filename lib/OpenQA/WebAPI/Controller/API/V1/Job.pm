@@ -902,11 +902,16 @@ sub _restart ($self, %args) {
     $self->emit_event(openqa_comment_create => $_) for @{$res->{comments}};
 
     my $clone_id = ($dup_route && $single_job_id) ? ($duplicates->[0] // {})->{$single_job_id} : undef;
+    my $impact_estimate;
+    if ($single_job_id && (my $sj = $self->schema->resultset('Jobs')->find($single_job_id))) {
+        $impact_estimate = eval { $sj->restart_impact_estimate };
+    }
     $self->render(
         json => {
             result => $duplicates,
             test_url => \@urls,
             defined $clone_id ? (id => $clone_id) : (),
+            defined $impact_estimate ? (impact_estimate => $impact_estimate) : (),
             @{$res->{warnings}} ? (warnings => $res->{warnings}) : (),
             @{$res->{errors}} ? (errors => $res->{errors}) : (),
             $res->{enforceable} ? (enforceable => 1) : (),
@@ -933,6 +938,18 @@ Used for both apiv1_restart and apiv1_restart_jobs
 =cut
 
 sub restart ($self) { $self->_restart }
+
+sub restart_estimate ($self) {
+    my $job_id = $self->param('jobid');
+    return undef unless my $job = $self->find_job_or_render_not_found($job_id);
+    my $estimate = $job->restart_impact_estimate(
+        {
+            skip_parents => $self->param('skip_parents'),
+            skip_children => $self->param('skip_children'),
+            no_directly_chained_parent => $self->param('no_directly_chained_parent'),
+        });
+    return $self->render(json => $estimate // {});
+}
 
 =over 4
 

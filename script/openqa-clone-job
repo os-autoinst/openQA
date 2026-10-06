@@ -223,7 +223,7 @@ use Getopt::Long;
 Getopt::Long::Configure('no_ignore_case');
 use FindBin;
 use lib "$FindBin::RealBin/../lib";
-use OpenQA::Script::CloneJob qw(clone_jobs split_jobid);
+use OpenQA::Script::CloneJob qw(clone_jobs split_jobid print_restart_estimate);
 use OpenQA::Utils 'assetdir';
 use Scalar::Util qw(looks_like_number);
 
@@ -271,6 +271,7 @@ sub parse_options () {
 sub main () {
     my ($jobid, $options) = parse_options();
     return unless $jobid;
+    print_restart_estimate($jobid, $options);
     clone_jobs($jobid, $options);
 }
 

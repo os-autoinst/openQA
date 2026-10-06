@@ -17,6 +17,7 @@ use OpenQA::Script::CloneJobSUSE;
 use OpenQA::Utils 'asset_type_from_setting';
 use List::Util 'any';
 use HTTP::Status qw(:constants);
+use Mojo::Util qw(encode);
 
 package OpenQA::Script::CloneJob::Command {
     use Mojo::Base 'OpenQA::Command', -signatures;
@@ -29,6 +30,7 @@ our @EXPORT_OK = qw(
   clone_job_get_job
   clone_job_download_assets
   create_url_handler
+  print_restart_estimate
   split_jobid
   post_jobs
   openqa_baseurl
@@ -360,6 +362,21 @@ sub append_idx_to_test_name ($n, $digits, $post_params) {
             # from the second onwards, replace old with the new number
             $job->{TEST} =~ s/-\d+$/$suffix/;
         }
+    }
+}
+
+sub print_restart_estimate ($jobid, $options) {
+    return if $options->{'json-output'} || $options->{'export-command'} || $options->{quiet};
+    my $url_handler = create_url_handler($options);
+    my $url = $url_handler->{remote_url}->clone;
+    $url->path("jobs/$jobid/restart_estimate");
+    my $res = eval {
+        my $tx = $url_handler->{remote}->get($url);
+        ($tx && !$tx->error && $tx->res->code == 200) ? $tx->res->json : undef;
+    };
+    if ($res && $res->{formatted_cost}) {
+        say encode('UTF-8',
+            "Estimated impact: $res->{formatted_cost} · $res->{formatted_carbon} for $res->{jobs} job(s)");
     }
 }
 

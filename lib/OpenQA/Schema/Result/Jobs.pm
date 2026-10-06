@@ -1038,6 +1038,145 @@ sub auto_duplicate ($self, $args = {}) {
     return $dup;
 }
 
+sub restart_impact_estimate ($self, $args = {}) {
+    return undef unless OpenQA::App->singleton->config->{job_impact}->{enabled};
+
+    my $jobs = eval {
+        $self->cluster_jobs(
+            skip_parents => $args->{skip_parents},
+            skip_children => $args->{skip_children},
+            no_directly_chained_parent => $args->{no_directly_chained_parent},
+        );
+    } // {};
+    $jobs->{$self->id} //= {};
+
+    my $schema = $self->result_source->schema;
+    my $jobs_rs = $schema->resultset('Jobs');
+    my $history_runs = OpenQA::App->singleton->config->{job_impact}->{history_runs} // 10;
+    my $currency = OpenQA::App->singleton->config->{job_impact}->{currency} // 'EUR';
+
+    my ($total_seconds, $total_energy, $total_carbon, $total_cost) = (0, 0, 0, 0);
+    my $is_upper_bound = 0;
+    my $job_count = 0;
+
+    for my $id (sort keys %$jobs) {
+        my $job = ($id == $self->id) ? $self : $jobs_rs->find($id);
+        next unless $job;
+        $job_count++;
+
+        my ($seconds, $upper_bound);
+        if (my $impact = $job->impact) {
+            $seconds = $impact->seconds;
+        }
+        elsif ($job->t_started && $job->t_finished) {
+            $seconds = $job->t_finished->epoch - $job->t_started->epoch;
+        }
+
+        if (!defined $seconds || $seconds <= 0) {
+            my $history_rs = $jobs_rs->search(
+                {
+                    TEST => $job->TEST,
+                    DISTRI => $job->DISTRI,
+                    VERSION => $job->VERSION,
+                    FLAVOR => $job->FLAVOR,
+                    ARCH => $job->ARCH,
+                    MACHINE => $job->MACHINE,
+                    'me.state' => DONE,
+                    'impact.seconds' => {'!=' => undef},
+                },
+                {
+                    join => 'impact',
+                    rows => $history_runs,
+                    order_by => {-desc => 'me.t_finished'},
+                    select => ['impact.seconds'],
+                    as => ['seconds'],
+                });
+            my @recent_seconds = sort { $a <=> $b } map { $_->get_column('seconds') } $history_rs->all;
+            if (@recent_seconds) {
+                my $mid = int(@recent_seconds / 2);
+                $seconds
+                  = (@recent_seconds % 2)
+                  ? $recent_seconds[$mid]
+                  : ($recent_seconds[$mid - 1] + $recent_seconds[$mid]) / 2;
+            }
+        }
+
+        if (!defined $seconds || $seconds <= 0) {
+            $seconds = OpenQA::JobImpact::upper_bound_seconds($job->settings_hash);
+            $upper_bound = 1;
+            $is_upper_bound = 1;
+        }
+
+        my $worker_props = eval {
+            ($job->assigned_worker && $job->assigned_worker->can('job_impact_factors'))
+              ? $job->assigned_worker->job_impact_factors
+              : {};
+        } // {};
+        my $job_settings = $job->settings_hash;
+        my $factors = OpenQA::JobImpact::resolve_factors(
+            config => OpenQA::App->singleton->config->{job_impact},
+            by_class => OpenQA::App->singleton->config->{job_impact_by_class},
+            worker_class => $job_settings->{WORKER_CLASS} // '',
+            worker_props => $worker_props,
+            job_settings => $job_settings,
+        );
+        my $resources = OpenQA::JobImpact::resources($job_settings, $factors);
+        my $assessment = OpenQA::JobImpact::assess(
+            seconds => $seconds,
+            resources => $resources,
+            factors => $factors,
+        );
+        if ($assessment) {
+            $total_seconds += $assessment->{seconds};
+            $total_energy += $assessment->{energy_kwh};
+            $total_carbon += $assessment->{carbon_g};
+            $total_cost += $assessment->{cost}->{total};
+        }
+    }
+
+    my @ancestors;
+    my $curr = $self;
+    my %seen = ($self->id => 1);
+    while ($curr && $curr->clone_id && !$seen{$curr->clone_id}++) {
+        $curr = $jobs_rs->find($curr->clone_id);
+        push @ancestors, $curr if $curr;
+    }
+
+    my ($prev_seconds, $prev_cost, $prev_carbon) = (0, 0, 0);
+    my %prev_by_origin;
+    for my $anc (@ancestors) {
+        my $origin = $anc->restart_origin // 'unknown';
+        if (my $anc_impact = $anc->impact) {
+            $prev_seconds += $anc_impact->seconds;
+            $prev_cost += $anc_impact->cost_total;
+            $prev_carbon += $anc_impact->carbon_g;
+            $prev_by_origin{$origin}->{cost} += $anc_impact->cost_total;
+            $prev_by_origin{$origin}->{carbon_g} += $anc_impact->carbon_g;
+            $prev_by_origin{$origin}->{count}++;
+        }
+    }
+
+    return {
+        jobs => $job_count,
+        seconds => $total_seconds,
+        energy_kwh => $total_energy,
+        carbon_g => $total_carbon,
+        cost_total => $total_cost,
+        currency => $currency,
+        upper_bound => $is_upper_bound ? 1 : 0,
+        formatted_cost => OpenQA::JobImpact::format_cost($total_cost, $currency),
+        formatted_carbon => OpenQA::JobImpact::format_carbon($total_carbon),
+        previous_attempts => {
+            count => scalar(@ancestors),
+            cost_total => $prev_cost,
+            carbon_g => $prev_carbon,
+            formatted_cost => OpenQA::JobImpact::format_cost($prev_cost, $currency),
+            formatted_carbon => OpenQA::JobImpact::format_carbon($prev_carbon),
+            by_origin => \%prev_by_origin,
+        },
+    };
+}
+
 sub abort ($self) {
     my $worker = $self->worker;
     return 0 unless $worker;

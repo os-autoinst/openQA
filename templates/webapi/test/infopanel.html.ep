@@ -184,7 +184,12 @@
                             <i class="fa-solid fa-2 fa-rotate-left"></i><span><%= $restart_text %></span>
                         %= end
                         % my $disabled_note = defined $job->clone_id ? '<p><strong>This job cannot be restarted because it has already been restarted.</strong></p><hr>' : '';
-                        <%= help_popover('Restart job' => "$disabled_note
+                        % my $restart_impact_note = '';
+                        % if (app->config->{job_impact}->{enabled} && (my $estimate = $job->restart_impact_estimate)) {
+                        %   my $prev_info = $estimate->{previous_attempts}->{count} ? sprintf('<br>Previous attempts: ≈ %s (%d runs)', $estimate->{previous_attempts}->{formatted_cost}, $estimate->{previous_attempts}->{count}) : '';
+                        %   $restart_impact_note = sprintf('<div class="alert alert-info p-2 mb-2"><small><strong>Estimated restart impact:</strong><br>Running %d job(s): ≈ %s · ≈ %s%s<br>Consider <a href="#investigation">investigating first</a></small></div>', $estimate->{jobs}, $estimate->{formatted_cost}, $estimate->{formatted_carbon}, $prev_info);
+                        % }
+                        <%= help_popover('Restart job' => "$disabled_note$restart_impact_note
                             <p>Restarts the job and certain dependent jobs.</p>
                             <p>Rules for restarting dependencies:</p>
                             <ul>
