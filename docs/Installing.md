@@ -1093,6 +1093,13 @@ The scaling algorithm:
 The running jobs heading in the web UI reflects the current dynamic limit when
 it is active.
 
+### Job impact assessment configuration
+
+openQA can calculate and visualize the estimated environmental and economic
+impact of job runs. See the [Job Impact Assessment](JobImpact.md#jobimpact) guide for
+detailed calculation formulas, default values, and configuration options for
+`openqa.ini` and `workers.ini`.
+
 ### Worker settings
 
 Default behavior for all workers is to use the QEMU backend and connect to
