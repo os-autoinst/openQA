@@ -988,6 +988,44 @@ subtest 'archived icon' => sub {
     is $t->tx->res->dom->find('#job-archived-badge')->size, 1, 'archived icon shown if job is archived';
 };
 
+subtest 'restart origin badge in infopanel' => sub {
+    my $job = $jobs->find(99947);
+    $job->update({restart_origin => undef});
+    $t->get_ok('/tests/99947/infopanel_ajax')->status_is(200);
+    is $t->tx->res->dom->find('#restart-origin-badge')->size, 0, 'restart origin badge not shown when origin is undef';
+
+    my @cases = (
+        {
+            origin => RESTART_ORIGIN_USER,
+            expected_text => 'manual restart',
+            desc => 'manual restart badge for user origin'
+        },
+        {
+            origin => RESTART_ORIGIN_RETRY,
+            expected_text => 'automatic retry (RETRY)',
+            desc => 'retry badge for retry origin'
+        },
+        {
+            origin => RESTART_ORIGIN_AUTO_CLONE,
+            expected_text => 'auto-clone',
+            desc => 'auto-clone badge for auto_clone origin'
+        },
+        {
+            origin => RESTART_ORIGIN_SYSTEM,
+            expected_text => 'system restart',
+            desc => 'system restart badge for system origin'
+        },
+    );
+
+    for my $case (@cases) {
+        $job->update({restart_origin => $case->{origin}});
+        $t->get_ok('/tests/99947/infopanel_ajax')->status_is(200);
+        my $badge = $t->tx->res->dom->at('#restart-origin-badge');
+        ok $badge, "$case->{desc} is present";
+        is $badge->text, $case->{expected_text}, "$case->{desc} displays correct label";
+    }
+};
+
 subtest 'test duration' => sub {
     my $start = DateTime->new(
         year => 2021,

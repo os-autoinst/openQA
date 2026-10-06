@@ -1,4 +1,10 @@
 % use OpenQA::Jobs::Constants;
+% my %origin_labels = (
+%     RESTART_ORIGIN_USER() => 'manual restart',
+%     RESTART_ORIGIN_RETRY() => 'automatic retry (RETRY)',
+%     RESTART_ORIGIN_AUTO_CLONE() => 'auto-clone',
+%     RESTART_ORIGIN_SYSTEM() => 'system restart',
+% );
             <div class="card-header">
                 Results for
                 % if (current_route 'latest') {
@@ -94,6 +100,9 @@
                         Clone of
                         %= link_to $clone_of->id => url_for ('test', testid => $clone_of->id)
                         (restarted already <%= $ancestors >= $ancestors_limit ? 'more than ' : '' %><%= $ancestors %> time<%= $ancestors != 1 ? 's' : '' %>)
+                    % }
+                    % if (my $origin = $job->restart_origin) {
+                        <span id="restart-origin-badge" class="badge rounded-pill text-bg-secondary"><%= $origin_labels{$origin} // $origin %></span>
                     % }
                     % if (my $clone_id = $job->clone_id) {
                         Cloned as
