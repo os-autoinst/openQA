@@ -2511,7 +2511,10 @@ sub _compute_result_and_reason ($self, $new_val, $result, $reason, $restart) {
 
 sub compute_impact ($self) {
     my $app = eval { OpenQA::App->singleton };
-    my $cfg = $app ? ($app->config->{job_impact} // {}) : {};
+    my $cfg
+      = ($app && $app->config && $app->config->{job_impact})
+      ? $app->config->{job_impact}
+      : OpenQA::Setup::default_config()->{job_impact};
     return undef unless $cfg->{enabled};
     return undef unless $self->t_started && $self->t_finished;
 
