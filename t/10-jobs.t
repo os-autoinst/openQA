@@ -1416,4 +1416,39 @@ subtest 'job_restart and duplicate assign restart_origin across cluster' => sub 
     }
 };
 
+subtest 'job_impacts table and relationship' => sub {
+    my $job = _job_create({%settings, TEST => 'job_impact_relationship'});
+    is $job->impact, undef, 'job initially has no impact record';
+
+    my $impact = $job->create_related(
+        'impact',
+        {
+            seconds => 120,
+            vcpus => 2,
+            ram_gb => 4,
+            power_w => 45.5,
+            energy_kwh => 0.0015,
+            carbon_g => 0.5,
+            cost_energy => 0.0003,
+            cost_hardware => 0.0004,
+            cost_human => undef,
+            cost_total => 0.0007,
+            currency => 'EUR',
+            model_version => 1,
+            factors => {pue => 1.5, sources => {pue => 'ini'}},
+        });
+    ok $impact, 'created impact record for job';
+    is $impact->job_id, $job->id, 'impact job_id matches job id';
+    is $impact->seconds, 120, 'impact seconds stored correctly';
+    is $impact->cost_human, undef, 'cost_human is nullable';
+    is_deeply $impact->factors, {pue => 1.5, sources => {pue => 'ini'}}, 'factors inflated to hash';
+    ok $impact->t_created, 't_created populated automatically';
+    is $job->discard_changes->impact->seconds, 120, 'might_have impact accessor retrieves record';
+
+    my $job_id = $job->id;
+    $job->delete;
+    is $t->app->schema->resultset('JobImpacts')->find($job_id), undef,
+      'job deletion cascades to remove job_impacts record';
+};
+
 done_testing();
