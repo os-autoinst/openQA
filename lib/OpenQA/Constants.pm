@@ -86,6 +86,9 @@ use constant MIN_TIMER => 60;
 # The max. time a job is allowed to run by default before the worker stops it.
 use constant DEFAULT_MAX_JOB_TIME => 2 * ONE_HOUR;
 
+# Default timeout scaling factor.
+use constant DEFAULT_TIMEOUT_SCALE => 1;
+
 # The max. time the job setup (asset caching, test syncing) is allowed to take before the worker stops it.
 use constant DEFAULT_MAX_SETUP_TIME => ONE_HOUR;
 
@@ -128,6 +131,7 @@ our @EXPORT_OK = qw(
   WORKER_API_COMMANDS WORKER_COMMAND_GRAB_JOB WORKER_COMMAND_GRAB_JOBS WORKER_COMMANDS
   MAX_TIMER MIN_TIMER
   DEFAULT_MAX_JOB_TIME
+  DEFAULT_TIMEOUT_SCALE
   DEFAULT_MAX_SETUP_TIME
   DEFAULT_UPLOAD_CHUNK_SIZE
   DB_TIMESTAMP_ACCURACY
