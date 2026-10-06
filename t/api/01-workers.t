@@ -174,6 +174,9 @@ subtest 'incompleting previous job on worker registration' => sub {
         ok $incomplete_job->result eq INCOMPLETE || $incomplete_job->result eq PARALLEL_RESTARTED,
           'assigned job considered incomplete or parallel restarted'
           or always_explain 'actual job result: ' . $incomplete_job->result;
+        is $incomplete_job->clone->restart_origin, RESTART_ORIGIN_SYSTEM,
+          'abandoned job clone has system restart_origin'
+          if $incomplete_job->clone;
         $schema->txn_rollback;
     };
 
@@ -428,6 +431,32 @@ subtest 'worker reservation API' => sub {
       ->status_is(200, 'admins can force the deletion of a reserved worker');
     is $workers->find(2), undef, 'forcibly deleted reserved worker is gone';
     $other_operator->delete;
+};
+
+subtest 'worker registration with job impact capabilities' => sub {
+    my %params = (
+        host => 'localhost',
+        instance => 1,
+        cpu_arch => 'x86_64',
+        mem_max => 4096,
+        worker_class => 'qemu_x86_64',
+        websocket_api_version => WEBSOCKET_API_VERSION,
+        job_impact_slot_power_w => '150',
+        job_impact_hw_eur_per_slot_hour => '0.05',
+    );
+    $t->post_ok('/api/v1/workers', form => \%params)
+      ->status_is(200, 'worker registered with valid job impact capabilities');
+    my $w = $workers->find({host => 'localhost', instance => 1});
+    is $w->get_property('JOB_IMPACT_SLOT_POWER_W'), '150', 'job impact slot power stored in worker properties';
+    is $w->get_property('JOB_IMPACT_HW_EUR_PER_SLOT_HOUR'), '0.05', 'job impact hw eur stored in worker properties';
+
+    $t->post_ok('/api/v1/workers', form => {%params, job_impact_slot_power_w => '-10'})
+      ->status_is(400, 'worker registration with negative job impact factor rejected')
+      ->json_is('/error' => 'Erroneous parameters (job_impact_slot_power_w invalid)');
+
+    $t->post_ok('/api/v1/workers', form => {%params, job_impact_slot_power_w => 'invalid'})
+      ->status_is(400, 'worker registration with non-numeric job impact factor rejected')
+      ->json_is('/error' => 'Erroneous parameters (job_impact_slot_power_w invalid)');
 };
 
 done_testing();

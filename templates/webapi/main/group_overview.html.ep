@@ -35,6 +35,21 @@
 % }
 %= include 'main/pinned_comments'
 
+% if (app->config->{job_impact}->{enabled}) {
+    <div class="card mb-3" id="group-impact-card">
+        <div class="card-header py-2" role="button" data-bs-toggle="collapse" data-bs-target="#group-impact-collapse">
+            <i class="fa-solid fa-leaf text-success me-1"></i>
+            <strong>Estimated Impact (Recent Runs)</strong>
+            <i class="fa-solid fa-chevron-down float-end"></i>
+        </div>
+        <div id="group-impact-collapse" class="collapse">
+            <div class="card-body p-2" id="group-impact-details" data-group-id="<%= $group->{id} %>">
+                <span class="text-muted"><i class="fa-solid fa-spinner fa-spin me-1"></i>Loading impact assessment...</span>
+            </div>
+        </div>
+    </div>
+% }
+
 <div id="build-results">
     %= include 'main/group_builds', build_results => $build_results, group => $group, children => undef, default_expanded => 1
 </div>

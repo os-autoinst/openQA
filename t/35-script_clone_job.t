@@ -12,7 +12,7 @@ use Test::Output qw(combined_like combined_unlike output_from);
 use Test::MockObject;
 use Test::MockModule;
 use OpenQA::Script::CloneJob
-  qw(clone_jobs clone_job_get_job clone_job_apply_settings clone_job_download_assets openqa_baseurl);
+  qw(clone_jobs clone_job_get_job clone_job_apply_settings clone_job_download_assets openqa_baseurl print_restart_estimate);
 use HTTP::Response;
 use Mojo::JSON qw(decode_json);
 use Mojo::URL;
@@ -620,6 +620,42 @@ subtest 'badge output' => sub {
     combined_like { OpenQA::Script::CloneJob::handle_tx($tx, \%url_handler, $options, $jobs) }
     qr|^\* \[!\[testjob\]\(https://base-url/tests/43/badge\?label=testjob\)\]\(https://base-url/tests/43\)$|m,
       'badge output format';
+};
+
+subtest 'print restart estimate' => sub {
+    my $clone_mock = Test::MockModule->new('OpenQA::Script::CloneJob');
+    $clone_mock->unmock_all;
+
+    my $mock_res = Test::MockObject->new;
+    $mock_res->set_always(code => 200);
+    $mock_res->set_always(
+        json => {
+            formatted_cost => '≈ 0.042 €',
+            formatted_carbon => '≈ 12 g CO₂e',
+            jobs => 2,
+        });
+    my $mock_tx = Test::MockObject->new;
+    $mock_tx->set_false('error');
+    $mock_tx->set_always(res => $mock_res);
+
+    my $mock_client = Test::MockObject->new;
+    $mock_client->set_always(get => $mock_tx);
+
+    $clone_mock->redefine(
+        create_url_handler => sub {
+            return {
+                remote_url => Mojo::URL->new('https://remote.host/api/v1/jobs'),
+                remote => $mock_client,
+            };
+        });
+
+    combined_like { print_restart_estimate(42, {}) }
+    qr/Estimated impact: .*0\.042 .* 12 g .* for 2 job\(s\)/, 'prints estimate when endpoint returns 200';
+
+    $mock_res->set_always(code => 404);
+    $mock_res->set_always(json => undef);
+    combined_unlike { print_restart_estimate(42, {}) }
+    qr/Estimated impact/, 'silent when endpoint returns 404';
 };
 
 done_testing();

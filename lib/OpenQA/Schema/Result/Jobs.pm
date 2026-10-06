@@ -18,6 +18,7 @@ use OpenQA::Jobs::Constants;
 use OpenQA::JobDependencies::Constants;
 use OpenQA::Markdown 'markdown_to_html';
 use OpenQA::Setup;
+use OpenQA::JobImpact;
 use OpenQA::ScreenshotDeletion;
 use File::Basename qw(basename dirname);
 use File::Copy::Recursive qw();
@@ -174,6 +175,10 @@ __PACKAGE__->add_columns(
         is_foreign_key => 1,
         is_nullable => 1,
     },
+    restart_origin => {
+        data_type => 'text',
+        is_nullable => 1,
+    },
 );
 __PACKAGE__->add_timestamps;
 
@@ -200,6 +205,7 @@ __PACKAGE__->might_have(origin => 'OpenQA::Schema::Result::Jobs', 'clone_id', {c
 __PACKAGE__->might_have(
     developer_session => 'OpenQA::Schema::Result::DeveloperSessions',
     'job_id', {cascade_delete => 1});
+__PACKAGE__->might_have(impact => 'OpenQA::Schema::Result::JobImpacts', 'job_id');
 __PACKAGE__->has_many(jobs_assets => 'OpenQA::Schema::Result::JobsAssets', 'job_id');
 __PACKAGE__->many_to_many(assets => 'jobs_assets', 'asset');
 __PACKAGE__->has_many(last_use_assets => 'OpenQA::Schema::Result::Assets', 'last_use_job_id', {cascade_delete => 0});
@@ -512,6 +518,23 @@ sub to_hash ($job, %args) {
         }
     }
     $j->{missing_assets} = $job->missing_assets if $args{check_assets};
+    my $include_impact = delete $args{impact} // 1;
+    if ($include_impact && (my $impact = ref $include_impact ? $include_impact : $job->impact)) {
+        $j->{impact} = {
+            seconds => $impact->seconds,
+            energy_kwh => $impact->energy_kwh,
+            carbon_g => $impact->carbon_g,
+            cost => {
+                energy => $impact->cost_energy,
+                hardware => $impact->cost_hardware,
+                human => $impact->cost_human,
+                total => $impact->cost_total,
+            },
+            currency => $impact->currency,
+            model_version => $impact->model_version,
+            estimated => \1,
+        };
+    }
     return $j;
 }
 
@@ -613,7 +636,9 @@ Internal function, needs to be executed in a transaction to perform
 optimistic locking on clone_id
 =cut
 
-sub _create_clone ($self, $cluster_job_info, $clone, $prio, $skip_ok_result_children, $settings) {
+sub _create_clone ($self, $cluster_job_info, $clone, $prio, $skip_ok_result_children, $settings,
+    $restart_origin = RESTART_ORIGIN_SYSTEM)
+{
     # Skip cloning 'ok' jobs which are only pulled in as children if that flag is set
     return ()
       if $skip_ok_result_children
@@ -638,6 +663,7 @@ sub _create_clone ($self, $cluster_job_info, $clone, $prio, $skip_ok_result_chil
     $main_settings{group_id} = defined $group ? ($group ? $group->id : undef) : ($self->group_id);
     $main_settings{settings} = \@new_settings;
     $main_settings{priority} = $prio || $self->priority;
+    $main_settings{restart_origin} = $restart_origin // RESTART_ORIGIN_SYSTEM;
     my $new_job = $rset->create(\%main_settings);    # assets are re-created in job_grab
 
     # Perform optimistic locking on clone_id. If the job is not longer there
@@ -934,14 +960,14 @@ sub duplicate ($self, $args = {}) {
     }
 
     log_debug('Duplicating jobs: ' . (dump $jobs));
+    my $restart_origin = $args->{restart_origin} // RESTART_ORIGIN_SYSTEM;
     my @args = (
         $jobs, $args->{comments} //= [],
-        $args->{comment},
-        $args->{comment_user_id},
-        $args->{clone} // 1,
-        $args->{prio},
-        $args->{skip_ok_result_children},
-        $args->{settings} // {});
+        $args->{comment}, $args->{comment_user_id},
+        $args->{clone} // 1, $args->{prio},
+        $args->{skip_ok_result_children}, $args->{settings} // {},
+        $restart_origin
+    );
     try {
         $self->result_source->schema->txn_do(sub { $self->_create_clones(@args) })
     }
@@ -1010,6 +1036,172 @@ sub auto_duplicate ($self, $args = {}) {
     $dup->{comments_created} = $args->{comments};
     log_debug("Job $job_id duplicated as $clone_id");
     return $dup;
+}
+
+sub restart_impact_estimate ($self, $args = {}) {
+    return undef unless OpenQA::App->singleton->config->{job_impact}->{enabled};
+
+    my $jobs = eval {
+        $self->cluster_jobs(
+            skip_parents => $args->{skip_parents},
+            skip_children => $args->{skip_children},
+            no_directly_chained_parent => $args->{no_directly_chained_parent},
+        );
+    } // {};
+    $jobs->{$self->id} //= {};
+
+    my $schema = $self->result_source->schema;
+    my $jobs_rs = $schema->resultset('Jobs');
+    my $history_runs = OpenQA::App->singleton->config->{job_impact}->{history_runs} // 10;
+    my $currency = OpenQA::App->singleton->config->{job_impact}->{currency} // 'EUR';
+
+    my ($total_seconds, $total_energy, $total_carbon, $total_cost) = (0, 0, 0, 0);
+    my $is_upper_bound = 0;
+    my $job_count = 0;
+
+    for my $id (sort keys %$jobs) {
+        my $job = ($id == $self->id) ? $self : $jobs_rs->find($id);
+        next unless $job;
+        $job_count++;
+
+        my ($seconds, $upper_bound);
+        if (my $impact = $job->impact) {
+            $seconds = $impact->seconds;
+        }
+        elsif ($job->t_started && $job->t_finished) {
+            $seconds = $job->t_finished->epoch - $job->t_started->epoch;
+        }
+
+        if (!defined $seconds || $seconds <= 0) {
+            my $history_rs = $jobs_rs->search(
+                {
+                    TEST => $job->TEST,
+                    DISTRI => $job->DISTRI,
+                    VERSION => $job->VERSION,
+                    FLAVOR => $job->FLAVOR,
+                    ARCH => $job->ARCH,
+                    MACHINE => $job->MACHINE,
+                    'me.state' => DONE,
+                    'impact.seconds' => {'!=' => undef},
+                },
+                {
+                    join => 'impact',
+                    rows => $history_runs,
+                    order_by => {-desc => 'me.t_finished'},
+                    select => ['impact.seconds'],
+                    as => ['seconds'],
+                });
+            my @recent_seconds = sort { $a <=> $b } map { $_->get_column('seconds') } $history_rs->all;
+            if (@recent_seconds) {
+                my $mid = int(@recent_seconds / 2);
+                $seconds
+                  = (@recent_seconds % 2)
+                  ? $recent_seconds[$mid]
+                  : ($recent_seconds[$mid - 1] + $recent_seconds[$mid]) / 2;
+            }
+        }
+
+        if (!defined $seconds || $seconds <= 0) {
+            $seconds = OpenQA::JobImpact::upper_bound_seconds($job->settings_hash);
+            $upper_bound = 1;
+            $is_upper_bound = 1;
+        }
+
+        my $worker_props = eval {
+            ($job->assigned_worker && $job->assigned_worker->can('job_impact_factors'))
+              ? $job->assigned_worker->job_impact_factors
+              : {};
+        } // {};
+        my $job_settings = $job->settings_hash;
+        my $factors = OpenQA::JobImpact::resolve_factors(
+            config => OpenQA::App->singleton->config->{job_impact},
+            by_class => OpenQA::App->singleton->config->{job_impact_by_class},
+            worker_class => $job_settings->{WORKER_CLASS} // '',
+            worker_props => $worker_props,
+            job_settings => $job_settings,
+        );
+        my $resources = OpenQA::JobImpact::resources($job_settings, $factors);
+        my $assessment = OpenQA::JobImpact::assess(
+            seconds => $seconds,
+            resources => $resources,
+            factors => $factors,
+        );
+        if ($assessment) {
+            $total_seconds += $assessment->{seconds};
+            $total_energy += $assessment->{energy_kwh};
+            $total_carbon += $assessment->{carbon_g};
+            $total_cost += $assessment->{cost}->{total};
+        }
+    }
+
+    my @ancestors;
+    my $curr = $self;
+    my %seen = ($self->id => 1);
+    while ($curr && $curr->clone_id && !$seen{$curr->clone_id}++) {
+        $curr = $jobs_rs->find($curr->clone_id);
+        push @ancestors, $curr if $curr;
+    }
+
+    my ($prev_seconds, $prev_cost, $prev_carbon) = (0, 0, 0);
+    my %prev_by_origin;
+    for my $anc (@ancestors) {
+        my $origin = $anc->restart_origin // 'unknown';
+        if (my $anc_impact = $anc->impact) {
+            $prev_seconds += $anc_impact->seconds;
+            $prev_cost += $anc_impact->cost_total;
+            $prev_carbon += $anc_impact->carbon_g;
+            $prev_by_origin{$origin}->{cost} += $anc_impact->cost_total;
+            $prev_by_origin{$origin}->{carbon_g} += $anc_impact->carbon_g;
+            $prev_by_origin{$origin}->{count}++;
+        }
+    }
+
+    my $cfg = OpenQA::App->singleton->config->{job_impact} // {};
+    my @reasons;
+    if (defined $cfg->{confirm_restart_above_cost} && $cfg->{confirm_restart_above_cost} ne '') {
+        if ($total_cost >= $cfg->{confirm_restart_above_cost}) {
+            my $cost_str = OpenQA::JobImpact::format_cost($total_cost, $currency);
+            push @reasons, sprintf 'Estimated cost (%s) exceeds threshold of %s %s', $cost_str,
+              $cfg->{confirm_restart_above_cost}, $currency;
+        }
+    }
+    if (defined $cfg->{confirm_restart_above_carbon_g} && $cfg->{confirm_restart_above_carbon_g} ne '') {
+        if ($total_carbon >= $cfg->{confirm_restart_above_carbon_g}) {
+            my $carbon_str = OpenQA::JobImpact::format_carbon($total_carbon);
+            push @reasons, sprintf 'Estimated carbon (%s) exceeds threshold of %s g CO₂e', $carbon_str,
+              $cfg->{confirm_restart_above_carbon_g};
+        }
+    }
+    my $manual_ancestors = $prev_by_origin{+RESTART_ORIGIN_USER}->{count} // 0;
+    if (defined $cfg->{confirm_restart_after_manual_restarts} && $cfg->{confirm_restart_after_manual_restarts} ne '') {
+        if ($manual_ancestors >= $cfg->{confirm_restart_after_manual_restarts}) {
+            push @reasons, sprintf 'Job has already been restarted manually %d time(s)', $manual_ancestors;
+        }
+    }
+
+    return {
+        jobs => $job_count,
+        seconds => $total_seconds,
+        energy_kwh => $total_energy,
+        carbon_g => $total_carbon,
+        cost_total => $total_cost,
+        currency => $currency,
+        upper_bound => $is_upper_bound ? 1 : 0,
+        formatted_cost => OpenQA::JobImpact::format_cost($total_cost, $currency),
+        formatted_carbon => OpenQA::JobImpact::format_carbon($total_carbon),
+        confirmation => {
+            required => @reasons ? 1 : 0,
+            reasons => \@reasons,
+        },
+        previous_attempts => {
+            count => scalar(@ancestors),
+            cost_total => $prev_cost,
+            carbon_g => $prev_carbon,
+            formatted_cost => OpenQA::JobImpact::format_cost($prev_cost, $currency),
+            formatted_carbon => OpenQA::JobImpact::format_carbon($prev_carbon),
+            by_origin => \%prev_by_origin,
+        },
+    };
 }
 
 sub abort ($self) {
@@ -2136,7 +2328,14 @@ sub handle_retry ($self) {
 
 sub enqueue_restart ($self, $options = {}) {
     my $openqa_job_id = $self->id;
-    my $minion_job_id = OpenQA::App->singleton->gru->enqueue(restart_job => [$openqa_job_id], $options)->{minion_id};
+    my %task_options = %$options;
+    my $restart_origin = delete $task_options{restart_origin};
+    my @job_args = ($openqa_job_id);
+    push @job_args, {restart_origin => $restart_origin} if defined $restart_origin;
+    if (defined $restart_origin) {
+        $task_options{notes} = {%{$task_options{notes} // {}}, restart_origin => $restart_origin};
+    }
+    my $minion_job_id = OpenQA::App->singleton->gru->enqueue(restart_job => \@job_args, \%task_options)->{minion_id};
     log_debug "Enqueued restarting openQA job $openqa_job_id via Minion job $minion_job_id";
     return $minion_job_id;
 }
@@ -2236,8 +2435,23 @@ sub done ($self, %args) {
     my $state = $self->state;
     $self->update(\%new_val);
     $self->unblock;
+
+    try {
+        $self->compute_impact;
+    }
+    catch ($e) {
+        log_warning 'Failed to compute job impact for job ' . $self->id . ": $e";
+    }
+
     my %finalize_opts = (lax => 1);
-    $finalize_opts{parents} = [$self->enqueue_restart] if $restart || ($self->is_ok_to_retry && $self->handle_retry);
+    my $restart_origin;
+    if ($restart) {
+        $restart_origin = RESTART_ORIGIN_AUTO_CLONE;
+    }
+    elsif ($self->is_ok_to_retry && $self->handle_retry) {
+        $restart_origin = RESTART_ORIGIN_RETRY;
+    }
+    $finalize_opts{parents} = [$self->enqueue_restart({restart_origin => $restart_origin})] if $restart_origin;
     # bugrefs are there to mark reasons of failure - the function checks itself though
     my $carried_over = $self->carry_over_bugrefs;
 
@@ -2294,6 +2508,73 @@ sub _compute_result_and_reason ($self, $new_val, $result, $reason, $restart) {
     elsif ($reason_unknown && !defined $reason && $result eq INCOMPLETE) {
         $new_val->{reason} = 'no test modules scheduled/uploaded';
     }
+}
+
+sub compute_impact ($self) {
+    my $app = eval { OpenQA::App->singleton };
+    my $cfg
+      = ($app && $app->config && $app->config->{job_impact})
+      ? $app->config->{job_impact}
+      : OpenQA::Setup::default_config()->{job_impact};
+    return undef unless $cfg->{enabled};
+    return undef unless $self->t_started && $self->t_finished;
+
+    my $start_epoch
+      = (ref $self->t_started && $self->t_started->can('epoch')) ? $self->t_started->epoch : $self->t_started;
+    my $finish_epoch
+      = (ref $self->t_finished && $self->t_finished->can('epoch')) ? $self->t_finished->epoch : $self->t_finished;
+    return undef unless defined $start_epoch && defined $finish_epoch;
+    my $seconds = int($finish_epoch - $start_epoch);
+    $seconds = 0 if $seconds < 0;
+
+    my $worker_props = {};
+    if (my $worker = $self->assigned_worker) {
+        $worker_props = $worker->job_impact_factors if $worker->can('job_impact_factors');
+    }
+
+    my $job_settings = $self->settings_hash;
+    my $worker_class = $job_settings->{WORKER_CLASS} // '';
+    my $by_class = $app ? ($app->config->{job_impact_by_class} // {}) : {};
+
+    my $factors = OpenQA::JobImpact::resolve_factors(
+        config => $cfg,
+        by_class => $by_class,
+        worker_class => $worker_class,
+        worker_props => $worker_props,
+        job_settings => $job_settings,
+    );
+
+    my $resources = OpenQA::JobImpact::resources($job_settings, $factors);
+    my $power_w = OpenQA::JobImpact::power_w($resources, $factors);
+    my $assessment = OpenQA::JobImpact::assess(
+        seconds => $seconds,
+        resources => $resources,
+        factors => $factors,
+        result => $self->result,
+    );
+    return undef unless $assessment;
+
+    my %data = (
+        seconds => $assessment->{seconds},
+        vcpus => $resources->{vcpus},
+        ram_gb => $resources->{ram_gb},
+        power_w => $power_w,
+        energy_kwh => $assessment->{energy_kwh},
+        carbon_g => $assessment->{carbon_g},
+        cost_energy => $assessment->{cost}->{energy},
+        cost_hardware => $assessment->{cost}->{hardware},
+        cost_human => $assessment->{cost}->{human},
+        cost_total => $assessment->{cost}->{total},
+        currency => $factors->{currency} // 'EUR',
+        model_version => $assessment->{model_version},
+        factors => $factors,
+    );
+
+    if (my $impact = $self->impact) {
+        $impact->update(\%data);
+        return $impact;
+    }
+    return $self->create_related('impact', \%data);
 }
 
 sub cancel ($self, $result, $reason = undef) {

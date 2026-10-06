@@ -258,6 +258,17 @@ sub capabilities ($self) {
         # TODO: check installed qemu and kvm?
     }
     $caps->{parallel_one_host_only} = $global_settings->{PARALLEL_ONE_HOST_ONLY};
+    for my $key (sort keys %$global_settings) {
+        next unless $key =~ /^JOB_IMPACT_/i;
+        my $val = $global_settings->{$key};
+        if (defined $val && looks_like_number($val) && $val >= 0) {
+            $caps->{lc $key} = $val;
+        }
+        else {
+            my $display_val = defined $val ? "'$val'" : 'undef';
+            log_warning("Ignoring invalid non-numeric job impact setting $key=$display_val");
+        }
+    }
     return $self->{_caps} = $caps;
 }
 

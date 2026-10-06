@@ -164,10 +164,15 @@ subtest 'delete offline worker' => sub {
     is scalar @{$driver->find_elements('table#workers tbody tr')}, 4, 'worker deleted not shown';
 };
 
+$workers->find(1)->set_property('JOB_IMPACT_SLOT_POWER_W', 150);
 $driver->find_element('tr#worker_1 .worker a')->click();
 $driver->title_is('openQA: Worker localhost:1', 'on worker 1');
 is scalar @{$driver->find_elements('#content h3', 'css')}, 2, 'table properties shown';
 like $driver->find_element_by_xpath('//body')->get_text(), qr/JOBTOKEN token99963/, 'token for 99963';
+like $driver->find_element_by_xpath('//body')->get_text(), qr/JOB_IMPACT_SLOT_POWER_W\s+150/,
+  'impact factor shown in properties table';
+ok $driver->find_element('table a[href="https://open.qa/docs/#jobimpact"]'),
+  'documentation link for impact factor present';
 
 # previous jobs table
 wait_for_ajax;

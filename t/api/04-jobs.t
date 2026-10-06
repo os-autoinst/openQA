@@ -426,6 +426,7 @@ subtest 'restart jobs (forced)' => sub {
         my $clone_id = $orig_job->{clone_id};
         next unless like $clone_id, qr/\d+/, "job $orig_id cloned";
         is $new_jobs{$clone_id}->{group_id}, $orig_job->{group_id}, "group of $orig_id taken over";
+        is $jobs->find($clone_id)->restart_origin, RESTART_ORIGIN_USER, "clone of $orig_id has user restart_origin";
     }
 
     $t->get_ok('/api/v1/jobs' => form => {scope => 'current'});
@@ -2088,6 +2089,52 @@ subtest 'redacted settings' => sub {
       'non-operator: secrets remain redacted even if requested';
 
     $job->settings->find({key => '_SECRET_PASSWORD'})->delete;
+};
+
+subtest 'job impact api' => sub {
+    my $job = $t->app->schema->resultset('Jobs')->find(99926);
+    $job->impact->delete if $job->impact;
+
+    $t->get_ok('/api/v1/jobs/99926')->status_is(200);
+    ok !exists $t->tx->res->json->{job}->{impact}, 'impact omitted from job show when not present';
+
+    my $impact = $job->create_related(
+        'impact',
+        {
+            seconds => 3600,
+            vcpus => 2,
+            ram_gb => 4,
+            power_w => 50,
+            energy_kwh => 0.075,
+            carbon_g => 25,
+            cost_energy => 0.015,
+            cost_hardware => 0.01,
+            cost_total => 0.025,
+            currency => 'EUR',
+            model_version => 1,
+            factors => {cpu_w => 10},
+        });
+
+    $t->get_ok('/api/v1/jobs/99926')->status_is(200);
+    my $job_json = $t->tx->res->json->{job};
+    ok exists $job_json->{impact}, 'impact present in job show when record exists';
+    is $job_json->{impact}->{seconds}, 3600, 'impact seconds returned';
+    is $job_json->{impact}->{cost}->{total}, 0.025, 'impact cost total returned';
+    is ${$job_json->{impact}->{estimated}}, 1, 'impact marked as estimated';
+
+    $t->get_ok('/api/v1/jobs?limit=5')->status_is(200);
+    ok !exists $t->tx->res->json->{jobs}->[0]->{impact}, 'impact omitted from jobs list by default';
+
+    $t->get_ok('/api/v1/jobs?ids=99926&impact=1')->status_is(200);
+    my ($matched) = grep { $_->{id} == 99926 } @{$t->tx->res->json->{jobs}};
+    ok $matched && exists $matched->{impact}, 'impact included in jobs list when impact=1';
+    is $matched->{impact}->{seconds}, 3600, 'matched job impact seconds present in list';
+
+    $t->get_ok('/api/v1/jobs?ids=99926')->status_is(200);
+    my ($unmatched) = grep { $_->{id} == 99926 } @{$t->tx->res->json->{jobs}};
+    ok $unmatched && !exists $unmatched->{impact}, 'impact omitted in jobs list without impact=1';
+
+    $impact->delete;
 };
 
 done_testing;

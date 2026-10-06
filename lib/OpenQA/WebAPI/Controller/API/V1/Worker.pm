@@ -146,7 +146,7 @@ sub _incomplete_previous_job ($jobs_worker_says_it_works_on, $job) {
     my $worker = $job->assigned_worker // $job->worker;
     my $worker_info = defined $worker ? ('worker ' . $worker->name) : 'worker';
     $job->set_property('JOBTOKEN');
-    try { $job->auto_duplicate }
+    try { $job->auto_duplicate({restart_origin => RESTART_ORIGIN_SYSTEM}) }
     catch ($e) { log_warning("Unable to duplicate job $job_id after being abandoned by $worker_info: $e") }
     my $reason = "abandoned: associated $worker_info re-connected but abandoned the job";
     try { $job->done(result => INCOMPLETE, reason => $reason) }
@@ -169,9 +169,11 @@ sub create ($self) {
     my $validation = $self->validation;
     my @validation_params
       = qw(cpu_arch cpu_modelname cpu_opmode cpu_flags mem_max isotovideo_interface_version websocket_api_version worker_class parallel_one_host_only);
+    my @job_impact_params = grep { /^job_impact_/i } keys %{$validation->input};
     $validation->required($_) for qw(host instance cpu_arch mem_max worker_class);
     $validation->optional($_) for qw(cpu_modelname cpu_opmode cpu_flags isotovideo_interface_version job_id
       websocket_api_version parallel_one_host_only);
+    $validation->optional($_)->like(qr/^\+?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?$/) for @job_impact_params;
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
     my $host = $validation->param('host');
@@ -179,6 +181,10 @@ sub create ($self) {
     my $job_ids = $validation->every_param('job_id');
     my $caps = {};
     $caps->{$_} = $validation->param($_) for @validation_params;
+    for my $param (@job_impact_params) {
+        my $val = $validation->param($param);
+        $caps->{lc $param} = $val if defined $val;
+    }
     my $id;
     try {
         $id = $self->_register($self->schema, $host, $instance, $caps, $job_ids);

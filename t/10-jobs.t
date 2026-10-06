@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#!/usr/bin/env perl    ## no critic (Modules::ProhibitExcessMainComplexity)
 
 # Copyright SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
@@ -16,6 +16,7 @@ use Mojo::Base -signatures;
 use autodie ':all';
 use File::Copy;
 use OpenQA::Jobs::Constants;
+use OpenQA::JobDependencies::Constants qw(PARALLEL);
 use OpenQA::Test::Case;
 use Test::MockModule 'strict';
 use Test::Mojo;
@@ -922,6 +923,7 @@ subtest 'job setting based retriggering' => sub {
     for (1 .. 2) {
         is $jobs->find({id => $next_job_id - 1})->clone_id, $next_job_id, "clone exists for retry nr. $_";
         $job = $jobs->find({id => $next_job_id});
+        is $job->restart_origin, RESTART_ORIGIN_RETRY, "retry nr. $_ clone has retry restart_origin";
         $jobs->find({id => $next_job_id})->done(result => FAILED);
         $job->update;
         perform_minion_jobs($minion);
@@ -1323,6 +1325,148 @@ subtest 'history isolation keys separate the scenario history' => sub {
         $t->get_ok('/tests/' . $cur->id . '/investigation_ajax?strict=0')->status_is(200);
         $t->json_is('/last_good/link' => '/tests/' . $good_other->id);
     };
+};
+
+subtest 'restart_origin defaults to undef for new jobs' => sub {
+    is RESTART_ORIGIN_USER, 'user', 'user restart origin constant';
+    is RESTART_ORIGIN_RETRY, 'retry', 'retry restart origin constant';
+    is RESTART_ORIGIN_AUTO_CLONE, 'auto_clone', 'auto_clone restart origin constant';
+    is RESTART_ORIGIN_SYSTEM, 'system', 'system restart origin constant';
+    is_deeply [RESTART_ORIGINS], [qw(user retry auto_clone system)], 'restart origins list';
+
+    is $jobs->find(99926)->restart_origin, undef, 'fixture job has undef restart_origin';
+    my $job = _job_create({%settings, TEST => 'default_restart_origin'});
+    is $job->restart_origin, undef, 'restart_origin defaults to undef for new job';
+};
+
+subtest 'auto_clone_regex sets restart_origin to auto_clone' => sub {
+    delete $ENV{OPENQA_JOB_DONE_HOOK_INCOMPLETE};
+    my $minion = $t->app->minion;
+    local OpenQA::App->singleton->config->{global}->{auto_clone_regex} = qr/infrastructure failure/;
+    local OpenQA::App->singleton->config->{global}->{auto_clone_limit} = 3;
+    local $t->app->config->{global}->{auto_clone_regex} = qr/infrastructure failure/;
+    local $t->app->config->{global}->{auto_clone_limit} = 3;
+    my $job = _job_create({%settings, TEST => 'auto_clone_origin_test'});
+    $job->update({state => RUNNING});
+    $job->done(result => INCOMPLETE, reason => 'infrastructure failure: worker network timeout');
+    perform_minion_jobs($minion);
+    $job->discard_changes;
+    ok my $clone_id = $job->clone_id, 'job cloned via auto_clone_regex';
+    my $clone = $jobs->find($clone_id);
+    is $clone->restart_origin, RESTART_ORIGIN_AUTO_CLONE, 'auto_clone clone has auto_clone restart_origin';
+};
+
+subtest 'job_restart and duplicate assign restart_origin across cluster' => sub {
+    my $normal_user = $users->find({username => 'restart_origin_tester'})
+      // $users->create_user('restart_origin_tester');
+    my $system_user = $users->system;
+
+    my @cases = (
+        {
+            desc => 'job_restart by regular user sets user restart_origin on all clones',
+            args => [user_id => $normal_user->id],
+            expected => RESTART_ORIGIN_USER,
+        },
+        {
+            desc => 'job_restart by system user sets system restart_origin on all clones',
+            args => [user_id => $system_user->id],
+            expected => RESTART_ORIGIN_SYSTEM,
+        },
+        {
+            desc => 'job_restart without user sets system restart_origin on all clones',
+            args => [],
+            expected => RESTART_ORIGIN_SYSTEM,
+        },
+        {
+            desc => 'duplicate without arguments defaults to system restart_origin on all clones',
+            duplicate_direct => 1,
+            expected => RESTART_ORIGIN_SYSTEM,
+        },
+        {
+            desc => 'duplicate with explicit retry origin assigns retry to all clones',
+            duplicate_direct => 1,
+            dup_args => {restart_origin => RESTART_ORIGIN_RETRY},
+            expected => RESTART_ORIGIN_RETRY,
+        },
+    );
+
+    for my $case (@cases) {
+        my $parent = _job_create({%settings, TEST => 'cluster_parent_' . $case->{expected}});
+        my $child = _job_create({%settings, TEST => 'cluster_child_' . $case->{expected}});
+        $child->parents->create({parent_job_id => $parent->id, dependency => PARALLEL});
+        $parent->update({state => DONE, result => PASSED});
+        $child->update({state => DONE, result => FAILED});
+
+        my %clones;
+        if ($case->{duplicate_direct}) {
+            my $res = $child->auto_duplicate($case->{dup_args} // {});
+            %clones = %{$res->{cluster_cloned}};
+        }
+        else {
+            require OpenQA::Resource::Jobs;
+            my $res = OpenQA::Resource::Jobs::job_restart([$child->id], @{$case->{args}});
+            %clones = %{$res->{duplicates}->[0]};
+        }
+
+        for my $orig_id (sort keys %clones) {
+            my $clone = $jobs->find($clones{$orig_id});
+            is $clone->restart_origin, $case->{expected},
+              "$case->{desc} (origin of clone $clones{$orig_id} for job $orig_id)";
+        }
+    }
+};
+
+subtest 'job_impacts table and relationship' => sub {
+    my $job = _job_create({%settings, TEST => 'job_impact_relationship'});
+    is $job->impact, undef, 'job initially has no impact record';
+
+    my $impact = $job->create_related(
+        'impact',
+        {
+            seconds => 120,
+            vcpus => 2,
+            ram_gb => 4,
+            power_w => 45.5,
+            energy_kwh => 0.0015,
+            carbon_g => 0.5,
+            cost_energy => 0.0003,
+            cost_hardware => 0.0004,
+            cost_human => undef,
+            cost_total => 0.0007,
+            currency => 'EUR',
+            model_version => 1,
+            factors => {pue => 1.5, sources => {pue => 'ini'}},
+        });
+    ok $impact, 'created impact record for job';
+    is $impact->job_id, $job->id, 'impact job_id matches job id';
+    is $impact->seconds, 120, 'impact seconds stored correctly';
+    is $impact->cost_human, undef, 'cost_human is nullable';
+    is_deeply $impact->factors, {pue => 1.5, sources => {pue => 'ini'}}, 'factors inflated to hash';
+    ok $impact->t_created, 't_created populated automatically';
+    is $job->discard_changes->impact->seconds, 120, 'might_have impact accessor retrieves record';
+
+    my $hash = $job->to_hash;
+    is $hash->{impact}->{seconds}, 120, 'to_hash includes impact seconds';
+    is $hash->{impact}->{energy_kwh}, 0.0015, 'to_hash includes impact energy_kwh';
+    is $hash->{impact}->{carbon_g}, 0.5, 'to_hash includes impact carbon_g';
+    is $hash->{impact}->{cost}->{energy}, 0.0003, 'to_hash includes impact cost energy';
+    is $hash->{impact}->{cost}->{hardware}, 0.0004, 'to_hash includes impact cost hardware';
+    is $hash->{impact}->{cost}->{human}, undef, 'to_hash includes impact cost human as undef';
+    is $hash->{impact}->{cost}->{total}, 0.0007, 'to_hash includes impact cost total';
+    is $hash->{impact}->{currency}, 'EUR', 'to_hash includes impact currency';
+    is $hash->{impact}->{model_version}, 1, 'to_hash includes impact model_version';
+    is ${$hash->{impact}->{estimated}}, 1, 'to_hash marks impact as estimated';
+
+    my $hash_no_impact = $job->to_hash(impact => 0);
+    ok !exists $hash_no_impact->{impact}, 'to_hash omits impact when impact option is false';
+
+    my $hash_custom_impact = $job->to_hash(impact => $impact);
+    is $hash_custom_impact->{impact}->{seconds}, 120, 'to_hash accepts pre-resolved impact object';
+
+    my $job_id = $job->id;
+    $job->delete;
+    is $t->app->schema->resultset('JobImpacts')->find($job_id), undef,
+      'job deletion cascades to remove job_impacts record';
 };
 
 done_testing();

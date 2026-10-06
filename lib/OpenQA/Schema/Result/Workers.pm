@@ -17,6 +17,7 @@ use OpenQA::WorkerReservation
   qw(RESERVATION_PROPERTIES RESERVATION_TIMESTAMP_FORMAT reservation_active reservation_error reservation_info reservation_class_valid);
 use Mojo::JSON qw(encode_json decode_json);
 use List::Util qw(any);
+use Scalar::Util 'looks_like_number';
 use Time::Seconds;
 use DBI qw(:sql_types);
 
@@ -119,6 +120,18 @@ sub set_property ($self, $key, $val) {
 
 sub _reservation_properties ($self) {
     return {map { $_->key => $_->value } $self->properties->search({key => {-in => [RESERVATION_PROPERTIES]}})->all};
+}
+
+sub job_impact_factors ($self) {
+    my %factors;
+    for my $prop ($self->properties->search({key => {-like => 'JOB_IMPACT_%'}})->all) {
+        my $k = lc $prop->key;
+        $k =~ s/^job_impact_//;
+        my $v = $prop->value;
+        next if !defined $v || !looks_like_number($v) || $v < 0;
+        $factors{$k} = $v + 0;
+    }
+    return \%factors;
 }
 
 sub is_reserved ($self) {

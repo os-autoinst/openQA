@@ -331,6 +331,34 @@ sub default_config () {
             archive_preserved_important_jobs => 0,
         },
         worker_reservation => {%{+WORKER_RESERVATION_DURATION_DEFAULTS}, comment_required => 1},
+        job_impact => {
+            enabled => 1,
+            model_version => 1,
+            currency => 'EUR',
+            slot_power_w => '',
+            slot_base_w => 20,
+            cpu_w => 10,
+            mem_w => 0.392,
+            pue => 1.5,
+            grid_g_per_kwh => 300,
+            eur_per_kwh => 0.20,
+            hw_eur_per_slot_hour => 0.01,
+            embodied_g_per_slot_hour => 1,
+            default_vcpus => 1,
+            default_ram_mb => 1024,
+            history_runs => 10,
+            allow_job_setting_overrides => 0,
+            methodology_url => '',
+            confirm_restart_above_cost => '',
+            confirm_restart_above_carbon_g => '',
+            confirm_restart_after_manual_restarts => '',
+            influxdb_window_hours => 24,
+            reviewer_eur_per_hour => '',
+            review_minutes_failed => 10,
+            review_minutes_incomplete => 5,
+            review_minutes_softfailed => 2,
+            review_minutes_passed => 0,
+        },
         job_details_archive => {
             job_details_archive_cache_dir => undef,
             job_details_archive_cache_limit_gb => 5,
@@ -403,8 +431,96 @@ sub read_config ($app) {
     _validate_worker_reservation_config($app);
     _validate_worker_timeout($app);
     _validate_security_policy($app, $global_config);
+    _parse_job_impact_by_class($app, $config);
+    _validate_job_impact_config($app);
     _set_default_storage_durations($_) for $config->{default_group_limits}, $config->{no_group_limits};
     return $config;
+}
+
+my %JOB_IMPACT_NUMERIC_DEFAULTS = (
+    slot_base_w => 20,
+    cpu_w => 10,
+    mem_w => 0.392,
+    pue => 1.5,
+    grid_g_per_kwh => 300,
+    eur_per_kwh => 0.20,
+    hw_eur_per_slot_hour => 0.01,
+    embodied_g_per_slot_hour => 1,
+    default_vcpus => 1,
+    default_ram_mb => 1024,
+    history_runs => 10,
+    model_version => 1,
+    influxdb_window_hours => 24,
+    review_minutes_failed => 10,
+    review_minutes_incomplete => 5,
+    review_minutes_softfailed => 2,
+    review_minutes_passed => 0,
+);
+
+sub _validate_job_impact_section ($app, $cfg, $name, $defaults) {
+    for my $key (sort keys %JOB_IMPACT_NUMERIC_DEFAULTS) {
+        next unless exists $cfg->{$key};
+        my $val = $cfg->{$key};
+        if (!defined $val || !looks_like_number($val) || $val < 0) {
+            $app->log->warn("Invalid $name $key specified, defaulting to $defaults->{$key}");
+            $cfg->{$key} = $defaults->{$key};
+        }
+    }
+    if (exists $cfg->{slot_power_w} && defined $cfg->{slot_power_w} && $cfg->{slot_power_w} ne '') {
+        if (!looks_like_number($cfg->{slot_power_w}) || $cfg->{slot_power_w} < 0) {
+            $app->log->warn("Invalid $name slot_power_w specified, defaulting to ''");
+            $cfg->{slot_power_w} = '';
+        }
+    }
+    if (   exists $cfg->{reviewer_eur_per_hour}
+        && defined $cfg->{reviewer_eur_per_hour}
+        && $cfg->{reviewer_eur_per_hour} ne '')
+    {
+        if (!looks_like_number($cfg->{reviewer_eur_per_hour}) || $cfg->{reviewer_eur_per_hour} < 0) {
+            $app->log->warn("Invalid $name reviewer_eur_per_hour specified, defaulting to ''");
+            $cfg->{reviewer_eur_per_hour} = '';
+        }
+    }
+    for my $bool_key (qw(enabled allow_job_setting_overrides)) {
+        next unless exists $cfg->{$bool_key};
+        if (($cfg->{$bool_key} // '') !~ /^[01]$/) {
+            $app->log->warn("Invalid $name $bool_key specified, defaulting to $defaults->{$bool_key}");
+            $cfg->{$bool_key} = $defaults->{$bool_key};
+        }
+    }
+    for my $threshold_key (
+        qw(confirm_restart_above_cost confirm_restart_above_carbon_g confirm_restart_after_manual_restarts))
+    {
+        next unless exists $cfg->{$threshold_key};
+        my $val = $cfg->{$threshold_key};
+        if (defined $val && $val ne '') {
+            if (!looks_like_number($val) || $val < 0) {
+                $app->log->warn("Invalid $name $threshold_key specified, defaulting to ''");
+                $cfg->{$threshold_key} = '';
+            }
+        }
+    }
+}
+
+sub _validate_job_impact_config ($app) {
+    my $defaults = default_config()->{job_impact};
+    _validate_job_impact_section($app, $app->config->{job_impact}, 'job_impact', $defaults);
+    for my $class (sort keys %{$app->config->{job_impact_by_class} // {}}) {
+        _validate_job_impact_section($app, $app->config->{job_impact_by_class}{$class}, "job_impact:$class", $defaults);
+    }
+}
+
+sub _parse_job_impact_by_class ($app, $config) {
+    $config->{job_impact_by_class} = {};
+    return unless my $ini = $config->{ini_config};
+    for my $section ($ini->Sections) {
+        next unless $section =~ /^job_impact:(.+)$/;
+        my $class = $1;
+        for my $param ($ini->Parameters($section)) {
+            my $val = $ini->val($section, $param);
+            $config->{job_impact_by_class}{$class}{$param} = trim $val;
+        }
+    }
 }
 
 sub _validate_worker_reservation_config ($app) {

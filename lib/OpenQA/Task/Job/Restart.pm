@@ -6,6 +6,7 @@ use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use Time::Seconds;
 use OpenQA::Events;
+use OpenQA::Jobs::Constants;
 
 sub register ($self, $app, @args) {
     $app->minion->add_task(restart_job => \&_restart_job);
@@ -15,8 +16,8 @@ sub restart_attempts () { $ENV{OPENQA_JOB_RESTART_ATTEMPTS} // 5 }
 
 sub restart_delay () { $ENV{OPENQA_JOB_RESTART_DELAY} // 5 }
 
-sub restart_openqa_job ($minion_job, $openqa_job) {
-    my $cloned_job_or_error = $openqa_job->auto_duplicate;
+sub restart_openqa_job ($minion_job, $openqa_job, $args = {}) {
+    my $cloned_job_or_error = $openqa_job->auto_duplicate($args);
     my $is_ok = ref $cloned_job_or_error || $cloned_job_or_error =~ qr/(already.*clone|direct parent)/i;
     if (ref $cloned_job_or_error) {
         my %event_data = (id => $openqa_job->id, result => $cloned_job_or_error->{cluster_cloned}, auto => 1);
@@ -33,7 +34,9 @@ sub restart_openqa_job ($minion_job, $openqa_job) {
 sub _restart_job ($minion_job, @args) {
     my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($minion_job);
 
-    my ($openqa_job_id) = @args;
+    my ($openqa_job_id, $job_args) = @args;
+    $job_args = {} unless ref $job_args eq 'HASH';
+    $job_args->{restart_origin} //= $minion_job->info->{notes}->{restart_origin} // RESTART_ORIGIN_RETRY;
     my $app = $minion_job->app;
     return $minion_job->fail('No job ID specified.') unless defined $openqa_job_id;
     my $openqa_job = $app->schema->resultset('Jobs')->find($openqa_job_id);
@@ -41,7 +44,7 @@ sub _restart_job ($minion_job, @args) {
 
     _init_amqp_plugin($app);
     # duplicate job and finish normally if no error was returned or job can not be cloned
-    my ($is_ok, $cloned_job_or_error) = restart_openqa_job($minion_job, $openqa_job);
+    my ($is_ok, $cloned_job_or_error) = restart_openqa_job($minion_job, $openqa_job, $job_args);
     _wait_for_event_publish($app);
 
     return $minion_job->finish(ref $cloned_job_or_error ? undef : $cloned_job_or_error) if $is_ok;

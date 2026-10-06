@@ -326,6 +326,7 @@ sub startup ($self) {
     $api_ra->post('/job_groups')->name('apiv1_post_job_group')->to('job_group#create');
     $api_ra->put('/job_groups/<group_id:num>')->name('apiv1_put_job_group')->to('job_group#update');
     $api_ra->delete('/job_groups/<group_id:num>')->name('apiv1_delete_job_group')->to('job_group#delete');
+    $api_public_r->get('/job_groups/<group_id:num>/impact')->name('apiv1_job_group_impact')->to('job_group#impact');
 
     # api/v1/parent_groups
     $api_public_r->get('/parent_groups')->name('apiv1_list_parent_groups')->to('job_group#list');
@@ -337,6 +338,7 @@ sub startup ($self) {
     # api/v1/jobs
     $api_maybe_auth_r->get('/jobs')->name('apiv1_jobs')->to('job#list');
     $api_maybe_auth_r->get('/jobs/overview')->name('apiv1_jobs_overview')->to('job#overview');
+    $api_public_r->get('/impact')->name('apiv1_impact_overview')->to('job#impact_overview');
     $api_ro->post('/jobs')->name('apiv1_create_job')->to('job#create');
     $api_ro->post('/jobs/cancel')->name('apiv1_cancel_jobs')->to('job#cancel');
     $api_ro->post('/jobs/restart')->name('apiv1_restart_jobs')->to('job#restart');
@@ -349,6 +351,8 @@ sub startup ($self) {
     $api_maybe_auth_r->any('/jobs/<jobid:num>')->name('apiv1_job')->to('job#show');
     $api_public_r->get('/experimental/jobs/<jobid:num>/status')->name('apiv1_get_status')->to('job#get_status');
     $api_maybe_auth_r->any('/jobs/<jobid:num>/details')->name('apiv1_job')->to('job#show', details => 1);
+    $api_maybe_auth_r->get('/jobs/<jobid:num>/restart_estimate')->name('apiv1_restart_estimate')
+      ->to('job#restart_estimate');
 
     $job_r->put('/')->name('apiv1_put_job')->to('job#update');
     $job_r->delete('/')->name('apiv1_delete_job')->to('job#destroy');

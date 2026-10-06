@@ -9,6 +9,7 @@ use OpenQA::Schema;
 use OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(assume_all_assets_exist);
 use Getopt::Long::Descriptive;
+use Feature::Compat::Try;
 
 sub init ($opt) {
     # Initialize or reset the openQA test database with standard fixtures and mock assets
@@ -41,6 +42,11 @@ sub init ($opt) {
         skip_schema => 1,
         fixtures_glob => $opt->fixtures,
     );
+
+    for my $j ($schema->resultset('Jobs')->search({state => 'done'})->all) {
+        try { $j->compute_impact }
+        catch ($e) { }
+    }
 
     # Configure mock assets to avoid 404s/warnings
     assume_all_assets_exist();

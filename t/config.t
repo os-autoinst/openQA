@@ -83,6 +83,7 @@ subtest 'Test configuration default modes' => sub {
         ]};
     $test_config->{misc_limits}->{prio_group_data}
       = [{property => 'full_name', regex => qr/Development/, increment => 50}];
+    $test_config->{job_impact_by_class} = {};
     is ref delete $config->{global}->{auto_clone_regex}, 'Regexp', 'auto_clone_regex parsed as regex';
     ok delete $config->{'test_preset example'}, 'default values for example tests assigned';
     is_deeply $config, $test_config, '"test" configuration';
@@ -276,6 +277,174 @@ subtest 'Validation of file_security_policy' => sub {
     $config{file_security_policy} = 'domain:openqa-foo';
     OpenQA::Setup::_validate_security_policy($app, \%config);
     is $config{file_domain}, 'openqa-foo', 'file_domain populated via "domain:"';
+};
+
+subtest 'Validation and parsing of job impact config' => sub {
+    my $defaults = OpenQA::Setup::default_config()->{job_impact};
+    my %config = (
+        job_impact => {%$defaults, slot_power_w => 150},
+        job_impact_by_class => {
+            qemu_ppc64le => {slot_base_w => 40, cpu_w => 15, slot_power_w => 200},
+        },
+    );
+    my $app = Mojolicious->new(config => \%config, log => $quiet_log);
+
+    OpenQA::Setup::_validate_job_impact_config($app);
+    is $config{job_impact}->{slot_power_w}, 150, 'valid numeric slot_power_w is retained';
+    is_deeply $config{job_impact_by_class}{qemu_ppc64le},
+      {slot_base_w => 40, cpu_w => 15, slot_power_w => 200},
+      'valid class job impact config is left untouched';
+
+    my @invalid_cases = (
+        {desc => 'non-numeric cpu_w on base', key => 'cpu_w', val => 'invalid', default => 10, target => 'base'},
+        {desc => 'negative cpu_w on base', key => 'cpu_w', val => -5, default => 10, target => 'base'},
+        {desc => 'non-numeric mem_w on base', key => 'mem_w', val => 'abc', default => 0.392, target => 'base'},
+        {desc => 'negative slot_base_w on base', key => 'slot_base_w', val => -1, default => 20, target => 'base'},
+        {desc => 'negative pue on base', key => 'pue', val => -2, default => 1.5, target => 'base'},
+        {
+            desc => 'non-numeric grid_g_per_kwh on base',
+            key => 'grid_g_per_kwh',
+            val => 'xyz',
+            default => 300,
+            target => 'base'
+        },
+        {desc => 'negative eur_per_kwh on base', key => 'eur_per_kwh', val => -0.5, default => 0.20, target => 'base'},
+        {
+            desc => 'non-numeric hw_eur_per_slot_hour on base',
+            key => 'hw_eur_per_slot_hour',
+            val => 'foo',
+            default => 0.01,
+            target => 'base'
+        },
+        {
+            desc => 'negative embodied_g_per_slot_hour on base',
+            key => 'embodied_g_per_slot_hour',
+            val => -10,
+            default => 1,
+            target => 'base'
+        },
+        {
+            desc => 'non-numeric default_vcpus on base',
+            key => 'default_vcpus',
+            val => 'none',
+            default => 1,
+            target => 'base'
+        },
+        {
+            desc => 'negative default_ram_mb on base',
+            key => 'default_ram_mb',
+            val => -512,
+            default => 1024,
+            target => 'base'
+        },
+        {
+            desc => 'non-numeric history_runs on base',
+            key => 'history_runs',
+            val => 'many',
+            default => 10,
+            target => 'base'
+        },
+        {desc => 'negative model_version on base', key => 'model_version', val => -1, default => 1, target => 'base'},
+        {
+            desc => 'non-numeric slot_power_w on base',
+            key => 'slot_power_w',
+            val => 'invalid',
+            default => '',
+            target => 'base'
+        },
+        {desc => 'negative slot_power_w on base', key => 'slot_power_w', val => -100, default => '', target => 'base'},
+        {desc => 'non-boolean enabled on base', key => 'enabled', val => 'maybe', default => 1, target => 'base'},
+        {
+            desc => 'out-of-range allow_job_setting_overrides on base',
+            key => 'allow_job_setting_overrides',
+            val => 2,
+            default => 0,
+            target => 'base'
+        },
+        {
+            desc => 'non-numeric slot_base_w on class',
+            key => 'slot_base_w',
+            val => 'bad',
+            default => 20,
+            target => 'class',
+            class => 'qemu_ppc64le'
+        },
+        {
+            desc => 'negative slot_power_w on class',
+            key => 'slot_power_w',
+            val => -1,
+            default => '',
+            target => 'class',
+            class => 'qemu_ppc64le'
+        },
+        {
+            desc => 'non-boolean enabled on class',
+            key => 'enabled',
+            val => 'invalid',
+            default => 1,
+            target => 'class',
+            class => 'qemu_ppc64le'
+        },
+        {
+            desc => 'invalid negative confirm_restart_above_cost',
+            key => 'confirm_restart_above_cost',
+            val => -5,
+            default => '',
+            target => 'base',
+        },
+        {
+            desc => 'invalid string confirm_restart_above_carbon_g',
+            key => 'confirm_restart_above_carbon_g',
+            val => 'non_numeric',
+            default => '',
+            target => 'base',
+        },
+        {
+            desc => 'invalid confirm_restart_after_manual_restarts',
+            key => 'confirm_restart_after_manual_restarts',
+            val => -1,
+            default => '',
+            target => 'base',
+        },
+    );
+
+    for my $case (@invalid_cases) {
+        my $target_hash
+          = $case->{target} eq 'class'
+          ? $config{job_impact_by_class}{$case->{class}}
+          : $config{job_impact};
+        my $target_label
+          = $case->{target} eq 'class'
+          ? "job_impact:$case->{class}"
+          : 'job_impact';
+
+        $target_hash->{$case->{key}} = $case->{val};
+        combined_like sub { OpenQA::Setup::_validate_job_impact_config($app) },
+          qr/Invalid $target_label $case->{key} specified, defaulting to \Q$case->{default}\E/,
+          "warning logged for $case->{desc}";
+        is $target_hash->{$case->{key}}, $case->{default}, "default value restored for $case->{desc}";
+    }
+
+    subtest 'parsing job impact class section from ini file' => sub {
+        my $t_dir = tempdir;
+        local $ENV{OPENQA_CONFIG} = $t_dir;
+        my $ini_data = join "\n",
+          '[job_impact]',
+          'currency = USD',
+          'cpu_w = 12',
+          '[job_impact:qemu_ppc64le]',
+          'slot_base_w = 40',
+          'cpu_w = 15',
+          'slot_power_w = 200';
+        $t_dir->child('openqa.ini')->spew($ini_data);
+        my $test_app = Mojolicious->new(log => $quiet_log);
+        my $parsed_cfg = OpenQA::Setup::read_config($test_app);
+        is $parsed_cfg->{job_impact}->{currency}, 'USD', 'base currency parsed from ini';
+        is $parsed_cfg->{job_impact}->{cpu_w}, 12, 'base cpu_w parsed from ini';
+        is_deeply $parsed_cfg->{job_impact_by_class}->{qemu_ppc64le},
+          {slot_base_w => 40, cpu_w => 15, slot_power_w => 200},
+          'class section parsed from ini into job_impact_by_class';
+    };
 };
 
 subtest 'Multiple config files' => sub {

@@ -412,4 +412,27 @@ sub build_results ($self) {
     $self->render(json => $cbr);
 }
 
+sub impact ($self) {
+    my $group_id = $self->param('group_id');
+    my $group = $self->schema->resultset('JobGroups')->find($group_id);
+    return $self->reply->not_found unless $group;
+
+    my %cond = (group_id => $group_id);
+    $cond{build} = $self->param('build') if defined $self->param('build');
+    $cond{from} = $self->param('from') if defined $self->param('from');
+    $cond{to} = $self->param('to') if defined $self->param('to');
+
+    my $impacts_rs = $self->schema->resultset('JobImpacts');
+    my $aggregates = $impacts_rs->aggregate(%cond);
+    my $latency = $impacts_rs->added_latency(%cond);
+
+    return $self->render(
+        json => {
+            group_id => $group_id,
+            total => $aggregates->{total},
+            by_origin => $aggregates->{by_origin},
+            added_latency_hours => $latency,
+        });
+}
+
 1;

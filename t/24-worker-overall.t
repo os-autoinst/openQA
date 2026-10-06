@@ -237,6 +237,52 @@ subtest 'capabilities' => sub {
     };
     delete $worker->{_caps};
 
+    subtest 'capabilities include JOB_IMPACT_* settings and warn on invalid values' => sub {
+        $global_settings->{JOB_IMPACT_SLOT_POWER_W} = '150';
+        $global_settings->{JOB_IMPACT_HW_EUR_PER_SLOT_HOUR} = '0.05';
+        $global_settings->{JOB_IMPACT_INVALID_STR} = 'non-numeric';
+        $global_settings->{JOB_IMPACT_NEGATIVE} = '-10';
+
+        combined_like {
+            $capabilities = $worker->capabilities;
+        }
+qr/Ignoring invalid non-numeric job impact setting JOB_IMPACT_INVALID_STR='non-numeric'.*Ignoring invalid non-numeric job impact setting JOB_IMPACT_NEGATIVE='-10'/s,
+          'invalid job impact settings skipped with warning';
+
+        is $capabilities->{job_impact_slot_power_w}, '150', 'valid job_impact_slot_power_w included in capabilities';
+        is $capabilities->{job_impact_hw_eur_per_slot_hour}, '0.05',
+          'valid job_impact_hw_eur_per_slot_hour included in capabilities';
+        ok !exists $capabilities->{job_impact_invalid_str}, 'invalid non-numeric setting excluded from capabilities';
+        ok !exists $capabilities->{job_impact_negative}, 'negative numeric setting excluded from capabilities';
+
+        delete $global_settings->{JOB_IMPACT_SLOT_POWER_W};
+        delete $global_settings->{JOB_IMPACT_HW_EUR_PER_SLOT_HOUR};
+        delete $global_settings->{JOB_IMPACT_INVALID_STR};
+        delete $global_settings->{JOB_IMPACT_NEGATIVE};
+    };
+    delete $worker->{_caps};
+
+    subtest 'class sections with job impact settings are honored in worker capabilities' => sub {
+        my $tmp_dir = tempdir('worker-class-settings-XXXX', TMPDIR => 1);
+        my $ini_path = path($tmp_dir, 'workers.ini');
+        $ini_path->spurt(<<~'INI');
+            [global]
+            HOST = http://localhost:9527
+            WORKER_HOSTNAME = 127.0.0.1
+            WORKER_CLASS = qemu_x86_64
+
+            [class:qemu_x86_64]
+            JOB_IMPACT_SLOT_POWER_W = 180
+            JOB_IMPACT_HW_EUR_PER_SLOT_HOUR = 0.08
+            INI
+        local $ENV{OPENQA_CONFIG} = $tmp_dir;
+        my $class_worker = OpenQA::Worker->new({instance => 1, apikey => 'foo', apisecret => 'bar', 'no-cleanup' => 1});
+        my $caps = $class_worker->capabilities;
+        is $caps->{job_impact_slot_power_w}, '180', 'slot power populated from class section in capabilities';
+        is $caps->{job_impact_hw_eur_per_slot_hour}, '0.08', 'hw eur per slot hour from class section in capabilities';
+    };
+    delete $worker->{_caps};
+
     subtest 'deduce worker class from CPU architecture' => sub {
         delete $global_settings->{WORKER_CLASS};
         $global_settings->{ARCH} = 'aarch64';

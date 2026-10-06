@@ -988,6 +988,83 @@ subtest 'archived icon' => sub {
     is $t->tx->res->dom->find('#job-archived-badge')->size, 1, 'archived icon shown if job is archived';
 };
 
+subtest 'restart origin badge in infopanel' => sub {
+    my $job = $jobs->find(99947);
+    $job->update({restart_origin => undef});
+    $t->get_ok('/tests/99947/infopanel_ajax')->status_is(200);
+    is $t->tx->res->dom->find('#restart-origin-badge')->size, 0, 'restart origin badge not shown when origin is undef';
+
+    my @cases = (
+        {
+            origin => RESTART_ORIGIN_USER,
+            expected_text => 'manual restart',
+            desc => 'manual restart badge for user origin'
+        },
+        {
+            origin => RESTART_ORIGIN_RETRY,
+            expected_text => 'automatic retry (RETRY)',
+            desc => 'retry badge for retry origin'
+        },
+        {
+            origin => RESTART_ORIGIN_AUTO_CLONE,
+            expected_text => 'auto-clone',
+            desc => 'auto-clone badge for auto_clone origin'
+        },
+        {
+            origin => RESTART_ORIGIN_SYSTEM,
+            expected_text => 'system restart',
+            desc => 'system restart badge for system origin'
+        },
+    );
+
+    for my $case (@cases) {
+        $job->update({restart_origin => $case->{origin}});
+        $t->get_ok('/tests/99947/infopanel_ajax')->status_is(200);
+        my $badge = $t->tx->res->dom->at('#restart-origin-badge');
+        ok $badge, "$case->{desc} is present";
+        is $badge->text, $case->{expected_text}, "$case->{desc} displays correct label";
+    }
+};
+
+subtest 'estimated impact in infopanel' => sub {
+    my $job = $jobs->find(99947);
+    $job->impact->delete if $job->impact;
+
+    $t->get_ok('/tests/99947/infopanel_ajax')->status_is(200);
+    is $t->tx->res->dom->find('#job-impact-info')->size, 0, 'impact info not shown when no impact record';
+
+    my $impact = $job->create_related(
+        'impact',
+        {
+            seconds => 3600,
+            vcpus => 2,
+            ram_gb => 4,
+            power_w => 50,
+            energy_kwh => 0.075,
+            carbon_g => 25,
+            cost_energy => 0.015,
+            cost_hardware => 0.01,
+            cost_total => 0.025,
+            currency => 'EUR',
+            model_version => 1,
+            factors => {cpu_w => 10},
+        });
+
+    $t->get_ok('/tests/99947/infopanel_ajax')->status_is(200);
+    my $impact_el = $t->tx->res->dom->at('#job-impact-info');
+    ok $impact_el, 'impact info element is present';
+    like $impact_el->all_text, qr/Estimated impact:/, 'displays estimated impact prefix';
+    like $impact_el->at('b')->all_text, qr/0\.025/, 'displays formatted estimate cost';
+    like $impact_el->at('b')->all_text, qr/25 g/, 'displays formatted estimate carbon';
+
+    my $popover = $impact_el->at('a.help_popover');
+    ok $popover, 'help popover link is present';
+    like $popover->attr('data-bs-content'), qr/Energy: 0\.075 kWh/, 'popover contains energy details';
+    like $popover->attr('data-bs-content'), qr/Carbon: 25\.0 g CO₂e/, 'popover contains carbon details';
+
+    $impact->delete;
+};
+
 subtest 'test duration' => sub {
     my $start = DateTime->new(
         year => 2021,

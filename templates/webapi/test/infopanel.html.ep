@@ -1,4 +1,10 @@
 % use OpenQA::Jobs::Constants;
+% my %origin_labels = (
+%     RESTART_ORIGIN_USER() => 'manual restart',
+%     RESTART_ORIGIN_RETRY() => 'automatic retry (RETRY)',
+%     RESTART_ORIGIN_AUTO_CLONE() => 'auto-clone',
+%     RESTART_ORIGIN_SYSTEM() => 'system restart',
+% );
             <div class="card-header">
                 Results for
                 % if (current_route 'latest') {
@@ -72,6 +78,14 @@
                         <%= ', created' =%>
                         <abbr class="timeago" title="<%= $job->t_created->datetime() %>Z"><%= format_time($job->t_created) %></abbr>
                     % }
+                    % if (app->config->{job_impact}->{enabled} && (my $impact = $job->impact)) {
+                        <br><span id="job-impact-info">Estimated impact: <b><%= format_job_impact($impact) %></b>
+                        % my $doc_url = app->config->{job_impact}->{methodology_url} || 'https://open.qa/docs/#jobimpact';
+                        % my $human_str = defined $impact->cost_human ? sprintf(', reviewer %.4f %s', $impact->cost_human, $impact->currency) : '';
+                        % my $content = sprintf('<p>Energy: %.3f kWh (%.1f W)<br>Carbon: %.1f g CO₂e<br>Cost: energy %.4f %s, hardware %.4f %s%s (total: %.4f %s)<br>Model version: %d</p>', $impact->energy_kwh, $impact->power_w, $impact->carbon_g, $impact->cost_energy, $impact->currency, $impact->cost_hardware, $impact->currency, $human_str, $impact->cost_total, $impact->currency, $impact->model_version);
+                        %= help_popover 'Estimated impact breakdown' => $content, $doc_url => 'methodology'
+                        </span>
+                    % }
                     % if (my $reason = $job->reason) {
                         <br><%= $job->state eq SCHEDULED ? 'Scheduling info' : 'Reason' %>: <%= $reason %>
                     % }
@@ -94,6 +108,9 @@
                         Clone of
                         %= link_to $clone_of->id => url_for ('test', testid => $clone_of->id)
                         (restarted already <%= $ancestors >= $ancestors_limit ? 'more than ' : '' %><%= $ancestors %> time<%= $ancestors != 1 ? 's' : '' %>)
+                    % }
+                    % if (my $origin = $job->restart_origin) {
+                        <span id="restart-origin-badge" class="badge rounded-pill text-bg-secondary"><%= $origin_labels{$origin} // $origin %></span>
                     % }
                     % if (my $clone_id = $job->clone_id) {
                         Cloned as
@@ -163,12 +180,21 @@
                         % if ($has_dependencies) {
                             %= include 'test/restart_options', jobid => $testid, btn_type => 'btn-secondary', btn_style => '';
                         % }
+                        % my $confirm_attr = {};
+                        % my $restart_impact_note = '';
+                        % if (app->config->{job_impact}->{enabled} && (my $estimate = $job->restart_impact_estimate)) {
+                        %   if ($estimate->{confirmation}->{required}) {
+                        %     $confirm_attr->{'data-confirm-restart'} = join("\n", @{$estimate->{confirmation}->{reasons}});
+                        %   }
+                        %   my $prev_info = $estimate->{previous_attempts}->{count} ? sprintf('<br>Previous attempts: ≈ %s (%d runs)', $estimate->{previous_attempts}->{formatted_cost}, $estimate->{previous_attempts}->{count}) : '';
+                        %   $restart_impact_note = sprintf('<div class="alert alert-info p-2 mb-2"><small><strong>Estimated restart impact:</strong><br>Running %d job(s): ≈ %s · ≈ %s%s<br>Consider <a href="#investigation">investigating first</a></small></div>', $estimate->{jobs}, $estimate->{formatted_cost}, $estimate->{formatted_carbon}, $prev_info);
+                        % }
                         % $class .= ' disabled' if defined $job->clone_id;
-                        %= link_post url_for('apiv1_restart', jobid => $testid) => (class => $class, 'data-remote' => 'true', id => 'restart-result', 'data-jobid' => $testid) => begin
+                        %= link_post url_for('apiv1_restart', jobid => $testid) => (class => $class, 'data-remote' => 'true', id => 'restart-result', 'data-jobid' => $testid, %$confirm_attr) => begin
                             <i class="fa-solid fa-2 fa-rotate-left"></i><span><%= $restart_text %></span>
                         %= end
                         % my $disabled_note = defined $job->clone_id ? '<p><strong>This job cannot be restarted because it has already been restarted.</strong></p><hr>' : '';
-                        <%= help_popover('Restart job' => "$disabled_note
+                        <%= help_popover('Restart job' => "$disabled_note$restart_impact_note
                             <p>Restarts the job and certain dependent jobs.</p>
                             <p>Rules for restarting dependencies:</p>
                             <ul>

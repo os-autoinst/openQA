@@ -73,6 +73,12 @@ Clones are excluded from the results.
 
 Limit the number of jobs.
 
+=item impact
+
+  impact => 1
+
+Include estimated impact assessment for jobs where available.
+
 =back
 
 =back
@@ -83,6 +89,7 @@ sub list ($self) {
     my $validation = $self->validation;
     $validation->optional('scope')->in('current', 'relevant');
     $validation->optional('latest')->num(1);
+    $validation->optional('impact')->in(0, 1);
     $validation->optional('limit')->num;
     $validation->optional('offset')->num;
     $validation->optional('groupid')->num;
@@ -126,6 +133,8 @@ sub list ($self) {
     }
 
     my $latest = $validation->param('latest');
+    my $include_impact = $validation->param('impact') ? 1 : 0;
+    $args{prefetch} = 'impact' if $include_impact;
     my $schema = $self->schema;
     my $rs = $schema->resultset('Jobs')->complex_query(%args);
     my @jobarray = defined $latest ? $rs->latest_jobs : $rs->all;
@@ -197,6 +206,7 @@ sub list ($self) {
             dependencies => {children => $children{$id}, parents => $parents{$id}},
             settings => $settings{$id},
             origin => $origins{$id},
+            impact => $include_impact,
         );
         $jobhash->{modules} = [];
         for my $module (@{$job->{_modules}}) {
@@ -460,13 +470,16 @@ sub show ($self) {
     my $check_assets = !!$self->param('check_assets');
     my $follow = $self->param('follow');
     my $unredacted = $self->param('unredacted') && $self->is_operator;
-    return unless my $job = $self->find_job_or_render_not_found($job_id, $follow ? {prefetch => 'settings'} : {});
+    return
+      unless my $job
+      = $self->find_job_or_render_not_found($job_id, {prefetch => $follow ? [qw(settings impact)] : 'impact'});
     $job = $job->latest_job if $follow;
     my $job_data = $job->to_hash(
         assets => 1,
         check_assets => $check_assets,
         deps => 1,
         details => $details,
+        impact => 1,
         parent_group => 1,
         unredacted => $unredacted,
     );
@@ -872,6 +885,7 @@ sub _restart ($self, %args) {
         push @params, comment => $comment;
         push @params, comment_user_id => $self->current_user->id;
     }
+    push @params, user_id => $self->current_user->id if $self->current_user;
 
     my $res = OpenQA::Resource::Jobs::job_restart($jobs, @params);
     OpenQA::Scheduler::Client->singleton->wakeup;
@@ -888,11 +902,16 @@ sub _restart ($self, %args) {
     $self->emit_event(openqa_comment_create => $_) for @{$res->{comments}};
 
     my $clone_id = ($dup_route && $single_job_id) ? ($duplicates->[0] // {})->{$single_job_id} : undef;
+    my $impact_estimate;
+    if ($single_job_id && (my $sj = $self->schema->resultset('Jobs')->find($single_job_id))) {
+        $impact_estimate = eval { $sj->restart_impact_estimate };
+    }
     $self->render(
         json => {
             result => $duplicates,
             test_url => \@urls,
             defined $clone_id ? (id => $clone_id) : (),
+            defined $impact_estimate ? (impact_estimate => $impact_estimate) : (),
             @{$res->{warnings}} ? (warnings => $res->{warnings}) : (),
             @{$res->{errors}} ? (errors => $res->{errors}) : (),
             $res->{enforceable} ? (enforceable => 1) : (),
@@ -919,6 +938,38 @@ Used for both apiv1_restart and apiv1_restart_jobs
 =cut
 
 sub restart ($self) { $self->_restart }
+
+sub restart_estimate ($self) {
+    my $job_id = $self->param('jobid');
+    return undef unless my $job = $self->find_job_or_render_not_found($job_id);
+    my $estimate = $job->restart_impact_estimate(
+        {
+            skip_parents => $self->param('skip_parents'),
+            skip_children => $self->param('skip_children'),
+            no_directly_chained_parent => $self->param('no_directly_chained_parent'),
+        });
+    return $self->render(json => $estimate // {});
+}
+
+sub impact_overview ($self) {
+    my %cond;
+    $cond{distri} = $self->param('distri') if defined $self->param('distri');
+    $cond{version} = $self->param('version') if defined $self->param('version');
+    $cond{build} = $self->param('build') if defined $self->param('build');
+    $cond{from} = $self->param('from') if defined $self->param('from');
+    $cond{to} = $self->param('to') if defined $self->param('to');
+
+    my $impacts_rs = $self->schema->resultset('JobImpacts');
+    my $aggregates = $impacts_rs->aggregate(%cond);
+    my $latency = $impacts_rs->added_latency(%cond);
+
+    return $self->render(
+        json => {
+            total => $aggregates->{total},
+            by_origin => $aggregates->{by_origin},
+            added_latency_hours => $latency,
+        });
+}
 
 =over 4
 
