@@ -73,6 +73,12 @@ Clones are excluded from the results.
 
 Limit the number of jobs.
 
+=item impact
+
+  impact => 1
+
+Include estimated impact assessment for jobs where available.
+
 =back
 
 =back
@@ -83,6 +89,7 @@ sub list ($self) {
     my $validation = $self->validation;
     $validation->optional('scope')->in('current', 'relevant');
     $validation->optional('latest')->num(1);
+    $validation->optional('impact')->in(0, 1);
     $validation->optional('limit')->num;
     $validation->optional('offset')->num;
     $validation->optional('groupid')->num;
@@ -126,6 +133,8 @@ sub list ($self) {
     }
 
     my $latest = $validation->param('latest');
+    my $include_impact = $validation->param('impact') ? 1 : 0;
+    $args{prefetch} = 'impact' if $include_impact;
     my $schema = $self->schema;
     my $rs = $schema->resultset('Jobs')->complex_query(%args);
     my @jobarray = defined $latest ? $rs->latest_jobs : $rs->all;
@@ -197,6 +206,7 @@ sub list ($self) {
             dependencies => {children => $children{$id}, parents => $parents{$id}},
             settings => $settings{$id},
             origin => $origins{$id},
+            impact => $include_impact,
         );
         $jobhash->{modules} = [];
         for my $module (@{$job->{_modules}}) {
@@ -460,13 +470,16 @@ sub show ($self) {
     my $check_assets = !!$self->param('check_assets');
     my $follow = $self->param('follow');
     my $unredacted = $self->param('unredacted') && $self->is_operator;
-    return unless my $job = $self->find_job_or_render_not_found($job_id, $follow ? {prefetch => 'settings'} : {});
+    return
+      unless my $job
+      = $self->find_job_or_render_not_found($job_id, {prefetch => $follow ? [qw(settings impact)] : 'impact'});
     $job = $job->latest_job if $follow;
     my $job_data = $job->to_hash(
         assets => 1,
         check_assets => $check_assets,
         deps => 1,
         details => $details,
+        impact => 1,
         parent_group => 1,
         unredacted => $unredacted,
     );

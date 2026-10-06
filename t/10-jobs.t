@@ -1445,6 +1445,24 @@ subtest 'job_impacts table and relationship' => sub {
     ok $impact->t_created, 't_created populated automatically';
     is $job->discard_changes->impact->seconds, 120, 'might_have impact accessor retrieves record';
 
+    my $hash = $job->to_hash;
+    is $hash->{impact}->{seconds}, 120, 'to_hash includes impact seconds';
+    is $hash->{impact}->{energy_kwh}, 0.0015, 'to_hash includes impact energy_kwh';
+    is $hash->{impact}->{carbon_g}, 0.5, 'to_hash includes impact carbon_g';
+    is $hash->{impact}->{cost}->{energy}, 0.0003, 'to_hash includes impact cost energy';
+    is $hash->{impact}->{cost}->{hardware}, 0.0004, 'to_hash includes impact cost hardware';
+    is $hash->{impact}->{cost}->{human}, undef, 'to_hash includes impact cost human as undef';
+    is $hash->{impact}->{cost}->{total}, 0.0007, 'to_hash includes impact cost total';
+    is $hash->{impact}->{currency}, 'EUR', 'to_hash includes impact currency';
+    is $hash->{impact}->{model_version}, 1, 'to_hash includes impact model_version';
+    is ${$hash->{impact}->{estimated}}, 1, 'to_hash marks impact as estimated';
+
+    my $hash_no_impact = $job->to_hash(impact => 0);
+    ok !exists $hash_no_impact->{impact}, 'to_hash omits impact when impact option is false';
+
+    my $hash_custom_impact = $job->to_hash(impact => $impact);
+    is $hash_custom_impact->{impact}->{seconds}, 120, 'to_hash accepts pre-resolved impact object';
+
     my $job_id = $job->id;
     $job->delete;
     is $t->app->schema->resultset('JobImpacts')->find($job_id), undef,

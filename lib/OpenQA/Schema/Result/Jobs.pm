@@ -518,6 +518,23 @@ sub to_hash ($job, %args) {
         }
     }
     $j->{missing_assets} = $job->missing_assets if $args{check_assets};
+    my $include_impact = delete $args{impact} // 1;
+    if ($include_impact && (my $impact = ref $include_impact ? $include_impact : $job->impact)) {
+        $j->{impact} = {
+            seconds => $impact->seconds,
+            energy_kwh => $impact->energy_kwh,
+            carbon_g => $impact->carbon_g,
+            cost => {
+                energy => $impact->cost_energy,
+                hardware => $impact->cost_hardware,
+                human => $impact->cost_human,
+                total => $impact->cost_total,
+            },
+            currency => $impact->currency,
+            model_version => $impact->model_version,
+            estimated => \1,
+        };
+    }
     return $j;
 }
 
