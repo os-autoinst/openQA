@@ -76,6 +76,7 @@ __PACKAGE__->add_columns(
     },
 );
 __PACKAGE__->set_primary_key('job_id');
+__PACKAGE__->resultset_class('OpenQA::Schema::ResultSet::JobImpacts');
 __PACKAGE__->belongs_to(
     job => 'OpenQA::Schema::Result::Jobs',
     'job_id',

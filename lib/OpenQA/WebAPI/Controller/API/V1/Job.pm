@@ -951,6 +951,26 @@ sub restart_estimate ($self) {
     return $self->render(json => $estimate // {});
 }
 
+sub impact_overview ($self) {
+    my %cond;
+    $cond{distri} = $self->param('distri') if defined $self->param('distri');
+    $cond{version} = $self->param('version') if defined $self->param('version');
+    $cond{build} = $self->param('build') if defined $self->param('build');
+    $cond{from} = $self->param('from') if defined $self->param('from');
+    $cond{to} = $self->param('to') if defined $self->param('to');
+
+    my $impacts_rs = $self->schema->resultset('JobImpacts');
+    my $aggregates = $impacts_rs->aggregate(%cond);
+    my $latency = $impacts_rs->added_latency(%cond);
+
+    return $self->render(
+        json => {
+            total => $aggregates->{total},
+            by_origin => $aggregates->{by_origin},
+            added_latency_hours => $latency,
+        });
+}
+
 =over 4
 
 =item duplicate()
