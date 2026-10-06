@@ -37,6 +37,7 @@ is $app->schema->resultset('Users')->find(99902)->feature_version, 42, 'feature 
 
 my $res = $t->post_ok('/api/v1/users/me/api_keys')->status_is(200, 'create api key')->tx->res->json;
 ok $res->{key}, 'key returned';
+ok $res->{secret}, 'secret returned and non-empty';
 my $expected_year = time2str('%Y', time + ONE_YEAR, 'UTC');
 like $res->{t_expiration}, qr/^$expected_year-/, 'default expiration is set to 1 year from now';
 my $key1 = $res->{key};
@@ -51,6 +52,7 @@ subtest 'create_api_key with expiration' => sub {
     $res = $t->post_ok('/api/v1/users/me/api_keys' => form => {expiration => $expiration})
       ->status_is(200, 'create api key with expiration')->tx->res->json;
     ok $res->{key}, 'key returned';
+    ok $res->{secret}, 'secret returned on key creation with expiration';
     my $expected_year = time2str('%Y', $expiration_time, 'UTC');
     like $res->{t_expiration}, qr/^$expected_year-/, 'expiration matches expected year';
 };
