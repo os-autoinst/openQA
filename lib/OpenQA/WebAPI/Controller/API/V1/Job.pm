@@ -872,6 +872,7 @@ sub _restart ($self, %args) {
         push @params, comment => $comment;
         push @params, comment_user_id => $self->current_user->id;
     }
+    push @params, user_id => $self->current_user->id if $self->current_user;
 
     my $res = OpenQA::Resource::Jobs::job_restart($jobs, @params);
     OpenQA::Scheduler::Client->singleton->wakeup;

@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#!/usr/bin/env perl    ## no critic (Modules::ProhibitExcessMainComplexity)
 
 # Copyright SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
@@ -16,6 +16,7 @@ use Mojo::Base -signatures;
 use autodie ':all';
 use File::Copy;
 use OpenQA::Jobs::Constants;
+use OpenQA::JobDependencies::Constants qw(PARALLEL);
 use OpenQA::Test::Case;
 use Test::MockModule 'strict';
 use Test::Mojo;
@@ -922,6 +923,7 @@ subtest 'job setting based retriggering' => sub {
     for (1 .. 2) {
         is $jobs->find({id => $next_job_id - 1})->clone_id, $next_job_id, "clone exists for retry nr. $_";
         $job = $jobs->find({id => $next_job_id});
+        is $job->restart_origin, RESTART_ORIGIN_RETRY, "retry nr. $_ clone has retry restart_origin";
         $jobs->find({id => $next_job_id})->done(result => FAILED);
         $job->update;
         perform_minion_jobs($minion);
@@ -1335,6 +1337,83 @@ subtest 'restart_origin defaults to undef for new jobs' => sub {
     is $jobs->find(99926)->restart_origin, undef, 'fixture job has undef restart_origin';
     my $job = _job_create({%settings, TEST => 'default_restart_origin'});
     is $job->restart_origin, undef, 'restart_origin defaults to undef for new job';
+};
+
+subtest 'auto_clone_regex sets restart_origin to auto_clone' => sub {
+    delete $ENV{OPENQA_JOB_DONE_HOOK_INCOMPLETE};
+    my $minion = $t->app->minion;
+    local OpenQA::App->singleton->config->{global}->{auto_clone_regex} = qr/infrastructure failure/;
+    local OpenQA::App->singleton->config->{global}->{auto_clone_limit} = 3;
+    local $t->app->config->{global}->{auto_clone_regex} = qr/infrastructure failure/;
+    local $t->app->config->{global}->{auto_clone_limit} = 3;
+    my $job = _job_create({%settings, TEST => 'auto_clone_origin_test'});
+    $job->update({state => RUNNING});
+    $job->done(result => INCOMPLETE, reason => 'infrastructure failure: worker network timeout');
+    perform_minion_jobs($minion);
+    $job->discard_changes;
+    ok my $clone_id = $job->clone_id, 'job cloned via auto_clone_regex';
+    my $clone = $jobs->find($clone_id);
+    is $clone->restart_origin, RESTART_ORIGIN_AUTO_CLONE, 'auto_clone clone has auto_clone restart_origin';
+};
+
+subtest 'job_restart and duplicate assign restart_origin across cluster' => sub {
+    my $normal_user = $users->find({username => 'restart_origin_tester'})
+      // $users->create_user('restart_origin_tester');
+    my $system_user = $users->system;
+
+    my @cases = (
+        {
+            desc => 'job_restart by regular user sets user restart_origin on all clones',
+            args => [user_id => $normal_user->id],
+            expected => RESTART_ORIGIN_USER,
+        },
+        {
+            desc => 'job_restart by system user sets system restart_origin on all clones',
+            args => [user_id => $system_user->id],
+            expected => RESTART_ORIGIN_SYSTEM,
+        },
+        {
+            desc => 'job_restart without user sets system restart_origin on all clones',
+            args => [],
+            expected => RESTART_ORIGIN_SYSTEM,
+        },
+        {
+            desc => 'duplicate without arguments defaults to system restart_origin on all clones',
+            duplicate_direct => 1,
+            expected => RESTART_ORIGIN_SYSTEM,
+        },
+        {
+            desc => 'duplicate with explicit retry origin assigns retry to all clones',
+            duplicate_direct => 1,
+            dup_args => {restart_origin => RESTART_ORIGIN_RETRY},
+            expected => RESTART_ORIGIN_RETRY,
+        },
+    );
+
+    for my $case (@cases) {
+        my $parent = _job_create({%settings, TEST => 'cluster_parent_' . $case->{expected}});
+        my $child = _job_create({%settings, TEST => 'cluster_child_' . $case->{expected}});
+        $child->parents->create({parent_job_id => $parent->id, dependency => PARALLEL});
+        $parent->update({state => DONE, result => PASSED});
+        $child->update({state => DONE, result => FAILED});
+
+        my %clones;
+        if ($case->{duplicate_direct}) {
+            my $res = $child->auto_duplicate($case->{dup_args} // {});
+            %clones = %{$res->{cluster_cloned}};
+        }
+        else {
+            require OpenQA::Resource::Jobs;
+            my $res = OpenQA::Resource::Jobs::job_restart([$child->id], @{$case->{args}});
+            %clones = %{$res->{duplicates}->[0]};
+        }
+
+        for my $orig_id (sort keys %clones) {
+            my $clone = $jobs->find($clones{$orig_id});
+            is $clone->restart_origin, $case->{expected},
+              "$case->{desc} (origin of clone $clones{$orig_id} for job $orig_id)";
+        }
+    }
 };
 
 done_testing();

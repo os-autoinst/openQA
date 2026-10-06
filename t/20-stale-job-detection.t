@@ -53,6 +53,8 @@ subtest 'worker with job and not updated in last 120s is considered dead' => sub
         is $job->state, DONE, "running job $job_id is now done";
         is $job->result, INCOMPLETE, "running job $job_id has been marked as incomplete";
         isnt $job->clone_id, undef, "running job $job_id a clone";
+        is $job->clone->restart_origin, RESTART_ORIGIN_SYSTEM,
+          "stale duplicated job $job_id clone has system restart_origin";
         like
           $job->reason,
           qr/abandoned: associated worker (remote|local)host:1 has not sent any status updates for too long/,

@@ -146,7 +146,7 @@ sub _incomplete_previous_job ($jobs_worker_says_it_works_on, $job) {
     my $worker = $job->assigned_worker // $job->worker;
     my $worker_info = defined $worker ? ('worker ' . $worker->name) : 'worker';
     $job->set_property('JOBTOKEN');
-    try { $job->auto_duplicate }
+    try { $job->auto_duplicate({restart_origin => RESTART_ORIGIN_SYSTEM}) }
     catch ($e) { log_warning("Unable to duplicate job $job_id after being abandoned by $worker_info: $e") }
     my $reason = "abandoned: associated $worker_info re-connected but abandoned the job";
     try { $job->done(result => INCOMPLETE, reason => $reason) }

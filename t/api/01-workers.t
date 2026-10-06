@@ -174,6 +174,9 @@ subtest 'incompleting previous job on worker registration' => sub {
         ok $incomplete_job->result eq INCOMPLETE || $incomplete_job->result eq PARALLEL_RESTARTED,
           'assigned job considered incomplete or parallel restarted'
           or always_explain 'actual job result: ' . $incomplete_job->result;
+        is $incomplete_job->clone->restart_origin, RESTART_ORIGIN_SYSTEM,
+          'abandoned job clone has system restart_origin'
+          if $incomplete_job->clone;
         $schema->txn_rollback;
     };
 

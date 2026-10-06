@@ -617,7 +617,9 @@ Internal function, needs to be executed in a transaction to perform
 optimistic locking on clone_id
 =cut
 
-sub _create_clone ($self, $cluster_job_info, $clone, $prio, $skip_ok_result_children, $settings) {
+sub _create_clone ($self, $cluster_job_info, $clone, $prio, $skip_ok_result_children, $settings,
+    $restart_origin = RESTART_ORIGIN_SYSTEM)
+{
     # Skip cloning 'ok' jobs which are only pulled in as children if that flag is set
     return ()
       if $skip_ok_result_children
@@ -642,6 +644,7 @@ sub _create_clone ($self, $cluster_job_info, $clone, $prio, $skip_ok_result_chil
     $main_settings{group_id} = defined $group ? ($group ? $group->id : undef) : ($self->group_id);
     $main_settings{settings} = \@new_settings;
     $main_settings{priority} = $prio || $self->priority;
+    $main_settings{restart_origin} = $restart_origin // RESTART_ORIGIN_SYSTEM;
     my $new_job = $rset->create(\%main_settings);    # assets are re-created in job_grab
 
     # Perform optimistic locking on clone_id. If the job is not longer there
@@ -938,14 +941,14 @@ sub duplicate ($self, $args = {}) {
     }
 
     log_debug('Duplicating jobs: ' . (dump $jobs));
+    my $restart_origin = $args->{restart_origin} // RESTART_ORIGIN_SYSTEM;
     my @args = (
         $jobs, $args->{comments} //= [],
-        $args->{comment},
-        $args->{comment_user_id},
-        $args->{clone} // 1,
-        $args->{prio},
-        $args->{skip_ok_result_children},
-        $args->{settings} // {});
+        $args->{comment}, $args->{comment_user_id},
+        $args->{clone} // 1, $args->{prio},
+        $args->{skip_ok_result_children}, $args->{settings} // {},
+        $restart_origin
+    );
     try {
         $self->result_source->schema->txn_do(sub { $self->_create_clones(@args) })
     }
@@ -2139,7 +2142,14 @@ sub handle_retry ($self) {
 
 sub enqueue_restart ($self, $options = {}) {
     my $openqa_job_id = $self->id;
-    my $minion_job_id = OpenQA::App->singleton->gru->enqueue(restart_job => [$openqa_job_id], $options)->{minion_id};
+    my %task_options = %$options;
+    my $restart_origin = delete $task_options{restart_origin};
+    my @job_args = ($openqa_job_id);
+    push @job_args, {restart_origin => $restart_origin} if defined $restart_origin;
+    if (defined $restart_origin) {
+        $task_options{notes} = {%{$task_options{notes} // {}}, restart_origin => $restart_origin};
+    }
+    my $minion_job_id = OpenQA::App->singleton->gru->enqueue(restart_job => \@job_args, \%task_options)->{minion_id};
     log_debug "Enqueued restarting openQA job $openqa_job_id via Minion job $minion_job_id";
     return $minion_job_id;
 }
@@ -2240,7 +2250,14 @@ sub done ($self, %args) {
     $self->update(\%new_val);
     $self->unblock;
     my %finalize_opts = (lax => 1);
-    $finalize_opts{parents} = [$self->enqueue_restart] if $restart || ($self->is_ok_to_retry && $self->handle_retry);
+    my $restart_origin;
+    if ($restart) {
+        $restart_origin = RESTART_ORIGIN_AUTO_CLONE;
+    }
+    elsif ($self->is_ok_to_retry && $self->handle_retry) {
+        $restart_origin = RESTART_ORIGIN_RETRY;
+    }
+    $finalize_opts{parents} = [$self->enqueue_restart({restart_origin => $restart_origin})] if $restart_origin;
     # bugrefs are there to mark reasons of failure - the function checks itself though
     my $carried_over = $self->carry_over_bugrefs;
 

@@ -12,7 +12,7 @@ use Exporter 'import';
 our @EXPORT_OK = qw(job_restart);
 
 my @DUPLICATION_ARG_KEYS
-  = (qw(clone prio skip_parents skip_children skip_ok_result_children settings comment comment_user_id));
+  = (qw(clone prio skip_parents skip_children skip_ok_result_children settings comment comment_user_id restart_origin));
 
 =head2 job_restart
 
@@ -50,6 +50,21 @@ sub job_restart ($jobids, %args) {
     my $jobs_rs = $schema->resultset('Jobs');
     my $jobs = $jobs_rs->search({id => $jobids, state => {'not in' => [PRISTINE_STATES]}});
     $duplication_args{no_directly_chained_parent} = 1 unless $force;
+
+    my $user_id = $args{user_id} // $args{comment_user_id};
+    my $restart_origin = $args{restart_origin};
+    if (!$restart_origin) {
+        my $system_user = $schema->resultset('Users')->system({select => ['id']});
+        my $system_user_id = $system_user ? $system_user->id : undef;
+        if ($user_id && (!defined $system_user_id || $user_id != $system_user_id)) {
+            $restart_origin = RESTART_ORIGIN_USER;
+        }
+        else {
+            $restart_origin = RESTART_ORIGIN_SYSTEM;
+        }
+    }
+    $duplication_args{restart_origin} = $restart_origin;
+
     while (my $job = $jobs->next) {
         my $job_id = $job->id;
         my $missing_assets = $job->missing_assets;

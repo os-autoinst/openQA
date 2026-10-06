@@ -426,6 +426,7 @@ subtest 'restart jobs (forced)' => sub {
         my $clone_id = $orig_job->{clone_id};
         next unless like $clone_id, qr/\d+/, "job $orig_id cloned";
         is $new_jobs{$clone_id}->{group_id}, $orig_job->{group_id}, "group of $orig_id taken over";
+        is $jobs->find($clone_id)->restart_origin, RESTART_ORIGIN_USER, "clone of $orig_id has user restart_origin";
     }
 
     $t->get_ok('/api/v1/jobs' => form => {scope => 'current'});

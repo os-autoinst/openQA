@@ -644,7 +644,7 @@ sub incomplete_and_duplicate_stale_jobs ($self) {
                         reason => "abandoned: associated $worker_info has not sent any status updates for too long",
                     );
                     my $res;
-                    $res = $job->auto_duplicate
+                    $res = $job->auto_duplicate({restart_origin => RESTART_ORIGIN_SYSTEM})
                       if OpenQA::App->singleton->config->{global}->{auto_duplicate_stale_jobs};
                     if (ref $res) {
                         log_warning(sprintf 'Dead job %d aborted and duplicated %d', $job->id, $res->id);
