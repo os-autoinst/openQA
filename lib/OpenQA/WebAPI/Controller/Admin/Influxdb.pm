@@ -85,6 +85,52 @@ sub jobs ($self) {
         }
     }
 
+    my $impact_cfg = $self->app->config->{job_impact} // {};
+    if ($impact_cfg->{enabled}) {
+        my $window_hours = $impact_cfg->{influxdb_window_hours} // 24;
+        my $from_time = DateTime->now(time_zone => 'UTC')->subtract(hours => $window_hours);
+        my $dt_str = $self->schema->storage->datetime_parser->format_datetime($from_time);
+        my $impacts_rs = $self->schema->resultset('JobImpacts');
+
+        my $rs = $impacts_rs->search(
+            {'job.t_finished' => {'>=' => $dt_str}},
+            {
+                join => 'job',
+                select => [
+                    'job.group_id',
+                    'job.restart_origin',
+                    {count => 'me.job_id', -as => 'job_count'},
+                    {sum => 'me.seconds', -as => 'total_seconds'},
+                    {sum => 'me.energy_kwh', -as => 'total_energy_kwh'},
+                    {sum => 'me.carbon_g', -as => 'total_carbon_g'},
+                    {sum => 'me.cost_total', -as => 'total_cost'},
+                ],
+                as => [qw(group_id restart_origin job_count total_seconds total_energy_kwh total_carbon_g total_cost)],
+                group_by => ['job.group_id', 'job.restart_origin'],
+            });
+
+        my %group_names = (0 => 'No Group');
+        my $groups = $self->schema->resultset('JobGroups')->search({}, {select => [qw(id name)]});
+        while (my $g = $groups->next) {
+            $group_names{$g->id} = $g->name;
+        }
+
+        while (my $row = $rs->next) {
+            my $gid = $row->get_column('group_id') // 0;
+            my $gname = $group_names{$gid} // "group_$gid";
+            $gname =~ s/([ ,=])/\\$1/g;
+            my $origin = $row->get_column('restart_origin') // 'first_run';
+            my $count = int($row->get_column('job_count') // 0);
+            my $sec = int($row->get_column('total_seconds') // 0);
+            my $energy = sprintf '%.4f', $row->get_column('total_energy_kwh') // 0;
+            my $carbon = sprintf '%.2f', $row->get_column('total_carbon_g') // 0;
+            my $cost = sprintf '%.4f', $row->get_column('total_cost') // 0;
+
+            $text
+              .= "openqa_job_impact,url=$url,group=$gname,origin=$origin jobs=${count}i,seconds=${sec}i,energy_kwh=${energy},carbon_g=${carbon},cost_total=${cost}\n";
+        }
+    }
+
     $self->render(text => $text);
 }
 

@@ -160,3 +160,27 @@ For higher accuracy:
   later does not retroactively change existing records.
 - **No Backfill**: Past jobs finished before enabling or upgrading the feature
   are not retroactively populated.
+
+## InfluxDB and Grafana Monitoring
+
+When `[job_impact] enabled = 1`, openQA exports job impact metrics under the
+existing `/admin/influxdb/jobs` endpoint.
+
+### Measurement Schema: `openqa_job_impact`
+
+- **Tags**:
+  - `url`: Host base URL.
+  - `group`: Job group name (or `No Group`).
+  - `origin`: Restart origin (`first_run`, `user`, `retry`, `auto_clone`, `system`).
+- **Fields**:
+  - `jobs`: Completed job count within rolling window (integer, `i`).
+  - `seconds`: Total runtime in seconds (integer, `i`).
+  - `energy_kwh`: Total estimated electricity consumption in kWh (float).
+  - `carbon_g`: Total estimated emissions in g CO₂e (float).
+  - `cost_total`: Total estimated cost in configured currency (float).
+
+### Sample InfluxQL Query for Grafana
+
+```sql
+SELECT sum("cost_total") FROM "openqa_job_impact" WHERE $timeFilter GROUP BY "group", "origin"
+```

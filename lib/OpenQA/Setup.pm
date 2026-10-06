@@ -352,6 +352,7 @@ sub default_config () {
             confirm_restart_above_cost => '',
             confirm_restart_above_carbon_g => '',
             confirm_restart_after_manual_restarts => '',
+            influxdb_window_hours => 24,
         },
         job_details_archive => {
             job_details_archive_cache_dir => undef,
@@ -444,6 +445,7 @@ my %JOB_IMPACT_NUMERIC_DEFAULTS = (
     default_ram_mb => 1024,
     history_runs => 10,
     model_version => 1,
+    influxdb_window_hours => 24,
 );
 
 sub _validate_job_impact_section ($app, $cfg, $name, $defaults) {

@@ -117,4 +117,37 @@ subtest 'filter specified minion tasks' => sub {
 
 $worker->unregister;
 
+subtest 'job impact influxdb metrics' => sub {
+    my $job = $schema->resultset('Jobs')->find(99926);
+    $job->update({t_finished => DateTime->now(time_zone => 'UTC')});
+    my $impact = $job->create_related(
+        'impact',
+        {
+            seconds => 1800,
+            vcpus => 2,
+            ram_gb => 4,
+            power_w => 50,
+            energy_kwh => 0.0375,
+            carbon_g => 12.5,
+            cost_energy => 0.0075,
+            cost_hardware => 0.005,
+            cost_total => 0.0125,
+            currency => 'EUR',
+            model_version => 1,
+            factors => {},
+        });
+
+    $t->get_ok('/admin/influxdb/jobs')->status_is(200)
+      ->content_like(
+qr/openqa_job_impact,url=http:\/\/example\.com,group=\S+,origin=\S+ jobs=\d+i,seconds=\d+i,energy_kwh=[\d\.]+,carbon_g=[\d\.]+,cost_total=[\d\.]+/
+      );
+
+    {
+        local $t->app->config->{job_impact}->{enabled} = 0;
+        $t->get_ok('/admin/influxdb/jobs')->status_is(200)->content_unlike(qr/openqa_job_impact/);
+    }
+
+    $impact->delete;
+};
+
 done_testing();
