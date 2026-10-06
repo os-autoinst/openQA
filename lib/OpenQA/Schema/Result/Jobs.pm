@@ -18,6 +18,7 @@ use OpenQA::Jobs::Constants;
 use OpenQA::JobDependencies::Constants;
 use OpenQA::Markdown 'markdown_to_html';
 use OpenQA::Setup;
+use OpenQA::JobImpact;
 use OpenQA::ScreenshotDeletion;
 use File::Basename qw(basename dirname);
 use File::Copy::Recursive qw();
@@ -2250,6 +2251,14 @@ sub done ($self, %args) {
     my $state = $self->state;
     $self->update(\%new_val);
     $self->unblock;
+
+    try {
+        $self->compute_impact;
+    }
+    catch ($e) {
+        log_warning 'Failed to compute job impact for job ' . $self->id . ": $e";
+    }
+
     my %finalize_opts = (lax => 1);
     my $restart_origin;
     if ($restart) {
@@ -2315,6 +2324,69 @@ sub _compute_result_and_reason ($self, $new_val, $result, $reason, $restart) {
     elsif ($reason_unknown && !defined $reason && $result eq INCOMPLETE) {
         $new_val->{reason} = 'no test modules scheduled/uploaded';
     }
+}
+
+sub compute_impact ($self) {
+    my $app = eval { OpenQA::App->singleton };
+    my $cfg = $app ? ($app->config->{job_impact} // {}) : {};
+    return undef unless $cfg->{enabled};
+    return undef unless $self->t_started && $self->t_finished;
+
+    my $start_epoch
+      = (ref $self->t_started && $self->t_started->can('epoch')) ? $self->t_started->epoch : $self->t_started;
+    my $finish_epoch
+      = (ref $self->t_finished && $self->t_finished->can('epoch')) ? $self->t_finished->epoch : $self->t_finished;
+    return undef unless defined $start_epoch && defined $finish_epoch;
+    my $seconds = int($finish_epoch - $start_epoch);
+    $seconds = 0 if $seconds < 0;
+
+    my $worker_props = {};
+    if (my $worker = $self->assigned_worker) {
+        $worker_props = $worker->job_impact_factors if $worker->can('job_impact_factors');
+    }
+
+    my $job_settings = $self->settings_hash;
+    my $worker_class = $job_settings->{WORKER_CLASS} // '';
+    my $by_class = $app ? ($app->config->{job_impact_by_class} // {}) : {};
+
+    my $factors = OpenQA::JobImpact::resolve_factors(
+        config => $cfg,
+        by_class => $by_class,
+        worker_class => $worker_class,
+        worker_props => $worker_props,
+        job_settings => $job_settings,
+    );
+
+    my $resources = OpenQA::JobImpact::resources($job_settings, $factors);
+    my $power_w = OpenQA::JobImpact::power_w($resources, $factors);
+    my $assessment = OpenQA::JobImpact::assess(
+        seconds => $seconds,
+        resources => $resources,
+        factors => $factors,
+    );
+    return undef unless $assessment;
+
+    my %data = (
+        seconds => $assessment->{seconds},
+        vcpus => $resources->{vcpus},
+        ram_gb => $resources->{ram_gb},
+        power_w => $power_w,
+        energy_kwh => $assessment->{energy_kwh},
+        carbon_g => $assessment->{carbon_g},
+        cost_energy => $assessment->{cost}->{energy},
+        cost_hardware => $assessment->{cost}->{hardware},
+        cost_human => undef,
+        cost_total => $assessment->{cost}->{total},
+        currency => $factors->{currency} // 'EUR',
+        model_version => $assessment->{model_version},
+        factors => $factors,
+    );
+
+    if (my $impact = $self->impact) {
+        $impact->update(\%data);
+        return $impact;
+    }
+    return $self->create_related('impact', \%data);
 }
 
 sub cancel ($self, $result, $reason = undef) {
