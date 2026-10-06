@@ -117,6 +117,18 @@ slot_power_w = 250
 hw_eur_per_slot_hour = 0.05
 ```
 
+### Restart Confirmation Thresholds
+
+Administrators can configure optional thresholds in `openqa.ini` under `[job_impact]`
+to present a confirmation nudge in the web UI before expensive or repeated manual restarts:
+
+- `confirm_restart_above_cost`: Threshold in configured currency (e.g. `1.50`).
+- `confirm_restart_above_carbon_g`: Threshold in g CO₂e (e.g. `500`).
+- `confirm_restart_after_manual_restarts`: Number of prior manual restart attempts (e.g. `2`).
+
+These thresholds act as an informational nudge in the web UI. API, CLI, and automated
+triggers remain unblocked.
+
 ### workers.ini
 
 Workers can advertise specific power parameters based on local host hardware:

@@ -349,6 +349,9 @@ sub default_config () {
             history_runs => 10,
             allow_job_setting_overrides => 0,
             methodology_url => '',
+            confirm_restart_above_cost => '',
+            confirm_restart_above_carbon_g => '',
+            confirm_restart_after_manual_restarts => '',
         },
         job_details_archive => {
             job_details_archive_cache_dir => undef,
@@ -463,6 +466,18 @@ sub _validate_job_impact_section ($app, $cfg, $name, $defaults) {
         if (($cfg->{$bool_key} // '') !~ /^[01]$/) {
             $app->log->warn("Invalid $name $bool_key specified, defaulting to $defaults->{$bool_key}");
             $cfg->{$bool_key} = $defaults->{$bool_key};
+        }
+    }
+    for my $threshold_key (
+        qw(confirm_restart_above_cost confirm_restart_above_carbon_g confirm_restart_after_manual_restarts))
+    {
+        next unless exists $cfg->{$threshold_key};
+        my $val = $cfg->{$threshold_key};
+        if (defined $val && $val ne '') {
+            if (!looks_like_number($val) || $val < 0) {
+                $app->log->warn("Invalid $name $threshold_key specified, defaulting to ''");
+                $cfg->{$threshold_key} = '';
+            }
         }
     }
 }

@@ -1156,6 +1156,29 @@ sub restart_impact_estimate ($self, $args = {}) {
         }
     }
 
+    my $cfg = OpenQA::App->singleton->config->{job_impact} // {};
+    my @reasons;
+    if (defined $cfg->{confirm_restart_above_cost} && $cfg->{confirm_restart_above_cost} ne '') {
+        if ($total_cost >= $cfg->{confirm_restart_above_cost}) {
+            my $cost_str = OpenQA::JobImpact::format_cost($total_cost, $currency);
+            push @reasons, sprintf 'Estimated cost (%s) exceeds threshold of %s %s', $cost_str,
+              $cfg->{confirm_restart_above_cost}, $currency;
+        }
+    }
+    if (defined $cfg->{confirm_restart_above_carbon_g} && $cfg->{confirm_restart_above_carbon_g} ne '') {
+        if ($total_carbon >= $cfg->{confirm_restart_above_carbon_g}) {
+            my $carbon_str = OpenQA::JobImpact::format_carbon($total_carbon);
+            push @reasons, sprintf 'Estimated carbon (%s) exceeds threshold of %s g CO₂e', $carbon_str,
+              $cfg->{confirm_restart_above_carbon_g};
+        }
+    }
+    my $manual_ancestors = $prev_by_origin{+RESTART_ORIGIN_USER}->{count} // 0;
+    if (defined $cfg->{confirm_restart_after_manual_restarts} && $cfg->{confirm_restart_after_manual_restarts} ne '') {
+        if ($manual_ancestors >= $cfg->{confirm_restart_after_manual_restarts}) {
+            push @reasons, sprintf 'Job has already been restarted manually %d time(s)', $manual_ancestors;
+        }
+    }
+
     return {
         jobs => $job_count,
         seconds => $total_seconds,
@@ -1166,6 +1189,10 @@ sub restart_impact_estimate ($self, $args = {}) {
         upper_bound => $is_upper_bound ? 1 : 0,
         formatted_cost => OpenQA::JobImpact::format_cost($total_cost, $currency),
         formatted_carbon => OpenQA::JobImpact::format_carbon($total_carbon),
+        confirmation => {
+            required => @reasons ? 1 : 0,
+            reasons => \@reasons,
+        },
         previous_attempts => {
             count => scalar(@ancestors),
             cost_total => $prev_cost,

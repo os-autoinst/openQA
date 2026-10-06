@@ -106,8 +106,39 @@ subtest 'restart estimate API endpoint' => sub {
     my $json = $t->tx->res->json;
     ok exists $json->{cost_total}, 'endpoint returns cost_total';
     ok exists $json->{jobs}, 'endpoint returns jobs count';
+    ok exists $json->{confirmation}, 'endpoint returns confirmation status';
 
     $t->get_ok('/api/v1/jobs/999999999/restart_estimate')->status_is(404);
+};
+
+subtest 'restart confirmation thresholds' => sub {
+    my $job = $jobs->find(99926);
+
+    my $estimate_default = $job->restart_impact_estimate;
+    ok $estimate_default->{confirmation}, 'confirmation field present in estimate';
+    is $estimate_default->{confirmation}->{required}, 0, 'confirmation not required by default';
+    is scalar @{$estimate_default->{confirmation}->{reasons}}, 0, 'no confirmation reasons by default';
+
+    {
+        local $t->app->config->{job_impact}->{confirm_restart_above_cost} = 0.000001;
+        my $estimate = $job->restart_impact_estimate;
+        is $estimate->{confirmation}->{required}, 1, 'confirmation required when cost exceeds threshold';
+        like $estimate->{confirmation}->{reasons}->[0], qr/Estimated cost/, 'reason mentions cost threshold';
+    }
+
+    {
+        local $t->app->config->{job_impact}->{confirm_restart_above_carbon_g} = 0.000001;
+        my $estimate = $job->restart_impact_estimate;
+        is $estimate->{confirmation}->{required}, 1, 'confirmation required when carbon exceeds threshold';
+        like $estimate->{confirmation}->{reasons}->[0], qr/Estimated carbon/, 'reason mentions carbon threshold';
+    }
+
+    {
+        local $t->app->config->{job_impact}->{confirm_restart_after_manual_restarts} = 0;
+        my $estimate = $job->restart_impact_estimate;
+        is $estimate->{confirmation}->{required}, 1, 'confirmation required when manual restarts threshold reached';
+        like $estimate->{confirmation}->{reasons}->[0], qr/restarted manually/, 'reason mentions manual restarts';
+    }
 };
 
 done_testing;

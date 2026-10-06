@@ -544,6 +544,13 @@ function setupTestButtons() {
 function setupResultButtons() {
   $('.restart-result').click(function (event) {
     event.preventDefault();
+    const confirmMsg = this.dataset.confirmRestart;
+    if (
+      confirmMsg &&
+      !confirm(`Estimated restart impact exceeds threshold:\n${confirmMsg}\n\nDo you want to proceed with restart?`)
+    ) {
+      return false;
+    }
     restartJob(this.href, this.dataset.jobid);
     // prevent posting twice by clicking #restart-result
     return false;

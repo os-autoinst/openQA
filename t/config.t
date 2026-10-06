@@ -385,6 +385,27 @@ subtest 'Validation and parsing of job impact config' => sub {
             target => 'class',
             class => 'qemu_ppc64le'
         },
+        {
+            desc => 'invalid negative confirm_restart_above_cost',
+            key => 'confirm_restart_above_cost',
+            val => -5,
+            default => '',
+            target => 'base',
+        },
+        {
+            desc => 'invalid string confirm_restart_above_carbon_g',
+            key => 'confirm_restart_above_carbon_g',
+            val => 'non_numeric',
+            default => '',
+            target => 'base',
+        },
+        {
+            desc => 'invalid confirm_restart_after_manual_restarts',
+            key => 'confirm_restart_after_manual_restarts',
+            val => -1,
+            default => '',
+            target => 'base',
+        },
     );
 
     for my $case (@invalid_cases) {
