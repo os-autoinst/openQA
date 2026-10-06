@@ -151,13 +151,19 @@ sub _job_publishes_uefi_vars ($job, $file) {
     $job->{settings}->{UEFI} && _job_setting_is $job, PUBLISH_PFLASH_VARS => $file;
 }
 
-sub _check_for_missing_assets ($job, $parents, $options) {
+sub _referenced_assets ($settings) {
+    # consider only settings that actually reference an asset to avoid matching unrelated settings
+    return {map { asset_type_from_setting($_, $settings->{$_}) ? ($settings->{$_} => 1) : () } keys %$settings};
+}
+
+sub _check_for_missing_assets ($job, $parents, $options, $referenced_assets) {
     return undef if $options->{'ignore-missing-assets'};
     my $missing_assets = $job->{missing_assets};
     return undef unless ref $missing_assets eq 'ARRAY';    # most likely an old version of the web UI
     my @relevant_missing_assets;
     for my $missing_asset (@$missing_assets) {
         my ($type, $name) = split qr{/}, $missing_asset, 2;
+        next unless $referenced_assets->{$name};
         push @relevant_missing_assets, $missing_asset
           unless _is_asset_generated_by_cloned_jobs $job, $parents, $name, $options;
     }
@@ -207,15 +213,14 @@ sub mirror ($url_handler, $from, $dst) {
 sub clone_job_download_assets ($jobid, $job, $url_handler, $options, $settings = undef) {
     $settings //= $job->{settings};
     my $parents = _get_chained_parents($job, $url_handler, $options);
-    _check_for_missing_assets($job, $parents, $options);
+    my $referenced_assets = _referenced_assets($settings);
+    _check_for_missing_assets($job, $parents, $options, $referenced_assets);
     my $remote_url = $url_handler->{remote_url};
-    # consider only settings that actually reference an asset to avoid matching unrelated settings
-    my %new_assets = map { asset_type_from_setting($_, $settings->{$_}) ? ($settings->{$_} => 1) : () } keys %$settings;
     for my $type (keys %{$job->{assets}}) {
         next if $type eq 'repo';    # we can't download repos
         for my $file (@{$job->{assets}->{$type}}) {
             # skip assets whose setting was overridden or cleared for the new job
-            next unless $new_assets{$file};
+            next unless $referenced_assets->{$file};
 
             my $dst = $file;
             # skip downloading published assets if we are also cloning the generation job or
