@@ -1325,4 +1325,16 @@ subtest 'history isolation keys separate the scenario history' => sub {
     };
 };
 
+subtest 'restart_origin defaults to undef for new jobs' => sub {
+    is RESTART_ORIGIN_USER, 'user', 'user restart origin constant';
+    is RESTART_ORIGIN_RETRY, 'retry', 'retry restart origin constant';
+    is RESTART_ORIGIN_AUTO_CLONE, 'auto_clone', 'auto_clone restart origin constant';
+    is RESTART_ORIGIN_SYSTEM, 'system', 'system restart origin constant';
+    is_deeply [RESTART_ORIGINS], [qw(user retry auto_clone system)], 'restart origins list';
+
+    is $jobs->find(99926)->restart_origin, undef, 'fixture job has undef restart_origin';
+    my $job = _job_create({%settings, TEST => 'default_restart_origin'});
+    is $job->restart_origin, undef, 'restart_origin defaults to undef for new job';
+};
+
 done_testing();

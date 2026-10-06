@@ -128,6 +128,16 @@ use constant
   RESULT_CLEANUP_LOG_FILES => COMMON_RESULT_LOG_FILES,
   qw(serial0.txt serial_terminal.txt serial_terminal_user.txt video_time.vtt);
 
+# restart origins
+use constant {
+    RESTART_ORIGIN_USER => 'user',
+    RESTART_ORIGIN_RETRY => 'retry',
+    RESTART_ORIGIN_AUTO_CLONE => 'auto_clone',
+    RESTART_ORIGIN_SYSTEM => 'system',
+};
+use constant RESTART_ORIGINS =>
+  (RESTART_ORIGIN_USER, RESTART_ORIGIN_RETRY, RESTART_ORIGIN_AUTO_CLONE, RESTART_ORIGIN_SYSTEM);
+
 # default for new jobs that are useful outside the schema
 use constant DEFAULT_JOB_PRIORITY => 50;
 
@@ -192,6 +202,11 @@ our @EXPORT =    ## no critic (Modules::ProhibitAutomaticExportation)
   RESULT_CLEANUP_LOG_FILES
   TAG_ID_COLUMN
   STATUS_PRIORITY
+  RESTART_ORIGIN_USER
+  RESTART_ORIGIN_RETRY
+  RESTART_ORIGIN_AUTO_CLONE
+  RESTART_ORIGIN_SYSTEM
+  RESTART_ORIGINS
   );
 
 # mapping from any specific job state/result to a meta state/result
