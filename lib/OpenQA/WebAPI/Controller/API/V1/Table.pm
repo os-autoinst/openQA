@@ -366,7 +366,7 @@ sub _prepare_settings ($self, $table, $entry) {
             my $value = trim $hp->{settings}->{$k};
             $k = trim $k;
             my %invalid;
-            @invalid{$k =~ m/([^\]\[0-9a-zA-Z_\+])/g} = ();
+            @invalid{$k =~ m/([^\]\[0-9a-zA-Z_\+\*])/g} = ();
             if (keys %invalid) {
                 my $eick = join ', ', map { '<b>' . xml_escape($_) . '</b>' } sort keys %invalid;
                 return sprintf 'Invalid characters %s in settings key <b>%s</b>', $eick, xml_escape($k);
