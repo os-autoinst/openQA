@@ -58,7 +58,12 @@
             <tbody>
                 % for my $k (sort keys %{$worker->{properties}}) {
                     <tr>
-                        <td><%= $k %></td>
+                        <td>
+                            <%= $k %>
+                            % if ($k =~ /^JOB_IMPACT_/) {
+                                &nbsp;<a href="https://open.qa/docs/#jobimpact" target="_blank" rel="noopener noreferrer"><i class="fa-regular fa-circle-question text-muted" data-bs-toggle="tooltip" title="Job impact factor documentation"></i></a>
+                            % }
+                        </td>
                         <td><%= $worker->{properties}->{$k} %></td>
                     </tr>
                 % }
