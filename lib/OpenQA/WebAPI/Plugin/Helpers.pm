@@ -7,6 +7,7 @@ use Mojo::Base 'Mojolicious::Plugin', -signatures;
 use Mojo::ByteStream;
 use OpenQA::Constants qw(JOBS_OVERVIEW_SEARCH_CRITERIA);
 use OpenQA::Schema;
+use OpenQA::JobImpact qw(format_estimate);
 use OpenQA::Utils qw(bugurl human_readable_size render_escaped_refs href_to_bugref);
 use OpenQA::Events;
 use OpenQA::Jobs::Constants qw(
@@ -30,6 +31,27 @@ sub register ($self, $app, $config) {
         });
 
     $app->helper(format_time_duration => \&_format_time_duration);
+
+    $app->helper(
+        format_job_impact => sub ($c, $impact, $currency = undef) {
+            return '' unless $impact;
+            $currency //= $c->app->config->{job_impact}->{currency} // 'EUR';
+            my $assessment
+              = ref $impact eq 'HASH'
+              ? $impact
+              : {
+                seconds => $impact->seconds,
+                energy_kwh => $impact->energy_kwh,
+                carbon_g => $impact->carbon_g,
+                cost => {
+                    energy => $impact->cost_energy,
+                    hardware => $impact->cost_hardware,
+                    human => $impact->cost_human,
+                    total => $impact->cost_total,
+                },
+              };
+            return format_estimate($assessment, $currency) // '';
+        });
 
     $app->helper(bugurl_for => sub ($c, $bugref = undef) { bugurl($bugref) });
 
