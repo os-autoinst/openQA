@@ -8,11 +8,15 @@ my $s3 = q{hello "world" $var @arr};
 my $s4 = qq{hello "world" $var @arr};
 my $s5 = "hello world";
 my $s6 = "hello \\ world";
+my $s7 = "hello \" world";
+my $s8 = "something \\$var";
+my $s9 = "$args{username}\@$args{hostname}";
+my $s10 = "unsupported \$result '$nargs{result}'";
 
 ## name Failing
 ## failures 3
 ## cut
 
-my $f1 = "hello \" world";
 my $f2 = "hello \$world";
 my $f3 = "hello \@array";
+my $f4 = "something \\\\\$var";
