@@ -440,6 +440,11 @@ subtest 'project directory functions' => sub {
         is assetdir, '/tmp/share/factory', 'assetdir';
         is imagesdir, '/tmp/test/openqa/images', 'imagesdir';
     };
+    subtest 'override OPENQA_BASEDIR for tests' => sub {
+        my $out
+          = qx{$^X -Ilib -e '\$0 = "t/test.t"; \$ENV{OPENQA_BASEDIR} = "/custom/path"; require OpenQA::Utils; print \$ENV{OPENQA_BASEDIR}'};
+        is $out, 't/data', 'OPENQA_BASEDIR overridden for .t files even if preset';
+    };
 };
 
 subtest 'change_sec_to_word' => sub {
