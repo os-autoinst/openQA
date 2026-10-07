@@ -432,9 +432,14 @@ sub _compose_job_overview_search_args ($c) {
         my @search_terms = (@group_id_search, @group_name_search);
         @groups = $schema->resultset('JobGroups')->search(\@search_terms)->all;
         if (!@groups) {
+            my %json_error = (json => {error => 'Group does not exist'}, status => 400);
+            if ($c->req->url->path =~ m{^/api/}) {
+                $c->render(%json_error);
+                return undef;
+            }
             $c->stash(error_message => 'Group does not exist');
             $c->respond_to(
-                json => {json => {error => 'Group does not exist'}, status => 400},
+                json => \%json_error,
                 any => sub { $c->render(template => 'main/specific_not_found', status => 400) });
             return undef;
         }
