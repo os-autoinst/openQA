@@ -284,7 +284,7 @@ sub name ($self) {
     my @a = map { my $c = $self->get_column($_); $c ? sprintf(($formats{$_} || '%s'), $c) : () } @name_keys;
     my $name = join '-', @a;
     my $machine = $self->MACHINE;
-    $name .= ('@' . $machine) if $machine;
+    $name .= "\@$machine" if $machine;
     $name =~ s/[^a-zA-Z0-9@._+:-]/_/g;
     $self->{_name} = $name;
     return $self->{_name};
@@ -308,7 +308,7 @@ sub scenario_hash ($self) {
 
 sub scenario_name ($self) {
     my $scenario = join '-', map { $self->get_column($_) } SCENARIO_KEYS;
-    if (my $machine = $self->MACHINE) { $scenario .= "@" . $machine }
+    if (my $machine = $self->MACHINE) { $scenario .= "\@$machine" }
     return $scenario;
 }
 
