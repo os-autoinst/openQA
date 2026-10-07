@@ -198,6 +198,7 @@ subtest 'test delete_self' => sub {
     is $user->email, undef, 'email cleared';
     is $user->fullname, undef, 'fullname cleared';
     is $user->nickname, undef, 'nickname cleared';
+    is $user->password, undef, 'password hash cleared';
     is $user->is_operator, 0, 'operator role reverted on self delete';
     is $user->is_admin, 0, 'admin role reverted on self delete';
     my $keys_after = $app->schema->resultset('ApiKeys')->search({user_id => 99902})->count;
