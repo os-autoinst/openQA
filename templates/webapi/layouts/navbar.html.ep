@@ -101,6 +101,9 @@
                       %= link_to 'MCP help' => url_for('mcp_help') => class => 'dropdown-item'
                   % }
                    %= link_to 'Changelog' => url_for('changelog') => class => 'dropdown-item'
+                   % if ((config->{auth}->{method} // '') eq 'Local') {
+                       %= link_to 'Change password' => url_for('password_change') => class => 'dropdown-item'
+                   % }
                    % if (config->{auth}->{method} ne 'None') {
                        %= link_to 'Logout' => url_for('logout') => 'data-method' => 'delete' => class => 'dropdown-item'
                    % }
