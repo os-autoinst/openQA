@@ -575,7 +575,7 @@ sub _stash_clone_info ($self, $job) {
 sub _gru_tasks_items ($self, $job) {
     my @items;
     for my $dependency ($job->gru_dependencies) {
-        my $task = $dependency->gru_task;
+        next unless my $task = $dependency->gru_task;
         my $label = 'id: ' . $task->id . ', name: ' . $task->taskname;
         my $href = '';
         if ($self->is_operator) {
