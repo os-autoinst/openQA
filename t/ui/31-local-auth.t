@@ -110,4 +110,135 @@ subtest 'session termination on logout' => sub {
     is $actions, 'Login', 'user interface shows unauthenticated login link after delete logout';
 };
 
+subtest 'registration form presentation and navigation link' => sub {
+    $t->get_ok('/register')->status_is(200, 'registration form renders with status 200 on GET')
+      ->element_exists('form[action="/register"][method="post"]', 'form posting to register endpoint exists')
+      ->element_exists('input[name="csrf_token"][type="hidden"]', 'hidden csrf token field exists')
+      ->element_exists('input#username[name="username"]', 'username input field exists')
+      ->element_exists('input#password[name="password"][type="password"]', 'password input field exists')
+      ->element_exists('input[type="submit"], button[type="submit"]', 'submit button exists');
+
+    $t->get_ok('/tests')->status_is(200, 'tests page accessible when logged out')
+      ->element_exists('a[href="/register"]', 'register link exists in navbar for local auth when logged out');
+};
+
+subtest 'registration disabled when auth method is not local' => sub {
+    $t->app->config->{auth}->{method} = 'Fake';
+
+    $t->get_ok('/register')->status_is(403, 'GET register forbidden when auth method is not Local');
+    $t->post_ok('/register', form => {username => 'someuser', password => 'password123'})
+      ->status_is(403, 'POST register forbidden when auth method is not Local');
+    $t->get_ok('/tests')->status_is(200, 'tests page accessible with non-local auth')
+      ->element_exists_not('a[href="/register"]', 'register link hidden when auth method is not Local');
+
+    $t->app->config->{auth}->{method} = 'Local';
+};
+
+subtest 'rejection of invalid registration policy and duplicate username' => sub {
+    my @invalid_registration_cases = (
+        {desc => 'empty username', form => {username => '', password => 'validpass123'}, err => qr/Invalid username/},
+        {desc => 'missing username', form => {password => 'validpass123'}, err => qr/Invalid username/},
+        {
+            desc => 'too short username',
+            form => {username => 'ab', password => 'validpass123'},
+            err => qr/Invalid username/
+        },
+        {
+            desc => 'too long username',
+            form => {username => 'a' x 65, password => 'validpass123'},
+            err => qr/Invalid username/
+        },
+        {
+            desc => 'invalid character in username',
+            form => {username => 'user$name', password => 'validpass123'},
+            err => qr/Invalid username/
+        },
+        {
+            desc => 'space in username',
+            form => {username => 'user name', password => 'validpass123'},
+            err => qr/Invalid username/
+        },
+        {
+            desc => 'empty password',
+            form => {username => 'validuser', password => ''},
+            err => qr/Password must be at least 8 characters/
+        },
+        {
+            desc => 'missing password',
+            form => {username => 'validuser'},
+            err => qr/Password must be at least 8 characters/
+        },
+        {
+            desc => 'too short password',
+            form => {username => 'validuser', password => 'short'},
+            err => qr/Password must be at least 8 characters/
+        },
+        {
+            desc => 'whitespace-only password',
+            form => {username => 'validuser', password => '        '},
+            err => qr/Password cannot be whitespace only/
+        },
+        {
+            desc => 'password identical to username',
+            form => {username => 'matchinguser', password => 'matchinguser'},
+            err => qr/Password cannot match username/
+        },
+        {
+            desc => 'duplicate username under local provider',
+            form => {username => 'localuser', password => 'validpass123'},
+            err => qr/Username already taken/
+        },
+        {
+            desc => 'duplicate username under non-local provider',
+            form => {username => 'arthur', password => 'validpass123'},
+            err => qr/Username already taken/
+        },
+    );
+
+    for my $case (@invalid_registration_cases) {
+        $t->post_ok('/register', form => $case->{form})->status_is(403, "status 403 returned for $case->{desc}")
+          ->content_like($case->{err}, "expected policy error message for $case->{desc}");
+    }
+};
+
+subtest 'successful registration of first user as admin and subsequent user as non-admin' => sub {
+    $schema->resultset('Users')->search({is_admin => 1})->update({is_admin => 0});
+
+    $t->post_ok('/register', form => {username => 'firstadmin', password => 'secureadminpass'})
+      ->status_is(302, 'first user registration returns redirect status')
+      ->header_is(Location => '/login', 'successful registration redirects to login');
+
+    my $first_user = $schema->resultset('Users')->find({username => 'firstadmin'});
+    ok $first_user, 'first registered user exists in database';
+    is $first_user->is_admin, 1, 'first registered user is granted admin privileges';
+    is $first_user->is_operator, 1, 'first registered user is granted operator privileges';
+    is $schema->resultset('AuditEvents')->search({user_id => $first_user->id, event => 'user_register'})->count, 1,
+      'audit event user_register recorded for first user';
+
+    $t->post_ok('/register', form => {username => 'regularuser', password => 'regularpass123'})
+      ->status_is(302, 'subsequent user registration returns redirect status')
+      ->header_is(Location => '/login', 'subsequent registration redirects to login');
+
+    my $reg_user = $schema->resultset('Users')->find({username => 'regularuser'});
+    ok $reg_user, 'subsequent registered user exists in database';
+    is $reg_user->is_admin, 0, 'subsequent registered user is not admin';
+    is $reg_user->is_operator, 0, 'subsequent registered user is not operator';
+    is $schema->resultset('AuditEvents')->search({user_id => $reg_user->id, event => 'user_register'})->count, 1,
+      'audit event user_register recorded for subsequent user';
+};
+
+subtest 'registered user authentication and interface state' => sub {
+    $t->post_ok('/login', form => {username => 'regularuser', password => 'regularpass123'})
+      ->status_is(302, 'login with newly registered credentials returns redirect status');
+
+    my $actions
+      = OpenQA::Test::Case::trim_whitespace(
+        $t->get_ok('/tests')->status_is(200, 'authenticated test overview request succeeds')
+          ->tx->res->dom->at('#user-action')->all_text);
+    like $actions, qr/Logged in as regularuser/, 'user interface shows logged in as newly registered user';
+    $t->element_exists_not('a[href="/register"]', 'register link is hidden when user is logged in');
+
+    $t->get_ok('/logout')->status_is(302, 'logout after registration test succeeds');
+};
+
 done_testing();
