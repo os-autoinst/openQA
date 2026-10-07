@@ -111,6 +111,11 @@
             <li class='nav-item' id="user-action">
                 %= link_to('Login' => url_for('login') => class => 'nav-link')
             </li>
+            % if ((config->{auth}->{method} // '') eq 'Local') {
+                <li class='nav-item'>
+                    %= link_to('Register' => url_for('register') => class => 'nav-link')
+                </li>
+            % }
         % }
      </ul>
    </div>

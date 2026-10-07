@@ -118,6 +118,8 @@ sub startup ($self) {
     $r->delete('/session')->to('session#destroy');
     $r->get('/login')->name('login')->to('session#create');
     $r->post('/login')->to('session#create');
+    $r->get('/register')->to('session#register_form');
+    $r->post('/register')->name('register')->to('session#register');
     $r->delete('/logout')->name('logout')->to('session#destroy');
     $r->get('/logout')->to('session#destroy');
     $r->get('/response')->to('session#response');
