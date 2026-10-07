@@ -275,7 +275,13 @@ subtest 'password change access controls and form presentation' => sub {
       ->element_exists('input#old_password[name="old_password"][type="password"]',
         'current password input field exists')
       ->element_exists('input#new_password[name="new_password"][type="password"]', 'new password input field exists')
-      ->element_exists('input[type="submit"], button[type="submit"]', 'submit button exists');
+      ->element_exists('input[type="submit"], button[type="submit"]', 'submit button exists')
+      ->element_exists('form[action="/delete_account"][method="post"]',
+        'form posting to delete account endpoint exists')
+      ->element_exists('form[action="/delete_account"] input[name="csrf_token"][type="hidden"]',
+        'delete account form contains csrf token field')
+      ->element_exists('form[action="/delete_account"] input[type="submit"][value="Delete Account"]',
+        'delete account submit button exists');
 };
 
 subtest 'password change validation and CSRF enforcement' => sub {
@@ -372,6 +378,179 @@ subtest 'successful password change, credential transition, and audit logging' =
     like $actions, qr/Logged in as localuser/, 'user interface shows user logged in under updated credentials';
 
     $t->get_ok('/logout')->status_is(302, 'final logout succeeds');
+};
+
+subtest 'account deletion access controls and system user guard' => sub {
+    $t->post_ok('/delete_account', form => {csrf_token => 'dummy'})
+      ->status_is(302, 'unauthenticated POST /delete_account returns redirect')
+      ->header_like(Location => qr{^/login\?return_page=}, 'unauthenticated POST /delete_account redirects to login');
+
+    $t->app->config->{auth}->{method} = 'Fake';
+    $t->post_ok('/delete_account', form => {csrf_token => 'dummy'})
+      ->status_is(403, 'POST /delete_account forbidden when auth method is not Local');
+    $t->app->config->{auth}->{method} = 'Local';
+
+    $t->post_ok('/login', form => {username => 'localuser', password => 'newsecurepass1'})
+      ->status_is(302, 'login as localuser succeeds before CSRF check');
+
+    $t->post_ok('/delete_account')->status_is(403, 'POST /delete_account without CSRF token returns 403')
+      ->content_is('Bad CSRF token!', 'CSRF error message returned when token missing');
+
+    my $system_user = $schema->resultset('Users')->find_or_create(
+        {
+            username => 'system',
+            provider => '',
+            email => 'noemail@open.qa',
+            fullname => 'openQA system user',
+            nickname => 'system',
+        });
+
+    my $cookie = (grep { $_->name eq $t->app->sessions->cookie_name } @{$t->ua->cookie_jar->all})[0];
+    my $c = $t->app->build_controller;
+    $c->req->cookies($cookie);
+    $t->app->sessions->load($c);
+    $c->session->{user} = 'system';
+    $t->app->sessions->store($c);
+    $cookie->value($c->res->cookie($t->app->sessions->cookie_name)->value);
+    my $system_csrf = $c->csrf_token;
+
+    $t->post_ok('/delete_account', form => {csrf_token => $system_csrf})
+      ->status_is(403, 'POST /delete_account for system user returns 403')
+      ->content_like(qr/Cannot delete system user/, 'error message confirms system user cannot be deleted');
+
+    $t->get_ok('/logout')->status_is(302, 'logout succeeds');
+};
+
+subtest 'successful self-deletion of local user account' => sub {
+    my $user_to_delete = $schema->resultset('Users')->create_user(
+        'selfdeleteuser',
+        provider => 'Local',
+        password => hash_password('selfdelpass123'),
+    );
+    my $del_id = $user_to_delete->id;
+
+    $t->post_ok('/login', form => {username => 'selfdeleteuser', password => 'selfdelpass123'})
+      ->status_is(302, 'login as selfdeleteuser returns redirect status');
+
+    my $csrf_token = $t->get_ok('/password_change')->status_is(200, 'password change page accessible')
+      ->tx->res->dom->at('form[action="/delete_account"] input[name="csrf_token"]')->attr('value');
+    ok $csrf_token, 'extracted valid CSRF token from delete account form';
+
+    $t->post_ok('/delete_account', form => {csrf_token => $csrf_token})
+      ->status_is(302, 'valid delete account request returns redirect status')
+      ->header_is(Location => '/', 'account deletion redirects to index page');
+
+    $t->get_ok('/')->status_is(200, 'index page renders successfully after account deletion')
+      ->content_like(qr/Account deleted successfully\./, 'success flash message rendered on home page');
+
+    $user_to_delete->discard_changes;
+    ok $user_to_delete->is_deleted, 'deleted user has deleted_at timestamp populated';
+    is $user_to_delete->username, "deleted-user-$del_id", 'deleted user username anonymized to deleted-user-id pattern';
+    is $user_to_delete->email, undef, 'deleted user email is cleared';
+    is $schema->resultset('AuditEvents')->search({user_id => $del_id, event => 'user_delete_account'})->count, 1,
+      'user_delete_account audit event recorded in database';
+
+    my $actions
+      = OpenQA::Test::Case::trim_whitespace(
+        $t->get_ok('/tests')->status_is(200, 'tests page accessible after deletion')->tx->res->dom->at('#user-action')
+          ->all_text);
+    is $actions, 'Login', 'user interface confirms session was invalidated and user is unauthenticated';
+
+    $t->post_ok('/login', form => {username => 'selfdeleteuser', password => 'selfdelpass123'})
+      ->status_is(403, 'login with original username of deleted account is rejected')
+      ->content_is('Invalid username or password', 'expected authentication failure error for original username');
+
+    $t->post_ok('/login', form => {username => "deleted-user-$del_id", password => 'selfdelpass123'})
+      ->status_is(403, 'login with anonymized username is rejected')
+      ->content_is('Invalid username or password', 'expected authentication failure error for anonymized username');
+};
+
+subtest 'admin user deletion access controls and system user guard' => sub {
+    my $system_user = $schema->resultset('Users')->find_or_create(
+        {
+            username => 'system',
+            provider => '',
+            email => 'noemail@open.qa',
+            fullname => 'openQA system user',
+            nickname => 'system',
+        });
+    my $sys_id = $system_user->id;
+
+    $t->post_ok("/admin/user/$sys_id/delete", form => {csrf_token => 'dummy'})
+      ->status_is(302, 'unauthenticated admin delete request redirects to login')
+      ->header_like(Location => qr{^/login\?return_page=}, 'redirect target points to login');
+
+    $t->post_ok('/login', form => {username => 'regularuser', password => 'regularpass123'})
+      ->status_is(302, 'login as regular non-admin user succeeds');
+
+    my $reg_csrf = $t->get_ok('/password_change')->tx->res->dom->at('input[name="csrf_token"]')->attr('value');
+    $t->post_ok("/admin/user/$sys_id/delete", form => {csrf_token => $reg_csrf})
+      ->status_is(403, 'non-admin attempt to delete user returns status 403');
+
+    $t->get_ok('/logout')->status_is(302, 'logout from regular user succeeds');
+
+    $t->post_ok('/login', form => {username => 'firstadmin', password => 'secureadminpass'})
+      ->status_is(302, 'login as admin succeeds');
+
+    my $admin_csrf = $t->get_ok('/admin/users')->status_is(200, 'admin users page accessible')
+      ->tx->res->dom->at('input[name="csrf_token"]')->attr('value');
+    ok $admin_csrf, 'extracted valid CSRF token from admin users page';
+
+    $t->post_ok("/admin/user/$sys_id/delete")->status_is(403, 'admin delete request without CSRF token returns 403')
+      ->content_is('Bad CSRF token!', 'CSRF error message returned when token missing');
+
+    $t->post_ok('/admin/user/99999999/delete', form => {csrf_token => $admin_csrf})
+      ->status_is(404, 'admin delete of non-existent user returns 404')
+      ->content_is("Can't find that user", 'not found message returned for unknown user');
+
+    $t->post_ok("/admin/user/$sys_id/delete", form => {csrf_token => $admin_csrf})
+      ->status_is(403, 'admin deletion of system user refused with status 403')
+      ->content_is('Cannot delete system user', 'error message confirms system user cannot be deleted');
+
+    $system_user->discard_changes;
+    ok !$system_user->is_deleted, 'system user is preserved and not marked as deleted';
+    is $system_user->username, 'system', 'system user username remains unchanged';
+};
+
+subtest 'admin deleting another user account' => sub {
+    my $target_user = $schema->resultset('Users')->create_user(
+        'admintargetuser',
+        provider => 'Local',
+        password => hash_password('targetsecret1'),
+    );
+    my $target_id = $target_user->id;
+
+    my $admin_csrf = $t->get_ok('/admin/users')->status_is(200, 'admin users page accessible')
+      ->tx->res->dom->at('input[name="csrf_token"]')->attr('value');
+    ok $admin_csrf, 'extracted valid CSRF token for admin delete request';
+
+    $t->post_ok("/admin/user/$target_id/delete", form => {csrf_token => $admin_csrf})
+      ->status_is(302, 'admin delete of local user returns redirect')
+      ->header_is(Location => '/admin/users', 'redirects back to admin users list');
+
+    $t->get_ok('/admin/users')->status_is(200, 'admin users list accessible after deletion')
+      ->content_like(qr/User deleted successfully\./, 'success flash message displayed on admin users page');
+
+    $target_user->discard_changes;
+    ok $target_user->is_deleted, 'target user is marked as deleted in database';
+    is $target_user->username, "deleted-user-$target_id", 'target user username is anonymized';
+    is $schema->resultset('AuditEvents')->search({user_id => $target_id, event => 'user_delete_account'})->count, 1,
+      'user_delete_account audit event recorded for target user';
+
+    my $actions
+      = OpenQA::Test::Case::trim_whitespace(
+        $t->get_ok('/tests')->status_is(200, 'tests page accessible')->tx->res->dom->at('#user-action')->all_text);
+    like $actions, qr/Logged in as firstadmin/, 'admin session remains active after deleting another user';
+
+    $t->get_ok('/logout')->status_is(302, 'admin logout succeeds');
+
+    $t->post_ok('/login', form => {username => 'admintargetuser', password => 'targetsecret1'})
+      ->status_is(403, 'login with deleted user username rejected')
+      ->content_is('Invalid username or password', 'authentication failure message');
+
+    $t->post_ok('/login', form => {username => "deleted-user-$target_id", password => 'targetsecret1'})
+      ->status_is(403, 'login with anonymized username rejected')
+      ->content_is('Invalid username or password', 'authentication failure message');
 };
 
 done_testing();

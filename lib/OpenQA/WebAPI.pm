@@ -122,6 +122,7 @@ sub startup ($self) {
     $r->post('/register')->name('register')->to('session#register');
     $r->get('/password_change')->to('session#password_change_form');
     $r->post('/password_change')->name('password_change')->to('session#password_change');
+    $r->post('/delete_account')->name('delete_account')->to('session#delete_account');
     $r->delete('/logout')->name('logout')->to('session#destroy');
     $r->get('/logout')->to('session#destroy');
     $r->get('/response')->to('session#response');
@@ -280,6 +281,7 @@ sub startup ($self) {
     # admins accessible tables
     $admin_r->get('/users')->name('admin_users')->to('user#index');
     $admin_r->post('/users/:userid')->name('admin_user')->to('user#update');
+    $admin_r->post('/user/:id/delete')->name('admin_delete_user')->to('user#delete');
     $admin_r->get('/needles')->name('admin_needles')->to('needle#index');
     $admin_r->get('/needles/:module_id/:needle_id')->name('admin_needle_module')->to('needle#module');
     $admin_r->get('/needles/ajax')->name('admin_needle_ajax')->to('needle#ajax');

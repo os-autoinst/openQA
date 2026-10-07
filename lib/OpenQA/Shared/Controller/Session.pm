@@ -186,4 +186,25 @@ sub password_change ($self) {
     return $self->redirect_to('password_change');
 }
 
+sub delete_account ($self) {
+    return $self->_render_forbidden unless ($self->app->config->{auth}->{method} // '') eq 'Local';
+    return undef unless $self->ensure_user;
+    return undef unless $self->_check_csrf_token;
+
+    my $user = $self->current_user;
+    return $self->_render_forbidden('Cannot delete system user')
+      if ($user->provider // '') eq '' && $user->username eq 'system';
+
+    $self->schema->resultset('AuditEvents')->create(
+        {
+            user_id => $user->id,
+            event => 'user_delete_account',
+            event_data => '{}',
+        });
+    $user->anonymize;
+    delete $self->session->{user};
+    $self->flash(info => 'Account deleted successfully.');
+    return $self->redirect_to('/');
+}
+
 1;
