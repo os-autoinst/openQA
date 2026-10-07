@@ -241,4 +241,137 @@ subtest 'registered user authentication and interface state' => sub {
     $t->get_ok('/logout')->status_is(302, 'logout after registration test succeeds');
 };
 
+subtest 'password change access controls and form presentation' => sub {
+    $t->get_ok('/password_change')->status_is(302, 'unauthenticated GET /password_change redirects')
+      ->header_like(Location => qr{^/login\?return_page=}, 'unauthenticated GET /password_change redirects to login');
+
+    $t->post_ok('/password_change', form => {old_password => 'foo', new_password => 'bar'})
+      ->status_is(302, 'unauthenticated POST /password_change redirects')
+      ->header_like(Location => qr{^/login\?return_page=}, 'unauthenticated POST /password_change redirects to login');
+
+    $t->app->config->{auth}->{method} = 'Fake';
+    $t->get_ok('/password_change')->status_is(403, 'GET /password_change forbidden when auth method is not Local');
+    $t->post_ok('/password_change', form => {old_password => 'foo', new_password => 'bar'})
+      ->status_is(403, 'POST /password_change forbidden when auth method is not Local');
+    $t->app->config->{auth}->{method} = 'Local';
+
+    $t->post_ok('/login', form => {username => 'localuser', password => 'correctpassword'})
+      ->status_is(302, 'login as localuser succeeds');
+
+    $t->get_ok('/tests')->status_is(200, 'tests page accessible when logged in')
+      ->element_exists('#user-action a[href="/password_change"]',
+        'change password link exists in navbar dropdown for local user');
+
+    $t->app->config->{auth}->{method} = 'Fake';
+    $t->get_ok('/tests')->status_is(200, 'tests page accessible with non-local auth')
+      ->element_exists_not('#user-action a[href="/password_change"]',
+        'change password link hidden in navbar when auth is not Local');
+    $t->app->config->{auth}->{method} = 'Local';
+
+    $t->get_ok('/password_change')->status_is(200, 'password change form renders with status 200 on GET')
+      ->element_exists('form[action="/password_change"][method="post"]',
+        'form posting to password change endpoint exists')
+      ->element_exists('input[name="csrf_token"][type="hidden"]', 'hidden csrf token field exists')
+      ->element_exists('input#old_password[name="old_password"][type="password"]',
+        'current password input field exists')
+      ->element_exists('input#new_password[name="new_password"][type="password"]', 'new password input field exists')
+      ->element_exists('input[type="submit"], button[type="submit"]', 'submit button exists');
+};
+
+subtest 'password change validation and CSRF enforcement' => sub {
+    $t->post_ok('/password_change', form => {old_password => 'correctpassword', new_password => 'newsecurepass1'})
+      ->status_is(403, 'status 403 returned when CSRF token is missing')
+      ->content_is('Bad CSRF token!', 'CSRF error message returned when token missing');
+
+    my $csrf_token = $t->get_ok('/password_change')->tx->res->dom->at('input[name="csrf_token"]')->attr('value');
+    ok $csrf_token, 'extracted valid CSRF token from password change form';
+
+    my @invalid_password_change_cases = (
+        {
+            desc => 'incorrect current password',
+            form => {old_password => 'wrongpassword', new_password => 'newsecurepass1'},
+            err => qr/Incorrect current password/,
+        },
+        {
+            desc => 'empty current password',
+            form => {old_password => '', new_password => 'newsecurepass1'},
+            err => qr/Incorrect current password/,
+        },
+        {
+            desc => 'missing current password',
+            form => {new_password => 'newsecurepass1'},
+            err => qr/Incorrect current password/,
+        },
+        {
+            desc => 'empty new password',
+            form => {old_password => 'correctpassword', new_password => ''},
+            err => qr/Password must be at least 8 characters/,
+        },
+        {
+            desc => 'missing new password',
+            form => {old_password => 'correctpassword'},
+            err => qr/Password must be at least 8 characters/,
+        },
+        {
+            desc => 'too short new password',
+            form => {old_password => 'correctpassword', new_password => 'short'},
+            err => qr/Password must be at least 8 characters/,
+        },
+        {
+            desc => 'whitespace-only new password',
+            form => {old_password => 'correctpassword', new_password => '        '},
+            err => qr/Password cannot be whitespace only/,
+        },
+        {
+            desc => 'new password matching username',
+            form => {old_password => 'correctpassword', new_password => 'localuser'},
+            err => qr/Password cannot match username/,
+        },
+    );
+
+    for my $case (@invalid_password_change_cases) {
+        $t->post_ok('/password_change', form => {%{$case->{form}}, csrf_token => $csrf_token})
+          ->status_is(403, "status 403 returned for $case->{desc}")
+          ->content_like($case->{err}, "expected policy error message for $case->{desc}");
+    }
+};
+
+subtest 'successful password change, credential transition, and audit logging' => sub {
+    my $user = $schema->resultset('Users')->find({username => 'localuser'});
+    my $initial_audit_count
+      = $schema->resultset('AuditEvents')->search({user_id => $user->id, event => 'user_password_change'})->count;
+
+    my $csrf_token = $t->get_ok('/password_change')->tx->res->dom->at('input[name="csrf_token"]')->attr('value');
+    ok $csrf_token, 'extracted valid CSRF token from password change form';
+
+    $t->post_ok('/password_change',
+        form => {old_password => 'correctpassword', new_password => 'newsecurepass1', csrf_token => $csrf_token})
+      ->status_is(302, 'valid password change returns redirect status')
+      ->header_is(Location => '/password_change', 'redirects to password change page');
+
+    $t->get_ok('/password_change')->status_is(200, 'password change page displays after redirect')
+      ->content_like(qr/Password changed successfully\./, 'success flash message rendered on password change page');
+
+    is $schema->resultset('AuditEvents')->search({user_id => $user->id, event => 'user_password_change'})->count,
+      $initial_audit_count + 1, 'user_password_change audit event recorded in database';
+
+    $t->get_ok('/logout')->status_is(302, 'logout succeeds following password change');
+
+    $t->post_ok('/login', form => {username => 'localuser', password => 'correctpassword'})
+      ->status_is(403, 'old password no longer accepted for login')
+      ->content_is('Invalid username or password', 'standard invalid credentials message returned for old password');
+
+    $t->post_ok('/login', form => {username => 'localuser', password => 'newsecurepass1'})
+      ->status_is(302, 'login with new password returns redirect status')
+      ->header_is(Location => '/', 'login with new password redirects to home page');
+
+    my $actions
+      = OpenQA::Test::Case::trim_whitespace(
+        $t->get_ok('/tests')->status_is(200, 'authenticated test overview accessible after password change')
+          ->tx->res->dom->at('#user-action')->all_text);
+    like $actions, qr/Logged in as localuser/, 'user interface shows user logged in under updated credentials';
+
+    $t->get_ok('/logout')->status_is(302, 'final logout succeeds');
+};
+
 done_testing();

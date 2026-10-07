@@ -120,6 +120,8 @@ sub startup ($self) {
     $r->post('/login')->to('session#create');
     $r->get('/register')->to('session#register_form');
     $r->post('/register')->name('register')->to('session#register');
+    $r->get('/password_change')->to('session#password_change_form');
+    $r->post('/password_change')->name('password_change')->to('session#password_change');
     $r->delete('/logout')->name('logout')->to('session#destroy');
     $r->get('/logout')->to('session#destroy');
     $r->get('/response')->to('session#response');
