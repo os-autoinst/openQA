@@ -36,4 +36,33 @@ sub verify_password ($pw, $hash) {
     return secure_compare($computed, $hash) ? 1 : 0;
 }
 
+sub auth_setup ($server) {
+    return;
+}
+
+sub auth_logout ($c) {
+    delete $c->session->{user};
+    return;
+}
+
+sub auth_login ($c) {
+    if ($c->req->method eq 'GET') {
+        $c->render('main/login');
+        return (manual => 1);
+    }
+
+    my $username = $c->param('username');
+    my $password = $c->param('password');
+
+    if (defined $username && defined $password && length $username && length $password) {
+        my $user = $c->schema->resultset('Users')->find({username => $username, provider => 'Local'});
+        if ($user && !$user->is_deleted && $user->password && verify_password($password, $user->password)) {
+            $c->session->{user} = $user->username;
+            return (error => 0);
+        }
+    }
+
+    return (error => 'Invalid username or password');
+}
+
 1;

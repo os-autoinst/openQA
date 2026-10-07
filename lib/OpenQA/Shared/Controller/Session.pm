@@ -64,7 +64,7 @@ sub _redirect_to_referrer ($self, $ref, $res) {
 sub return_page ($self) { $self->param('return_page') || $self->req->headers->referrer }
 
 sub create ($self) {
-    my $ref = $self->req->headers->referrer;
+    my $ref = $self->param('return_page') || $self->req->headers->referrer;
     my $config = $self->app->config;
     my $auth_method = $config->{auth}->{method};
     my $auth_module = "OpenQA::WebAPI::Auth::$auth_method";
@@ -72,7 +72,9 @@ sub create ($self) {
       if $self->via_domain($config->{global}->{file_domain});
 
     # prevent redirecting loop when referrer is login page
-    $ref = 'index' if !$ref or $ref eq $self->url_for('login');
+    if (!$ref || Mojo::URL->new($ref)->path->to_string eq $self->url_for('login')->path->to_string) {
+        $ref = 'index';
+    }
 
     croak "Method auth_login missing from class $auth_module" unless my $sub = $auth_module->can('auth_login');
 
