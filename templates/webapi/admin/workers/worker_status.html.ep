@@ -14,7 +14,7 @@
     % my $res_info = $reservation_details ? "<br>$reservation_details" : '';
     <%= help_popover('Worker status' => "Job: $job_link$step_info$res_info") %>
 % } elsif ($worker->{status} eq 'reserved') {
-    Reserved <%= $reservation->{worker_class} ? '(class ' . escape_html($reservation->{worker_class}) . ')' : '' %>
+    Reserved <%= $reservation->{worker_class} ? "(class $reservation->{worker_class})" : '' %>
     <%= help_popover('Worker status' => $reservation_details) %>
 % } elsif ($worker->{status} eq 'dead' && $worker->{job}) {
     Dead
