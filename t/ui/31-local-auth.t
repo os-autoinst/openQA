@@ -513,6 +513,9 @@ subtest 'admin user deletion access controls and system user guard' => sub {
 };
 
 subtest 'admin deleting another user account' => sub {
+    my $system_user = $schema->resultset('Users')->find({username => 'system', provider => ''});
+    my $sys_id = $system_user->id;
+
     my $target_user = $schema->resultset('Users')->create_user(
         'admintargetuser',
         provider => 'Local',
@@ -520,8 +523,19 @@ subtest 'admin deleting another user account' => sub {
     );
     my $target_id = $target_user->id;
 
-    my $admin_csrf = $t->get_ok('/admin/users')->status_is(200, 'admin users page accessible')
-      ->tx->res->dom->at('input[name="csrf_token"]')->attr('value');
+    my $admin_csrf
+      = $t->get_ok('/admin/users')->status_is(200, 'admin users page accessible')
+      ->text_is('thead th:nth-child(5)', 'Provider', 'provider table header is displayed')
+      ->text_is("#user_$target_id .provider", 'Local', 'target user row displays Local provider')
+      ->element_exists(qq{#user_$target_id form[action="/admin/user/$target_id/delete"][method="POST"]},
+        'delete form present for active local user')
+      ->element_exists(qq{#user_$target_id form[action="/admin/user/$target_id/delete"] input[name="csrf_token"]},
+        'delete form contains csrf token')
+      ->element_exists(
+        qq{#user_$target_id form[action="/admin/user/$target_id/delete"] input[type="submit"][value="Delete"]},
+        'delete form contains submit button')
+      ->element_exists_not(qq{#user_$sys_id form[action="/admin/user/$sys_id/delete"]},
+        'delete form not rendered for system user')->tx->res->dom->at('input[name="csrf_token"]')->attr('value');
     ok $admin_csrf, 'extracted valid CSRF token for admin delete request';
 
     $t->post_ok("/admin/user/$target_id/delete", form => {csrf_token => $admin_csrf})
@@ -529,7 +543,9 @@ subtest 'admin deleting another user account' => sub {
       ->header_is(Location => '/admin/users', 'redirects back to admin users list');
 
     $t->get_ok('/admin/users')->status_is(200, 'admin users list accessible after deletion')
-      ->content_like(qr/User deleted successfully\./, 'success flash message displayed on admin users page');
+      ->content_like(qr/User deleted successfully\./, 'success flash message displayed on admin users page')
+      ->element_exists_not(qq{#user_$target_id form[action="/admin/user/$target_id/delete"]},
+        'delete form not rendered for already deleted user');
 
     $target_user->discard_changes;
     ok $target_user->is_deleted, 'target user is marked as deleted in database';
@@ -551,6 +567,79 @@ subtest 'admin deleting another user account' => sub {
     $t->post_ok('/login', form => {username => "deleted-user-$target_id", password => 'targetsecret1'})
       ->status_is(403, 'login with anonymized username rejected')
       ->content_is('Invalid username or password', 'authentication failure message');
+};
+
+subtest 'admin managing local user roles and permissions' => sub {
+    my $manage_user = $schema->resultset('Users')->create_user(
+        'rolechangeuser',
+        nickname => 'rolechange',
+        provider => 'Local',
+        password => hash_password('rolechangepass'),
+    );
+    my $user_id = $manage_user->id;
+
+    $t->post_ok('/login', form => {username => 'regularuser', password => 'regularpass123'})
+      ->status_is(302, 'login as regular non-admin user succeeds');
+
+    my $reg_csrf = $t->get_ok('/password_change')->tx->res->dom->at('input[name="csrf_token"]')->attr('value');
+    $t->post_ok("/admin/users/$user_id", form => {csrf_token => $reg_csrf, role => 'admin'})
+      ->status_is(403, 'non-admin attempt to update user role returns status 403');
+
+    $t->get_ok('/logout')->status_is(302, 'logout from regular user succeeds');
+
+    $t->post_ok('/login', form => {username => 'firstadmin', password => 'secureadminpass'})
+      ->status_is(302, 'login as admin succeeds');
+
+    my $admin_csrf = $t->get_ok('/admin/users')->status_is(200, 'admin users page accessible')
+      ->tx->res->dom->at('input[name="csrf_token"]')->attr('value');
+    ok $admin_csrf, 'extracted valid CSRF token from admin users page';
+
+    is $t->tx->res->dom->at("#user_$user_id .role")->attr('data-order'), '00',
+      'initial user role is non-operator non-admin';
+
+    $t->post_ok("/admin/users/$user_id", form => {csrf_token => $admin_csrf, role => 'operator'})
+      ->status_is(302, 'promote local user to operator returns redirect')
+      ->header_is(Location => '/admin/users', 'redirects back to admin users list');
+
+    $t->get_ok('/admin/users')->status_is(200, 'admin users page reloaded after role change');
+    is $t->tx->res->dom->at("#user_$user_id .role")->attr('data-order'), '01',
+      'user promoted to operator has updated role data-order 01';
+
+    $t->post_ok(
+        "/admin/users/$user_id",
+        {'X-CSRF-Token' => $admin_csrf, Accept => 'application/json'},
+        form => {role => 'admin'}
+    )->status_is(200, 'promote local user to admin with json accept returns status 200')
+      ->json_is('/status', 'User rolechange updated', 'json response confirms role update');
+
+    $t->get_ok('/admin/users')->status_is(200, 'admin users page reloaded after second role change');
+    is $t->tx->res->dom->at("#user_$user_id .role")->attr('data-order'), '11',
+      'user promoted to admin has updated role data-order 11';
+
+    $t->post_ok("/admin/users/$user_id", form => {csrf_token => $admin_csrf, role => 'user'})
+      ->status_is(302, 'demote local user back to regular user returns redirect');
+
+    $t->get_ok('/admin/users')->status_is(200, 'admin users page reloaded after demotion');
+    is $t->tx->res->dom->at("#user_$user_id .role")->attr('data-order'), '00',
+      'demoted user has role data-order reset to 00';
+
+    $t->post_ok(
+        '/admin/users/99999999',
+        {'X-CSRF-Token' => $admin_csrf, Accept => 'application/json'},
+        form => {role => 'admin'}
+    )->status_is(404, 'role update for non-existent user with json accept returns 404')
+      ->json_is('/error', "Can't find that user", 'json response contains error message for non-existent user');
+
+    $t->post_ok('/admin/users/99999999', form => {csrf_token => $admin_csrf, role => 'admin'})
+      ->status_is(302, 'role update for non-existent user without json accept returns redirect');
+
+    $t->get_ok('/admin/users')->status_is(200, 'admin users page reloaded after error')->text_like(
+        '#flash-messages span',
+        qr/Can't find that user/,
+        'flash error displayed when updating non-existent user'
+    );
+
+    $t->get_ok('/logout')->status_is(302, 'admin logout succeeds');
 };
 
 done_testing();
