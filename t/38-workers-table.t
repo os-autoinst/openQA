@@ -279,4 +279,82 @@ subtest 'unlimited admin reservations are capped once admin_max_duration is conf
     ok !$worker->is_reserved, 'worker stays unreserved when the admin duration is rejected';
 };
 
+subtest 'worker host reservation model' => sub {
+    $db->txn_begin;
+    my $users = $db->resultset('Users');
+    my ($admin, $non_operator, $operator) = map { $users->find($_) } 99901, 99902, 99903;
+    my $other_operator = $users->create({username => 'gawain', is_operator => 1, feature_version => 0});
+
+    my $w1 = $workers->create({host => 'testhost', instance => 1});
+    my $w2 = $workers->create({host => 'testhost', instance => 2});
+    my $w3 = $workers->create({host => 'testhost', instance => 3});
+
+    $workers->reserve_host('testhost', $operator, comment => 'host maintenance', duration => '2h');
+    for my $w ($w1, $w2, $w3) {
+        $w->discard_changes;
+        ok $w->is_reserved, 'instance ' . $w->name . ' is reserved atomically via host reservation';
+        is $w->reservation->{scope}, 'host', 'instance ' . $w->name . ' reservation scope is host';
+    }
+
+    $workers->release_host('testhost', $operator);
+
+    $w2->reserve($operator, 'instance reservation', '1h');
+
+    throws_ok {
+        $workers->reserve_host('testhost', $other_operator, comment => 'host maint', duration => '1h');
+    }
+    qr/already reserved/, 'refuse overlapping host reservation due to conflict';
+
+    $w1->discard_changes;
+    $w3->discard_changes;
+    ok !$w1->is_reserved, 'instance 1 was not reserved due to rollback';
+    ok !$w3->is_reserved, 'instance 3 was not reserved due to rollback';
+
+    $w2->release($operator);
+
+    $w2->reserve($operator, 'instance reservation', '1h');
+    $workers->reserve_host('testhost', $admin, comment => 'admin force', duration => '1h', force => 1);
+    for my $w ($w1, $w2, $w3) {
+        $w->discard_changes;
+        ok $w->is_reserved, 'instance ' . $w->name . ' is reserved after force';
+        is $w->reservation->{user}, $admin->username, 'owner is admin';
+    }
+
+    throws_ok {
+        $workers->release_host('testhost', $other_operator);
+    }
+    qr/Insufficient permissions/, 'non-admin release fails when instances are foreign-owned';
+
+    $workers->release_host('testhost', $admin);
+    for my $w ($w1, $w2, $w3) {
+        $w->discard_changes;
+        ok !$w->is_reserved, 'instance ' . $w->name . ' is released';
+    }
+
+    $workers->reserve_host('testhost', $operator, comment => 'host maint', duration => '2h');
+    $w2->release($operator);
+    $w2->discard_changes;
+    $w1->discard_changes;
+    $w3->discard_changes;
+    ok !$w2->is_reserved, 'released instance 2 is no longer reserved';
+    ok $w1->is_reserved, 'instance 1 is still reserved';
+    ok $w3->is_reserved, 'instance 3 is still reserved';
+
+    $workers->release_host('testhost', $operator);
+
+    $workers->reserve_host(
+        'testhost', $operator,
+        comment => 'verification',
+        duration => '1h',
+        worker_class => 'poo167749'
+    );
+    for my $w ($w1, $w2, $w3) {
+        $w->discard_changes;
+        is $w->reservation->{worker_class}, 'poo167749', 'worker_class set on ' . $w->name;
+    }
+
+    $workers->release_host('testhost', $operator);
+    $db->txn_rollback;
+};
+
 done_testing();

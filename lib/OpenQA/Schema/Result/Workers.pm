@@ -14,7 +14,7 @@ use OpenQA::Constants qw(WORKER_API_COMMANDS DB_TIMESTAMP_ACCURACY VNC_PORT WORK
 use OpenQA::Jobs::Constants;
 use OpenQA::Utils 'parse_duration';
 use OpenQA::WorkerReservation
-  qw(RESERVATION_PROPERTIES RESERVATION_TIMESTAMP_FORMAT reservation_active reservation_error reservation_info reservation_class_valid);
+  qw(RESERVATION_PROPERTIES RESERVATION_TIMESTAMP_FORMAT reservation_active reservation_error reservation_info reservation_class_valid SCOPE_HOST SCOPE_INSTANCE);
 use Mojo::JSON qw(encode_json decode_json);
 use List::Util qw(any);
 use Time::Seconds;
@@ -160,7 +160,8 @@ sub _reservation_duration ($duration, $is_admin) {
     return $seconds;
 }
 
-sub reserve ($self, $user, $comment = undef, $duration = undef, $force = 0, $worker_class = undef) {
+sub reserve ($self, $user, $comment = undef, $duration = undef, $force = 0, $worker_class = undef, $scope = 'instance')
+{
     my $is_admin = $user->is_admin;
     die reservation_error(forbidden => 'Insufficient permissions to reserve a worker')
       unless $is_admin || $user->is_operator;
@@ -184,6 +185,7 @@ sub reserve ($self, $user, $comment = undef, $duration = undef, $force = 0, $wor
             $self->set_property(RESERVED_T_CREATED => $now);
             $self->set_property(RESERVED_T_EXPIRES => $seconds == 0 ? 0 : $now + $seconds);
             $self->set_property(RESERVED_WORKER_CLASS => $worker_class);
+            $self->set_property(RESERVED_SCOPE => $scope);
         });
     return $self;
 }
