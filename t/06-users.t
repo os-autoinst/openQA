@@ -64,4 +64,23 @@ subtest 'auth provider mismatch' => sub {
     lives_ok { $users->create_user('collision_user', provider => '') } 'works if provider matches existing one';
 };
 
+subtest 'password column' => sub {
+    my $source = $users->result_source;
+    ok $source->has_column('password'), 'password column is defined on Users schema';
+    my $info = $source->column_info('password');
+    is $info->{data_type}, 'text', 'password column has text data type';
+    ok $info->{is_nullable}, 'password column is nullable';
+    my $user_without_pw = $users->create({username => 'user_without_password'});
+    ok $user_without_pw, 'user can be created without specifying password';
+    is $user_without_pw->password, undef, 'password defaults to undef when omitted';
+    my $user_with_pw = $users->create(
+        {
+            username => 'user_with_password',
+            password => '$2b$12$some22characterlongdummyhashval',
+        });
+    ok $user_with_pw, 'user can be created with password';
+    is $user_with_pw->password, '$2b$12$some22characterlongdummyhashval',
+      'password value is stored and retrieved correctly';
+};
+
 done_testing();

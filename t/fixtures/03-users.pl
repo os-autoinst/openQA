@@ -8,6 +8,7 @@ use warnings;
         email => 'arthur@example.com',
         fullname => 'King Arthur',
         nickname => 'artie',
+        password => '$2b$12$FLJgP8VnthmHMuuqWtyqru0Mkwk1bUfLV8q5bGio2DdpXME.nmQ/q', # password is 'testpassword'
         is_operator => 1,
         is_admin => 1,
         api_keys => [{key => 'ARTHURKEY01', secret => 'EXCALIBUR'},],
@@ -51,6 +52,18 @@ use warnings;
     Users => {
         id => 99904,
         username => 'Demo',
+        feature_version => 0,
+    },
+    Users => {
+        id => 99905,
+        username => 'localadmin',
+        email => 'localadmin@example.com',
+        fullname => 'Local Admin',
+        nickname => 'localadmin',
+        provider => 'Local',
+        password => '$2b$12$FLJgP8VnthmHMuuqWtyqru0Mkwk1bUfLV8q5bGio2DdpXME.nmQ/q', # password is 'testpassword'
+        is_operator => 1,
+        is_admin => 1,
         feature_version => 0,
     },
 ]
