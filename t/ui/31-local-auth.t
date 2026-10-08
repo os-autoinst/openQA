@@ -406,10 +406,11 @@ subtest 'password change validation and CSRF enforcement' => sub {
     }
 };
 
-subtest 'successful password change, credential transition, and audit logging' => sub {
+subtest 'successful password change invalidates session, credential transition, and audit logging' => sub {
     my $user = $schema->resultset('Users')->find({username => 'localuser'});
     my $initial_audit_count
       = $schema->resultset('AuditEvents')->search({user_id => $user->id, event => 'user_password_change'})->count;
+    my $initial_epoch = $user->session_epoch // 0;
 
     my $csrf_token = $t->get_ok('/password_change')->tx->res->dom->at('input[name="csrf_token"]')->attr('value');
     ok $csrf_token, 'extracted valid CSRF token from password change form';
@@ -418,13 +419,21 @@ subtest 'successful password change, credential transition, and audit logging' =
       ->status_is(302, 'password change succeeds with only new_password and no old_password supplied')
       ->header_is(Location => '/password_change', 'successful password change redirects to password change page');
 
-    $t->get_ok('/password_change')->status_is(200, 'password change page displays after redirect')
-      ->content_like(qr/Password changed successfully\./, 'success flash message rendered on password change page');
+    is $schema->resultset('Users')->find({username => 'localuser'})->session_epoch, $initial_epoch + 1,
+      'session_epoch incremented on password change to invalidate prior browser sessions';
 
     is $schema->resultset('AuditEvents')->search({user_id => $user->id, event => 'user_password_change'})->count,
       $initial_audit_count + 1, 'user_password_change audit event recorded in database';
 
-    $t->get_ok('/logout')->status_is(302, 'logout succeeds following password change');
+    $t->get_ok('/password_change')
+      ->status_is(302, 'password change page is not accessible after the change because the session was deleted')
+      ->header_like(Location => qr{^/login\?return_page=}, 'invalidated session redirects back to login');
+
+    my $actions
+      = OpenQA::Test::Case::trim_whitespace(
+        $t->get_ok('/tests')->status_is(200, 'tests page accessible after password change')
+          ->tx->res->dom->at('#user-action')->all_text);
+    is $actions, 'Login', 'user interface shows the user must log in again after the password change';
 
     $t->post_ok('/login', form => {username => 'localuser', password => 'correctpassword'})
       ->status_is(403, 'old password no longer accepted for login')
@@ -434,7 +443,7 @@ subtest 'successful password change, credential transition, and audit logging' =
       ->status_is(302, 'login with new password returns redirect status')
       ->header_is(Location => '/', 'login with new password redirects to home page');
 
-    my $actions
+    $actions
       = OpenQA::Test::Case::trim_whitespace(
         $t->get_ok('/tests')->status_is(200, 'authenticated test overview accessible after password change')
           ->tx->res->dom->at('#user-action')->all_text);
@@ -443,7 +452,36 @@ subtest 'successful password change, credential transition, and audit logging' =
     $t->get_ok('/logout')->status_is(302, 'final logout succeeds');
 };
 
+subtest 'stale browser session with pre-change epoch is rejected after credential change' => sub {
+    my $cookie = (grep { $_->name eq $t->app->sessions->cookie_name } @{$t->ua->cookie_jar->all})[0];
+    my $c = $t->app->build_controller;
+    $c->req->cookies($cookie);
+    $t->app->sessions->load($c);
+    $c->session->{user} = 'localuser';
+    $c->session->{epoch} = 0;
+    $t->app->sessions->store($c);
+    $cookie->value($c->res->cookie($t->app->sessions->cookie_name)->value);
+
+    my $actions
+      = OpenQA::Test::Case::trim_whitespace(
+        $t->get_ok('/tests')->status_is(200, 'tests page accessible with forged pre-change-epoch session')
+          ->tx->res->dom->at('#user-action')->all_text);
+    is $actions, 'Login', 'forged session carrying the pre-change epoch does not resolve to localuser';
+
+    $t->post_ok('/login', form => {username => 'localuser', password => 'newsecurepass1'})
+      ->status_is(302, 'fresh login stores the current epoch and succeeds')
+      ->header_is(Location => '/', 'login redirects to index page');
+
+    $actions
+      = OpenQA::Test::Case::trim_whitespace(
+        $t->get_ok('/tests')->status_is(200, 'tests page accessible after fresh login')
+          ->tx->res->dom->at('#user-action')->all_text);
+    like $actions, qr/Logged in as localuser/, 'session with the current epoch resolves to localuser';
+};
+
 subtest 'account deletion access controls and system user guard' => sub {
+    $t->get_ok('/logout')->status_is(302, 'logout before unauthenticated delete account check');
+
     $t->post_ok('/delete_account', form => {csrf_token => 'dummy'})
       ->status_is(302, 'unauthenticated POST /delete_account returns redirect')
       ->header_like(Location => qr{^/login\?return_page=}, 'unauthenticated POST /delete_account redirects to login');
@@ -473,6 +511,7 @@ subtest 'account deletion access controls and system user guard' => sub {
     $c->req->cookies($cookie);
     $t->app->sessions->load($c);
     $c->session->{user} = 'system';
+    $c->session->{epoch} = $system_user->session_epoch // 0;
     $t->app->sessions->store($c);
     $cookie->value($c->res->cookie($t->app->sessions->cookie_name)->value);
     my $system_csrf = $c->csrf_token;

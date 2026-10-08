@@ -60,6 +60,11 @@ sub _current_user ($c) {
         my $id = $c->session->{user} // ($is_auth_method_none && !$c->is_api_request ? DEFAULT_ADMIN : undef);
         my $users = $c->schema->resultset('Users');
         my $user = $id ? $users->find({username => $id}) : undef;
+        # Credential changes bump the user's session_epoch, so a browser session
+        # carrying an older epoch is stale and must not resolve to a user.
+        if ($user && defined $c->session->{user} && ($c->session->{epoch} // 0) != ($user->session_epoch // 0)) {
+            $user = undef;
+        }
         if ($is_auth_method_none && $id && $id eq DEFAULT_ADMIN) {
             $user ||= $users->create_user(DEFAULT_ADMIN, fullname => 'Administrator', email => 'admin@example.com');
             $user->update({is_admin => 1, is_operator => 1}) unless $user->is_admin && $user->is_operator;

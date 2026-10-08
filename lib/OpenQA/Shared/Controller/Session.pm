@@ -181,7 +181,9 @@ sub password_change ($self) {
         return $self->_render_forbidden($err);
     }
 
-    $user->update({password => hash_password($new_password)});
+    # Bump the per-user session epoch so browser sessions issued before the
+    # credential change stop resolving to this user.
+    $user->update({password => hash_password($new_password), session_epoch => ($user->session_epoch // 0) + 1});
 
     $self->schema->resultset('AuditEvents')->create(
         {
@@ -190,6 +192,7 @@ sub password_change ($self) {
             event_data => '{}',
         });
 
+    delete $self->session->{user};
     $self->flash(info => 'Password changed successfully.');
     return $self->redirect_to('password_change');
 }

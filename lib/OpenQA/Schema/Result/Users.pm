@@ -60,6 +60,10 @@ __PACKAGE__->add_columns(
         data_type => 'timestamp',
         is_nullable => 1,
     },
+    session_epoch => {
+        data_type => 'integer',
+        default_value => 0,
+    },
 );
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');

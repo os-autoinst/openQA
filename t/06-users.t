@@ -83,4 +83,19 @@ subtest 'password column' => sub {
       'password value is stored and retrieved correctly';
 };
 
+subtest 'session epoch column' => sub {
+    my $source = $users->result_source;
+    ok $source->has_column('session_epoch'), 'session_epoch column is defined on Users schema';
+    my $info = $source->column_info('session_epoch');
+    is $info->{data_type}, 'integer', 'session_epoch column has integer data type';
+    ok !$info->{is_nullable}, 'session_epoch column is not nullable';
+    is $info->{default_value}, 0, 'session_epoch column defaults to 0';
+    $users->create({username => 'epoch_default_user'});
+    is $users->find({username => 'epoch_default_user'})->session_epoch, 0,
+      'users created without session_epoch get the default 0';
+    my $epoch_user = $users->find({username => 'epoch_default_user'});
+    $epoch_user->update({session_epoch => 3});
+    is $epoch_user->session_epoch, 3, 'session_epoch can be incremented via update to invalidate old sessions';
+};
+
 done_testing();

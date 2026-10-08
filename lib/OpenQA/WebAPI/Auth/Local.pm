@@ -74,6 +74,7 @@ sub auth_login ($c) {
         my $user = $c->schema->resultset('Users')->find({username => $username, provider => 'Local'});
         if ($user && !$user->is_deleted && $user->password && verify_password($password, $user->password)) {
             $c->session->{user} = $user->username;
+            $c->session->{epoch} = $user->session_epoch // 0;
             return (error => 0);
         }
     }
