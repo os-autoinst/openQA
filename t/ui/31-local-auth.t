@@ -972,6 +972,53 @@ subtest 'admin generates a temporary password returned exactly once' => sub {
     $t->get_ok('/logout')->status_is(302, 'logout after generated reset');
 };
 
+subtest 'admin password reset revokes API keys by default unless keep_api_keys is set' => sub {
+    my $user_revoked = $schema->resultset('Users')->create_user(
+        'keyrevokeduser',
+        provider => 'Local',
+        password => hash_password('oldpassword1'),
+    );
+    $user_revoked->api_keys->create({t_expiration => DateTime->now->add(years => 1)});
+    $user_revoked->api_keys->create({t_expiration => DateTime->now->add(years => 1)});
+    is $user_revoked->api_keys->count, 2, 'user has 2 API keys initially';
+
+    my $admin_csrf = admin_login_and_csrf();
+    my $revoked_id = $user_revoked->id;
+    $t->post_ok(
+        "/admin/users/$revoked_id/password_reset",
+        {'X-CSRF-Token' => $admin_csrf, Accept => 'application/json'},
+        form => {new_password => 'brandnewpass1'})->status_is(200);
+
+    is $user_revoked->api_keys->count, 0, 'API keys revoked by default after admin password reset';
+    my $audit_revoked
+      = $schema->resultset('AuditEvents')
+      ->search({user_id => $user_revoked->id, event => 'user_password_reset'}, {order_by => {-desc => 'id'}, rows => 1})
+      ->single;
+    like $audit_revoked->event_data, qr/"revoked_api_keys":1/, 'audit event indicates API keys were revoked';
+
+    my $user_kept = $schema->resultset('Users')->create_user(
+        'keykeptuser',
+        provider => 'Local',
+        password => hash_password('oldpassword1'),
+    );
+    $user_kept->api_keys->create({t_expiration => DateTime->now->add(years => 1)});
+    is $user_kept->api_keys->count, 1, 'user has 1 API key initially';
+
+    $admin_csrf = admin_login_and_csrf();
+    my $kept_id = $user_kept->id;
+    $t->post_ok(
+        "/admin/users/$kept_id/password_reset",
+        {'X-CSRF-Token' => $admin_csrf, Accept => 'application/json'},
+        form => {new_password => 'brandnewpass1', keep_api_keys => 1})->status_is(200);
+
+    is $user_kept->api_keys->count, 1, 'API keys retained when keep_api_keys=1';
+    my $audit_kept
+      = $schema->resultset('AuditEvents')
+      ->search({user_id => $user_kept->id, event => 'user_password_reset'}, {order_by => {-desc => 'id'}, rows => 1})
+      ->single;
+    like $audit_kept->event_data, qr/"revoked_api_keys":0/, 'audit event indicates API keys were kept';
+};
+
 subtest 'admin password reset rejected for system, deleted, non-local and unknown users' => sub {
     my $system_user = $schema->resultset('Users')->find({username => 'system', provider => ''});
     my $deleted = $schema->resultset('Users')->find({username => 'deletedlocal'});

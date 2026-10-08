@@ -134,6 +134,11 @@ sub reset_password ($self) {
         return _render_reset($self, HTTP_FORBIDDEN, 'Provide new_password or generate=1');
     }
 
+    my $keep_api_keys = $self->param('keep_api_keys') ? 1 : 0;
+    unless ($keep_api_keys) {
+        $user->api_keys->delete;
+    }
+
     # Bump session_epoch so any browser session for the target stops resolving to them.
     $user->update({password => hash_password($new_password), session_epoch => ($user->session_epoch // 0) + 1});
 
@@ -141,7 +146,13 @@ sub reset_password ($self) {
         {
             user_id => $user->id,
             event => 'user_password_reset',
-            event_data => encode_json({mode => $mode, username => $user->username}),
+            event_data => encode_json(
+                {
+                    mode => $mode,
+                    username => $user->username,
+                    revoked_api_keys => $keep_api_keys ? 0 : 1,
+                }
+            ),
         });
 
     if (my $current = $self->current_user) {
