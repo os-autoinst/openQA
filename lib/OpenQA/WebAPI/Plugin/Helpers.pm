@@ -456,31 +456,7 @@ sub _compose_job_overview_search_args ($c) {
       if $c->param('groupid') && !$v->is_valid('groupid');
 
     # determine build number
-    if (!$search_args{build}) {
-        if (@groups) {
-            my %builds;
-            for my $group (@groups) {
-                my $last_build = $schema->resultset('Jobs')->latest_build(%search_args, groupid => $group->id) or next;
-                $builds{$last_build}++;
-            }
-            $search_args{build} = [sort keys %builds] if %builds;
-        }
-        else {
-            my $build = $schema->resultset('Jobs')->latest_build(%search_args);
-            $search_args{build} = $build if $build;
-        }
-
-        # print debug output
-        if (@groups == 0) {
-            $c->app->log->debug('No build and no group specified, will lookup build based on the other parameters');
-        }
-        elsif (@groups == 1) {
-            $c->app->log->debug('Only one group but no build specified, searching for build');
-        }
-        else {
-            $c->app->log->info('More than one group but no build specified, selecting all latest builds in groups');
-        }
-    }
+    _determine_job_overview_build($c, \%search_args, \@groups);
 
     # limit results to return one row more than the configured/specified limit so we know when the limit is exceeded
     my $configured_limit = $c->app->config->{misc_limits}->{tests_overview_max_jobs};
@@ -507,6 +483,35 @@ sub _compose_job_overview_search_args ($c) {
     $search_args{job_settings} = $c->every_key_value_param('job_setting');
 
     return (\%search_args, \@groups);
+}
+
+sub _determine_job_overview_build ($c, $search_args, $groups) {
+    return if $search_args->{build};
+
+    my $schema = $c->schema;
+    if (@$groups) {
+        my %builds;
+        for my $group (@$groups) {
+            my $last_build = $schema->resultset('Jobs')->latest_build(%$search_args, groupid => $group->id) or next;
+            $builds{$last_build}++;
+        }
+        $search_args->{build} = [sort keys %builds] if %builds;
+    }
+    else {
+        my $build = $schema->resultset('Jobs')->latest_build(%$search_args);
+        $search_args->{build} = $build if $build;
+    }
+
+    # print debug output
+    if (@$groups == 0) {
+        $c->app->log->debug('No build and no group specified, will lookup build based on the other parameters');
+    }
+    elsif (@$groups == 1) {
+        $c->app->log->debug('Only one group but no build specified, searching for build');
+    }
+    else {
+        $c->app->log->info('More than one group but no build specified, selecting all latest builds in groups');
+    }
 }
 
 sub _every_non_empty_param ($c, $param_key) {
