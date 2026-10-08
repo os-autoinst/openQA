@@ -575,13 +575,11 @@ sub _stash_clone_info ($self, $job) {
 sub _gru_tasks_items ($self, $job) {
     my @items;
     for my $dependency ($job->gru_dependencies) {
-        my $task = $dependency->gru_task;
-        my $label = 'id: ' . $task->id . ', name: ' . $task->taskname;
-        my $href = '';
-        if ($self->is_operator) {
-            $href = $self->url_for('/minion/jobs')->query(note => 'gru_id_' . $task->id, task => $task->taskname);
-        }
-        push @items, {label => $label, href => $href};
+        next unless my $task = $dependency->gru_task;
+        my ($id, $name) = ($task->id, $task->taskname);
+        my $href
+          = $self->is_operator ? $self->url_for('/minion/jobs')->query(note => 'gru_id_' . $id, task => $name) : '';
+        push @items, {label => "id: $id, name: $name", href => $href};
     }
     return \@items;
 }
