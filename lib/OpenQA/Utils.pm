@@ -187,7 +187,7 @@ if ($0 =~ /\.t$/) {
     my ($tdirname) = $0 =~ m{((.*/t/|^t/)).+$};
     # remove ./
     $tdirname = File::Spec->canonpath($tdirname);
-    $ENV{OPENQA_BASEDIR} ||= "$tdirname/data";
+    $ENV{OPENQA_BASEDIR} = "$tdirname/data";
 }
 
 sub prjdir () { ($ENV{OPENQA_BASEDIR} || '/var/lib') . '/openqa' }
