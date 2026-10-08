@@ -7,6 +7,11 @@ use Mojo::Base 'Mojolicious::Controller', -signatures;
 use Carp 'croak';
 use OpenQA::WebAPI::Auth::Local qw(hash_password verify_password);
 
+my %COMMON_PASSWORDS = map { $_ => 1 } qw(
+  password password1 password12 password123 12345678 123456789 1234567890
+  qwerty123 asdfghjk letmein1 admin123 welcome1 iloveyou
+);
+
 sub _redirect_back ($self) {
     $self->redirect_to($self->url_for('login')->query(return_page => $self->req->url));
     return undef;
@@ -104,11 +109,17 @@ sub _validate_password ($self, $password, $username) {
     return 'Password must be at least 8 characters'
       if !defined $password || length $password < 8;
 
+    return 'Password must be at most 128 characters'
+      if length $password > 128;
+
     return 'Password cannot be whitespace only'
       if $password =~ /^\s*$/;
 
     return 'Password cannot match username'
-      if defined $username && $username eq $password;
+      if defined $username && index($password, $username) >= 0;
+
+    return 'Password is too common'
+      if $COMMON_PASSWORDS{$password};
 
     return undef;
 }

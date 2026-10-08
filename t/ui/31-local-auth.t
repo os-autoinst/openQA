@@ -179,6 +179,21 @@ subtest 'rejection of invalid registration policy and duplicate username' => sub
             err => qr/Password cannot be whitespace only/
         },
         {
+            desc => 'too long password',
+            form => {username => 'validuser', password => 'a' x 129},
+            err => qr/Password must be at most 128 characters/
+        },
+        {
+            desc => 'password containing username',
+            form => {username => 'containuser', password => 'xcontainuser1234'},
+            err => qr/Password cannot match username/
+        },
+        {
+            desc => 'common password',
+            form => {username => 'validuser', password => 'password123'},
+            err => qr/Password is too common/
+        },
+        {
             desc => 'password identical to username',
             form => {username => 'matchinguser', password => 'matchinguser'},
             err => qr/Password cannot match username/
@@ -239,6 +254,25 @@ subtest 'registered user authentication and interface state' => sub {
     $t->element_exists_not('a[href="/register"]', 'register link is hidden when user is logged in');
 
     $t->get_ok('/logout')->status_is(302, 'logout after registration test succeeds');
+};
+
+subtest 'hardened password policy still accepts existing valid passwords' => sub {
+    my @accepted_registration_cases = (
+        {desc => 'password with letters and digits', username => 'hardeneduser1', password => 'validpass123'},
+        {
+            desc => 'password previously accepted before hardening',
+            username => 'hardeneduser2',
+            password => 'correctpassword'
+        },
+        {desc => 'password at the 128 character maximum boundary', username => 'hardeneduser3', password => 'x' x 128},
+        {desc => 'password with symbols and digits', username => 'hardeneduser4', password => 'Sup3r$ecure!'},
+    );
+
+    for my $case (@accepted_registration_cases) {
+        $t->post_ok('/register', form => {username => $case->{username}, password => $case->{password}})
+          ->status_is(302, "registration accepted for $case->{desc}")
+          ->header_is(Location => '/login', "successful registration redirects to login for $case->{desc}");
+    }
 };
 
 subtest 'password change access controls and form presentation' => sub {
@@ -327,6 +361,21 @@ subtest 'password change validation and CSRF enforcement' => sub {
             desc => 'whitespace-only new password',
             form => {old_password => 'correctpassword', new_password => '        '},
             err => qr/Password cannot be whitespace only/,
+        },
+        {
+            desc => 'too long new password',
+            form => {old_password => 'correctpassword', new_password => 'a' x 129},
+            err => qr/Password must be at most 128 characters/,
+        },
+        {
+            desc => 'new password containing username',
+            form => {old_password => 'correctpassword', new_password => 'localuser1234'},
+            err => qr/Password cannot match username/,
+        },
+        {
+            desc => 'common new password',
+            form => {old_password => 'correctpassword', new_password => 'password123'},
+            err => qr/Password is too common/,
         },
         {
             desc => 'new password matching username',
