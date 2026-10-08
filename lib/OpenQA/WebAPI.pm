@@ -282,6 +282,7 @@ sub startup ($self) {
     $admin_r->get('/users')->name('admin_users')->to('user#index');
     $admin_r->post('/users/:userid')->name('admin_user')->to('user#update');
     $admin_r->post('/user/:id/delete')->name('admin_delete_user')->to('user#delete');
+    $admin_r->post('/users/:userid/password_reset')->name('admin_reset_user_password')->to('user#reset_password');
     $admin_r->get('/needles')->name('admin_needles')->to('needle#index');
     $admin_r->get('/needles/:module_id/:needle_id')->name('admin_needle_module')->to('needle#module');
     $admin_r->get('/needles/ajax')->name('admin_needle_ajax')->to('needle#ajax');

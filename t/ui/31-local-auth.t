@@ -744,4 +744,199 @@ subtest 'admin managing local user roles and permissions' => sub {
     $t->get_ok('/logout')->status_is(302, 'admin logout succeeds');
 };
 
+sub admin_login_and_csrf () {
+    $t->post_ok('/login', form => {username => 'firstadmin', password => 'secureadminpass'})
+      ->status_is(302, 'admin logs in for password reset scenario');
+    return $t->get_ok('/admin/users')->status_is(200, 'admin users page reachable for csrf extraction')
+      ->tx->res->dom->at('input[name="csrf_token"]')->attr('value');
+}
+
+subtest 'admin resets another local user password with an explicit new_password' => sub {
+    my $target = $schema->resultset('Users')->create_user(
+        'pwdresettarget',
+        provider => 'Local',
+        password => hash_password('oldpassword1'));
+    my $target_id = $target->id;
+    my $epoch_before = $target->session_epoch // 0;
+
+    my $admin_csrf = admin_login_and_csrf();
+    ok $admin_csrf, 'valid admin csrf token obtained';
+
+    $t->post_ok(
+        "/admin/users/$target_id/password_reset",
+        {'X-CSRF-Token' => $admin_csrf, Accept => 'application/json'},
+        form => {new_password => 'brandnewpass1'}
+    )->status_is(200, 'explicit admin password reset with json accept returns 200')
+      ->json_is('/status', 'Password of user pwdresettarget reset', 'json status confirms reset');
+
+    is $schema->resultset('Users')->find($target_id)->session_epoch, $epoch_before + 1,
+      'target session_epoch incremented to invalidate prior sessions';
+
+    my $audit
+      = $schema->resultset('AuditEvents')->search({user_id => $target_id, event => 'user_password_reset'})->next;
+    ok $audit, 'user_password_reset audit event recorded';
+    like $audit->event_data, qr/"mode":"explicit"/, 'audit event_data records explicit mode';
+    like $audit->event_data, qr/pwdresettarget/, 'audit event_data records target username';
+    unlike $audit->event_data, qr/brandnewpass1/, 'audit event_data never contains the password';
+
+    $t->post_ok('/login', form => {username => 'pwdresettarget', password => 'oldpassword1'})
+      ->status_is(403, 'old password rejected after admin reset')
+      ->content_is('Invalid username or password', 'standard invalid credentials message for old password');
+
+    $t->post_ok('/login', form => {username => 'pwdresettarget', password => 'brandnewpass1'})
+      ->status_is(302, 'new explicit password authenticates after admin reset')
+      ->header_is(Location => '/', 'login redirects to index');
+
+    $t->get_ok('/logout')->status_is(302, 'logout after reset');
+};
+
+subtest 'admin generates a temporary password returned exactly once' => sub {
+    my $target = $schema->resultset('Users')->create_user(
+        'pwdgentarget',
+        provider => 'Local',
+        password => hash_password('oldpassword1'));
+    my $target_id = $target->id;
+
+    my $admin_csrf = admin_login_and_csrf();
+    ok $admin_csrf, 'valid admin csrf token obtained';
+
+    my $res = $t->post_ok(
+        "/admin/users/$target_id/password_reset",
+        {'X-CSRF-Token' => $admin_csrf, Accept => 'application/json'},
+        form => {generate => 1}
+    )->status_is(200, 'generate=1 admin password reset with json accept returns 200')
+      ->json_has('/generated_password', 'generated password present in response')->tx->res->json;
+    my $generated = $res->{generated_password};
+    ok $generated, 'generated password captured from response';
+    like $generated, qr/^[a-zA-Z0-9]{16,}$/, 'generated password is alphanumeric and at least 16 chars';
+
+    my $audit
+      = $schema->resultset('AuditEvents')->search({user_id => $target_id, event => 'user_password_reset'})->next;
+    ok $audit, 'user_password_reset audit event recorded for generated reset';
+    like $audit->event_data, qr/"mode":"generated"/, 'audit event_data records generated mode';
+    unlike $audit->event_data, qr/\Q$generated\E/, 'generated password is not persisted in audit event_data';
+
+    $t->post_ok('/login', form => {username => 'pwdgentarget', password => 'oldpassword1'})
+      ->status_is(403, 'old password rejected after generated reset');
+
+    $t->post_ok('/login', form => {username => 'pwdgentarget', password => $generated})
+      ->status_is(302, 'generated password authenticates')->header_is(Location => '/', 'login redirects to index');
+
+    $t->get_ok('/logout')->status_is(302, 'logout after generated reset');
+};
+
+subtest 'admin password reset rejected for system, deleted, non-local and unknown users' => sub {
+    my $system_user = $schema->resultset('Users')->find({username => 'system', provider => ''});
+    my $deleted = $schema->resultset('Users')->find({username => 'deletedlocal'});
+    my $nonlocal = $schema->resultset('Users')->find({username => 'arthur'});
+
+    my $admin_csrf = admin_login_and_csrf();
+    ok $admin_csrf, 'valid admin csrf token obtained';
+
+    my @rejected_cases = (
+        {desc => 'system user', id => $system_user->id, status => 403, err => 'Cannot reset password of system user'},
+        {
+            desc => 'deleted local user',
+            id => $deleted->id,
+            status => 403,
+            err => 'Cannot reset password of deleted user'
+        },
+        {
+            desc => 'non-local provider user',
+            id => $nonlocal->id,
+            status => 403,
+            err => 'Cannot reset password of non-local user'
+        },
+        {desc => 'non-existent user', id => 99_999_999, status => 404, err => "Can't find that user"},
+    );
+
+    for my $case (@rejected_cases) {
+        $t->post_ok(
+            "/admin/users/$case->{id}/password_reset",
+            {'X-CSRF-Token' => $admin_csrf, Accept => 'application/json'},
+            form => {generate => 1}
+        )->status_is($case->{status}, "status $case->{status} returned for $case->{desc}")
+          ->json_is('/error', $case->{err}, "expected guard error for $case->{desc}");
+    }
+};
+
+subtest 'non-admin forbidden from admin password reset' => sub {
+    $t->post_ok('/login', form => {username => 'regularuser', password => 'regularpass123'})
+      ->status_is(302, 'non-admin regular user logs in');
+    my $csrf = $t->get_ok('/password_change')->tx->res->dom->at('input[name="csrf_token"]')->attr('value');
+    ok $csrf, 'csrf token from non-admin page';
+    my $local_id = $schema->resultset('Users')->find({username => 'localuser'})->id;
+    $t->post_ok(
+        "/admin/users/$local_id/password_reset",
+        {'X-CSRF-Token' => $csrf, Accept => 'application/json'},
+        form => {generate => 1})->status_is(403, 'non-admin password reset attempt returns 403');
+    $t->get_ok('/logout')->status_is(302, 'logout non-admin');
+};
+
+subtest 'admin password reset browser flow and input validation branches' => sub {
+    my $target = $schema->resultset('Users')->create_user(
+        'pwdflowtarget',
+        provider => 'Local',
+        password => hash_password('oldpassword1'));
+    my $target_id = $target->id;
+
+    my $admin_csrf = admin_login_and_csrf();
+    ok $admin_csrf, 'valid admin csrf token obtained';
+
+    $t->post_ok(
+        "/admin/users/$target_id/password_reset",
+        {'X-CSRF-Token' => $admin_csrf, Accept => 'application/json'},
+        form => {}
+    )->status_is(403, 'reset with neither new_password nor generate returns 403')
+      ->json_is('/error', 'Provide new_password or generate=1', 'missing input error message');
+
+    $t->post_ok(
+        "/admin/users/$target_id/password_reset",
+        {'X-CSRF-Token' => $admin_csrf, Accept => 'application/json'},
+        form => {new_password => 'short'}
+    )->status_is(403, 'explicit password violating policy returns 403')
+      ->json_is('/error', 'Password must be at least 8 characters', 'policy error surfaced for explicit reset');
+
+    $t->post_ok(
+        "/admin/users/$target_id/password_reset",
+        {'X-CSRF-Token' => $admin_csrf},
+        form => {new_password => 'brandnewpass1'}
+    )->status_is(302, 'browser explicit reset returns redirect')
+      ->header_is(Location => '/admin/users', 'redirects back to admin users page');
+
+    $t->get_ok('/admin/users')->status_is(200, 'admin users page shows reset flash')
+      ->content_like(qr/Password of user pwdflowtarget reset/, 'flash confirms reset on admin users page');
+
+    $t->post_ok("/admin/users/$target_id/password_reset", {'X-CSRF-Token' => $admin_csrf}, form => {generate => 1})
+      ->status_is(302, 'browser generated reset returns redirect')
+      ->header_is(Location => '/admin/users', 'redirects back to admin users page');
+
+    $t->get_ok('/admin/users')->status_is(200, 'admin users page shows generated flash')
+      ->content_like(qr/Generated password \(shown once\): [a-zA-Z0-9]{16,}/, 'generated password shown once in flash');
+
+    $t->get_ok('/logout')->status_is(302, 'logout after browser reset flow');
+};
+
+subtest 'admin password reset UI form rendered for active local users only' => sub {
+    my $local_id = $schema->resultset('Users')->find({username => 'localuser'})->id;
+    my $sys_id = $schema->resultset('Users')->find({username => 'system', provider => ''})->id;
+    my $arthur_id = $schema->resultset('Users')->find({username => 'arthur'})->id;
+
+    admin_login_and_csrf();
+    $t->get_ok('/admin/users')->status_is(200, 'admin users page accessible for UI check')
+      ->element_exists(qq{#user_$local_id form[action="/admin/users/$local_id/password_reset"][method="POST"]},
+        'password reset form present for active local user')
+      ->element_exists(
+        qq{#user_$local_id form[action="/admin/users/$local_id/password_reset"] input[name="csrf_token"]},
+        'password reset form contains csrf token')
+      ->element_exists(qq{#user_$local_id form[action="/admin/users/$local_id/password_reset"] input[name="generate"]},
+        'password reset form carries generate field')->element_exists(
+qq{#user_$local_id form[action="/admin/users/$local_id/password_reset"] input[type="submit"][value="Reset Password"]},
+        'password reset submit button present'
+      )->element_exists_not(qq{#user_$sys_id form[action="/admin/users/$sys_id/password_reset"]},
+        'no password reset form for system user')
+      ->element_exists_not(qq{#user_$arthur_id form[action="/admin/users/$arthur_id/password_reset"]},
+        'no password reset form for non-local user');
+};
+
 done_testing();
