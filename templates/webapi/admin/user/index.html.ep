@@ -29,13 +29,15 @@
             </thead>
             <tbody>
                 % for my $user (@$users) {
-                    <tr id="user_<%= $user->id %>">
-                        <td class="username"><%= $user->username %></td>
+                <tr id="user_<%= $user->id %>">
+                    % my $is_system = ($user->provider // '') eq '' && $user->username eq 'system';
+                    <td class="username"><%= $user->username %></td>
                         <td class="email"><%= $user->email %></td>
                         <td class="name"><%= $user->fullname %></td>
                         <td class="nick"><%= $user->nickname %></td>
                         <td class="provider"><%= $user->provider %></td>
                         <td class="role" data-order="<%= $user->is_admin %><%= $user->is_operator %>">
+                        % if (!$is_system) {
                 %= form_for url_for('admin_user', userid => $user->id) => (method => 'POST') => begin
                 % my @selects = ('', '', '');
                 % $selects[$user->is_admin ? 2 : $user->is_operator ? 1 : 0] = Mojo::ByteStream->new("checked='checked' class='default'");
@@ -64,10 +66,10 @@
                     Administrator
                 </label>
                             % end
+                        % }
                         </td>
                         % if ($show_user_actions) {
                         <td class="text-nowrap">
-                            % my $is_system = ($user->provider // '') eq '' && $user->username eq 'system';
                             % if (!$is_system && !$user->is_deleted) {
                                 %= form_for url_for('admin_delete_user', id => $user->id) => (method => 'POST', class => 'd-inline') => begin
                                     %= csrf_field

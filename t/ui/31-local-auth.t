@@ -9,6 +9,7 @@ use DateTime;
 use OpenQA::Test::Case;
 use OpenQA::Test::TimeLimit '15';
 use OpenQA::WebAPI::Auth::Local qw(hash_password);
+use OpenQA::Events;
 use Test::MockModule;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
@@ -742,6 +743,106 @@ subtest 'admin managing local user roles and permissions' => sub {
     );
 
     $t->get_ok('/logout')->status_is(302, 'admin logout succeeds');
+};
+
+subtest 'admin role update rejects system user and demotion of the last remaining admin' => sub {
+    my $sys_id = $schema->resultset('Users')->find({username => 'system', provider => ''})->id;
+    my $admin_user = $schema->resultset('Users')->find({username => 'firstadmin'});
+    my $admin_id = $admin_user->id;
+
+    my $admin_csrf = admin_login_and_csrf();
+    ok $admin_csrf, 'valid admin csrf token obtained';
+
+    my @forbidden_role_cases = (
+        {
+            desc => 'system user role change',
+            id => $sys_id,
+            role => 'operator',
+            err => 'Cannot change role of system user',
+        },
+        {
+            desc => 'demoting the only remaining admin',
+            id => $admin_id,
+            role => 'user',
+            err => 'Cannot demote the last remaining admin',
+        },
+    );
+
+    for my $case (@forbidden_role_cases) {
+        $t->post_ok(
+            "/admin/users/$case->{id}",
+            {'X-CSRF-Token' => $admin_csrf, Accept => 'application/json'},
+            form => {role => $case->{role}}
+        )->status_is(403, "role update rejected with 403 for $case->{desc}")
+          ->json_is('/error', $case->{err}, "expected guard message for $case->{desc}");
+    }
+
+    is $schema->resultset('Users')->find($admin_id)->is_admin, 1, 'firstadmin remains admin after rejected demotion';
+    is $schema->resultset('Users')->find($sys_id)->is_operator, 0, 'system user role unchanged by rejected update';
+
+    $t->get_ok('/logout')->status_is(302, 'logout after guard rejections');
+};
+
+subtest 'admin demotion allowed once another admin exists and update event records actor and roles' => sub {
+    my $second = $schema->resultset('Users')->create_user(
+        'secondadmin',
+        nickname => 'secondadmin',
+        provider => 'Local',
+        password => hash_password('secondadminpw1'),
+    );
+    my $second_id = $second->id;
+
+    my $admin_csrf = admin_login_and_csrf();
+    ok $admin_csrf, 'valid admin csrf token obtained';
+
+    $t->post_ok(
+        "/admin/users/$second_id",
+        {'X-CSRF-Token' => $admin_csrf, Accept => 'application/json'},
+        form => {role => 'admin'}
+    )->status_is(200, 'promoting a second user to admin succeeds so two admins exist')
+      ->json_is('/status', 'User secondadmin updated', 'json confirms promotion');
+
+    my $captured;
+    my $cb = OpenQA::Events->singleton->on(user_update_res => sub { my (undef, $args) = @_; $captured = $args->[3] });
+
+    $t->post_ok(
+        "/admin/users/$second_id",
+        {'X-CSRF-Token' => $admin_csrf, Accept => 'application/json'},
+        form => {role => 'operator'}
+    )->status_is(200, 'demoting an admin to operator allowed while another admin exists')
+      ->json_is('/status', 'User secondadmin updated', 'json confirms demotion');
+
+    OpenQA::Events->singleton->unsubscribe($cb);
+
+    ok $captured, 'user_update_res event emitted for the successful role update';
+    is $captured->{actor}, 'firstadmin', 'event payload records the acting admin username';
+    is $captured->{old_role}, 'admin', 'event payload records the previous role';
+    is $captured->{new_role}, 'operator', 'event payload records the new role';
+
+    is $schema->resultset('Users')->find($second_id)->is_admin, 0, 'demoted user is no longer admin';
+    is $schema->resultset('Users')->find({username => 'firstadmin'})->is_admin, 1,
+      'the other admin keeps firstadmin admin';
+
+    $t->get_ok('/logout')->status_is(302, 'logout after demotion test');
+};
+
+subtest 'admin users page hides role, delete and reset actions for system user' => sub {
+    my $sys_id = $schema->resultset('Users')->find({username => 'system', provider => ''})->id;
+    my $local_id = $schema->resultset('Users')->find({username => 'localuser'})->id;
+
+    admin_login_and_csrf();
+    $t->get_ok('/admin/users')->status_is(200, 'admin users page accessible for UI guard check')
+      ->element_exists_not(qq{#user_$sys_id form[action="/admin/users/$sys_id"]},
+        'no role update form rendered for system user')
+      ->element_exists_not(qq{#user_$sys_id form[action="/admin/user/$sys_id/delete"]},
+        'no delete form rendered for system user')
+      ->element_exists_not(qq{#user_$sys_id form[action="/admin/users/$sys_id/password_reset"]},
+        'no password reset form rendered for system user')->element_exists(
+        qq{#user_$local_id form[action="/admin/users/$local_id"]},
+        'role update form still rendered for active local user'
+        );
+
+    $t->get_ok('/logout')->status_is(302, 'logout after UI guard check');
 };
 
 sub admin_login_and_csrf () {

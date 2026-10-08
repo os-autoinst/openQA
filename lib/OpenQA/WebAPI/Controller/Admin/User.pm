@@ -38,10 +38,31 @@ sub update ($self) {
         $err = HTTP_NOT_FOUND;
         $msg = "Can't find that user";
     }
+    elsif (($user->provider // '') eq '' && $user->username eq 'system') {
+        $err = HTTP_FORBIDDEN;
+        $msg = 'Cannot change role of system user';
+    }
+    elsif ($user->is_admin
+        && !$is_admin
+        && !$set->search({is_admin => 1, deleted_at => undef, id => {'!=', $user->id}})->count)
+    {
+        $err = HTTP_FORBIDDEN;
+        $msg = 'Cannot demote the last remaining admin';
+    }
     else {
+        my $old_role = $user->is_admin ? 'admin' : $user->is_operator ? 'operator' : 'user';
         $user->update({is_admin => $is_admin, is_operator => $is_operator});
         $msg = 'User ' . $user->nickname . ' updated';
-        $self->emit_event('user_update_res', {nickname => $user->nickname, role => $role});
+        my $actor = $self->current_user;
+        $self->emit_event(
+            'user_update_res',
+            {
+                nickname => $user->nickname,
+                role => $role,
+                actor => $actor ? $actor->username : undef,
+                old_role => $old_role,
+                new_role => $role,
+            });
     }
 
     if (($self->tx->req->headers->accept // '') eq 'application/json') {
