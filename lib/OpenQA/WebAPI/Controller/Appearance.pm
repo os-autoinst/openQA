@@ -10,7 +10,7 @@ sub index ($self) {
 
 sub save ($self) {
     my $validation = $self->validation;
-    $validation->required('theme')->in('light', 'dark', 'detect');
+    $validation->required('theme')->in('light', 'dark', 'catpuccin-latte', 'catpuccin-frappe', 'catpuccin-macchiato', 'catpuccin-mocha', 'detect');
     return $self->reply->exception('Invalid theme settings') unless $validation->is_valid;
 
     my $theme = $validation->param('theme');

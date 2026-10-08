@@ -12,6 +12,10 @@
                       % my $theme = current_theme;
                       <option value="light"<%= $theme eq 'light' ? ' selected' : '' %>>Light mode</option>
                       <option value="dark"<%= $theme eq 'dark' ? ' selected' : '' %>>Dark mode</option>
+                      <option value="catpuccin-latte"<%= $theme eq 'catpuccin-latte' ? ' selected' : '' %>>Catpuccin Latte</option>
+                      <option value="catpuccin-frappe"<%= $theme eq 'catpuccin-frappe' ? ' selected' : '' %>>Catpuccin Frappé</option>
+                      <option value="catpuccin-macchiato"<%= $theme eq 'catpuccin-macchiato' ? ' selected' : '' %>>Catpuccin Macchiato</option>
+                      <option value="catpuccin-mocha"<%= $theme eq 'catpuccin-mocha' ? ' selected' : '' %>>Catpuccin Mocha</option>
                       <option value="detect"<%= $theme eq 'detect' ? ' selected' : '' %>>Detect from browser</option>
                     </select>
                 </div>
