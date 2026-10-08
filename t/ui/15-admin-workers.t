@@ -310,5 +310,35 @@ subtest 'Worker host administration view and reservation scope' => sub {
     $w2->delete;
 };
 
+subtest 'host previous jobs table' => sub {
+    $driver->get('/admin/worker_hosts/localhost');
+    wait_for_ajax;
+    my $table = $driver->find_element_by_id('previous_host_jobs');
+    ok $table, 'host previous jobs table found';
+    my @entries = map { $_->get_text() } $driver->find_child_elements($table, 'tbody/tr/td', 'xpath');
+    is scalar @entries, 8, 'two previous jobs shown (4 cols per row)';
+    is_deeply
+      \@entries,
+      [
+        'opensuse-13.1-NET-x86_64-Build0091-kde@64bit',
+        ':1', '', 'not yet', 'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit (restarted)',
+        ':1', '0', '1 hour ago',
+      ],
+      'host previous jobs ordered by completion time descending by default';
+
+    $driver->find_element('#previous_host_jobs thead th:nth-child(4)')->click;
+    wait_for_ajax;
+    $table = $driver->find_element_by_id('previous_host_jobs');
+    @entries = map { $_->get_text() } $driver->find_child_elements($table, 'tbody/tr/td', 'xpath');
+    is_deeply
+      \@entries,
+      [
+        'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit (restarted)',
+        ':1', '0', '1 hour ago', 'opensuse-13.1-NET-x86_64-Build0091-kde@64bit',
+        ':1', '', 'not yet',
+      ],
+      'host previous jobs sorted by completion time ascending after clicking column';
+};
+
 kill_driver();
 done_testing();
