@@ -15,13 +15,26 @@ sub _has_bcrypt () {
     return eval { require Crypt::Bcrypt; 1 } ? 1 : 0;
 }
 
-sub hash_password ($pw) {
+# Argon2 is optional at runtime so it is not a hard packaging dependency.
+sub _has_argon2 () {
+    return eval { require Crypt::Argon2; 1 } ? 1 : 0;
+}
+
+# Prefer Argon2id, then bcrypt. The weak crypt() fallback is opt-in only, so the
+# production path fails closed instead of silently downgrading when no strong KDF is present.
+sub hash_password ($pw, $opts = {}) {
     croak 'Password is required' unless defined $pw && length $pw;
     $pw = encode('UTF-8', $pw) if utf8::is_utf8($pw);
+    if (_has_argon2()) {
+        my $salt = random_bytes(16);
+        return Crypt::Argon2::argon2id_pass($pw, $salt, 3, '16M', 1, 16);
+    }
     if (_has_bcrypt()) {
         my $salt = random_bytes(16);
         return Crypt::Bcrypt::bcrypt($pw, '2b', 12, $salt);
     }
+    croak 'No strong password hashing available (need Argon2id or bcrypt)'
+      unless $opts->{allow_weak_fallback};
     my $salt = random_string(16);
     return crypt $pw, '$6$' . $salt . '$';
 }
@@ -29,8 +42,11 @@ sub hash_password ($pw) {
 sub verify_password ($pw, $hash) {
     return 0 unless defined $pw && defined $hash && length $hash;
     $pw = encode('UTF-8', $pw) if utf8::is_utf8($pw);
-    if ($hash =~ /^\$2[abxy]?\$/ && _has_bcrypt()) {
-        return eval { Crypt::Bcrypt::bcrypt_check($pw, $hash) } ? 1 : 0;
+    if ($hash =~ /^\$argon2/) {
+        return _has_argon2() && eval { Crypt::Argon2::argon2_verify($hash, $pw) } ? 1 : 0;
+    }
+    if ($hash =~ /^\$2[abxy]?\$/) {
+        return _has_bcrypt() && eval { Crypt::Bcrypt::bcrypt_check($pw, $hash) } ? 1 : 0;
     }
     my $computed = eval { crypt $pw, $hash } // '';
     return secure_compare($computed, $hash) ? 1 : 0;

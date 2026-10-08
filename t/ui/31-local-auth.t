@@ -9,14 +9,39 @@ use DateTime;
 use OpenQA::Test::Case;
 use OpenQA::Test::TimeLimit '15';
 use OpenQA::WebAPI::Auth::Local qw(hash_password);
+use Test::MockModule;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
+use Mojo::Util 'secure_compare';
 
 my $test_case = OpenQA::Test::Case->new;
 my $schema = $test_case->init_data(fixtures_glob => '03-users.pl');
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 $t->app->config->{auth}->{method} = 'Local';
+
+BEGIN {
+    unless (eval { require Crypt::Bcrypt; 1 }) {
+
+        package Crypt::Bcrypt;
+        $INC{'Crypt/Bcrypt.pm'} = 'mocked';
+        sub bcrypt { }
+        sub bcrypt_check { }
+    }
+}
+
+my $mock_bcrypt = Test::MockModule->new('Crypt::Bcrypt');
+$mock_bcrypt->redefine(
+    bcrypt => sub {
+        my ($pw, $subtype, $cost, $salt) = @_;
+        return '$2b$' . $cost . '$' . unpack('H*', $salt) . $pw;
+    });
+$mock_bcrypt->redefine(
+    bcrypt_check => sub {
+        my ($pw, $hash) = @_;
+        return 0 unless $hash =~ /^\$2b\$12\$([0-9a-f]{32})(.*)$/;
+        return secure_compare($2, $pw);
+    });
 
 $schema->resultset('Users')->create_user(
     'localuser',
