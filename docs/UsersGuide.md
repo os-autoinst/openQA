@@ -834,6 +834,21 @@ YAML directly.
 More generally the regular expression `[A-Za-z0-9._*-]+` could be used to
 check if a name is allowed for a product or test suite.
 
+### User management
+
+The user administration interface (`/admin/users`) is available to users with
+administrator privileges.
+
+- **Role management:** Administrators can grant or revoke `Operator` and
+  `Administrator` roles. openQA prevents demoting the last remaining active
+  administrator and safeguards the internal `system` user from role modifications.
+- **Local user management:** For instances configured with `auth.method = Local`,
+  administrators can delete user accounts and trigger password resets.
+- **Admin password reset:** Resetting a user password generates a temporary
+  password (displayed once) or accepts an explicit new password. Resetting a
+  password automatically revokes the user's active API keys by default (unless
+  explicitly preserved) and terminates any active sessions.
+
 ## Configuring job groups via YAML documents
 
 A new job group starts out empty, which in YAML means that the two mandatory
