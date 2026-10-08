@@ -8,11 +8,12 @@ use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common
 use DateTime;
 use OpenQA::Test::Case;
 use OpenQA::Test::TimeLimit '15';
-use OpenQA::WebAPI::Auth::Local qw(hash_password);
+use OpenQA::WebAPI::Auth::Local qw(hash_password clear_rate_limits);
 use OpenQA::Events;
 use Test::MockModule;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
+use Mojo::JSON 'decode_json';
 use Mojo::Util 'secure_compare';
 
 my $test_case = OpenQA::Test::Case->new;
@@ -93,6 +94,51 @@ subtest 'rejection of invalid credentials on POST request' => sub {
         $t->post_ok('/login', form => $case->{form})->status_is(403, "status 403 returned for $case->{desc}")
           ->content_is('Invalid username or password', "standard error message returned for $case->{desc}");
     }
+};
+
+subtest 'failed login auditing and throttling' => sub {
+    clear_rate_limits();
+    my $audit_rs = $schema->resultset('AuditEvents');
+    my $initial_failed_count = $audit_rs->search({event => 'user_login_failed'})->count;
+
+    $t->post_ok('/login', form => {username => 'localuser', password => 'wrong_attempt'})->status_is(403)
+      ->content_is('Invalid username or password');
+
+    my $new_failed_count = $audit_rs->search({event => 'user_login_failed'})->count;
+    is $new_failed_count, $initial_failed_count + 1, 'user_login_failed audit event recorded';
+    my $latest_event
+      = $audit_rs->search({event => 'user_login_failed'}, {order_by => {-desc => 'id'}, rows => 1})->single;
+    ok $latest_event, 'found latest failed login event';
+    my $data = decode_json($latest_event->event_data);
+    is $data->{username}, 'localuser', 'audit event records attempted username';
+    unlike $latest_event->event_data, qr/wrong_attempt/, 'password is not stored in audit event';
+
+    $t->post_ok('/login', form => {username => 'some_ghost_user', password => 'wrong_attempt'})->status_is(403);
+    is $audit_rs->search({event => 'user_login_failed'})->count, $new_failed_count + 1,
+      'audit event recorded for non-existent valid username';
+
+    for (1 .. 5) {
+        $t->post_ok('/login', form => {username => 'throttled_user', password => 'bad_pass'})->status_is(403)
+          ->content_is('Invalid username or password');
+    }
+    $t->post_ok('/login', form => {username => 'throttled_user', password => 'bad_pass'})->status_is(403)
+      ->content_like(qr/Too many failed login attempts/);
+
+    my $reset_user = $schema->resultset('Users')->create_user(
+        'ratelimituser',
+        provider => 'Local',
+        password => hash_password('securepass123'),
+    );
+    for (1 .. 4) {
+        $t->post_ok('/login', form => {username => 'ratelimituser', password => 'bad_pass'})->status_is(403);
+    }
+    $t->post_ok('/login', form => {username => 'ratelimituser', password => 'securepass123'})->status_is(302);
+    $t->get_ok('/logout')->status_is(302);
+
+    $t->post_ok('/login', form => {username => 'ratelimituser', password => 'bad_pass'})->status_is(403)
+      ->content_is('Invalid username or password');
+
+    clear_rate_limits();
 };
 
 subtest 'successful login with valid credentials and redirection' => sub {

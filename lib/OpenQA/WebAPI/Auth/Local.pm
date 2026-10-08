@@ -7,9 +7,19 @@ use Mojo::Base -base, -signatures;
 use Carp 'croak';
 use Crypt::PRNG qw(random_bytes random_string);
 use Exporter 'import';
+use Feature::Compat::Try;
+use Mojo::JSON qw(to_json);
 use Mojo::Util qw(encode secure_compare);
 
-our @EXPORT_OK = qw(hash_password verify_password);
+our @EXPORT_OK = qw(hash_password verify_password clear_rate_limits);
+
+our %FAILED_ATTEMPTS;
+our $MAX_FAILED_ATTEMPTS = 5;
+our $RATE_LIMIT_WINDOW = 60;
+
+sub clear_rate_limits () {
+    %FAILED_ATTEMPTS = ();
+}
 
 sub _has_bcrypt () {
     return eval { require Crypt::Bcrypt; 1 } ? 1 : 0;
@@ -70,12 +80,47 @@ sub auth_login ($c) {
     my $username = $c->param('username');
     my $password = $c->param('password');
 
+    my $rate_limit_key = defined $username && length $username ? $username : undef;
+    my $now = time;
+    if ($rate_limit_key) {
+        my $attempts = $FAILED_ATTEMPTS{$rate_limit_key} //= [];
+        @$attempts = grep { $_ > $now - $RATE_LIMIT_WINDOW } @$attempts;
+        if (@$attempts >= $MAX_FAILED_ATTEMPTS) {
+            return (error => 'Too many failed login attempts. Please try again later.');
+        }
+    }
+
     if (defined $username && defined $password && length $username && length $password) {
         my $user = $c->schema->resultset('Users')->find({username => $username, provider => 'Local'});
         if ($user && !$user->is_deleted && $user->password && verify_password($password, $user->password)) {
+            delete $FAILED_ATTEMPTS{$rate_limit_key} if $rate_limit_key;
             $c->session->{user} = $user->username;
             $c->session->{epoch} = $user->session_epoch // 0;
             return (error => 0);
+        }
+    }
+
+    if ($rate_limit_key) {
+        push @{$FAILED_ATTEMPTS{$rate_limit_key}}, $now;
+    }
+
+    if (defined $username && $username =~ /^[A-Za-z0-9_.@+-]{1,64}$/) {
+        my $user;
+        try {
+            $user = $c->schema->resultset('Users')->find({username => $username});
+        }
+        catch ($e) {
+            $user = undef;
+        }
+        try {
+            $c->schema->resultset('AuditEvents')->create(
+                {
+                    user_id => ($user ? $user->id : undef),
+                    event => 'user_login_failed',
+                    event_data => to_json({username => $username}),
+                });
+        }
+        catch ($e) {
         }
     }
 
