@@ -5,7 +5,7 @@ package OpenQA::Shared::Controller::Session;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use Carp 'croak';
-use OpenQA::WebAPI::Auth::Local qw(hash_password verify_password);
+use OpenQA::WebAPI::Auth::Local qw(hash_password);
 
 my %COMMON_PASSWORDS = map { $_ => 1 } qw(
   password password1 password12 password123 12345678 123456789 1234567890
@@ -174,12 +174,9 @@ sub password_change ($self) {
     return undef unless $self->_check_csrf_token;
 
     my $user = $self->current_user;
-    my $old_password = $self->param('old_password');
     my $new_password = $self->param('new_password');
 
-    return $self->_render_forbidden('Incorrect current password')
-      if !defined $old_password || !verify_password($old_password, $user->password);
-
+    # Session + CSRF already authenticate the user, so no old password round trip is needed.
     if (my $err = $self->_validate_password($new_password, $user->username)) {
         return $self->_render_forbidden($err);
     }

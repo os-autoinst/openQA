@@ -304,13 +304,13 @@ subtest 'password change access controls and form presentation' => sub {
     $t->get_ok('/password_change')->status_is(302, 'unauthenticated GET /password_change redirects')
       ->header_like(Location => qr{^/login\?return_page=}, 'unauthenticated GET /password_change redirects to login');
 
-    $t->post_ok('/password_change', form => {old_password => 'foo', new_password => 'bar'})
+    $t->post_ok('/password_change', form => {new_password => 'newpassword1'})
       ->status_is(302, 'unauthenticated POST /password_change redirects')
       ->header_like(Location => qr{^/login\?return_page=}, 'unauthenticated POST /password_change redirects to login');
 
     $t->app->config->{auth}->{method} = 'Fake';
     $t->get_ok('/password_change')->status_is(403, 'GET /password_change forbidden when auth method is not Local');
-    $t->post_ok('/password_change', form => {old_password => 'foo', new_password => 'bar'})
+    $t->post_ok('/password_change', form => {new_password => 'newpassword1'})
       ->status_is(403, 'POST /password_change forbidden when auth method is not Local');
     $t->app->config->{auth}->{method} = 'Local';
 
@@ -331,8 +331,8 @@ subtest 'password change access controls and form presentation' => sub {
       ->element_exists('form[action="/password_change"][method="post"]',
         'form posting to password change endpoint exists')
       ->element_exists('input[name="csrf_token"][type="hidden"]', 'hidden csrf token field exists')
-      ->element_exists('input#old_password[name="old_password"][type="password"]',
-        'current password input field exists')
+      ->element_exists_not('input#old_password[name="old_password"]',
+        'no current password input field rendered; the session alone authorizes the change')
       ->element_exists('input#new_password[name="new_password"][type="password"]', 'new password input field exists')
       ->element_exists('input[type="submit"], button[type="submit"]', 'submit button exists')
       ->element_exists('form[action="/delete_account"][method="post"]',
@@ -344,7 +344,7 @@ subtest 'password change access controls and form presentation' => sub {
 };
 
 subtest 'password change validation and CSRF enforcement' => sub {
-    $t->post_ok('/password_change', form => {old_password => 'correctpassword', new_password => 'newsecurepass1'})
+    $t->post_ok('/password_change', form => {new_password => 'newsecurepass1'})
       ->status_is(403, 'status 403 returned when CSRF token is missing')
       ->content_is('Bad CSRF token!', 'CSRF error message returned when token missing');
 
@@ -353,59 +353,49 @@ subtest 'password change validation and CSRF enforcement' => sub {
 
     my @invalid_password_change_cases = (
         {
-            desc => 'incorrect current password',
-            form => {old_password => 'wrongpassword', new_password => 'newsecurepass1'},
-            err => qr/Incorrect current password/,
-        },
-        {
-            desc => 'empty current password',
-            form => {old_password => '', new_password => 'newsecurepass1'},
-            err => qr/Incorrect current password/,
-        },
-        {
-            desc => 'missing current password',
-            form => {new_password => 'newsecurepass1'},
-            err => qr/Incorrect current password/,
-        },
-        {
-            desc => 'empty new password',
-            form => {old_password => 'correctpassword', new_password => ''},
+            desc => 'missing new password',
+            form => {},
             err => qr/Password must be at least 8 characters/,
         },
         {
-            desc => 'missing new password',
-            form => {old_password => 'correctpassword'},
+            desc => 'empty new password',
+            form => {new_password => ''},
             err => qr/Password must be at least 8 characters/,
         },
         {
             desc => 'too short new password',
-            form => {old_password => 'correctpassword', new_password => 'short'},
+            form => {new_password => 'short'},
             err => qr/Password must be at least 8 characters/,
         },
         {
             desc => 'whitespace-only new password',
-            form => {old_password => 'correctpassword', new_password => '        '},
+            form => {new_password => '        '},
             err => qr/Password cannot be whitespace only/,
         },
         {
             desc => 'too long new password',
-            form => {old_password => 'correctpassword', new_password => 'a' x 129},
+            form => {new_password => 'a' x 129},
             err => qr/Password must be at most 128 characters/,
         },
         {
             desc => 'new password containing username',
-            form => {old_password => 'correctpassword', new_password => 'localuser1234'},
+            form => {new_password => 'localuser1234'},
             err => qr/Password cannot match username/,
         },
         {
             desc => 'common new password',
-            form => {old_password => 'correctpassword', new_password => 'password123'},
+            form => {new_password => 'password123'},
             err => qr/Password is too common/,
         },
         {
             desc => 'new password matching username',
-            form => {old_password => 'correctpassword', new_password => 'localuser'},
+            form => {new_password => 'localuser'},
             err => qr/Password cannot match username/,
+        },
+        {
+            desc => 'stale old_password field is ignored and only new password policy is enforced',
+            form => {old_password => 'totallywrongpassword', new_password => 'short'},
+            err => qr/Password must be at least 8 characters/,
         },
     );
 
@@ -424,10 +414,9 @@ subtest 'successful password change, credential transition, and audit logging' =
     my $csrf_token = $t->get_ok('/password_change')->tx->res->dom->at('input[name="csrf_token"]')->attr('value');
     ok $csrf_token, 'extracted valid CSRF token from password change form';
 
-    $t->post_ok('/password_change',
-        form => {old_password => 'correctpassword', new_password => 'newsecurepass1', csrf_token => $csrf_token})
-      ->status_is(302, 'valid password change returns redirect status')
-      ->header_is(Location => '/password_change', 'redirects to password change page');
+    $t->post_ok('/password_change', form => {new_password => 'newsecurepass1', csrf_token => $csrf_token})
+      ->status_is(302, 'password change succeeds with only new_password and no old_password supplied')
+      ->header_is(Location => '/password_change', 'successful password change redirects to password change page');
 
     $t->get_ok('/password_change')->status_is(200, 'password change page displays after redirect')
       ->content_like(qr/Password changed successfully\./, 'success flash message rendered on password change page');
