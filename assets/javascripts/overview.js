@@ -261,7 +261,7 @@ function setupOverview(options) {
       }
       return formatFilter(val);
     } else {
-      const input = document.getElementById('filter-' + key.replace(/_/g, '-')) || form.elements[key];
+      const input = form.elements[key] || document.getElementById('filter-' + key.replace(/_/g, '-'));
       if (input && input.value !== undefined) {
         input.value += input.value.length > 0 ? `,${val}` : val;
         return val;

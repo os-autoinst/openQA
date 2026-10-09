@@ -203,7 +203,7 @@
                         </div>
                     </div>
                 </div>
-                <button type="submit" class="btn btn-primary">Apply</button>
+                %= include 'main/_filter_form_buttons'
             </form>
         </div>
     </div>
