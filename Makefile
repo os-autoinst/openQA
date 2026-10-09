@@ -101,6 +101,13 @@ build-manpages: $(man_dir) $(manpages) ## Build manpages for the scripts
 clean: ## Remove build artifacts
 	-rm -r build
 
+.PHONY: generate-manpages
+generate-manpages: ## Regenerate manpage from public/openqa-cli.yaml
+	mkdir -p contrib/manpages
+	echo -e "=encoding utf8\n" >contrib/manpages/openqa-cli.pod
+	(appspec pod public/openqa-cli.yaml 2>/dev/null || echo "=head1 No manpage available") >> contrib/manpages/openqa-cli.pod
+	pod2man contrib/manpages/openqa-cli.pod > contrib/manpages/openqa-cli.1
+
 .PHONY: generate-completions
 generate-completions: ## Regenerate shell completion scripts from public/openqa-cli.yaml
 	mkdir -p contrib/completions
@@ -123,7 +130,7 @@ install-nginx: ## Install the NGINX configuration
 	done
 
 .PHONY: install-generic
-install-generic: generate-assets generate-completions install-nginx ## Install generic components
+install-generic: generate-assets generate-completions generate-manpages install-nginx ## Install generic components
 	for f in $(shell perl -Ilib -mOpenQA::Assets -e OpenQA::Assets::list); do \
 		install -m 644 -D --target-directory="$(DESTDIR)/usr/share/openqa/$${f%/*}" "$$f";\
 	done
@@ -195,6 +202,7 @@ install-generic: generate-assets generate-completions install-nginx ## Install g
 	install -D -m 644 usr/lib/sysctl.d/01-openqa-reload-worker-auto-restart.conf "$(DESTDIR)"/usr/lib/sysctl.d/01-openqa-reload-worker-auto-restart.conf
 	install -D -m 644 contrib/completions/openqa-cli-completion.bash "$(DESTDIR)"/usr/share/bash-completion/completions/openqa-cli
 	install -D -m 644 contrib/completions/openqa-cli-completion.zsh "$(DESTDIR)"/usr/share/zsh/site-functions/_openqa-cli
+	install -D -m 644 contrib/manpages/openqa-cli.1 "$(DESTDIR)"/usr/share/man/man1/openqa-cli.1
 #
 # install openQA apparmor profile
 	install -d -m 755 "$(DESTDIR)"/etc/apparmor.d

@@ -878,6 +878,7 @@ fi
 %{_bindir}/openqa-load-templates
 %{_bindir}/openqa-clone-custom-git-refspec
 %{_bindir}/openqa-validate-yaml
+%{_mandir}/man1/openqa-cli.1%{?ext_man}
 
 %if %{with python_scripts}
 %files python-scripts
