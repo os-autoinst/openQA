@@ -83,7 +83,7 @@ function loadWorkerTable() {
 
   setupTablePersistence(table, {
     customFilters: {
-      status: {column: 4, element: '#workers_online', defaultValue: 'Idle'}
+      status: {column: 5, element: '#workers_online', defaultValue: 'Idle'}
     }
   });
 }

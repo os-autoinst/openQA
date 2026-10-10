@@ -56,7 +56,6 @@ options:
   - verbose|v       --Print HTTP response headers
 
 subcommands:
-
   api:
     summary: Issue an arbitrary request to the API
     description: |2
@@ -189,10 +188,8 @@ subcommands:
         monitor|m         --Wait until all jobs are done/cancelled and return
                             non-zero exit code if at least on job has not
                             passed/softfailed
-      - &follow
-        follow|f          --Use the newest clone of each monitored job
-      - &poll_intervall
-        poll-interval|i=i --Specifies the poll interval used with --monitor
+      - &follow follow|f          --Use the newest clone of each monitored job
+      - &poll_intervall poll-interval|i=i --Specifies the poll interval used with --monitor
 
   monitor:
     summary: Monitors a set of jobs
@@ -204,3 +201,14 @@ subcommands:
     options:
       - *poll_intervall
       - *follow
+
+  workers:
+    summary: Audit worker and host utilization
+    description: |
+      Usage: openqa-cli workers [OPTIONS]
+
+      List worker hosts with their instance counts, worker classes, the timestamp of
+      the most recent finished job and how long the host has been idle. Hosts that
+      have not executed any job for at least --unused-days days are flagged as IDLE.
+    options:
+      - unused-days|i=i   --Flag hosts idle for at least the given number of days (default 14)
