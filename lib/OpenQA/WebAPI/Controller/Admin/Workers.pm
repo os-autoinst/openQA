@@ -40,13 +40,18 @@ sub _reservation_default_duration ($self) {
 sub index ($self) {
     my $workers_db = $self->schema->resultset('Workers');
     my $worker_stats = $workers_db->stats;
-
+    my @dormant = $workers_db->find_unused_hosts(threshold_days => 14, online_only => 1);
+    my @all_workers = $workers_db->all;
+    my $lf_map = $workers_db->last_jobs_finished_per_worker([map { $_->id } @all_workers]);
     my %workers;
-    while (my $w = $workers_db->next) {
+    for my $w (@all_workers) {
         next unless $w->id;
         $workers{$w->name} = _extend_info($w);
+        $workers{$w->name}{last_job_finished} = $lf_map->{$w->id};
     }
+
     $self->stash(
+        dormant_hosts => \@dormant,
         reservation_default_duration => $self->_reservation_default_duration,
         workers_online => $worker_stats->{total_online},
         total => $worker_stats->{total},
@@ -116,6 +121,15 @@ sub show_host ($self) {
         shared_properties => \%shared_props,
         different_properties => \%different_props,
         worker_classes => [sort keys %distinct_classes],
+    };
+
+    my $summary_for_host = $self->schema->resultset('Workers')->host_activity_summary;
+    my $host_activity = $summary_for_host->{$worker_host} // {};
+    $shared_data->{activity} = {
+        last_job_finished => $host_activity->{last_job_finished},
+        idle_seconds => $host_activity->{idle_seconds},
+        jobs_last_7d => $host_activity->{jobs_last_7d},
+        jobs_last_30d => $host_activity->{jobs_last_30d},
     };
 
     $self->stash(
