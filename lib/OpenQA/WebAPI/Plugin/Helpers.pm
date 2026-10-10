@@ -386,6 +386,16 @@ sub _domain_url_for ($c, $url, $is_userfile) {
     return $url;
 }
 
+sub _parse_history_isolation_params ($c, $v, $search_args) {
+    $v->optional('strict')->num(0, 1);
+    $v->optional('isolation_keys')->like(qr/^[a-zA-Z0-9_, ]*$/);
+
+    if ($v->is_valid('strict')) { $search_args->{strict} = $v->param('strict') }
+    if ($v->is_valid('isolation_keys')) {
+        $search_args->{isolation_keys} = [grep { length } split /\s*,\s*/, $v->param('isolation_keys') // ''];
+    }
+}
+
 # returns the search args for the job overview according to the parameter of the specified controller
 sub _compose_job_overview_search_args ($c) {
     my %search_args;
@@ -399,6 +409,8 @@ sub _compose_job_overview_search_args ($c) {
     $v->optional('limit', 'not_empty')->num(1, undef);
     $v->optional('job_setting', 'not_empty')->like(qr/.+=.*/);
     $v->optional('t')->datetime;
+
+    _parse_history_isolation_params($c, $v, \%search_args);
 
     # add simple query params to search args
     for my $arg (qw(distri version flavor test)) {

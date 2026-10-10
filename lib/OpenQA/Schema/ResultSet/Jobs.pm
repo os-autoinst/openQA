@@ -90,13 +90,19 @@ the return array.
 
 =cut
 
-sub latest_jobs ($self, $until = undef) {
+sub latest_jobs ($self, $until = undef, %args) {
     my @jobs = $self->search($until ? {'me.t_created' => {'<=' => $until}} : undef, {order_by => ['me.id DESC']});
 
     my @latest;
     my %seen;
     foreach my $job (@jobs) {
-        my $key = join '-', map { $job->$_ // '' } OpenQA::Schema::Result::Jobs::MAIN_SETTINGS;
+        my @key_parts = map { $job->$_ // '' } OpenQA::Schema::Result::Jobs::MAIN_SETTINGS;
+        if (defined $args{strict} || (defined $args{isolation_keys} && @{$args{isolation_keys}})) {
+            my $iso_keys = $args{strict} ? undef : $args{isolation_keys};
+            my $isolation = $job->history_isolation_values($iso_keys);
+            push @key_parts, "$_=" . ($isolation->{$_} // '') for sort keys %$isolation;
+        }
+        my $key = join '-', @key_parts;
         push @latest, $job unless $seen{$key}++;
     }
 
@@ -477,11 +483,40 @@ sub complex_query ($self, %args) {
 sub complex_query_latest_ids ($self, %args) {
     # prepare basic search conditions and attributes
     _accept_comma_separated_arg_values(\%args);
+
+    my $strict = delete $args{strict};
+    my $isolation_keys = delete $args{isolation_keys};
+
     my ($conds, $attrs) = $self->_prepare_complex_query_search_args(\%args);
     my $filters = $args{filters};
     my $has_filters = $filters && @$filters > 0;
     my $rows = $has_filters ? delete $attrs->{rows} : undef;  # when filtering, limit rows only in outer/filtering query
     if (my $until = $args{until}) { push @$conds, {'me.t_created' => {'<=' => $until}} }
+
+    if (defined $strict || (defined $isolation_keys && @$isolation_keys)) {
+        my $search_attrs = {%$attrs};
+        delete $search_attrs->{rows};
+        $search_attrs->{order_by} = ['me.id DESC'];
+
+        my $search = $self->search({-and => $conds}, $search_attrs);
+        my @candidates = $search->all;
+
+        my @latest_ids;
+        my %seen;
+        foreach my $job (@candidates) {
+            my @key_parts = map { $job->$_ // '' } OpenQA::Schema::Result::Jobs::MAIN_SETTINGS;
+            my $iso_keys = $strict ? undef : $isolation_keys;
+            my $isolation = $job->history_isolation_values($iso_keys);
+            push @key_parts, "$_=" . ($isolation->{$_} // '') for sort keys %$isolation;
+            my $key = join '-', @key_parts;
+            push @latest_ids, $job->id unless $seen{$key}++;
+        }
+
+        if (my $limit = $attrs->{rows}) {
+            @latest_ids = splice @latest_ids, 0, $limit;
+        }
+        return \@latest_ids;
+    }
 
     # set attributes to return only the latest job IDs for a certain combination of TEST, DISTRI, VERSION, …
     $attrs->{order_by} = \['max(me.id) DESC'];
