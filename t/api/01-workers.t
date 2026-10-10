@@ -559,4 +559,34 @@ subtest 'worker registration reservation inheritance' => sub {
     $schema->txn_rollback;
 };
 
+subtest 'unused worker and host activity reporting' => sub {
+    my $now = time;
+    my $now_str = time2str('%Y-%m-%d %H:%M:%S', $now, 'UTC');
+    my $old_str = time2str('%Y-%m-%d %H:%M:%S', $now - 20 * 86400, 'UTC');
+    my $recent_str = time2str('%Y-%m-%d %H:%M:%S', $now - 2 * 86400, 'UTC');
+
+    my $stale = $workers->create({id => 900, host => 'stale-host', instance => 1, t_seen => $now_str});
+    my $active = $workers->create({id => 901, host => 'active-host', instance => 1, t_seen => $now_str});
+    $workers->create({id => 902, host => 'never-host', instance => 1, t_seen => $now_str});
+
+    my $j_old
+      = $jobs->create({TEST => 'stale-test', state => 'done', result => 'passed', assigned_worker_id => $stale->id});
+    $j_old->update({t_finished => $old_str});
+    my $j_new
+      = $jobs->create({TEST => 'active-test', state => 'done', result => 'passed', assigned_worker_id => $active->id});
+    $j_new->update({t_finished => $recent_str});
+
+    $t->get_ok('/api/v1/workers?unused_days=14')->status_is(200, 'unused_days filter accepted');
+    $t->get_ok('/api/v1/workers?include_activity=1')->status_is(200, 'include_activity accepted');
+
+    $t->get_ok('/api/v1/worker_hosts')->status_is(200, 'worker hosts listing');
+    my $hosts = $t->tx->res->json->{hosts};
+    ok exists $hosts->{'stale-host'}, 'stale host present in host summary';
+    is $hosts->{'stale-host'}{jobs_last_7d}, 0, 'stale host has no jobs in last 7 days';
+    is $hosts->{'stale-host'}{jobs_last_30d}, 1, 'stale host has one job in last 30 days';
+    is $hosts->{'active-host'}{jobs_last_7d}, 1, 'active host has one job in last 7 days';
+    is $hosts->{'never-host'}{jobs_last_30d}, 0, 'never host has no jobs in last 30 days';
+    ok !defined $hosts->{'never-host'}{last_job_finished}, 'never host has no last_job_finished';
+};
+
 done_testing();
