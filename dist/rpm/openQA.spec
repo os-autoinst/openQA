@@ -139,6 +139,8 @@ Recommends:     perl(Mojolicious::Plugin::OAuth2)
 Recommends:     perl(IO::Uncompress::UnXz)
 # server needs to run an rsync server if worker caching is used
 Recommends:     rsync
+# required to download repository assets via http/https/ftp
+Recommends:     wget
 # We cannot use noarch because of the strict perl-Mojolicious-Plugin-AssetPack
 # requirement. With noarch it can happen that the rpm built on aarch64 gets
 # uploaded to download.opensuse.org, and aarch for some reason has an older
