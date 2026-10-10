@@ -9,9 +9,9 @@
 % content_for 'ready_function' => begin
     user_is_admin = <%= is_admin_js %>;
     setupTemplateEditor();
-    $('#expand-template').click(function() { submitTemplateEditor('expand'); });
-    $('#preview-template').click(function() { submitTemplateEditor('preview'); });
-    $('#save-template').click(function() { submitTemplateEditor('save'); });
+    document.getElementById('expand-template')?.addEventListener('click', () => submitTemplateEditor('expand'));
+    document.getElementById('preview-template')?.addEventListener('click', () => submitTemplateEditor('preview'));
+    document.getElementById('save-template')?.addEventListener('click', () => submitTemplateEditor('save'));
 % end
 
         <form action="<%= url_for('admin_groups') %>" class="corner-buttons">

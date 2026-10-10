@@ -122,7 +122,7 @@
                                 </div>
                                 <div class="col-md-auto">
                                     <button id="clear-size-limit-button" type="button"
-                                            class="btn btn-outline-info btn-sm" onclick="$('#editor-size-limit').val('');"
+                                            class="btn btn-outline-info btn-sm" onclick="document.getElementById('editor-size-limit').value = '';"
                                             data-bs-toggle="tooltip" data-bs-placement="bottom"
                                             title="<%= $is_parent ? 'to use the limits set on job group level instead'
                                                                   : 'to use configured default instead' %>">
