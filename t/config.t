@@ -83,6 +83,7 @@ subtest 'Test configuration default modes' => sub {
         ]};
     $test_config->{misc_limits}->{prio_group_data}
       = [{property => 'full_name', regex => qr/Development/, increment => 50}];
+    $test_config->{misc_limits}->{job_settings_lifecycle_rules} = [];
     is ref delete $config->{global}->{auto_clone_regex}, 'Regexp', 'auto_clone_regex parsed as regex';
     ok delete $config->{'test_preset example'}, 'default values for example tests assigned';
     is_deeply $config, $test_config, '"test" configuration';
@@ -185,7 +186,9 @@ subtest 'openqa.ini documentation check' => sub {
               =~ /^(scm|parallel_children_collapsable_results_sel|file_domain|prio_throttling_data|access_control_allow_origin_header|changelog_file|file_subdomain|search_results_limit)$/;
             next if $section eq 'hypnotoad';
             next if $section eq 'job_settings_ui' && $key eq 'default_data_dir';
-            next if $section eq 'misc_limits' && $key =~ /^(prio_throttling_data|prio_group_data|mcp_max_result_size)$/;
+            next
+              if $section eq 'misc_limits'
+              && $key =~ /^(prio_throttling_data|prio_group_data|mcp_max_result_size|job_settings_lifecycle_rules)$/;
             next if $section eq 'rate_limits' && $key eq 'search';
             next if $section eq 'secrets';
             next if $section eq 'audit' && $key eq 'blacklist';
