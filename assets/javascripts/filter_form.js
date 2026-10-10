@@ -1,3 +1,5 @@
+const NO_FILTER_LABEL = 'no filter present, click to toggle filter form';
+
 function setupFilterForm(options) {
   // make filter form expandable
   const cardHeader = document.querySelector('#filter-panel .card-header');
@@ -23,69 +25,68 @@ function setupFilterForm(options) {
     });
   });
 
-  if (options && options.preventLoadingIndication) {
-    return;
-  }
-
   const filterForm = document.getElementById('filter-form');
-  if (filterForm) {
-    filterForm.addEventListener('submit', function (event) {
-      event.preventDefault();
-      const currentQuery = window.location.search.substring(1);
-      const formData = new FormData(filterForm);
+  const applyFilterForm = function () {
+    const currentQuery = window.location.search.substring(1);
+    const formData = new FormData(filterForm);
 
-      // optimize results and states to use negative filters if shorter
+    // optimize results and states to use negative filters if shorter
+    ['result', 'state'].forEach(key => {
+      const checkboxes = Array.from(filterForm.querySelectorAll(`input[name="${key}"]:not(.filter-meta)`));
+      const checked = checkboxes.filter(cb => cb.checked);
+      const unchecked = checkboxes.filter(cb => !cb.checked);
+      if (checked.length > 1 && unchecked.length > 0 && unchecked.length < checked.length) {
+        formData.delete(key);
+        unchecked.forEach(cb => formData.append(`${key}__not`, cb.value));
+      }
+    });
+
+    const params = new URLSearchParams(formData);
+
+    // remove redundant constituent values if meta-values are present
+    if (options && options.metaMapping) {
       ['result', 'state'].forEach(key => {
-        const checkboxes = Array.from(filterForm.querySelectorAll(`input[name="${key}"]:not(.filter-meta)`));
-        const checked = checkboxes.filter(cb => cb.checked);
-        const unchecked = checkboxes.filter(cb => !cb.checked);
-        if (checked.length > 1 && unchecked.length > 0 && unchecked.length < checked.length) {
-          formData.delete(key);
-          unchecked.forEach(cb => formData.append(`${key}__not`, cb.value));
-        }
-      });
+        const mapping = options.metaMapping[key];
+        if (!mapping) return;
+        const currentValues = params.getAll(key);
+        if (currentValues.length === 0) return;
 
-      const params = new URLSearchParams(formData);
-
-      // remove redundant constituent values if meta-values are present
-      if (options && options.metaMapping) {
-        ['result', 'state'].forEach(key => {
-          const mapping = options.metaMapping[key];
-          if (!mapping) return;
-          const currentValues = params.getAll(key);
-          if (currentValues.length === 0) return;
-
-          let newValues = [...currentValues];
-          Object.keys(mapping).forEach(metaValue => {
-            if (currentValues.includes(metaValue)) {
-              const constituents = mapping[metaValue];
-              newValues = newValues.filter(val => !constituents.includes(val));
-            }
-          });
-
-          if (newValues.length !== currentValues.length) {
-            params.delete(key);
-            newValues.forEach(val => params.append(key, val));
+        let newValues = [...currentValues];
+        Object.keys(mapping).forEach(metaValue => {
+          if (currentValues.includes(metaValue)) {
+            const constituents = mapping[metaValue];
+            newValues = newValues.filter(val => !constituents.includes(val));
           }
         });
-      }
 
-      const newQuery = new URLSearchParams(Array.from(params).filter(([, value]) => value !== ''))
-        .toString()
-        .replace(/\+/g, '%20');
-
-      if (newQuery !== currentQuery) {
-        // show progress indication
-        filterForm.hidden = true;
-        const cardBody = document.querySelector('#filter-panel .card-body');
-        if (cardBody) {
-          const progress = document.createElement('span');
-          progress.id = 'filter-progress';
-          progress.innerHTML = '<i class="fa-solid fa-gear fa-spin fa-2x fa-fw"></i> <span>Applying filter…</span>';
-          cardBody.appendChild(progress);
+        if (newValues.length !== currentValues.length) {
+          params.delete(key);
+          newValues.forEach(val => params.append(key, val));
         }
-        window.location.search = newQuery;
+      });
+    }
+
+    const newQuery = new URLSearchParams(Array.from(params).filter(([, value]) => value !== ''))
+      .toString()
+      .replace(/\+/g, '%20');
+
+    if (newQuery !== currentQuery) {
+      // show progress indication
+      filterForm.hidden = true;
+      const cardBody = document.querySelector('#filter-panel .card-body');
+      if (cardBody) {
+        const progress = document.createElement('span');
+        progress.id = 'filter-progress';
+        progress.innerHTML = '<i class="fa-solid fa-gear fa-spin fa-2x fa-fw"></i> <span>Applying filter…</span>';
+        cardBody.appendChild(progress);
       }
+      window.location.search = newQuery;
+    }
+  };
+  if (filterForm && (!options || !options.preventLoadingIndication)) {
+    filterForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+      applyFilterForm();
     });
   }
 
@@ -93,15 +94,14 @@ function setupFilterForm(options) {
   if (resetBtn) {
     resetBtn.addEventListener('click', function () {
       if (!filterForm) return;
-      filterForm.querySelectorAll('input[type="text"], input[type="number"]').forEach(input => {
-        input.value = '';
-      });
+      filterForm
+        .querySelectorAll('input[type="text"]:not([hidden]), input[type="number"]:not([hidden])')
+        .forEach(input => {
+          input.value = '';
+        });
       filterForm.querySelectorAll('input[type="checkbox"]').forEach(input => {
         input.checked = false;
         input.indeterminate = false;
-      });
-      filterForm.querySelectorAll('input[hidden]').forEach(input => {
-        input.remove();
       });
       filterForm.querySelectorAll('select').forEach(select => {
         Array.from(select.options).forEach(opt => (opt.selected = false));
@@ -109,8 +109,11 @@ function setupFilterForm(options) {
           $(select).trigger('chosen:updated');
         }
       });
-      document.querySelector('#filter-panel .card-header span').textContent =
-        'no filter present, click to toggle filter form';
+      const headerSpan = document.querySelector('#filter-panel .card-header span');
+      if (headerSpan) {
+        headerSpan.textContent = NO_FILTER_LABEL;
+      }
+      applyFilterForm();
     });
   }
 
@@ -213,8 +216,7 @@ function parseFilterArguments(paramHandler) {
     form.append(...hiddenInputs);
   }
 
-  if (filterLabels.length > 0) {
-    document.querySelector('#filter-panel .card-header span').textContent = 'current: ' + filterLabels.join(', ');
-  }
+  const headerSpan = document.querySelector('#filter-panel .card-header span');
+  headerSpan.textContent = filterLabels.length > 0 ? 'current: ' + filterLabels.join(', ') : NO_FILTER_LABEL;
   return filterLabels;
 }

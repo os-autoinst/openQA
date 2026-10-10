@@ -452,6 +452,24 @@ subtest 'filtering by module' => sub {
         my $jobs = $driver->execute_script($query_all_job_ids_sorted);
         is_deeply $jobs, [qw(jobid_td_99938 jobid_td_99946)], 'expected jobs present';
     };
+
+    subtest 'module filter is populated in the form and clear filter button resets it' => sub {
+        $driver->get("/tests/overview?arch=&distri=opensuse&modules=$module");
+        is element_prop('modules'), $module, 'module filter is populated in form';
+        wait_for_element(
+            selector => qq{//*[\@id='filter-panel']/*[\@class='card-header']/span[text()='current: $module']},
+            method => 'xpath',
+            desc => "module filter '$module' visible on form header",
+        );
+        $driver->find_element('#filter-panel .card-header')->click();
+        $driver->find_element_by_id('filter-reset-button')->click();
+        wait_until sub { $driver->get_current_url !~ /modules=$module/ },
+          'clear filter button removes module filter from URL', 10;
+        like $driver->get_current_url, qr/distri=opensuse/, 'clear filter button keeps page context parameters in URL';
+        is element_prop_by_selector('#filter-panel .card-header span', 'textContent'),
+          'no filter present, click to toggle filter form',
+          'clear filter button resets filter form header text';
+    };
 };
 
 subtest 'filtering by module_re' => sub {

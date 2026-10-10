@@ -93,7 +93,7 @@
                     <label class="form-label p-2" for="filter-autorefresh-interval">seconds</label>
                 </p>
             </div>
-            <button type="submit" class="btn btn-primary" id="filter-apply-button">Apply</button>
+            %= include 'main/_filter_form_buttons'
         </form>
     </div>
 </div>
