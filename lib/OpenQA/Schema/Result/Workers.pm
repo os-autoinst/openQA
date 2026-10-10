@@ -10,7 +10,8 @@ use Feature::Compat::Try;
 use OpenQA::App;
 use OpenQA::Log qw(log_error log_warning log_info);
 use OpenQA::WebSockets::Client;
-use OpenQA::Constants qw(WORKER_API_COMMANDS DB_TIMESTAMP_ACCURACY VNC_PORT WORKER_CLASS_LIMIT_REGEX);
+use OpenQA::Constants
+  qw(WORKER_API_COMMANDS DB_TIMESTAMP_ACCURACY VNC_PORT WORKER_CLASS_LIMIT_REGEX DEFAULT_WORKER_TIMEOUT);
 use OpenQA::Jobs::Constants;
 use OpenQA::Utils 'parse_duration';
 use OpenQA::WorkerReservation
@@ -199,10 +200,19 @@ sub release ($self, $user) {
     return $self;
 }
 
+
+
+sub last_job_finished ($self) {
+    my $last_job = $self->previous_jobs->search({state => 'done', t_finished => {'!=' => undef}},
+        {order_by => {-desc => 't_finished'}, rows => 1})->first;
+    return $last_job ? $last_job->t_finished->datetime . 'Z' : undef;
+}
+
 sub dead ($self) {
     return 1 unless my $t_seen = $self->t_seen;
     my $dt = DateTime->now(time_zone => 'UTC');
-    $dt->subtract(seconds => OpenQA::App->singleton->config->{global}->{worker_timeout} - DB_TIMESTAMP_ACCURACY);
+    my $timeout = eval { OpenQA::App->singleton->config->{global}->{worker_timeout} } // DEFAULT_WORKER_TIMEOUT;
+    $dt->subtract(seconds => $timeout - DB_TIMESTAMP_ACCURACY);
     $t_seen < $dt;
 }
 
