@@ -20,6 +20,10 @@ __PACKAGE__->add_columns(
     username => {
         data_type => 'text',
     },
+    password => {
+        data_type => 'text',
+        is_nullable => 1,
+    },
     provider => {
         data_type => 'text',
         default_value => '',

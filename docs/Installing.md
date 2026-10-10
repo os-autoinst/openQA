@@ -574,8 +574,8 @@ password = somepassword
 
 ### User authentication
 
-openQA supports four different authentication methods: OpenID (default), OAuth2,
-Fake (for development) and None (no authentication).
+openQA supports five different authentication methods: OpenID (default), OAuth2,
+Local, Fake (for development) and None (no authentication).
 
 Use the `auth` section in
 [the web UI configuration](GettingStarted.md#webui-configuration) to configure
@@ -650,6 +650,22 @@ the application owner(s).
 
 As shown in the comments of the default configuration file, it is also possible
 to use different providers.
+
+#### Local
+
+The Local authentication provider manages user credentials directly within
+openQA without requiring an external identity provider:
+
+```ini
+[auth]
+# method name is case sensitive!
+method = Local
+```
+
+Users can register, choose a password (requires 8 chars minimum), change their
+password, and delete their account. Note that password hashing uses bcrypt with
+cost 12, which takes ~300ms, and that passwords should be served over HTTPS in
+production.
 
 #### Fake
 

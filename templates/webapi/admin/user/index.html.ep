@@ -20,6 +20,7 @@
                     <th>Email</th>
                     <th>Name</th>
                     <th>Nick</th>
+                    <th>Provider</th>
                     <th>Role</th>
                     % if ($show_user_actions) {
                     <th></th>
@@ -33,6 +34,7 @@
                         <td class="email"><%= $user->email %></td>
                         <td class="name"><%= $user->fullname %></td>
                         <td class="nick"><%= $user->nickname %></td>
+                        <td class="provider"><%= $user->provider %></td>
                         <td class="role" data-order="<%= $user->is_admin %><%= $user->is_operator %>">
                 %= form_for url_for('admin_user', userid => $user->id) => (method => 'POST') => begin
                 % my @selects = ('', '', '');
@@ -65,9 +67,13 @@
                         </td>
                         % if ($show_user_actions) {
                         <td class="text-nowrap">
-                            <a class="btn p-0">
-                                <i class="fa-solid fa-trash" aria-hidden="true" onclick="deleteUser(<%= $user->id %>)"></i>
-                            </a>
+                            % my $is_system = ($user->provider // '') eq '' && $user->username eq 'system';
+                            % if (!$is_system && !$user->is_deleted) {
+                                %= form_for url_for('admin_delete_user', id => $user->id) => (method => 'POST', class => 'd-inline') => begin
+                                    %= csrf_field
+                                    %= submit_button 'Delete', class => 'btn btn-sm btn-danger', onclick => 'return confirm("Are you sure you want to delete this user?")'
+                                % end
+                            % }
                         </td>
                         % }
                     </tr>

@@ -827,10 +827,10 @@ export DBIC_TRACE=1
 
 ## Adding new authentication module
 
-openQA comes with two authentication modules providing authentication methods:
-OpenID and Fake (see [User authentication](Installing.md#authentication)).
+openQA comes with multiple authentication modules providing authentication methods:
+OpenID, OAuth2, Local, Fake and None (see [User authentication](Installing.md#authentication)).
 
-All authentication modules reside in `lib/OpenQA/Auth` directory. During openQA start, the `[auth]/method` section of
+All authentication modules reside in `lib/OpenQA/WebAPI/Auth` directory. During openQA start, the `[auth]/method` section of
 [the web UI configuration](GettingStarted.md#webui-configuration) is read and
 according to its value (or default OpenID) openQA tries to require
 `OpenQA::WebAPI::Auth::$method`. If successful, the module for the given method
