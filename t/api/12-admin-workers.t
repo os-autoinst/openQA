@@ -80,4 +80,42 @@ subtest 'Worker status template rendering with reservation' => sub {
     $t->app->schema->txn_rollback;
 };
 
+subtest 'Host previous jobs are sorted by finish time, not by an unrelated column' => sub {
+    $t->app->schema->txn_begin;
+    my $worker_id = $t->app->schema->resultset('Workers')->find({host => 'localhost', instance => 1})->id;
+    my $jobs = $t->app->schema->resultset('Jobs');
+    my $older = $jobs->create(
+        {
+            DISTRI => 'opensuse',
+            VERSION => 'v1',
+            FLAVOR => 'zzz',
+            ARCH => 'x86_64',
+            TEST => 'ordering',
+            state => 'queued',
+            result => 'none',
+            assigned_worker_id => $worker_id,
+            t_finished => DateTime->new(year => 2020, month => 1, day => 1),
+        });
+    my $newer = $jobs->create(
+        {
+            DISTRI => 'opensuse',
+            VERSION => 'v1',
+            FLAVOR => 'aaa',
+            ARCH => 'x86_64',
+            TEST => 'ordering',
+            state => 'queued',
+            result => 'none',
+            assigned_worker_id => $worker_id,
+            t_finished => DateTime->new(year => 2025, month => 1, day => 1),
+        });
+
+    $t->get_ok('/admin/worker_hosts/localhost/ajax?order%5B0%5D%5Bcolumn%5D=3&order%5B0%5D%5Bdir%5D=desc')
+      ->status_is(200, 'sorting by 4th display column (Finished) descending returns 200 OK');
+    my $data = $t->tx->res->json->{data};
+    is $data->[0]{id}, $newer->id, 'most recently finished job is listed first';
+    is $data->[1]{id}, $older->id, 'older job listed after the most recent one';
+    ok $data->[0]{finished} gt $data->[1]{finished}, 'finished times are ordered descending';
+    $t->app->schema->txn_rollback;
+};
+
 done_testing();

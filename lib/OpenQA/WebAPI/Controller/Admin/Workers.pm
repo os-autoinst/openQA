@@ -8,11 +8,9 @@ use OpenQA::Utils;
 use OpenQA::WebAPI::ServerSideDataTable;
 use Scalar::Util 'looks_like_number';
 
-use constant PREVIOUS_JOBS_COLUMNS => (
-    [qw(BUILD DISTRI VERSION FLAVOR ARCH)],
-    [qw(passed_module_count softfailed_module_count failed_module_count)],
-    qw(t_finished),
-);
+# SQL sort keys positionally aligned with the DataTable display columns of each view
+use constant PREVIOUS_HOST_JOBS_COLUMNS => (qw(BUILD assigned_worker_id me.id t_finished));
+use constant PREVIOUS_JOBS_COLUMNS => (qw(BUILD me.id t_finished));
 
 sub _extend_info ($w) {
     my $info = $w->info;
@@ -157,7 +155,7 @@ sub host_previous_jobs_ajax ($self) {
     OpenQA::WebAPI::ServerSideDataTable::render_response(
         controller => $self,
         resultset => 'Jobs',
-        columns => [PREVIOUS_JOBS_COLUMNS],
+        columns => [PREVIOUS_HOST_JOBS_COLUMNS],
         initial_conds => [{assigned_worker_id => {-in => \@worker_ids}}],
         additional_params => {prefetch => [qw(children parents assigned_worker)]},
         prepare_data_function => \&_previous_jobs_data,
