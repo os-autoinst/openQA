@@ -574,8 +574,8 @@ password = somepassword
 
 ### User authentication
 
-openQA supports four different authentication methods: OpenID (default), OAuth2,
-Fake (for development) and None (no authentication).
+openQA supports five different authentication methods: OpenID (default), OAuth2,
+Local, Fake (for development) and None (no authentication).
 
 Use the `auth` section in
 [the web UI configuration](GettingStarted.md#webui-configuration) to configure
@@ -650,6 +650,36 @@ the application owner(s).
 
 As shown in the comments of the default configuration file, it is also possible
 to use different providers.
+
+#### Local
+
+The Local authentication provider manages user credentials directly within
+openQA without requiring an external identity provider:
+
+```ini
+[auth]
+# method name is case sensitive!
+method = Local
+```
+
+Users can register, choose a password, change their password, and delete their
+account. Note that passwords should be served over HTTPS in production.
+
+- **Password Policy:** Passwords must be between 8 and 128 characters in length,
+  cannot be whitespace only, cannot contain the username, and cannot match common
+  passwords.
+- **Password Hashing:** Passwords are hashed using Argon2id if available at
+  runtime, falling back to bcrypt (cost 12, taking ~300ms). In production, hashing
+  fails closed if neither strong algorithm is available.
+- **Session Invalidation:** Changing a password or an administrative password
+  reset immediately invalidates active browser sessions for the affected user by
+  incrementing their session epoch.
+- **Throttling & Auditing:** Repeated failed login attempts are throttled in
+  memory and recorded in audit events without storing credentials.
+- **Admin Password Reset:** Administrators can reset local user passwords or
+  generate a temporary single-use password via the administrative interface. By
+  default, resetting a user's password revokes all associated API keys unless
+  explicitly opted out.
 
 #### Fake
 

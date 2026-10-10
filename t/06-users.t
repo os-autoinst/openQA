@@ -64,4 +64,38 @@ subtest 'auth provider mismatch' => sub {
     lives_ok { $users->create_user('collision_user', provider => '') } 'works if provider matches existing one';
 };
 
+subtest 'password column' => sub {
+    my $source = $users->result_source;
+    ok $source->has_column('password'), 'password column is defined on Users schema';
+    my $info = $source->column_info('password');
+    is $info->{data_type}, 'text', 'password column has text data type';
+    ok $info->{is_nullable}, 'password column is nullable';
+    my $user_without_pw = $users->create({username => 'user_without_password'});
+    ok $user_without_pw, 'user can be created without specifying password';
+    is $user_without_pw->password, undef, 'password defaults to undef when omitted';
+    my $user_with_pw = $users->create(
+        {
+            username => 'user_with_password',
+            password => '$2b$12$some22characterlongdummyhashval',
+        });
+    ok $user_with_pw, 'user can be created with password';
+    is $user_with_pw->password, '$2b$12$some22characterlongdummyhashval',
+      'password value is stored and retrieved correctly';
+};
+
+subtest 'session epoch column' => sub {
+    my $source = $users->result_source;
+    ok $source->has_column('session_epoch'), 'session_epoch column is defined on Users schema';
+    my $info = $source->column_info('session_epoch');
+    is $info->{data_type}, 'integer', 'session_epoch column has integer data type';
+    ok !$info->{is_nullable}, 'session_epoch column is not nullable';
+    is $info->{default_value}, 0, 'session_epoch column defaults to 0';
+    $users->create({username => 'epoch_default_user'});
+    is $users->find({username => 'epoch_default_user'})->session_epoch, 0,
+      'users created without session_epoch get the default 0';
+    my $epoch_user = $users->find({username => 'epoch_default_user'});
+    $epoch_user->update({session_epoch => 3});
+    is $epoch_user->session_epoch, 3, 'session_epoch can be incremented via update to invalidate old sessions';
+};
+
 done_testing();

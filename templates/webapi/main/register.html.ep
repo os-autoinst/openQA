@@ -1,0 +1,29 @@
+% layout 'bootstrap';
+% title 'Register';
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        %= include 'layouts/info'
+        <div class="card mt-4">
+            <div class="card-header">Register</div>
+            <div class="card-body">
+                %= form_for 'register' => (method => 'post') => begin
+                    %= csrf_field
+                    % if (my $return_page = param('return_page')) {
+                        <input type="hidden" name="return_page" value="<%= $return_page %>">
+                    % }
+                    <div class="mb-3">
+                        <label class="form-label" for="username">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" required autofocus pattern="^[A-Za-z0-9_.@+-]{3,64}$">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="password">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" minlength="8" required>
+                    </div>
+                    <div class="mb-3">
+                        %= submit_button 'Register', class => 'btn btn-primary w-100'
+                    </div>
+                % end
+            </div>
+        </div>
+    </div>
+</div>
