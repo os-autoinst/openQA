@@ -66,4 +66,22 @@ $t->post_ok('/api_keys', {'X-CSRF-Token' => $token} => form => {user_id => 99902
 $t->get_ok('/api_keys')->status_is(200)->element_exists('#api_key_3', 'Percival keys are there')
   ->element_exists('#api_key_8', 'and the new one belongs to Percival, not Lancelot');
 
+$t->post_ok('/api_keys', {'X-CSRF-Token' => $token} => form => {comment => 'ui test key'})
+  ->status_is(302, 'create api key with comment redirects');
+$t->get_ok('/api_keys')->status_is(200, 'api keys listing page displays')
+  ->text_is('#api_key_8 .comment' => '', 'key created without comment displays empty comment cell')
+  ->text_like('#api_key_9 .comment' => qr/ui test key/, 'created key displays comment in UI table');
+
+$t->post_ok('/api_keys', {'X-CSRF-Token' => $token} => form => {comment => '   '})
+  ->status_is(302, 'create api key with whitespace comment redirects');
+$t->get_ok('/api_keys')->status_is(200, 'api keys listing page displays')
+  ->text_is('#api_key_10 .comment' => '', 'key created with whitespace comment displays empty comment cell');
+
+$t->post_ok('/api_keys', {'X-CSRF-Token' => $token} => form => {comment => '<script>alert("xss")</script>'})
+  ->status_is(302, 'create api key with HTML comment redirects');
+$t->get_ok('/api_keys')->status_is(200, 'api keys listing page displays')->text_is(
+    '#api_key_11 .comment' => '<script>alert("xss")</script>',
+    'comment with HTML special characters is safely rendered as text'
+)->element_exists_not('#api_key_11 .comment script', 'HTML tags in comment are not rendered as DOM elements');
+
 done_testing();
