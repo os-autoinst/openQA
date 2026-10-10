@@ -116,14 +116,177 @@ subtest circular_reference => sub {
 };
 
 subtest 'handle_plus_in_settings' => sub {
-    my $settings = {
-        'ISO' => 'foo.iso',
-        '+ISO' => 'bar.iso',
-        '+ARCH' => 'x86_64',
-        'DISTRI' => 'opensuse',
-    };
-    OpenQA::JobSettings::handle_plus_in_settings($settings);
-    is_deeply $settings, {ISO => 'bar.iso', ARCH => 'x86_64', DISTRI => 'opensuse'}, 'handle the plus correctly';
+    my @cases = (
+        {
+            desc => 'regular plus override replaces target key',
+            input => {'ISO' => 'foo.iso', '+ISO' => 'bar.iso', '+ARCH' => 'x86_64', 'DISTRI' => 'opensuse'},
+            expected => {ISO => 'bar.iso', ARCH => 'x86_64', DISTRI => 'opensuse'},
+        },
+        {
+            desc => 'wildcard plus with empty string clears matching settings',
+            input => {
+                'ASSET_1' => 'a1.raw',
+                'ASSET_256' => 'a256.raw',
+                'MY_ASSET_1' => 'my.raw',
+                'ISO' => 'foo.iso',
+                '+ASSET_*' => '',
+            },
+            expected => {MY_ASSET_1 => 'my.raw', ISO => 'foo.iso'},
+        },
+        {
+            desc => 'wildcard plus with undef clears matching settings',
+            input => {
+                'ASSET_1' => 'a1.raw',
+                '+ASSET_*' => undef,
+            },
+            expected => {},
+        },
+        {
+            desc => 'wildcard plus matching no keys removes only the plus key',
+            input => {
+                'ISO' => 'foo.iso',
+                '+UNKNOWN_*' => '',
+            },
+            expected => {ISO => 'foo.iso'},
+        },
+        {
+            desc => 'wildcard plus preserves specific plus override',
+            input => {
+                'ASSET_1' => 'a1.raw',
+                'ASSET_2' => 'a2.raw',
+                '+ASSET_*' => '',
+                '+ASSET_1' => 'override.raw',
+            },
+            expected => {ASSET_1 => 'override.raw'},
+        },
+        {
+            desc => 'wildcard star clearing does not delete _DROP_SETTINGS',
+            input => {
+                'ISO' => 'foo.iso',
+                '_DROP_SETTINGS' => 'ISO',
+                '+*' => '',
+            },
+            expected => {_DROP_SETTINGS => 'ISO'},
+        },
+        {
+            desc => 'multiple wildcard plus settings clear respective matches',
+            input => {
+                'ASSET_1' => 'a1.raw',
+                'HDD_1' => 'h1.raw',
+                'ISO' => 'foo.iso',
+                '+ASSET_*' => '',
+                '+HDD_*' => '',
+            },
+            expected => {ISO => 'foo.iso'},
+        },
+        {
+            desc => 'wildcard plus with non-empty value yields error',
+            input => {'+ASSET_*' => 'foo'},
+            expected_error => qr/Wildcard setting '\+ASSET_\*' cannot have a non-empty value/,
+        },
+    );
+
+    for my $case (@cases) {
+        my $settings = {%{$case->{input}}};
+        my $err = OpenQA::JobSettings::handle_plus_in_settings($settings);
+        if ($case->{expected_error}) {
+            like $err, $case->{expected_error}, "$case->{desc}: error matches";
+        }
+        else {
+            is $err, undef, "$case->{desc}: no error returned";
+            is_deeply $settings, $case->{expected}, "$case->{desc}: settings match expected";
+        }
+    }
+
+    my $finalize_settings = {'+ASSET_*' => 'foo'};
+    my ($finalize_err) = OpenQA::JobSettings::finalize_job_settings($finalize_settings, []);
+    like $finalize_err, qr/Wildcard setting '\+ASSET_\*' cannot have a non-empty value/,
+      'finalize_job_settings returns error on non-empty wildcard plus';
+
+    my $generate_err = OpenQA::JobSettings::generate_settings({settings => {'+ASSET_*' => 'foo'}});
+    like $generate_err, qr/Wildcard setting '\+ASSET_\*' cannot have a non-empty value/,
+      'generate_settings returns error on non-empty wildcard plus';
+};
+
+subtest '_DROP_SETTINGS' => sub {
+    my @cases = (
+        {
+            desc => 'no-op when _DROP_SETTINGS is not present',
+            input => {ISO => 'foo.iso', ARCH => 'x86_64'},
+            expected => {ISO => 'foo.iso', ARCH => 'x86_64'},
+        },
+        {
+            desc => 'no-op when _DROP_SETTINGS is empty or whitespace with empty entries',
+            input => {_DROP_SETTINGS => ' , ', ISO => 'foo.iso'},
+            expected => {_DROP_SETTINGS => ' , ', ISO => 'foo.iso'},
+        },
+        {
+            desc => 'drop single setting by exact name',
+            input => {_DROP_SETTINGS => 'ISO', ISO => 'foo.iso', ARCH => 'x86_64'},
+            expected => {_DROP_SETTINGS => 'ISO', ARCH => 'x86_64'},
+        },
+        {
+            desc => 'drop multiple settings by comma-separated names and trimmed spaces',
+            input => {_DROP_SETTINGS => ' ISO , ARCH ', ISO => 'foo.iso', ARCH => 'x86_64', DISTRI => 'opensuse'},
+            expected => {_DROP_SETTINGS => ' ISO , ARCH ', DISTRI => 'opensuse'},
+        },
+        {
+            desc => 'drop settings with glob pattern while keeping non-matching settings',
+            input => {
+                _DROP_SETTINGS => 'ASSET_*',
+                ASSET_1 => 'asset1.raw',
+                ASSET_256 => 'asset256.raw',
+                ASSET_VIRTUALBOX => 'vbox.raw',
+                MY_ASSET_1 => 'my_asset.raw',
+                DISTRI => 'opensuse',
+            },
+            expected => {
+                _DROP_SETTINGS => 'ASSET_*',
+                MY_ASSET_1 => 'my_asset.raw',
+                DISTRI => 'opensuse',
+            },
+        },
+        {
+            desc => 'no match does not remove existing settings',
+            input => {_DROP_SETTINGS => 'NONEXISTENT,OTHER_*', ISO => 'foo.iso'},
+            expected => {_DROP_SETTINGS => 'NONEXISTENT,OTHER_*', ISO => 'foo.iso'},
+        },
+        {
+            desc => '_DROP_SETTINGS is preserved and never dropped by wildcard or self name',
+            input => {_DROP_SETTINGS => '*,_DROP_SETTINGS', ISO => 'foo.iso', ARCH => 'x86_64'},
+            expected => {_DROP_SETTINGS => '*,_DROP_SETTINGS'},
+        },
+        {
+            desc => 'interaction with +VAR where plus override is dropped',
+            input => {_DROP_SETTINGS => 'ISO', '+ISO' => 'bar.iso', ARCH => 'x86_64'},
+            finalize => 1,
+            expected => {_DROP_SETTINGS => 'ISO', ARCH => 'x86_64'},
+        },
+        {
+            desc => 'interaction with +_DROP_SETTINGS where plus overrides precedence',
+            input => {'+_DROP_SETTINGS' => 'ISO', ISO => 'foo.iso', ARCH => 'x86_64'},
+            finalize => 1,
+            expected => {_DROP_SETTINGS => 'ISO', ARCH => 'x86_64'},
+        },
+        {
+            desc => 'placeholders referencing dropped settings remain unexpanded',
+            input => {_DROP_SETTINGS => 'DROPPED', DROPPED => 'val', TARGET => '%DROPPED%'},
+            finalize => 1,
+            expected => {_DROP_SETTINGS => 'DROPPED', TARGET => '%DROPPED%'},
+        },
+    );
+
+    for my $case (@cases) {
+        my $settings = {%{$case->{input}}};
+        if ($case->{finalize}) {
+            my ($err) = OpenQA::JobSettings::finalize_job_settings($settings, []);
+            is $err, undef, "$case->{desc}: no finalize error";
+        }
+        else {
+            OpenQA::JobSettings::apply_drop_settings($settings);
+        }
+        is_deeply $settings, $case->{expected}, "$case->{desc}: settings match expected";
+    }
 };
 
 subtest 'two-pass variable expansion' => sub {

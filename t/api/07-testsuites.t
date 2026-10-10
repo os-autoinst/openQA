@@ -283,6 +283,11 @@ is_deeply
   'Delete test_suite variable'
   || always_explain $t->tx->res->json;
 
+$t->put_ok("/api/v1/test_suites/$test_suite_id", json => {name => 'testsuite', settings => {'+ASSET_*' => ''}})
+  ->status_is(200, 'wildcard setting key accepted by test suite table API');
+$t->get_ok("/api/v1/test_suites/$test_suite_id")->status_is(200);
+is $t->tx->res->json->{TestSuites}[0]{settings}[0]{key}, '+ASSET_*', 'wildcard key stored in settings';
+
 $t->delete_ok("/api/v1/test_suites/$test_suite_id")->status_is(200);
 $t->delete_ok("/api/v1/test_suites/$test_suite_id")->status_is(404);    #not found
 
