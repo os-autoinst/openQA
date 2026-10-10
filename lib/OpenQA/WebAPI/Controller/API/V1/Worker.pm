@@ -48,6 +48,8 @@ sub list ($self) {
     $validation->optional('limit')->num;
     $validation->optional('offset')->num;
     $validation->optional('reserved')->num(0, 1);
+    $validation->optional('unused_days')->num;
+    $validation->optional('include_activity')->num(0, 1);
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
     my $limits = OpenQA::App->singleton->config->{misc_limits};
@@ -61,11 +63,26 @@ sub list ($self) {
       = defined $reserved_param
       ? {id => {($reserved_param ? '-in' : '-not_in') => [keys %{$workers->active_reservations}]}}
       : {};
+    my $unused_days = $validation->param('unused_days');
+    if (defined $unused_days) {
+        $condition->{id}
+          = {'-in' => [map { $_->id } $workers->find_unused_workers(threshold_days => $unused_days, online_only => 0)]};
+    }
     my @paged = $workers->search($condition, {rows => $limit + 1, offset => $offset, order_by => 'id'})->all;
     pop @paged if my $has_more = @paged > $limit;
     $self->pagination_links_header($limit, $offset, $has_more);
 
-    $self->render(json => {workers => [map { $_->info } @paged]});
+    my $include_activity = $validation->param('include_activity');
+    my $lf_map = $include_activity ? $workers->last_jobs_finished_per_worker([map { $_->id } @paged]) : {};
+    $self->render(
+        json => {
+            workers => [
+                map {
+                    my $info = $_->info;
+                    $info->{last_job_finished} = $lf_map->{$_->id} if $include_activity;
+                    $info;
+                } @paged
+            ]});
 }
 
 =over 4
@@ -439,6 +456,13 @@ sub release_host ($self) {
         });
 
     $self->render(json => {message => "Worker host '$host' reservation released successfully."});
+}
+
+
+sub list_hosts ($self) {
+    my $workers = $self->schema->resultset('Workers');
+    my $summary = $workers->host_activity_summary;
+    $self->render(json => {hosts => $summary});
 }
 
 1;
