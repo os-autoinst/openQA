@@ -1275,6 +1275,46 @@ is_deeply
   {id => "$job_template_id2"},
   'Delete was logged correctly';
 
+subtest 'deprecation/lifecycle template enforcement' => sub {
+    my $template_with_deprecated = {
+        defaults => {
+            i586 => {
+                machine => '64bit',
+                priority => 50,
+            }
+        },
+        products => {
+            'opensuse-13.1-DVD-i586' => {
+                distri => 'opensuse',
+                flavor => 'DVD',
+                version => '13.1',
+            }
+        },
+        scenarios => {
+            i586 => {
+                'opensuse-13.1-DVD-i586' => [
+                    {
+                        textmode => {
+                            priority => 40,
+                            machine => '32bit',
+                            settings => {
+                                OBSOLETE_SETTING => 'some_val',
+                            }}}]}}};
+
+    $t->app->config->{job_settings_lifecycle}
+      = {rule_error => 'OBSOLETE_SETTING:=~.*:error:OBSOLETE_SETTING is deprecated with error',};
+    delete $t->app->config->{misc_limits}->{job_settings_lifecycle_rules};
+
+    my %form = (schema => $schema_filename, template => dump_yaml($template_with_deprecated));
+    $t->post_ok('/api/v1/job_templates_scheduling/' . $opensuse->id, form => \%form)->status_is(400);
+    like $t->tx->res->body,
+      qr/Setting 'OBSOLETE_SETTING' has deprecated value 'some_val': OBSOLETE_SETTING is deprecated with error/,
+      'error message contains deprecation explanation';
+
+    delete $t->app->config->{job_settings_lifecycle};
+    delete $t->app->config->{misc_limits}->{job_settings_lifecycle_rules};
+};
+
 # switch to operator (default client) and try some modifications
 client($t);
 $t->post_ok(
