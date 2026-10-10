@@ -42,7 +42,8 @@ sub render_response (%args) {
         my $column_index = $controller->param("order[$index][column]") // @$columns;
         my $column_order = $controller->param("order[$index][dir]");
         last if $column_index >= @$columns || !grep { $column_order eq $_ } qw(asc desc);
-        push @order_by_params, {'-' . $column_order => $columns->[$column_index]};
+        my $column = $columns->[$column_index];
+        push @order_by_params, {'-' . $column_order => $column} if defined $column;
         ++$index;
     }
     push @order_by_params, 'me.id';
