@@ -55,6 +55,11 @@ subtest 'create_api_key with expiration' => sub {
     ok $res->{secret}, 'secret returned on key creation with expiration';
     my $expected_year = time2str('%Y', $expiration_time, 'UTC');
     like $res->{t_expiration}, qr/^$expected_year-/, 'expiration matches expected year';
+
+    $res = $t->post_ok('/api/v1/users/me/api_keys' => json => {expiration => $expiration})
+      ->status_is(200, 'create api key with JSON payload succeeds')->tx->res->json;
+    ok $res->{key}, 'key returned for JSON payload';
+    ok $res->{secret}, 'secret returned for JSON payload';
 };
 
 subtest 'create_api_key with invalid expiration' => sub {
