@@ -169,6 +169,23 @@ subtest 'auto_clone limits' => sub {
         is $restart, 1, 'restart true';
         like $new{reason}, qr{Auto-restarting because.*auto_clone_regex}, '$reason is modified';
     };
+
+    subtest 'auto_clone_regex matches backend SSH and hypervisor connection failures' => sub {
+        my @test_reasons = (
+            'backend died: hypervisor host s390zl12 is not reachable after 1800 seconds',
+            'backend died: Lost SSH connection to SUT: -43 Failure while draining incoming flow',
+            'backend died: Lost SSH serial connection: transport read (error code: -43)',
+'backend done: Error connecting to <root@s390zl13.oqa.prg2.suse.org>: Unable to connect to remote host: Connection refused',
+'backend died: Error connecting to <root@s390zl12.oqa.prg2.suse.org>: Unable to connect to remote host: No route to host',
+        );
+        for my $r (@test_reasons) {
+            $restart = 0;
+            %new = ();
+            $last->_compute_result_and_reason(\%new, 'incomplete', $r, \$restart);
+            is $restart, 1, "restart triggered for: $r";
+            like $new{reason}, qr{Auto-restarting because.*auto_clone_regex}, "reason marked for auto-restart: $r";
+        }
+    };
     $schema->txn_rollback;
 };
 
