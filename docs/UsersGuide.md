@@ -301,6 +301,14 @@ request, the test suite setting would 'win' and the value would be foo.
 If the same variable is set with a + prefix in multiple places, the same precedence
 order described above will apply to those settings.
 
+To remove settings from a job regardless of where they were defined (including
+API POST parameters), you can set `_DROP_SETTINGS` to a comma-separated list of
+setting names or glob patterns (anchored, using `*` wildcards), e.g.
+`_DROP_SETTINGS=ISO,ASSET_*`. `_DROP_SETTINGS` itself is preserved on the job
+for traceability and is never removed by its own patterns. If you need to override
+or set it from a template or test suite against posted values, prefix it with `+`,
+e.g. `+_DROP_SETTINGS=ISO,ASSET_*`.
+
 Note that the `WORKER_CLASS` variable is not overridden in the way described above.
 Instead multiple occurrences are combined.
 
@@ -904,6 +912,19 @@ defaults:
     priority: 50
     settings:
       FOO: '1'
+```
+
+Defaults can also be used to clear posted assets for entire groups of tests
+(such as HDD-booting tests), using `_DROP_SETTINGS` (see
+[Variable precedence](#variable-precedence)):
+
+```yaml
+defaults:
+  x86_64:
+    machine: 64bit
+    priority: 50
+    settings:
+      _DROP_SETTINGS: ISO,ASSET_*
 ```
 
 Defaults are always overwritten by explicit parameters on scenarios. Further
@@ -1566,6 +1587,11 @@ The following job settings are specifying that an asset is required by a job:
 - `INITRD` (type `other`)
 
 Where you see e.g. `ISO_n`, that means `ISO_1`, `ISO_2` etc. will all be treated as assets.
+
+For jobs that do not use posted assets, you can set `_DROP_SETTINGS=ISO,ASSET_*`
+to drop those settings and avoid registering or downloading unused assets. This
+can also be defined once for an architecture in the `defaults.<arch>.settings`
+section of a job group YAML.
 
 The values of the above parameters are expected to be the name of a file - or, in the case of
 `REPO_n`, a directory - that exists under the path `/var/lib/openqa/share/factory` on the openQA

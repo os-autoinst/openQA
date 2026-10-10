@@ -126,6 +126,87 @@ subtest 'handle_plus_in_settings' => sub {
     is_deeply $settings, {ISO => 'bar.iso', ARCH => 'x86_64', DISTRI => 'opensuse'}, 'handle the plus correctly';
 };
 
+subtest '_DROP_SETTINGS' => sub {
+    my @cases = (
+        {
+            desc => 'no-op when _DROP_SETTINGS is not present',
+            input => {ISO => 'foo.iso', ARCH => 'x86_64'},
+            expected => {ISO => 'foo.iso', ARCH => 'x86_64'},
+        },
+        {
+            desc => 'no-op when _DROP_SETTINGS is empty or whitespace with empty entries',
+            input => {_DROP_SETTINGS => ' , ', ISO => 'foo.iso'},
+            expected => {_DROP_SETTINGS => ' , ', ISO => 'foo.iso'},
+        },
+        {
+            desc => 'drop single setting by exact name',
+            input => {_DROP_SETTINGS => 'ISO', ISO => 'foo.iso', ARCH => 'x86_64'},
+            expected => {_DROP_SETTINGS => 'ISO', ARCH => 'x86_64'},
+        },
+        {
+            desc => 'drop multiple settings by comma-separated names and trimmed spaces',
+            input => {_DROP_SETTINGS => ' ISO , ARCH ', ISO => 'foo.iso', ARCH => 'x86_64', DISTRI => 'opensuse'},
+            expected => {_DROP_SETTINGS => ' ISO , ARCH ', DISTRI => 'opensuse'},
+        },
+        {
+            desc => 'drop settings with glob pattern while keeping non-matching settings',
+            input => {
+                _DROP_SETTINGS => 'ASSET_*',
+                ASSET_1 => 'asset1.raw',
+                ASSET_256 => 'asset256.raw',
+                ASSET_VIRTUALBOX => 'vbox.raw',
+                MY_ASSET_1 => 'my_asset.raw',
+                DISTRI => 'opensuse',
+            },
+            expected => {
+                _DROP_SETTINGS => 'ASSET_*',
+                MY_ASSET_1 => 'my_asset.raw',
+                DISTRI => 'opensuse',
+            },
+        },
+        {
+            desc => 'no match does not remove existing settings',
+            input => {_DROP_SETTINGS => 'NONEXISTENT,OTHER_*', ISO => 'foo.iso'},
+            expected => {_DROP_SETTINGS => 'NONEXISTENT,OTHER_*', ISO => 'foo.iso'},
+        },
+        {
+            desc => '_DROP_SETTINGS is preserved and never dropped by wildcard or self name',
+            input => {_DROP_SETTINGS => '*,_DROP_SETTINGS', ISO => 'foo.iso', ARCH => 'x86_64'},
+            expected => {_DROP_SETTINGS => '*,_DROP_SETTINGS'},
+        },
+        {
+            desc => 'interaction with +VAR where plus override is dropped',
+            input => {_DROP_SETTINGS => 'ISO', '+ISO' => 'bar.iso', ARCH => 'x86_64'},
+            finalize => 1,
+            expected => {_DROP_SETTINGS => 'ISO', ARCH => 'x86_64'},
+        },
+        {
+            desc => 'interaction with +_DROP_SETTINGS where plus overrides precedence',
+            input => {'+_DROP_SETTINGS' => 'ISO', ISO => 'foo.iso', ARCH => 'x86_64'},
+            finalize => 1,
+            expected => {_DROP_SETTINGS => 'ISO', ARCH => 'x86_64'},
+        },
+        {
+            desc => 'placeholders referencing dropped settings remain unexpanded',
+            input => {_DROP_SETTINGS => 'DROPPED', DROPPED => 'val', TARGET => '%DROPPED%'},
+            finalize => 1,
+            expected => {_DROP_SETTINGS => 'DROPPED', TARGET => '%DROPPED%'},
+        },
+    );
+
+    for my $case (@cases) {
+        my $settings = {%{$case->{input}}};
+        if ($case->{finalize}) {
+            my ($err) = OpenQA::JobSettings::finalize_job_settings($settings, []);
+            is $err, undef, "$case->{desc}: no finalize error";
+        }
+        else {
+            OpenQA::JobSettings::apply_drop_settings($settings);
+        }
+        is_deeply $settings, $case->{expected}, "$case->{desc}: settings match expected";
+    }
+};
+
 subtest 'two-pass variable expansion' => sub {
     my %settings = (FOO => 'http://%BAR%/', NEEDLES_DIR => '%%CASEDIR%%/needles');
 
