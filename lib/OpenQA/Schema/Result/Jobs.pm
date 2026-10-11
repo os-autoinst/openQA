@@ -1282,7 +1282,10 @@ sub update_module ($self, $name, $raw_result = undef, $known_md5_sums = undef, $
     # note: The name is not strictly unique so use additional query parameters to consistently consider the
     #       most recent module.
     my $mod = $self->modules->find({name => $name}, {order_by => {-desc => 't_updated'}, rows => 1});
-    return undef unless $mod;
+    unless ($mod) {
+        log_warning("Job module '$name' not found for job ${\$self->id} (existing modules: ${\$self->modules->count})");
+        return undef;
+    }
 
     # ensure the result dir exists
     $self->create_result_dir;

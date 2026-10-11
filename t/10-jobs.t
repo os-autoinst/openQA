@@ -1023,6 +1023,15 @@ subtest '"race" between status updates and stale job detection' => sub {
     is $update->{job_result}, 'incomplete', 'cancelled jobs will still get a status update';
 };
 
+subtest 'status update with result for unknown job module' => sub {
+    my $job = $jobs->create({TEST => 'test-job', state => RUNNING});
+    my $update;
+    combined_like { $update = $job->update_status({result => {boot => 'canceled'}}) }
+    qr/Job module 'boot' not found for job \d+ \(existing modules: 0\)/, 'missing module logged';
+    is $update->{error}, 'Failed modules: boot', 'error reports failed module';
+    is $update->{error_status}, 490, 'error status requests retry';
+};
+
 is $t->app->minion->jobs({states => ['failed']})->total, 0, 'No unexpected failed minion background jobs';
 
 subtest 'special cases when restarting job via Minion task' => sub {
