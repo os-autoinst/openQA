@@ -9,6 +9,7 @@ sub register ($self, $app, $conf = undef) {
     $types->type(yaml => 'text/yaml;charset=UTF-8');
     $types->type(bz2 => 'application/x-bzip2');
     $types->type(xz => 'application/x-xz');
+    $types->type(rss => 'application/rss+xml;charset=UTF-8');
 }
 
 1;

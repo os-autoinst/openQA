@@ -210,12 +210,12 @@ sub startup ($self) {
     # but this route is actually matched (in case apache is not catching this earlier)
     # due to the split md5_dirname having a /
     $r->get('/image/:md5_1/:md5_2/.thumbs/#md5_basename')->to('file#thumb_image');
-    $r->get('/group_overview/<groupid:num>' => [format => ['json', 'html']])->name('group_overview')
+    $r->get('/group_overview/<groupid:num>' => [format => ['json', 'html', 'rss']])->name('group_overview')
       ->to('main#job_group_overview', format => undef);
     $r->get('/group_overview/<groupid:num>/comments_ajax' => [format => ['html']])->name('job_group_comments_ajax')
       ->to('main#job_group_comments_ajax', format => undef);
-    $r->get('/parent_group_overview/<groupid:num>' => [format => ['json', 'html']])->name('parent_group_overview')
-      ->to('main#parent_group_overview', format => undef);
+    $r->get('/parent_group_overview/<groupid:num>' => [format => ['json', 'html', 'rss']])
+      ->name('parent_group_overview')->to('main#parent_group_overview', format => undef);
     $r->get('/parent_group_overview/<groupid:num>/comments_ajax' => [format => ['html']])
       ->name('parent_group_comments_ajax')->to('main#parent_group_comments_ajax', format => undef);
 

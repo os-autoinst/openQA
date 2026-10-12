@@ -361,6 +361,9 @@ subtest 'content negotiation' => sub {
     $t->get_ok('/group_overview/1001.json')->status_is(200)->content_type_is('application/json;charset=UTF-8');
     $t->get_ok('/group_overview/1001' => {Accept => 'application/json'})->status_is(200)
       ->content_type_is('application/json;charset=UTF-8');
+    $t->get_ok('/group_overview/1001.rss')->status_is(200)->content_type_is('application/rss+xml;charset=UTF-8');
+    $t->get_ok('/group_overview/1001' => {Accept => 'application/rss+xml'})->status_is(200)
+      ->content_type_is('application/rss+xml;charset=UTF-8');
 };
 
 subtest 'tags with datetime' => sub {
