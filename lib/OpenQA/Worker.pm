@@ -258,6 +258,8 @@ sub capabilities ($self) {
         # TODO: check installed qemu and kvm?
     }
     $caps->{parallel_one_host_only} = $global_settings->{PARALLEL_ONE_HOST_ONLY};
+    $caps->{developer_connection_hint} = $global_settings->{DEVELOPER_CONNECTION_HINT}
+      if defined $global_settings->{DEVELOPER_CONNECTION_HINT};
     return $self->{_caps} = $caps;
 }
 

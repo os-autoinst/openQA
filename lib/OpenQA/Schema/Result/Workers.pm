@@ -4,6 +4,7 @@
 
 package OpenQA::Schema::Result::Workers;
 use Mojo::Base 'DBIx::Class::Core', -signatures;
+use Mojo::Util 'trim';
 
 use DBIx::Class::Timestamps 'now';
 use Feature::Compat::Try;
@@ -352,6 +353,11 @@ sub vnc_argument ($self) {
     my $hostname = $self->get_property('WORKER_HOSTNAME') || $self->host;
     my $instance = $self->instance + VNC_PORT;
     return "$hostname:$instance";
+}
+
+sub developer_connection_hint ($self) {
+    my $hint = trim($self->get_property('DEVELOPER_CONNECTION_HINT') // '');
+    return length $hint ? $hint : undef;
 }
 
 1;

@@ -237,6 +237,16 @@ subtest 'capabilities' => sub {
     };
     delete $worker->{_caps};
 
+    subtest 'capabilities include DEVELOPER_CONNECTION_HINT setting if present' => sub {
+        my $hint = 'worker-host.example.com:5903';
+        $global_settings->{DEVELOPER_CONNECTION_HINT} = $hint;
+        $capabilities = $worker->capabilities;
+        is $capabilities->{developer_connection_hint}, $hint,
+          'capabilities contain configured developer connection hint';
+        delete $global_settings->{DEVELOPER_CONNECTION_HINT};
+    };
+    delete $worker->{_caps};
+
     subtest 'deduce worker class from CPU architecture' => sub {
         delete $global_settings->{WORKER_CLASS};
         $global_settings->{ARCH} = 'aarch64';

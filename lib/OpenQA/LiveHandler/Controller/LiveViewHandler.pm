@@ -471,7 +471,7 @@ sub ws_proxy ($self, $status_only = undef) {
     push @$java_script_transactions_for_current_job, $java_script_tx;
 
     # determine url to os-autoinst command server
-    my ($cmd_srv_raw_url, $vnc_arg) = $self->determine_connection_params_for_job($job);
+    my ($cmd_srv_raw_url, $conn_params) = $self->determine_connection_params_for_job($job);
     if (!$cmd_srv_raw_url) {
         $app->log->debug('attempt to open ws proxy for job '
               . $job->name . ' ('
@@ -487,7 +487,7 @@ sub ws_proxy ($self, $status_only = undef) {
     }
 
     # start opening a websocket connection to os-autoinst instantly
-    $self->connect_to_cmd_srv($job_id, $cmd_srv_raw_url, {vnc_arg => $vnc_arg}) if $cmd_srv_raw_url;
+    $self->connect_to_cmd_srv($job_id, $cmd_srv_raw_url, $conn_params) if $cmd_srv_raw_url;
 
     # don't react to any messages from the JavaScript client if serving the status-only route
     if ($status_only) {

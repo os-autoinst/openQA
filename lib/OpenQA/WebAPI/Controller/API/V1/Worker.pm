@@ -184,10 +184,10 @@ Initializes and registers a worker.
 sub create ($self) {
     my $validation = $self->validation;
     my @validation_params
-      = qw(cpu_arch cpu_modelname cpu_opmode cpu_flags mem_max isotovideo_interface_version websocket_api_version worker_class parallel_one_host_only);
+      = qw(cpu_arch cpu_modelname cpu_opmode cpu_flags mem_max isotovideo_interface_version websocket_api_version worker_class parallel_one_host_only developer_connection_hint);
     $validation->required($_) for qw(host instance cpu_arch mem_max worker_class);
     $validation->optional($_) for qw(cpu_modelname cpu_opmode cpu_flags isotovideo_interface_version job_id
-      websocket_api_version parallel_one_host_only);
+      websocket_api_version parallel_one_host_only developer_connection_hint);
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
     my $host = $validation->param('host');
