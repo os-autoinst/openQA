@@ -15,6 +15,7 @@ docs/vendor/
 **/openqa-in-5-minutes.webm
 # Development
 contrib/completions/
+contrib/manpages/
 .sass-cache/
 .tidyall.d/
 assets/cache/
