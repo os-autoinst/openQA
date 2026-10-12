@@ -173,6 +173,17 @@ subtest 'filter form' => sub {
     is $driver->get_current_url, $url, 'URL parameters for filter are correct';
 };
 
+subtest 'clear filter button on index page' => sub {
+    $driver->get('/?group=opensuse');
+    wait_for_ajax;
+    (my $base_url = $driver->get_current_url) =~ s/\?.*//;
+    $driver->find_element('#filter-panel .card-header')->click();
+    $driver->find_element_by_id('filter-reset-button')->click();
+    wait_until sub { $driver->get_current_url !~ /group=opensuse/ },
+      'clear filter button removes group parameter from URL', 10;
+    like $driver->get_current_url, qr{^\Q$base_url\E\??}, 'clear filter button leaves a URL without query parameters';
+};
+
 subtest 'Ignore job groups on dashboard' => sub {
     my $job_groups = $schema->resultset('JobGroups');
     my $parent_groups = $schema->resultset('JobGroupParents');

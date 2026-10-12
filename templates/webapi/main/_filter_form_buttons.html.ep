@@ -1,0 +1,2 @@
+<button type="submit" class="btn btn-primary" id="filter-apply-button">Apply</button>
+<button type="button" id="filter-reset-button" class="btn btn-secondary">Clear filter</button>
