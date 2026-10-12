@@ -47,36 +47,36 @@ function createTests(form) {
   if (scenarioDefinitions.length > 0) {
     queryParams.append('SCENARIO_DEFINITIONS_YAML', scenarioDefinitions);
   }
-  $.ajax({
-    url: form.dataset.postUrl,
+  fetchWithCSRF(form.dataset.postUrl, {
     method: form.method,
-    data: queryParams.toString(),
-    success: function (response) {
-      const id = response.scheduled_product_id;
+    body: queryParams
+  })
+    .then(handleJSONResponseOrThrow)
+    .then(({json}) => {
+      const id = json.scheduled_product_id;
       const url = `${form.dataset.productlogUrl}?id=${id}`;
       addFlash('info', `Tests have been scheduled, check out the <a href="${url}">product log</a> for details.`);
-    },
-    error: function (xhr, ajaxOptions, thrownError) {
-      addFlash('danger', 'Unable to create tests: ' + (xhr.responseJSON?.error ?? xhr.responseText ?? thrownError));
-    }
-  });
+    })
+    .catch(error => {
+      addFlash('danger', 'Unable to create tests: ' + (error.json?.error ?? error));
+    });
 }
 
 function cloneTests(link) {
   const loadingIndication = document.createElement('span');
   loadingIndication.append('Cloning test distribution …');
   link.parentNode.replaceWith(loadingIndication);
-  $.ajax({
-    url: document.getElementById('flash-messages').dataset.cloneUrl,
-    method: 'POST',
-    success: function (response) {
+  fetchWithCSRF(document.getElementById('flash-messages').dataset.cloneUrl, {
+    method: 'POST'
+  })
+    .then(handleJSONResponseOrThrow)
+    .then(() => {
       location.reload();
-    },
-    error: function (xhr, ajaxOptions, thrownError) {
+    })
+    .catch(error => {
       const retryButton = '<br/><a class="btn btn-primary" href="#" onclick="cloneTests(this)">Retry</a>';
-      const error = xhr.responseJSON?.error ?? xhr.responseText ?? thrownError;
+      const errorMsg = error.json?.error ?? error;
       loadingIndication.parentNode.classList.replace('alert-primary', 'alert-danger');
-      loadingIndication.innerHTML = `Unable to clone: ${error} ${retryButton}`;
-    }
-  });
+      loadingIndication.innerHTML = `Unable to clone: ${errorMsg} ${retryButton}`;
+    });
 }
