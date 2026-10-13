@@ -9,14 +9,11 @@ use OpenQA::WebAPI::ServerSideDataTable;
 use Scalar::Util 'looks_like_number';
 
 # SQL sort keys positionally aligned with the DataTable display columns of each view
-use constant PREVIOUS_HOST_JOBS_COLUMNS => (
-    [qw(BUILD DISTRI VERSION FLAVOR ARCH)],
-    'assigned_worker_id', [qw(passed_module_count softfailed_module_count failed_module_count)], 't_finished',
-);
-use constant PREVIOUS_JOBS_COLUMNS => (
-    [qw(BUILD DISTRI VERSION FLAVOR ARCH)],
-    [qw(passed_module_count softfailed_module_count failed_module_count)], 't_finished',
-);
+use constant JOB_NAME_SORT_COLUMNS => [qw(BUILD DISTRI VERSION FLAVOR ARCH)];
+use constant RESULT_SORT_COLUMNS => [qw(passed_module_count softfailed_module_count failed_module_count)];
+use constant PREVIOUS_JOBS_COLUMNS => (JOB_NAME_SORT_COLUMNS, RESULT_SORT_COLUMNS, 't_finished');
+use constant PREVIOUS_HOST_JOBS_COLUMNS =>
+  (JOB_NAME_SORT_COLUMNS, 'assigned_worker.instance', RESULT_SORT_COLUMNS, 't_finished');
 
 sub _extend_info ($w) {
     my $info = $w->info;

@@ -327,17 +327,57 @@ subtest 'host previous jobs table' => sub {
       'host previous jobs ordered by completion time descending by default';
 
     $driver->find_element('#previous_host_jobs thead th:nth-child(4)')->click;
-    wait_for_ajax;
-    $table = $driver->find_element_by_id('previous_host_jobs');
-    @entries = map { $_->get_text() } $driver->find_child_elements($table, 'tbody/tr/td', 'xpath');
-    is_deeply
-      \@entries,
-      [
+    my @expected = (
         'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit (restarted)',
         ':1', '0', '1 hour ago', 'opensuse-13.1-NET-x86_64-Build0091-kde@64bit',
         ':1', '', 'not yet',
+    );
+    @entries = ();
+    wait_for {
+        @entries = map { $_->[0] } @{map_elements('#previous_host_jobs tbody tr td', 'e.textContent.trim()')};
+        @entries == @expected && $entries[0] =~ /Factory/ && $entries[4] =~ /NET/
+    }
+    'host previous jobs sorted by completion time ascending';
+    is_deeply \@entries, \@expected, 'host previous jobs sorted by completion time ascending after clicking column';
+};
+
+subtest 'worker previous jobs table' => sub {
+    $driver->get('/admin/workers/1');
+    wait_for_ajax;
+    my $table = $driver->find_element_by_id('previous_jobs');
+    my @entries = map { $_->get_text() } $driver->find_child_elements($table, 'tbody/tr/td', 'xpath');
+    is_deeply \@entries,
+      [
+        'opensuse-13.1-NET-x86_64-Build0091-kde@64bit',
+        '', 'not yet', 'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit (restarted)',
+        '0', '1 hour ago',
       ],
-      'host previous jobs sorted by completion time ascending after clicking column';
+      'worker previous jobs ordered by completion time descending by default';
+};
+
+subtest 'host previous jobs slot column sorts by worker instance number' => sub {
+    my $w3 = $workers->create({id => 7, host => 'localhost', instance => 3});
+    my $w4 = $workers->create({id => 9, host => 'localhost', instance => 2});
+    $jobs->find(99963)->update({assigned_worker_id => $w3->id});
+    $jobs->find(99961)->update({assigned_worker_id => $w4->id});
+
+    $driver->get('/admin/worker_hosts/localhost');
+    wait_for_ajax;
+    $driver->find_element('#previous_host_jobs thead th:nth-child(2)')->click;
+    my @slots;
+    wait_for {
+        @slots
+          = map { $_->[0] } @{map_elements('#previous_host_jobs tbody tr td:nth-child(2)', 'e.textContent.trim()')};
+        @slots == 3 && "@slots" eq ':1 :2 :3'
+    }
+    'slot column sorted by worker instance number ascending';
+    is_deeply \@slots, [':1', ':2', ':3'],
+      'slot column sorted by worker instance number ascending rather than by worker id';
+
+    $jobs->find(99961)->update({assigned_worker_id => 1});
+    $jobs->find(99963)->update({assigned_worker_id => undef});
+    $w3->delete;
+    $w4->delete;
 };
 
 kill_driver();
