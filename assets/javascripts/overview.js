@@ -139,42 +139,32 @@ function setupOverview(options) {
       addFlash('danger', '<strong>Unable to restart job.</strong>');
       return;
     }
-    showJobRestartResults(xhr, undefined, forceJobRestartViaRestartLink.bind(undefined, event.currentTarget));
-    const newId = xhr.result[0];
-    const oldId = 0;
+    let newJobUrl;
+    try {
+      const jobId = event.currentTarget.dataset.jobid;
+      newJobUrl = xhr.test_url?.[0]?.[jobId];
+      if (!newJobUrl && Array.isArray(xhr.test_url) && xhr.test_url[0]) {
+        newJobUrl = Object.values(xhr.test_url[0])[0];
+      }
+    } catch {
+      // Intentionally ignore all errors
+    }
+    const hasRestartResults = showJobRestartResults(
+      xhr,
+      newJobUrl,
+      forceJobRestartViaRestartLink.bind(undefined, event.currentTarget)
+    );
     const newIdMap = xhr.result[0];
-    Object.entries(newIdMap).forEach(([key, value]) => {
-      const restarted = document.querySelector('.restart[data-jobid="' + key + '"]');
-      if (!restarted) {
-        return;
-      }
-      restarted.textContent = ''; // hide the icon
-      const td = restarted.closest('td');
-      const icon = td.querySelector('.status');
-      if (icon) {
-        icon.classList.remove('state_done', 'state_cancelled');
-        icon.classList.add('state_scheduled');
-        icon.title = 'Scheduled';
-
-        // remove the result class
-        td.querySelectorAll('.result_passed, .result_failed, .result_softfailed').forEach(el => {
-          el.classList.remove('result_passed', 'result_failed', 'result_softfailed');
-        });
-
-        // If the API call returns a new id, a new job have been created to replace
-        // the old one. In other case, the old job is being reused
-        if (value) {
-          const link = icon.closest('a');
-          const oldId = restarted.dataset.jobid;
-          const newUrl = link.getAttribute('href').replace(oldId, value);
-          link.setAttribute('href', newUrl);
-          link.classList.add('restarted');
+    if (newIdMap) {
+      updateOverviewRestartedJobs(newIdMap);
+      if (!hasRestartResults && event.currentTarget.href.includes('force=1')) {
+        if (newJobUrl) {
+          addFlash('info', `The job has been restarted. Go to <a href="${newJobUrl}">new job</a>.`);
+        } else {
+          addFlash('info', 'The job has been restarted.');
         }
-
-        icon.style.opacity = 0.5;
-        setTimeout(() => (icon.style.opacity = 1.0), 500);
       }
-    });
+    }
   });
   const dependencies = document.getElementsByClassName('dependency');
   for (let i = 0; i < dependencies.length; i++) {

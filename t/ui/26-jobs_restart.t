@@ -361,6 +361,64 @@ subtest 'check cluster jobs restart in test overview page' => sub {
           expected_job_id_regex(++$i), "restarted link for $_ is correct"
           for @cluster_jobs;
     };
+
+    subtest 'no automatic redirect on restart parent skipping OK children and force restart' => sub {
+        my $cleanup = scope_guard sub {
+            $job_deps->search({parent_job_id => 99900, child_job_id => 99901})->update({dependency => CHAINED});
+            $jobs->search({id => [99900 .. 99903]})->update({clone_id => undef});
+            $jobs->search({id => {'>' => 99981}})->delete;
+        };
+
+        ensure_asset_exists('00099900-openSUSE-13.1-DVD-i586-Build0091-Media.iso');
+        $job_deps->search({parent_job_id => 99900, child_job_id => 99901})->update({dependency => DIRECTLY_CHAINED});
+        $jobs->search({id => [99900 .. 99903]})->update({clone_id => undef});
+        $jobs->search({id => {'>' => 99981}})->delete;
+
+        subtest 'restart parent skipping OK children shows flash notice without redirecting' => sub {
+            is $driver->get('/tests/overview?distri=opensuse&version=13.1&build=0091&groupid=1001'),
+              1, 'refresh test overview page';
+            update_last_job_id;
+            $driver->find_element('#res_DVD_i586_support_server .restart')->click();
+            wait_for_ajax(msg => 'fail to restart job because of directly chained parent');
+            wait_until(sub { flash_messages =~ m/Direct parent 99900 needs to be cloned as well/s },
+                'direct parent error shown', 20);
+            verify_parent_skip_ok_button(click => 1) or return;
+            wait_for_ajax(msg => 'parent job restarted skipping OK children');
+            like $driver->get_current_url, qr{/tests/overview}, 'stays on overview page without automatic redirect';
+            wait_until(sub { flash_messages =~ m/The job has been restarted/s }, 'notice flash message shown');
+            my $clone_id = $jobs->find(99900)->clone_id;
+            like
+              $driver->find_element_by_link_text('new job')->get_attribute('href'),
+              qr{/tests/$clone_id$},
+              'link to new job is correct in flash message';
+            is $driver->find_element('#res_DVD_i586_create_hdd .fa-solid.fa-circle')->get_attribute('title'),
+              'Scheduled',
+              'create_hdd is marked as restarted';
+        };
+
+        subtest 'force restart shows flash notice without redirecting' => sub {
+            $jobs->search({id => [99900 .. 99903]})->update({clone_id => undef});
+
+            is $driver->get('/tests/overview?distri=opensuse&version=13.1&build=0091&groupid=1001'),
+              1, 'refresh test overview page';
+            $driver->find_element('#res_DVD_i586_support_server .restart')->click();
+            wait_for_ajax(msg => 'fail to restart job because of directly chained parent');
+            wait_until(sub { flash_messages =~ m/Direct parent 99900 needs to be cloned as well/s },
+                'direct parent error shown', 20);
+            $driver->find_element('#flash-messages button.force-restart')->click();
+            wait_for_ajax(msg => 'forced job restart in overview page');
+            like $driver->get_current_url, qr{/tests/overview}, 'stays on overview page without automatic redirect';
+            wait_until(sub { flash_messages =~ m/The job has been restarted/s }, 'notice flash message shown');
+            my $clone_id = $jobs->find(99901)->clone_id;
+            like
+              $driver->find_element_by_link_text('new job')->get_attribute('href'),
+              qr{/tests/$clone_id$},
+              'link to new job is correct in flash message';
+            is $driver->find_element('#res_DVD_i586_support_server .fa-solid.fa-circle')->get_attribute('title'),
+              'Scheduled',
+              'support_server is marked as restarted';
+        };
+    };
 };
 
 subtest 'wait_for_element error handling' => sub {

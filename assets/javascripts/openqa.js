@@ -313,6 +313,54 @@ function renderList(items) {
   return ul;
 }
 
+function isOverviewPage() {
+  return (
+    (typeof urlWithBase === 'function' &&
+      window.location.pathname.replace(/\/$/, '') === urlWithBase('/tests/overview').replace(/\/$/, '')) ||
+    Boolean(document.querySelector('table.overview') && document.getElementById('summary'))
+  );
+}
+
+function updateOverviewRestartedJobs(newIdMap) {
+  if (!isOverviewPage() || !newIdMap || typeof newIdMap !== 'object') {
+    return;
+  }
+  Object.entries(newIdMap).forEach(([key, value]) => {
+    const restarted = document.querySelector('.restart[data-jobid="' + key + '"]');
+    if (!restarted) {
+      return;
+    }
+    restarted.textContent = ''; // hide the icon
+    const td = restarted.closest('td');
+    const icon = td?.querySelector('.status');
+    if (icon) {
+      icon.classList.remove('state_done', 'state_cancelled');
+      icon.classList.add('state_scheduled');
+      icon.title = 'Scheduled';
+
+      // remove the result class
+      td.querySelectorAll('.result_passed, .result_failed, .result_softfailed').forEach(el => {
+        el.classList.remove('result_passed', 'result_failed', 'result_softfailed');
+      });
+
+      // If the API call returns a new id, a new job have been created to replace
+      // the old one. In other case, the old job is being reused
+      if (value) {
+        const link = icon.closest('a');
+        if (link) {
+          const oldId = restarted.dataset.jobid;
+          const newUrl = link.getAttribute('href').replace(oldId, value);
+          link.setAttribute('href', newUrl);
+          link.classList.add('restarted');
+        }
+      }
+
+      icon.style.opacity = 0.5;
+      setTimeout(() => (icon.style.opacity = 1.0), 500);
+    }
+  });
+}
+
 function showJobRestartResults(responseJSON, newJobUrl, retryFunction, targetElement) {
   const hasResponse = typeof responseJSON === 'object';
   const errors = hasResponse ? responseJSON.errors : ['Server returned invalid response'];
@@ -400,12 +448,13 @@ function forceJobRestartViaRestartLink(restartLink) {
   restartLink.click();
 }
 
-function restartJob(ajaxUrl, jobIds, comment) {
+function restartJob(ajaxUrl, jobIds, comment, options = {}) {
   let singleJobId;
   if (!Array.isArray(jobIds)) {
     singleJobId = jobIds;
     jobIds = [jobIds];
   }
+  const shouldRedirect = options.redirect !== undefined ? options.redirect : !isOverviewPage();
   const showError = function (reason) {
     let errorMessage = '<strong>Unable to restart job';
     if (reason) {
@@ -452,9 +501,10 @@ function restartJob(ajaxUrl, jobIds, comment) {
         showJobRestartResults(
           json,
           newJobUrl,
-          restartJob.bind(undefined, addParam(ajaxUrl, 'force', '1'), jobIds, comment)
+          restartJob.bind(undefined, addParam(ajaxUrl, 'force', '1'), jobIds, comment, options)
         )
       ) {
+        updateOverviewRestartedJobs(json.result?.[0]);
         return;
       }
       if (newJobUrl) {
@@ -463,12 +513,15 @@ function restartJob(ajaxUrl, jobIds, comment) {
             'info',
             'The jobs have been restarted. <a href="javascript: location.reload()">Reload</a> the page to show changes.'
           );
+        } else if (!shouldRedirect) {
+          addFlash('info', `The job has been restarted. Go to <a href="${newJobUrl}">new job</a>.`);
         } else {
           window.location.replace(newJobUrl);
         }
       } else {
         throw 'URL for new job not available';
       }
+      updateOverviewRestartedJobs(json.result?.[0]);
     })
     .catch(error => {
       showError(error);
