@@ -516,6 +516,26 @@ subtest 'worker host reservation API' => sub {
     $schema->txn_rollback;
 };
 
+subtest 'developer connection hint registration' => sub {
+    my %reg_params = (
+        host => 'hint-host',
+        instance => 1,
+        cpu_arch => 'x86_64',
+        mem_max => 4096,
+        worker_class => 'qemu',
+        websocket_api_version => WEBSOCKET_API_VERSION,
+    );
+    my $stored_hint = sub { $workers->find({host => 'hint-host', instance => 1})->developer_connection_hint };
+
+    $t->post_ok('/api/v1/workers', form => {%reg_params, developer_connection_hint => 'worker-host.example.com:5903'})
+      ->status_is(200, 'worker registered with developer connection hint');
+    is $stored_hint->(), 'worker-host.example.com:5903', 'developer connection hint stored on registration';
+
+    $t->post_ok('/api/v1/workers', form => \%reg_params)->status_is(200, 'worker re-registered without hint');
+    is $stored_hint->(), undef, 'stale developer connection hint cleared when re-registered without one';
+    $workers->find({host => 'hint-host', instance => 1})->delete;
+};
+
 subtest 'worker registration reservation inheritance' => sub {
     $schema->txn_begin;
     my $users = $schema->resultset('Users');

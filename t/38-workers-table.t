@@ -133,6 +133,20 @@ subtest 'VNC argument' => sub {
     is $worker->vnc_argument, 'remotehost.foo.bar:5991', 'WORKER_HOSTNAME used if set';
 };
 
+subtest 'developer connection hint' => sub {
+    my $worker = $workers->first;
+    my $hint = 'worker-host.example.com:5903';
+    $worker->delete_properties(['DEVELOPER_CONNECTION_HINT']);
+    is $worker->developer_connection_hint, undef, 'developer_connection_hint returns undef when unset';
+    $worker->set_property(DEVELOPER_CONNECTION_HINT => '');
+    is $worker->developer_connection_hint, undef, 'developer_connection_hint returns undef when empty';
+    $worker->set_property(DEVELOPER_CONNECTION_HINT => '   ');
+    is $worker->developer_connection_hint, undef, 'developer_connection_hint returns undef when whitespace only';
+    $worker->set_property(DEVELOPER_CONNECTION_HINT => $hint);
+    is $worker->developer_connection_hint, $hint, 'developer_connection_hint returns configured hint';
+    $worker->delete_properties(['DEVELOPER_CONNECTION_HINT']);
+};
+
 subtest 'worker reservation model' => sub {
     my $worker = $workers->first;
     $worker->delete_properties([RESERVATION_PROPERTIES]);

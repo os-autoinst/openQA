@@ -26,7 +26,7 @@ sub register ($self, $app, @args) {
     $app->helper(via_domain => \&_via_domain);
 }
 
-# returns the isotovideo command server web socket URL and the VNC argument for the given job or undef if not available
+# returns the isotovideo command server web socket URL and connection params for the given job or undef
 sub _determine_connection_params_for_job ($c, $job) {
     return undef unless $job->state eq OpenQA::Jobs::Constants::RUNNING;
 
@@ -39,7 +39,12 @@ sub _determine_connection_params_for_job ($c, $job) {
     my $cmd_srv_raw_url = $worker->get_property('CMD_SRV_URL') or return undef;
     my $cmd_srv_url = Mojo::URL->new($cmd_srv_raw_url);
     my $port = $cmd_srv_url->port() or return undef;
-    return ("ws://$host:$port/$job_token/ws", $worker->vnc_argument);
+    return (
+        "ws://$host:$port/$job_token/ws",
+        {
+            vnc_arg => $worker->vnc_argument,
+            developer_connection_hint => $worker->developer_connection_hint,
+        });
 }
 
 sub _determine_os_autoinst_web_socket_url ($c, $job) { (_determine_connection_params_for_job($c, $job))[0] }

@@ -511,6 +511,7 @@ const developerMode = {
   develSessionDeveloper: undefined, // name of the user in possession the development session
   develSessionStartedAt: undefined, // time stamp when the development session was created
   develSessionTabCount: undefined, // number of open web socket connections by the developer
+  developerConnectionHint: undefined, // custom connection hint configured for the worker
 
   // returns whether we're currently connecting
   isConnecting: function () {
@@ -1228,6 +1229,18 @@ function processWsCommand(obj) {
           somethingChanged = true;
           Array.from(document.getElementsByClassName('vnc-arg')).forEach(e => {
             e.textContent = vncArg;
+          });
+        }
+      }
+
+      // handle developer connection hint; messages from older live handlers reset it
+      if (data && ('developer_connection_hint' in data || 'vnc_arg' in data)) {
+        const hint = data.developer_connection_hint?.trim() || undefined;
+        if (hint !== developerMode.developerConnectionHint) {
+          developerMode.developerConnectionHint = hint;
+          somethingChanged = true;
+          Array.from(document.getElementsByClassName('developer-connection-hint-text')).forEach(e => {
+            e.textContent = hint || '';
           });
         }
       }

@@ -94,6 +94,9 @@ my $auth = {'X-CSRF-Token' => $t->ua->get('/tests')->res->dom->at('meta[name=csr
 #       just copy the cookie with the required token from the regular user agent
 $t_livehandler->ua->cookie_jar($t->ua->cookie_jar);
 
+my $developer_hint = 'worker-host.example.com:5903';
+sub connection_info ($hint = undef) { {vnc_arg => 'remotehost.qa:5991', developer_connection_hint => $hint} }
+
 # login as arthur
 sub login ($user_name) {
     $test_case->login($t, $user_name);
@@ -568,6 +571,14 @@ subtest 'URLs for command server and livehandler' => sub {
       $app->determine_os_autoinst_web_socket_url($job),
       'ws://remotehost.qa:20013/token99961/ws',
       'URL for job with assigned worker and WORKER_HOSTNAME property';
+    my $cmd_srv_url = 'ws://remotehost.qa:20013/token99961/ws';
+    is_deeply [$app->determine_connection_params_for_job($job)], [$cmd_srv_url, connection_info()],
+      'connection params without developer connection hint';
+    $worker->set_property(DEVELOPER_CONNECTION_HINT => $developer_hint);
+    is_deeply [$app->determine_connection_params_for_job($job)],
+      [$cmd_srv_url, connection_info($developer_hint)],
+      'connection params with developer connection hint';
+    $worker->delete_properties(['DEVELOPER_CONNECTION_HINT']);
 
     is determine_web_ui_web_socket_url(99961), 'liveviewhandler/tests/99961/developer/ws-proxy', 'URL for livehandler';
 
@@ -719,7 +730,7 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
             {
                 type => 'info',
                 what => 'connecting to os-autoinst command server at ws://remotehost.qa:20013/token99961/ws',
-                data => {vnc_arg => 'remotehost.qa:5991'},
+                data => connection_info(),
             });
         $t_livehandler->message_ok('another message received');
         $t_livehandler->json_message_is(
@@ -764,7 +775,7 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
             {
                 type => 'info',
                 what => 'connecting to os-autoinst command server at ws://remotehost.qa:20013/token99961/ws',
-                data => {vnc_arg => 'remotehost.qa:5991'},
+                data => connection_info(),
             });
         $t_livehandler->message_ok('another message received');
         $t_livehandler->json_message_is(
@@ -819,7 +830,7 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
             {
                 type => 'info',
                 what => 'connecting to os-autoinst command server at ws://remotehost.qa:20013/token99961/ws',
-                data => {vnc_arg => 'remotehost.qa:5991'},
+                data => connection_info(),
             });
         $t_livehandler->message_ok('another message received');
         $t_livehandler->json_message_is(
@@ -892,7 +903,7 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
             {
                 type => 'info',
                 what => 'connecting to os-autoinst command server at ws://remotehost.qa:20013/token99961/ws',
-                data => {vnc_arg => 'remotehost.qa:5991'},
+                data => connection_info(),
             });
         $t_livehandler->message_ok('another message received');
         $t_livehandler->json_message_is(
@@ -914,6 +925,24 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
         $t_livehandler->finish_ok();
         is scalar @{$t_livehandler->app->status_java_script_transactions_by_job->{99961} // []},
           0, 'status only js transactions cleaned';
+    };
+
+    subtest 'connecting message includes developer connection hint if configured' => sub {
+        my $worker = $workers->find({job_id => 99961});
+        $worker->set_property(DEVELOPER_CONNECTION_HINT => $developer_hint);
+        $t_livehandler->websocket_ok(
+            '/liveviewhandler/tests/99961/developer/ws-proxy/status',
+            'establish status-only ws connection from JavaScript to livehandler'
+        );
+        $t_livehandler->message_ok('message received');
+        $t_livehandler->json_message_is(
+            {
+                type => 'info',
+                what => 'connecting to os-autoinst command server at ws://remotehost.qa:20013/token99961/ws',
+                data => connection_info($developer_hint),
+            });
+        $t_livehandler->finish_ok();
+        $worker->delete_properties(['DEVELOPER_CONNECTION_HINT']);
     };
 
     subtest 'error handling' => sub {

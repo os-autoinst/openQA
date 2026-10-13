@@ -778,6 +778,15 @@ So I am not repeating that information here and rather explain the overall workf
 In case the developer mode in not working on your instance, try to follow the
 [steps for debugging the developer mode under 'Pitfalls'](Pitfalls.md#debugdevelmode).
 
+#### Connecting to the SUT via VNC
+
+While a test is paused, the developer mode shows how to connect to the SUT via VNC,
+e.g. `vncviewer <host>:<port> -Shared`. The address is derived from the
+`WORKER_HOSTNAME` of the worker running the test. If this address is not reachable
+from your machine, the administrator of the worker can set `DEVELOPER_CONNECTION_HINT`
+in the [worker configuration](GettingStarted.md#worker-configuration). The configured text
+replaces the default VNC notice and is shown as plain text, e.g. an SSH tunnel command.
+
 #### Workflow for creating or updating needles
 
 1.  In case a new needles should be created, add the corresponding `assert_screen` calls

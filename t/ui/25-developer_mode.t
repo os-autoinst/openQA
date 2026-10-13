@@ -76,6 +76,16 @@ sub fake_message_from_ws_connection ($message) {
     inject_java_script(qq{handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "$message" });});
 }
 
+# returns the "connecting" message as sent by the live view handler, optionally with a developer connection hint
+sub connecting_message ($hint = undef) {
+    my $hint_field = defined $hint ? qq(,\\"developer_connection_hint\\":\\"$hint\\") : '';
+    return
+qq({\\"type\\":\\"info\\",\\"what\\":\\"connecting\\",\\"data\\":{\\"vnc_arg\\":\\"remotehost:5991\\"$hint_field}});
+}
+
+my $default_vnc_notice
+  = qr/You might be able to connect to the SUT at remotehost:5991 via VNC with shared mode enabled \(eg\. vncviewer remotehost:5991 -Shared for TigerVNC\)\./;
+
 # checks whether the commands sent by the JavaScript since the last call matches the expected commands
 sub assert_sent_commands ($expected, $test_name) {
     my $sent_cmds
@@ -186,8 +196,7 @@ subtest 'state shown when connected' => sub {
     element_hidden('#developer-panel .card-body');
 
     # fake "connecting" message which contains VNC argument
-    my $connecting = '{\"type\":\"info\",\"what\":\"connecting\",\"data\":{\"vnc_arg\":\"remotehost:5991\"}}';
-    fake_message_from_ws_connection($connecting);
+    fake_message_from_ws_connection(connecting_message());
 
     # running, current module known
     fake_state(developerMode => {currentModule => '"installation-welcome"'});
@@ -221,10 +230,26 @@ subtest 'state shown when connected' => sub {
 
     # currently paused
     fake_state(developerMode => {isPaused => '"some reason"'});
-    element_visible(
-        '#developer-vnc-notice',
-qr/You might be able to connect to the SUT at remotehost:5991 via VNC with shared mode enabled \(eg\. vncviewer remotehost:5991 -Shared for TigerVNC\)\./,
-    );
+    element_visible('#developer-vnc-notice', $default_vnc_notice);
+    element_hidden('#developer-connection-hint-notice');
+
+    fake_message_from_ws_connection(connecting_message('worker-host.example.com:5903'));
+    element_hidden('#developer-vnc-notice');
+    element_visible('#developer-connection-hint-notice', qr/worker-host\.example\.com\:5903/);
+
+    fake_message_from_ws_connection(connecting_message('<b>custom plain hint</b>'));
+    element_hidden('#developer-vnc-notice');
+    element_visible('#developer-connection-hint-notice', qr/<b>custom plain hint<\/b>/);
+    is scalar @{$driver->find_elements('#developer-connection-hint-notice b')}, 0,
+      'custom hint plain text is not rendered as HTML elements';
+
+    fake_message_from_ws_connection(connecting_message(''));
+    element_visible('#developer-vnc-notice', $default_vnc_notice);
+    element_hidden('#developer-connection-hint-notice');
+
+    fake_message_from_ws_connection(connecting_message());
+    element_visible('#developer-vnc-notice', $default_vnc_notice);
+    element_hidden('#developer-connection-hint-notice');
     element_visible(
         '#developer-panel .card-header',
         qr/paused at module: installation-welcome/,

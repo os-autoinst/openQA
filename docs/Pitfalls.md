@@ -130,3 +130,8 @@ This is basically a checklist to go through in case the developer mode is broken
 
 5.  It can also help to look at the [architecture diagram](images/architecture.svg) which shows
     which component needs access to which other components and the ports used by default.
+
+6.  If the VNC instructions shown in the developer mode are not reachable from your machine,
+    e.g. because the SUT runs behind a jump host, set `DEVELOPER_CONNECTION_HINT` in
+    [the worker configuration](GettingStarted.md#worker-configuration) to describe how to connect.
+    See [connecting to the SUT via VNC](UsersGuide.md#connecting-to-the-sut-via-vnc).
