@@ -104,8 +104,11 @@ clean: ## Remove build artifacts
 .PHONY: generate-manpages
 generate-manpages: ## Regenerate manpage from public/openqa-cli.yaml
 	mkdir -p contrib/manpages
-	echo -e "=encoding utf8\n" >contrib/manpages/openqa-cli.pod
-	(appspec pod public/openqa-cli.yaml 2>/dev/null || echo "=head1 No manpage available") >> contrib/manpages/openqa-cli.pod
+	@if perl -wE 'use App::Spec v0.17.0'; then \
+		appspec pod public/openqa-cli.yaml > contrib/manpages/openqa-cli.pod; \
+	else \
+		echo "=head1 No manpage available" > contrib/manpages/openqa-cli.pod; \
+	fi
 	pod2man contrib/manpages/openqa-cli.pod > contrib/manpages/openqa-cli.1
 
 .PHONY: generate-completions
