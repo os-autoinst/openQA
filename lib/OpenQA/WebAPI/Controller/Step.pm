@@ -500,8 +500,11 @@ sub viewimg ($self) {
 
     my $append_needle_info = sub ($tags, $needle_info) {
         # add timestamps and URLs from database
-        $self->populate_hash_with_needle_timestamps_and_urls(
-            $needles_rs->find_needle($real_needle_dir, "$needle_info->{name}.json"), $needle_info);
+        my $db_needle
+          = $needles_rs->find_needle($real_needle_dir, "$needle_info->{name}.json")
+          || $needles_rs->find_needle($needle_dir, "$needle_info->{name}.json")
+          || $needles_rs->search({filename => "$needle_info->{name}.json"})->first;
+        $self->populate_hash_with_needle_timestamps_and_urls($db_needle, $needle_info);
 
         # handle case when the needle has (for some reason) no tags
         if (!$tags) {
@@ -539,6 +542,25 @@ sub viewimg ($self) {
             };
             $primary_match = _calc_matches($info, $module_detail->{area});
             $append_needle_info->($needleinfo->{tags} => $info);
+        }
+        else {
+            my $db_needle
+              = $needles_rs->find_needle($real_needle_dir, "$needle.json")
+              || $needles_rs->find_needle($needle_dir, "$needle.json")
+              || $needles_rs->search({filename => "$needle.json"})->first;
+            my $info = {
+                name => $needle,
+                needledir => undef,
+                image => undef,
+                areas => [],
+                error => $module_detail->{error},
+                matches => [],
+                primary_match => 1,
+                selected => 1,
+                deleted => $db_needle ? 1 : 0,
+            };
+            $primary_match = _calc_matches($info, $module_detail->{area});
+            $append_needle_info->(($module_detail->{tags} // []) => $info);
         }
     }
 

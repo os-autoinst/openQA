@@ -53,8 +53,12 @@
                                             </td>
                                             <td>
                                                 %= $needle->{name}
+                                                % if ($needle->{deleted}) {
+                                                    <span class="badge bg-danger text-light ms-1">deleted</span>
+                                                % }
                                             </td>
                                             <td>
+                                                % if (!$needle->{deleted}) {
                                                 <i class="fa-solid fa-image trigger-diff"
                                                     title="View area-only diff"
                                                     data-diff="area-only-diff">
@@ -72,6 +76,7 @@
                                                         <div><span>Last seen:</span><span><%= popover_link $needle->{last_seen}, $needle->{last_seen_link} %></span></div>
                                                     </div>">
                                                 </i>
+                                                % }
                                             </td>
                                         </tr>
                                     % }
