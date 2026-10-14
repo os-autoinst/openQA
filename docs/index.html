@@ -3852,7 +3852,18 @@ information here and rather explain the overall workflow.</p>
 <p>In case the developer mode in not working on your instance, try to
 follow the <a href="#debugdevelmode">steps for debugging the developer
 mode under &#39;Pitfalls&#39;</a>.</p>
-<h4 data-number="3.3.22.1" id="workflow-for-creating-or-updating-needles"><span class="header-section-number">3.3.22.1</span> Workflow for creating or
+<h4 data-number="3.3.22.1" id="connecting-to-the-sut-via-vnc"><span class="header-section-number">3.3.22.1</span> Connecting to the SUT via
+VNC</h4>
+<p>While a test is paused, the developer mode shows how to connect to
+the SUT via VNC, e.g.
+<code>vncviewer &lt;host&gt;:&lt;port&gt; -Shared</code>. The address is
+derived from the <code>WORKER_HOSTNAME</code> of the worker running the
+test. If this address is not reachable from your machine, the
+administrator of the worker can set
+<code>DEVELOPER_CONNECTION_HINT</code> in the <a href="#worker-configuration">worker configuration</a>. The configured
+text replaces the default VNC notice and is shown as plain text, e.g. an
+SSH tunnel command.</p>
+<h4 data-number="3.3.22.2" id="workflow-for-creating-or-updating-needles"><span class="header-section-number">3.3.22.2</span> Workflow for creating or
 updating needles</h4>
 <ol type="1">
 <li>In case a new needles should be created, add the corresponding
@@ -7683,7 +7694,12 @@ ports 20013, 20023, … and 20103.</li>
 </ol></li>
 <li><p>It can also help to look at the <a href="images/architecture.svg">architecture diagram</a> which shows
 which component needs access to which other components and the ports
-used by default. <a id="networking"></a></p></li>
+used by default.</p></li>
+<li><p>If the VNC instructions shown in the developer mode are not
+reachable from your machine, e.g. because the SUT runs behind a jump
+host, set <code>DEVELOPER_CONNECTION_HINT</code> in <a href="#worker-configuration">the worker configuration</a> to describe
+how to connect. See <a href="#connecting-to-the-sut-via-vnc">connecting
+to the SUT via VNC</a>. <a id="networking"></a></p></li>
 </ol>
 <h1 data-number="8" id="networking"><span class="header-section-number">8</span> Networking</h1>
 <p>For tests using the QEMU backend the networking type used is
