@@ -697,6 +697,10 @@ sub conclude_upload_if_ongoing ($self, $result = {}) {
 }
 
 sub _upload_results ($self, $callback) {
+    # avoid concurrent upload chains; the deferred call removes the timer set by the ongoing one
+    return $self->once(uploading_results_concluded => sub (@) { $self->_upload_results($callback) })
+      if $self->{_is_uploading_results};
+
     # ensure an ongoing timer is cancelled in case upload_results has been called manually
     if (my $upload_results_timer = delete $self->{_upload_results_timer}) {
         Mojo::IOLoop->remove($upload_results_timer);
