@@ -144,6 +144,20 @@ subtest 'developer connection hint' => sub {
     is $worker->developer_connection_hint, undef, 'developer_connection_hint returns undef when whitespace only';
     $worker->set_property(DEVELOPER_CONNECTION_HINT => $hint);
     is $worker->developer_connection_hint, $hint, 'developer_connection_hint returns configured hint';
+    $worker->set_property(DEVELOPER_CONNECTION_HINT => 'ssh -L %PORT%:sut.example.com:%PORT% jump.example.com');
+    is $worker->developer_connection_hint, 'ssh -L 5991:sut.example.com:5991 jump.example.com',
+      'developer_connection_hint expands %PORT%';
+    $worker->set_property(DEVELOPER_CONNECTION_HINT => 'ssh -L %port%:sut.example.com:%vnc_port% jump.example.com');
+    is $worker->developer_connection_hint, 'ssh -L 5991:sut.example.com:5991 jump.example.com',
+      'developer_connection_hint expands lowercase %port% and %vnc_port%';
+    $worker->set_property(DEVELOPER_CONNECTION_HINT =>
+          'vncviewer %HOST%:%PORT% instance %INSTANCE% arg %VNC_ARG% host %WORKER_HOSTNAME%');
+    is $worker->developer_connection_hint,
+      'vncviewer remotehost.foo.bar:5991 instance 1 arg remotehost.foo.bar:5991 host remotehost.foo.bar',
+      'developer_connection_hint expands %HOST%, %INSTANCE%, %VNC_ARG%, and %WORKER_HOSTNAME%';
+    $worker->set_property(DEVELOPER_CONNECTION_HINT => 'percent 50% unchanged %UNKNOWN%');
+    is $worker->developer_connection_hint, 'percent 50% unchanged %UNKNOWN%',
+      'developer_connection_hint leaves unknown variables and single percent signs intact';
     $worker->delete_properties(['DEVELOPER_CONNECTION_HINT']);
 };
 
