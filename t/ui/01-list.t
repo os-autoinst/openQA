@@ -460,6 +460,7 @@ subtest 'filter-finished' => sub {
     $driver->find_element('#finished_jobs_result_filter_chosen .search-choice-close', 'css')->click();
     # enable filter via query parameter, this time disable relevantfilter
     $driver->get('/tests?resultfilter=Failed&foo=bar&resultfilter=Softfailed');
+    wait_for_ajax_and_animations(msg => 'tables loaded after reloading page with disabled relevantfilter');
     $driver->find_element_by_id('relevantfilter')->click();
     wait_for_ajax_and_animations();
     @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
