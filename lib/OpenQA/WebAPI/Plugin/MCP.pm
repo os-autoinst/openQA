@@ -10,6 +10,7 @@ use Mojo::Loader qw(data_section);
 use Mojo::File qw(path);
 
 sub register ($self, $app, $config) {
+    my $mode = $config->{mode} // 'read-only';
     my $mcp = MCP::Server->new;
     $mcp->name('openQA');
     $mcp->version('1.0.0');
@@ -78,8 +79,22 @@ sub register ($self, $app, $config) {
         code => \&tool_openqa_get_log_file
     );
 
+    my %transport = (auth => sub ($c) { _auth_scopes($c, $mode) });
+    $transport{origins} = [split ' ', $config->{origins}] if $config->{origins};
     my $mcp_auth = $app->routes->under('/')->to('Auth#auth')->name('mcp_ensure_user');
-    $mcp_auth->any('/mcp' => $mcp->to_action)->name('mcp');
+    $mcp_auth->any('/mcp' => $mcp->to_action(\%transport))->name('mcp');
+}
+
+# openQA roles are the authorization basis, so scopes are derived from them
+# instead of being negotiated separately
+sub _auth_scopes ($c, $mode) {
+    my $user = $c->stash->{current_user}{user};
+    my @scopes = ('mcp:read');
+    if ($mode eq 'read-write') {
+        push @scopes, 'mcp:write' if $user->is_operator;
+        push @scopes, 'mcp:admin' if $user->is_admin;
+    }
+    return {scopes => \@scopes, principal => $user->username};
 }
 
 sub tool_openqa_get_info ($tool, $args) {

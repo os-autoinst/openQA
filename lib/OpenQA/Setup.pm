@@ -135,6 +135,7 @@ sub default_config () {
             profiling_enabled => 0,
             monitoring_enabled => 0,
             mcp_enabled => 'no',
+            mcp_origins => '',
             plugins => undef,
             hide_asset_types => 'repo',
             file_security_policy => 'download-prompt',
@@ -544,7 +545,7 @@ sub load_plugins ($server, $monitoring_root_route = undef, %options) {
     $server->plugin($_) for qw(Helpers MIMETypes CSRF REST Gru YAML);
     $server->plugin('AuditLog') if $server->config->{global}{audit_enabled};
     my $mcp_mode = $server->config->{global}{mcp_enabled};
-    $server->plugin(MCP => {mode => $mcp_mode}) if $mcp_mode ne 'no';
+    $server->plugin(MCP => {mode => $mcp_mode, origins => $server->config->{global}{mcp_origins}}) if $mcp_mode ne 'no';
     # Load arbitrary plugins defined in config: 'plugins' in section
     # '[global]' can be a space-separated list of plugins to load, by
     # module name under OpenQA::WebAPI::Plugin::

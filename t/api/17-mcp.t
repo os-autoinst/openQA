@@ -16,6 +16,7 @@ use OpenQA::Test::Case;
 use OpenQA::Test::Client 'client';
 use MCP::Client;
 use MCP;
+use OpenQA::WebAPI::Plugin::MCP;
 
 OpenQA::Test::Case->new(config_directory => "$FindBin::Bin/../data/17-mcp")
   ->init_data(fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl');
@@ -30,6 +31,28 @@ subtest 'Authentication' => sub {
 
     $t->ua->on(start => sub ($ua, $tx) { $tx->req->headers->authorization("Bearer $PERSONAL_ACCESS_TOKEN") });
     $t->get_ok('/mcp')->status_is(405);
+};
+
+subtest 'Origin header check' => sub {
+    $t->get_ok('/mcp', {Origin => 'http://evil.example.com'})->status_is(403)->json_is({error => 'Origin not allowed'});
+    $t->get_ok('/mcp', {Origin => 'http://openqa.example.com'})->status_is(405);
+};
+
+subtest 'Scopes derived from user role' => sub {
+    my $users = $t->app->schema->resultset('Users');
+    my $c = $t->app->build_controller;
+    for my $case (
+        {mode => 'read-only', username => 'percival', scopes => ['mcp:read']},
+        {mode => 'read-write', username => 'https://openid.camelot.uk/lancelot', scopes => ['mcp:read']},
+        {mode => 'read-write', username => 'percival', scopes => ['mcp:read', 'mcp:write']},
+        {mode => 'read-write', username => 'arthur', scopes => ['mcp:read', 'mcp:write', 'mcp:admin']},
+      )
+    {
+        $c->stash(current_user => {user => $users->find({username => $case->{username}})});
+        is_deeply OpenQA::WebAPI::Plugin::MCP::_auth_scopes($c, $case->{mode}),
+          {scopes => $case->{scopes}, principal => $case->{username}},
+          "$case->{username} gets @{[join ' ', @{$case->{scopes}}]} in $case->{mode} mode";
+    }
 };
 
 subtest 'Start session' => sub {
