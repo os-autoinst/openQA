@@ -403,6 +403,7 @@ sub read_config ($app) {
     _validate_worker_reservation_config($app);
     _validate_worker_timeout($app);
     _validate_security_policy($app, $global_config);
+    _validate_mcp_mode($app, $global_config);
     _set_default_storage_durations($_) for $config->{default_group_limits}, $config->{no_group_limits};
     return $config;
 }
@@ -441,6 +442,13 @@ sub _validate_security_policy ($app, $config) {
         $config->{file_security_policy} = 'download-prompt';
         $app->log->warn('Invalid file_security_policy specified, defaulting to "download-prompt"');
     }
+}
+
+sub _validate_mcp_mode ($app, $config) {
+    my $mode = ($config->{mcp_enabled} // 'no') =~ s/\s//gr;
+    return $config->{mcp_enabled} = $mode if $mode =~ m/^(no|read-only|read-write)$/;
+    $config->{mcp_enabled} = 'no';
+    $app->log->warn('Invalid mcp_enabled specified, defaulting to "no"');
 }
 
 sub _max_limit (@limits) {
@@ -535,7 +543,8 @@ sub load_plugins ($server, $monitoring_root_route = undef, %options) {
     push @{$server->plugins->namespaces}, 'OpenQA::WebAPI::Plugin';
     $server->plugin($_) for qw(Helpers MIMETypes CSRF REST Gru YAML);
     $server->plugin('AuditLog') if $server->config->{global}{audit_enabled};
-    $server->plugin('MCP') if $server->config->{global}{mcp_enabled} eq 'read-only';
+    my $mcp_mode = $server->config->{global}{mcp_enabled};
+    $server->plugin(MCP => {mode => $mcp_mode}) if $mcp_mode ne 'no';
     # Load arbitrary plugins defined in config: 'plugins' in section
     # '[global]' can be a space-separated list of plugins to load, by
     # module name under OpenQA::WebAPI::Plugin::

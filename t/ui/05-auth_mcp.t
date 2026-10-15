@@ -38,4 +38,12 @@ subtest 'MCP enabled' => sub {
     like $actions, qr/API help ${mcp_help}Changelog Logout/, 'MCP entry is shown for operator when MCP is enabled';
 };
 
+subtest 'MCP write mode enabled' => sub {
+    $t->app->config->{global}{mcp_enabled} = 'read-write';
+    my $mcp_help = 'MCP help ';
+    $t->get_ok('/tests')->status_is(200);
+    my $actions = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#user-action')->all_text);
+    like $actions, qr/API help ${mcp_help}Changelog Logout/, 'MCP entry is shown for operator in write mode';
+};
+
 done_testing();
