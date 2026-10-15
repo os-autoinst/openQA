@@ -71,10 +71,11 @@ subtest 'Start session' => sub {
 
 subtest 'List tools' => sub {
     my $result = $client->list_tools;
-    is scalar @{$result->{tools}}, 3, 'three tools available';
-    is $result->{tools}[0]{name}, 'openqa_get_info', 'right tool name';
-    is $result->{tools}[1]{name}, 'openqa_get_job_info', 'right tool name';
-    is $result->{tools}[2]{name}, 'openqa_get_log_file', 'right tool name';
+    is_deeply [sort map { $_->{name} } @{$result->{tools}}], [
+        qw(openqa_get_comments openqa_get_info openqa_get_job_info openqa_get_log_file openqa_job_group_overview
+          openqa_list_api_routes openqa_list_job_groups openqa_list_jobs openqa_list_workers openqa_search)
+      ],
+      'read-only tools registered when mode is read-only';
 };
 
 subtest 'openqa_get_info tool' => sub {
@@ -233,4 +234,59 @@ subtest 'In-process API calls' => sub {
         is $res->{json}{error}, 'Job does not exist', 'error message from the controller';
     };
 };
+subtest 'openqa_list_jobs tool' => sub {
+    my $result = $client->call_tool('openqa_list_jobs', {limit => 5, state => 'done'});
+    ok !$result->{isError}, 'not an error';
+    my @jobs = @{$result->{structuredContent}{jobs}};
+    ok @jobs, 'jobs returned';
+    is scalar(grep { $_->{state} ne 'done' } @jobs), 0, 'state filter applied';
+};
+
+subtest 'openqa_list_job_groups tool' => sub {
+    my $result = $client->call_tool('openqa_list_job_groups');
+    ok !$result->{isError}, 'not an error';
+    is_deeply [sort map { $_->{name} } @{$result->{structuredContent}}], ['opensuse', 'opensuse test'],
+      'fixture job groups listed';
+};
+
+subtest 'openqa_job_group_overview tool' => sub {
+    my $result = $client->call_tool('openqa_job_group_overview', {group_id => 1001});
+    ok !$result->{isError}, 'not an error';
+    is $result->{structuredContent}{group}{id}, 1001, 'group reported in build results';
+    ok exists $result->{structuredContent}{build_results}, 'build results included';
+};
+
+subtest 'openqa_list_workers tool' => sub {
+    my $result = $client->call_tool('openqa_list_workers');
+    ok !$result->{isError}, 'not an error';
+    my @workers = @{$result->{structuredContent}};
+    is scalar @workers, 2, 'both fixture workers listed';
+    is $workers[0]{status}, 'dead', 'offline worker reported as dead';
+};
+
+subtest 'openqa_get_comments tool' => sub {
+    my $result = $client->call_tool('openqa_get_comments', {job_id => 99764});
+    ok !$result->{isError}, 'not an error';
+    like $result->{structuredContent}[0]{text}, qr/Just a test comment/, 'comment of job 99764 listed';
+};
+
+subtest 'openqa_search tool' => sub {
+    my $result = $client->call_tool('openqa_search', {q => 'minimalx'});
+    ok !$result->{isError}, 'not an error';
+    ok exists $result->{structuredContent}{data}, 'search data included';
+};
+
+subtest 'openqa_list_api_routes tool' => sub {
+    my $result = $client->call_tool('openqa_list_api_routes');
+    ok !$result->{isError}, 'not an error';
+    ok scalar grep({ $_->{path} eq '/api/v1/jobs' } @{$result->{structuredContent}{routes}}), 'jobs route listed';
+};
+
+subtest 'result size limit' => sub {
+    local $t->app->config->{misc_limits}{mcp_max_result_size} = 10;
+    my $result = $client->call_tool('openqa_list_jobs', {limit => 5});
+    ok $result->{isError}, 'is an error';
+    like $result->{content}[0]{text}, qr/Result too large to be transmitted via MCP/, 'size limit reported';
+};
+
 done_testing();

@@ -11,6 +11,155 @@ use Mojo::File qw(path);
 use Mojo::Parameters;
 use Mojo::Transaction::HTTP;
 use Feature::Compat::Try;
+use Mojo::JSON 'encode_json';
+
+my %READ_TOOLS = (
+    openqa_list_jobs => {
+        title => 'List openQA Jobs',
+        description => 'List jobs filtered by group, state, result, test name, distri, version, build, arch, flavor '
+          . 'or machine. Use latest=1 for the most recent job per test setting combination and scope=relevant for '
+          . 'pending, non-obsoleted jobs.',
+        properties => {
+            groupid => {type => 'integer', minimum => 1, description => 'Job group ID to filter by'},
+            state => {
+                type => 'string',
+                description => 'Job state, e.g. scheduled, running, done; comma-separated for multiple'
+            },
+            result =>
+              {type => 'string', description => 'Job result, e.g. passed, failed; comma-separated for multiple'},
+            test => {type => 'string', description => 'TEST setting to filter by'},
+            distri => {type => 'string'},
+            version => {type => 'string'},
+            build => {type => 'string'},
+            arch => {type => 'string'},
+            flavor => {type => 'string'},
+            machine => {type => 'string'},
+            latest => {type => 'boolean', description => 'Return only the latest job per test setting combination'},
+            scope => {
+                type => 'string',
+                enum => ['current', 'relevant'],
+                description => 'current excludes clones, relevant includes only pending jobs'
+            },
+            limit => {
+                type => 'integer',
+                minimum => 1,
+                description => 'Maximum number of jobs, capped by the server configuration'
+            },
+            offset => {type => 'integer', minimum => 0},
+        },
+        output_schema => {type => 'object'},
+        call => sub ($tool, $args) {
+            _read_call(
+                $tool,
+                controller => 'Job',
+                action => 'list',
+                method => 'GET',
+                path => '/api/v1/jobs',
+                params => _params($args));
+        },
+    },
+    openqa_list_job_groups => {
+        title => 'List openQA Job Groups',
+        description =>
+          'List all job groups with their properties, or one group given its ID. Set parent=1 to list parent groups.',
+        properties => {
+            group_id => {type => 'integer', minimum => 1, description => 'Limit the result to one group'},
+            parent => {type => 'boolean', description => 'List parent groups instead of job groups'},
+        },
+        output_schema => {type => 'array', items => {type => 'object'}},
+        call => sub ($tool, $args) {
+            my $parent = delete $args->{parent};
+            _read_call(
+                $tool,
+                controller => 'JobGroup',
+                action => 'list',
+                method => 'GET',
+                path => ($parent ? '/api/v1/parent_groups' : '/api/v1/job_groups'),
+                params => _params($args));
+        },
+    },
+    openqa_job_group_overview => {
+        title => 'openQA Job Group Build Results',
+        description =>
+          'Build results of a job group: the latest builds with their job counts, like the group overview page.',
+        properties => {
+            group_id => {type => 'integer', minimum => 1, description => 'Job group ID'},
+            limit_builds => {type => 'integer', minimum => 1, description => 'Number of builds to include, default 10'},
+            time_limit_days => {type => 'number', description => 'Include only builds of the last N days'},
+            only_tagged => {type => 'boolean'},
+            show_tags => {type => 'boolean'},
+        },
+        required => ['group_id'],
+        output_schema => {type => 'object'},
+        call => sub ($tool, $args) {
+            my $group_id = delete $args->{group_id};
+            _read_call(
+                $tool,
+                controller => 'JobGroup',
+                action => 'build_results',
+                method => 'GET',
+                path => "/api/v1/job_groups/$group_id/build_results",
+                captures => {group_id => $group_id},
+                params => _params($args));
+        },
+    },
+    openqa_list_workers => {
+        title => 'List openQA Workers',
+        description =>
+          'List all workers with their status (idle, running, reserved, broken, dead), assigned job and reservation.',
+        properties => {},
+        output_schema => {type => 'array', items => {type => 'object'}},
+        call => sub ($tool, $args) {
+            _structured($tool, [map { $_->info } _get_schema($tool)->resultset('Workers')->all]);
+        },
+    },
+    openqa_get_comments => {
+        title => 'Get openQA Comments',
+        description => 'List comments of a job, a job group or a parent group.',
+        properties => {
+            job_id => {type => 'integer', minimum => 1},
+            group_id => {type => 'integer', minimum => 1},
+            parent_group_id => {type => 'integer', minimum => 1},
+            limit => {type => 'integer', minimum => 1},
+            render_markdown => {type => 'boolean'},
+        },
+        output_schema => {type => 'array', items => {type => 'object'}},
+        call => sub ($tool, $args) {
+            _read_call(
+                $tool,
+                controller => 'Comment',
+                action => 'list',
+                method => 'GET',
+                path => '/api/v1/comments',
+                params => _params($args));
+        },
+    },
+    openqa_search => {
+        title => 'Search openQA Tests',
+        description => 'Search for tests by keyword, e.g. a test name, distri, version or build.',
+        properties => {q => {type => 'string', minLength => 1, description => 'One or more keywords'}},
+        required => ['q'],
+        output_schema => {type => 'object'},
+        call => sub ($tool, $args) {
+            _read_call(
+                $tool,
+                controller => 'Search',
+                action => 'query',
+                method => 'GET',
+                path => '/api/v1/experimental/search',
+                params => {q => $args->{q}});
+        },
+    },
+    openqa_list_api_routes => {
+        title => 'List openQA API Routes',
+        description => 'List all REST API routes of this openQA instance.',
+        properties => {},
+        output_schema => {type => 'object'},
+        call => sub ($tool, $args) {
+            _read_call($tool, controller => 'Routes', action => 'list', method => 'GET', path => '/api/v1/routes');
+        },
+    },
+);
 
 sub register ($self, $app, $config) {
     my $mode = $config->{mode} // 'read-only';
@@ -81,6 +230,30 @@ sub register ($self, $app, $config) {
         },
         code => \&tool_openqa_get_log_file
     );
+
+    for my $name (sort keys %READ_TOOLS) {
+        my $def = $READ_TOOLS{$name};
+        $mcp->tool(
+            name => $name,
+            title => $def->{title},
+            description => $def->{description},
+            input_schema => {
+                type => 'object',
+                properties => $def->{properties},
+                ($def->{required} ? (required => $def->{required}) : ()),
+                additionalProperties => \0,
+            },
+            output_schema => $def->{output_schema},
+            annotations => {
+                title => $def->{title},
+                readOnlyHint => \1,
+                destructiveHint => \0,
+                idempotentHint => \1,
+                openWorldHint => \0,
+            },
+            code => $def->{call},
+        );
+    }
 
     my %transport = (auth => sub ($c) { _auth_scopes($c, $mode) });
     $transport{origins} = [split ' ', $config->{origins}] if $config->{origins};
@@ -173,13 +346,16 @@ sub _api_call ($tool, %args) {
     return {error => 'Insufficient role'} if $role eq 'operator' && !$user->is_operator;
 
     my $params = Mojo::Parameters->new;
-    $params->append($_, $args{params}{$_}) for keys %{$args{params}};
+    $params->append($_, $args{params}{$_}) for keys %{$args{params} // {}};
     my $tx = Mojo::Transaction::HTTP->new(connection => $c->tx->connection);
     my $class = "OpenQA::WebAPI::Controller::API::V1::$args{controller}";
     my $ctrl = $class->new(
         app => $c->app,
         tx => $tx,
-        stash => {current_user => {user => $user}, %{$args{stash}}});
+        stash => {
+            current_user => {user => $user},
+            'mojo.captures' => {%{$args{captures} // {}}},
+            %{$args{stash} // {}}});
     $ctrl->req->method($args{method});
     $ctrl->req->headers->content_type('application/x-www-form-urlencoded');
     $ctrl->req->body($params->to_string);
@@ -190,6 +366,31 @@ sub _api_call ($tool, %args) {
     }
     catch ($e) { $result = {error => "$e"} };
     return $result;
+}
+
+# MCP arguments are JSON, controllers expect form parameters, so booleans become 1/0
+# and lists become comma-separated strings
+sub _params ($args) {
+    my %params;
+    for my $key (keys %$args) {
+        my $value = $args->{$key};
+        next unless defined $value;
+        $params{$key} = ref $value ? (ref $value eq 'ARRAY' ? join ',', @$value : ($value ? 1 : 0)) : $value;
+    }
+    return \%params;
+}
+
+sub _structured ($tool, $data) {
+    my $max = _get_controller($tool)->app->config->{misc_limits}{mcp_max_result_size};
+    return $tool->text_result('Result too large to be transmitted via MCP', 1) if length encode_json($data) > $max;
+    return $tool->structured_result($data);
+}
+
+sub _read_call ($tool, %args) {
+    my $res = _api_call($tool, %args, role => 'user');
+    return $tool->text_result($res->{error}, 1) if $res->{error};
+    return $tool->text_result($res->{json}{error} // 'Request failed', 1) if $res->{code} >= 400;
+    return _structured($tool, $res->{json});
 }
 
 sub _render_from_data_section ($template_name, $vars) {
