@@ -109,6 +109,10 @@ For an architecture overview the AI generated openQA deepwiki can provide a good
 about the complete project but without a guarantee for correctness:
 <https://deepwiki.com/os-autoinst/openQA>
 
+The surrounding tools, public instances, learning resources, and community
+channels are listed in the [Ecosystem guide](Ecosystem.md#ecosystem), which is
+also the place to add your own instance, tool, blog, or video.
+
 ## Technologies
 
 Most in openQA, from `os-autoinst` to the web frontend and from the tests to
