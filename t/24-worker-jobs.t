@@ -762,15 +762,26 @@ subtest 'Livelog' => sub {
         },
         {
             json => {
+                outstanding_files => 0,
+                outstanding_images => 0,
+                upload_up_to => undef,
+                upload_up_to_current_module => undef
+            },
+            path => '/liveviewhandler/api/v1/jobs/5/upload_progress'
+        },
+        {
+            json => {
+                status => {
+                    uploading => 1,
+                    worker_id => 1
+                }
+            },
+            path => 'jobs/5/status'
+        },
+        {
+            json => {
                 status => {
                     cmd_srv_url => $engine_url,
-                    log => {},
-                    serial_log => {},
-                    serial_terminal => {},
-                    serial_terminal_user => {
-                        'data' => '',
-                        'offset' => (length $user_console_text)
-                    },
                     test_execution_paused => 0,
                     worker_hostname => '127.0.0.1',
                     worker_id => 1
@@ -780,21 +791,24 @@ subtest 'Livelog' => sub {
         },
         {
             json => {
-                outstanding_files => 0,
-                outstanding_images => 0,
-                upload_up_to => undef,
-                upload_up_to_current_module => undef
+                status => {
+                    cmd_srv_url => $engine_url,
+                    result => {},
+                    test_execution_paused => 0,
+                    test_order => [],
+                    worker_hostname => '127.0.0.1',
+                    worker_id => 1
+                }
             },
-            path => '/liveviewhandler/api/v1/jobs/5/upload_progress'
+            path => 'jobs/5/status'
         },
-        usual_status_updates(job_id => 5),
         {
             json => undef,
             path => 'jobs/5/set_done',
             worker_id => 1,
         }
       ],
-      'expected REST-API calls happened'
+      'expected REST-API calls happened, uploads serialized by the re-entrancy guard'
       or always_explain $client->sent_messages;
     $client->sent_messages([]);
 
@@ -830,6 +844,89 @@ subtest 'Livelog' => sub {
         is $path, 'jobs/5/status', 'upload triggered' or always_explain $client->sent_messages;
         $client->sent_messages([]);
     };
+};
+
+subtest 'Avoiding concurrent result uploads' => sub {
+    my $client_mock = Test::MockModule->new('Test::FakeClient', no_auto => 1);
+    my @sent;
+    my @pending;
+    $client_mock->redefine(
+        send => sub ($self, $method, $path, %args) {
+            push @sent, $path;
+            push @pending, $args{callback} if $args{callback} && $args{callback} ne 'no';
+        });
+    my %timers;
+    my $next_timer_id = 1000;
+    $io_loop_mock->redefine(
+        timer => sub ($io, $delay, $cb) {
+            my $id = $next_timer_id++;
+            $timers{$id} = $cb;
+            return $id;
+        },
+        remove => sub ($io, $id) { delete $timers{$id} });
+    my $drain = sub {
+        Mojo::IOLoop->next_tick(sub { Mojo::IOLoop->stop });
+        Mojo::IOLoop->start;
+    };
+
+    subtest 'calling _upload_results while an upload is in flight defers it until the ongoing one concludes' => sub {
+        @sent = ();
+        @pending = ();
+        %timers = ();
+        my $job = OpenQA::Worker::Job->new($worker, $client, {id => 8, URL => $engine_url});
+        $job->{_engine} = {child => Test::FakeEngine->new};
+        $job->_upload_results(sub { });
+        is scalar(@pending), 1, 'ongoing upload posts jobs/8/status once and is in flight';
+        my $deferred_invoked = 0;
+        $job->_upload_results(sub { ++$deferred_invoked });
+        is scalar(@pending), 1, 'no second status post while an upload is in flight';
+        ok $job->is_uploading_results, 'job still considered uploading results';
+        shift(@pending)->({});
+        $drain->();
+        is scalar(@pending), 1, 'deferred upload posts status right after the ongoing one concluded';
+        is scalar(@sent), 2, 'status posts are serialized instead of concurrent';
+        shift(@pending)->({});
+        $drain->();
+        is $deferred_invoked, 1, 'callback of the deferred upload invoked after its upload concluded';
+        is scalar(keys %timers), 1, 'exactly one upload timer active after both uploads concluded';
+        ok defined $job->{_upload_results_timer}, 'job tracks the remaining upload timer';
+        (values %timers)[0]->();
+        is scalar(@pending), 1, 'remaining timer fires exactly one new upload';
+        is scalar(@sent), 3, 'timer-triggered upload posts status';
+        shift(@pending)->({});
+        $drain->();
+        is scalar(keys %timers), 1, 'still exactly one upload timer after the timer-triggered upload concluded';
+    };
+
+    subtest 'engine startup with livelog viewer registered before the backend runs posts status only once at a time' =>
+      sub {
+        @sent = ();
+        @pending = ();
+        %timers = ();
+        my $job = OpenQA::Worker::Job->new($worker, $client, {id => 9, URL => $engine_url});
+        $job->start_livelog;
+        is $job->livelog_viewers, 1, 'viewer registered before the backend runs';
+        is scalar(@pending), 0, 'no upload triggered while the backend is not running';
+        $job->{_engine} = {child => Test::FakeEngine->new};
+        Mojo::IOLoop->next_tick(
+            sub {
+                $job->_upload_results(sub { });
+            });
+        combined_like { $job->_add_livelog_viewers(0) } qr/Starting livelog/, 'livelog started with engine';
+        is scalar(@pending), 1, 'livelog start triggers one status post';
+        $drain->();
+        is scalar(@pending), 1, 'next_tick upload is deferred, so never two concurrent status posts';
+        is scalar(@sent), 1, 'only the livelog upload posted status so far';
+        shift(@pending)->({});
+        $drain->();
+        is scalar(@sent), 2, 'deferred upload posts status after the ongoing one concluded';
+        shift(@pending)->({});
+        $drain->();
+        is scalar(keys %timers), 1, 'exactly one upload timer remains after the startup scenario';
+      };
+
+    $client_mock->unmock('send');
+    $io_loop_mock->unmock('timer', 'remove');
 };
 
 subtest 'handling API failures' => sub {
@@ -1046,7 +1143,7 @@ subtest 'Job stopped while uploading' => sub {
 
     # assume the ongoing upload has concluded: this is supposed to continue stopping the job which is in turn
     # supposed to trigger the final upload
-    $job->emit(uploading_results_concluded => {});
+    $job->conclude_upload_if_ongoing;
 
     wait_until_job_status_ok($job, 'stopped');
     ok $final_result_upload_invoked, 'final result upload invoked';
