@@ -48,8 +48,7 @@ subtest 'error pages shown for OpenQA::WebAPI::Controller::Step' => sub {
     $t->get_ok("/tests/$existing_job/modules/installer_timezone/steps/1", {'X-Requested-With' => 'XMLHttpRequest'})
       ->status_is(200, 'step viewimg loads with needle present')
       ->content_like(qr/inst-timezone-text/, 'needle name is shown')
-      ->content_unlike(qr/<span class="badge bg-danger text-light ms-1">deleted<\/span>/,
-        'needle is not marked deleted')
+      ->content_unlike(qr/deleted/, 'needle is not marked deleted')
       ->content_like(qr/inst-timezone-text.*show-needle-info/s, 'needle info action icon is displayed');
 
     unlink $needle_path or die "Failed to remove needle: $!";
@@ -58,6 +57,8 @@ subtest 'error pages shown for OpenQA::WebAPI::Controller::Step' => sub {
       ->status_is(200, 'step viewimg loads with deleted needle')
       ->content_like(qr/inst-timezone-text/, 'needle name is shown')
       ->content_like(qr/<span class="badge bg-danger text-light ms-1">deleted<\/span>/, 'needle is marked deleted')
+      ->content_like(qr/id="current_needle_label">\s*[^<]*inst-timezone-text \(needle deleted\)/,
+        'deleted needle is marked in collapsed selector label')
       ->content_unlike(qr/inst-timezone-text.*show-needle-info/s, 'needle info action icon is hidden');
     $t->get_ok("/tests/$existing_job/modules/installer_timezone/steps/1/src")->status_is(200)
       ->content_type_is('text/html;charset=UTF-8');

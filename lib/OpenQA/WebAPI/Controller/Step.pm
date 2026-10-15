@@ -513,7 +513,10 @@ sub viewimg ($self) {
         }
 
         # ensure we have a label assigned
-        $needle_info->{label} //= $needle_info->{avg_similarity} . '%: ' . $needle_info->{name};
+        $needle_info->{label}
+          //= $needle_info->{avg_similarity} . '%: '
+          . $needle_info->{name}
+          . ($needle_info->{deleted} ? ' (needle deleted)' : '');
 
         # add the needle info to tags ...
         for my $tag (@$tags) {
