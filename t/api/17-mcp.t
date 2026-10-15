@@ -16,6 +16,8 @@ use OpenQA::Test::Case;
 use OpenQA::Test::Client 'client';
 use MCP::Client;
 use MCP;
+use MCP::Tool;
+use MCP::Server::Context;
 use OpenQA::WebAPI::Plugin::MCP;
 
 OpenQA::Test::Case->new(config_directory => "$FindBin::Bin/../data/17-mcp")
@@ -186,4 +188,49 @@ subtest 'openqa_get_log_file tool' => sub {
     };
 };
 
+
+subtest 'In-process API calls' => sub {
+    my $users = $t->app->schema->resultset('Users');
+    my $tool = MCP::Tool->new(name => 'openqa_set_job_priority', code => sub { 1 });
+    my $context = MCP::Server::Context->new(controller => $t->app->build_controller);
+    $tool->{context} = $context;
+    my $c = $context->controller;
+    my $call = sub ($username, $role, $job_id, $prio) {
+        $c->stash(current_user => {user => $users->find({username => $username})});
+        return OpenQA::WebAPI::Plugin::MCP::_api_call(
+            $tool,
+            controller => 'Job',
+            action => 'prio',
+            method => 'POST',
+            role => $role,
+            stash => {jobid => $job_id},
+            params => {prio => $prio});
+    };
+
+    subtest 'operator call reaches the controller' => sub {
+        my $res = $call->('percival', 'operator', 99938, 100);
+        is $res->{code}, 200, 'controller rendered 200';
+        is $t->app->schema->resultset('Jobs')->find(99938)->priority, 100, 'priority changed in the database';
+    };
+    subtest 'non-operator is rejected' => sub {
+        my $res = $call->('https://openid.camelot.uk/lancelot', 'operator', 99938, 50);
+        is $res->{error}, 'Insufficient role', 'non-operator rejected for operator role';
+        is $t->app->schema->resultset('Jobs')->find(99938)->priority, 100, 'priority unchanged';
+    };
+    subtest 'operator is rejected for admin role' => sub {
+        my $res = $call->('percival', 'admin', 99938, 50);
+        is $res->{error}, 'Insufficient role', 'operator rejected for admin role';
+        is $t->app->schema->resultset('Jobs')->find(99938)->priority, 100, 'priority unchanged';
+    };
+    subtest 'admin call reaches the controller' => sub {
+        my $res = $call->('arthur', 'admin', 99938, 200);
+        is $res->{code}, 200, 'admin accepted for admin role';
+        is $t->app->schema->resultset('Jobs')->find(99938)->priority, 200, 'priority changed by admin';
+    };
+    subtest 'missing job is reported as 404' => sub {
+        my $res = $call->('percival', 'operator', 999_999_999, 50);
+        is $res->{code}, 404, 'missing job renders 404';
+        is $res->{json}{error}, 'Job does not exist', 'error message from the controller';
+    };
+};
 done_testing();

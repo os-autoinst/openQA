@@ -8,6 +8,9 @@ use MCP::Server;
 use Mojo::Template;
 use Mojo::Loader qw(data_section);
 use Mojo::File qw(path);
+use Mojo::Parameters;
+use Mojo::Transaction::HTTP;
+use Feature::Compat::Try;
 
 sub register ($self, $app, $config) {
     my $mode = $config->{mode} // 'read-only';
@@ -159,6 +162,35 @@ sub tool_openqa_get_log_file ($tool, $args) {
 sub _get_controller ($tool) { $tool->context->{controller} }
 sub _get_schema ($tool) { _get_controller($tool)->schema }
 sub _get_user ($tool) { _get_controller($tool)->stash->{current_user}{user} }
+
+# API controllers are reused instead of reimplementing their logic, so that
+# validation, gru tasks, events and audit logging behave like a REST API call
+sub _api_call ($tool, %args) {
+    my $c = _get_controller($tool);
+    my $user = _get_user($tool);
+    my $role = $args{role} // 'operator';
+    return {error => 'Insufficient role'} if $role eq 'admin' && !$user->is_admin;
+    return {error => 'Insufficient role'} if $role eq 'operator' && !$user->is_operator;
+
+    my $params = Mojo::Parameters->new;
+    $params->append($_, $args{params}{$_}) for keys %{$args{params}};
+    my $tx = Mojo::Transaction::HTTP->new(connection => $c->tx->connection);
+    my $class = "OpenQA::WebAPI::Controller::API::V1::$args{controller}";
+    my $ctrl = $class->new(
+        app => $c->app,
+        tx => $tx,
+        stash => {current_user => {user => $user}, %{$args{stash}}});
+    $ctrl->req->method($args{method});
+    $ctrl->req->headers->content_type('application/x-www-form-urlencoded');
+    $ctrl->req->body($params->to_string);
+    my $result;
+    try {
+        $ctrl->can($args{action})->($ctrl);
+        $result = {code => $ctrl->res->code, json => $ctrl->res->json};
+    }
+    catch ($e) { $result = {error => "$e"} };
+    return $result;
+}
 
 sub _render_from_data_section ($template_name, $vars) {
     my $template = data_section(__PACKAGE__, $template_name);
