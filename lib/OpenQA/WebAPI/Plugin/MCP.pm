@@ -314,8 +314,71 @@ my %TOOLS = (
                 params => _params($args));
         },
     },
-
-
+    openqa_post_comment => {
+        title => 'Post openQA Comment',
+        mode => 'read-write',
+        scopes => ['mcp:read'],
+        annotations => {readOnlyHint => \0, destructiveHint => \0, idempotentHint => \0, openWorldHint => \0},
+        description => 'Add a comment to a job, a job group or a parent group. The REST API allows any logged-in '
+          . 'user, so this tool is available without operator rights.',
+        properties => {
+            job_id => {type => 'integer', minimum => 1},
+            group_id => {type => 'integer', minimum => 1},
+            parent_group_id => {type => 'integer', minimum => 1},
+            text => {type => 'string', minLength => 1, description => 'Bugrefs like bsc#1234 are turned into links'},
+        },
+        required => ['text'],
+        output_schema => {type => 'object'},
+        call => sub ($tool, $args) {
+            my $job_id = $args->{job_id};
+            _call(
+                $tool,
+                role => 'user',
+                controller => 'Comment',
+                action => 'create',
+                method => 'POST',
+                path => ($job_id ? "/api/v1/jobs/$job_id/comments" : '/api/v1/comments'),
+                params => _params($args));
+        },
+    },
+    openqa_schedule_iso => {
+        title => 'Schedule openQA ISO',
+        mode => 'read-write',
+        scopes => ['mcp:write'],
+        annotations => {readOnlyHint => \0, destructiveHint => \0, idempotentHint => \0, openWorldHint => \1},
+        description => 'Schedule an ISO build, i.e. create the jobs defined by the job templates of its group. '
+          . 'DISTRI, VERSION, FLAVOR and ARCH are mandatory. Scheduling runs asynchronously by default.',
+        properties => {
+            settings => {
+                type => 'object',
+                description =>
+                  'Parameters of the scheduled product, e.g. DISTRI, VERSION, FLAVOR, ARCH, BUILD, ISO, REPO',
+                additionalProperties => {type => 'string'},
+            },
+            scheduled_product_clone_id => {
+                type => 'integer',
+                minimum => 1,
+                description => 'Reuse the settings of a previous scheduled product'
+            },
+            async => {type => 'boolean', description => 'Schedule as a Minion job, which is the default'},
+        },
+        required => ['settings'],
+        output_schema => {type => 'object'},
+        call => sub ($tool, $args) {
+            my $params = _params(delete $args->{settings});
+            push @$params, async => 1 unless delete $args->{async};
+            push @$params, _params($args);
+            _call(
+                $tool,
+                role => 'operator',
+                controller => 'Iso',
+                action => 'create',
+                method => 'POST',
+                path => '/api/v1/isos',
+                params => $params
+            );
+        },
+    },
 );
 
 sub register ($self, $app, $config) {

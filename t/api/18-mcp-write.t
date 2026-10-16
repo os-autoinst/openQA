@@ -90,6 +90,37 @@ subtest 'Missing job is reported' => sub {
     like $result->{content}[0]{text}, qr/Job does not exist/, 'controller error message forwarded';
 };
 
+subtest 'openqa_post_comment tool' => sub {
+    my $result = $client->call_tool('openqa_post_comment', {job_id => 99764, text => 'triage: known flake'});
+    ok !$result->{isError}, 'not an error';
+    ok $result->{structuredContent}{id}, 'comment id reported';
+    is audit('comment_create'), 1, 'comment recorded in the audit log';
+};
+
+subtest 'openqa_schedule_iso tool' => sub {
+    my $result = $client->call_tool(
+        'openqa_schedule_iso',
+        {
+            settings => {
+                DISTRI => 'opensuse',
+                VERSION => 'Factory',
+                FLAVOR => 'DVD',
+                ARCH => 'x86_64',
+                BUILD => '0042',
+                ISO => 'Factory-DVD-x86_64-Build0042.iso',
+                REPO => 'http://download.opensuse.org'
+            }});
+    ok !$result->{isError}, 'not an error';
+    ok $result->{structuredContent}{scheduled_product_id}, 'scheduled product created';
+    is audit('iso_create'), 1, 'scheduling recorded in the audit log';
+};
+
+subtest 'ISO scheduling requires operator' => sub {
+    auth($USER_TOKEN);
+    dies_ok { $client->call_tool('openqa_schedule_iso', {settings => {DISTRI => 'opensuse'}}) }
+    'call refused for a user without operator rights';
+};
+
 subtest 'Admin role required for admin tools' => sub {
     auth($OPERATOR_TOKEN);
     my $result = $client->call_tool('openqa_set_job_priority', {job_id => 99938, prio => 3});
