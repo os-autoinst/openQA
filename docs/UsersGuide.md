@@ -1222,8 +1222,11 @@ navigates to the joint host administration view
 
 openQA includes a _client_ script which - depending on the distribution - is
 packaged independently to allow interfacing with an existing openQA instance
-without needing to install openQA itself. Call `openqa-cli --help` for help. The sub-commands provide further help, e.g. `openqa-cli api --help` contains
-a lot of examples.
+without needing to install openQA itself. Call `openqa-cli --help` or
+`man openqa-cli` for help, or view the [online
+manpage](https://manpages.opensuse.org/Tumbleweed/openQA-client/openqa-cli.1).
+The sub-commands provide further help, e.g. `openqa-cli api --help` contains a
+lot of examples.
 
 Shell completion for `bash` and `zsh` is available via the
 `openqa-client-bash-completion` and `openqa-client-zsh-completion` packages.

@@ -42,10 +42,11 @@ will automatically get the correct version prefix applied (such as `/api/v1`), a
 
 The `api` subcommand is not the only one available and more will be added over
 time. To get a complete list of all currently available subcommands you can use
-the `--help` option.
+the `--help` option or `man`.
 
 ```sh
 openqa-cli --help
+man openqa-cli
 ```
 
 And each subcommand also contains descriptions for all its available options, as
@@ -54,6 +55,9 @@ well as many common usage examples.
 ```sh
 openqa-cli api --help
 ```
+
+See also the [online
+manpage](https://manpages.opensuse.org/Tumbleweed/openQA-client/openqa-cli.1).
 
 ## Authentication
 
