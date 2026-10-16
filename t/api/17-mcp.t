@@ -205,7 +205,7 @@ subtest 'In-process API calls' => sub {
             method => 'POST',
             role => $role,
             stash => {jobid => $job_id},
-            params => {prio => $prio});
+            params => [prio => $prio]);
     };
 
     subtest 'operator call reaches the controller' => sub {
@@ -287,6 +287,21 @@ subtest 'result size limit' => sub {
     my $result = $client->call_tool('openqa_list_jobs', {limit => 5});
     ok $result->{isError}, 'is an error';
     like $result->{content}[0]{text}, qr/Result too large to be transmitted via MCP/, 'size limit reported';
+};
+
+subtest 'Server instructions, resources and prompts' => sub {
+    like $client->discover->{instructions}, qr/mcp_enabled=read-write/, 'instructions describe the tool set';
+    is_deeply [map { $_->{uri} } @{$client->list_resources->{resources}}],
+      ['openqa://jobs/recent', 'openqa://job-groups', 'openqa://workers'], 'resources listed';
+    like $client->read_resource('openqa://job-groups')->{contents}[0]{text}, qr/opensuse test/,
+      'job group resource returns the groups';
+    is_deeply [map { $_->{name} } @{$client->list_prompts->{prompts}}], [qw(triage_job triage_build)], 'prompts listed';
+    like $client->get_prompt('triage_job', {job_id => 99938})->{messages}[0]{content}{text},
+      qr/Triage openQA job 99938 \(.*state done, result failed\)/, 'job triage prompt built';
+    like $client->get_prompt('triage_build', {group_id => 1001, build => '0048'})->{messages}[0]{content}{text},
+      qr/Summarise build 0048 of job group 1001/, 'build triage prompt built';
+    like $client->get_prompt('triage_build', {group_id => 1001, build => '42'})->{messages}[0]{content}{text},
+      qr/not found/, 'missing build reported';
 };
 
 done_testing();

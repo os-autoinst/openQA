@@ -11,6 +11,7 @@ use Mojo::File qw(path);
 use Mojo::Parameters;
 use Mojo::Transaction::HTTP;
 use Feature::Compat::Try;
+use List::Util 'first';
 use Mojo::JSON 'encode_json';
 
 my %TOOLS = (
@@ -389,6 +390,91 @@ my %TOOLS = (
     },
 );
 
+my @RESOURCES = (
+    {
+        name => 'openqa_recent_jobs',
+        uri => 'openqa://jobs/recent',
+        title => 'Recent openQA Jobs',
+        description => 'The 20 most recent jobs with state, result and job group',
+        code => sub ($res) {
+            _resource_json(
+                $res,
+                controller => 'Job',
+                action => 'list',
+                method => 'GET',
+                path => '/api/v1/jobs',
+                params => [limit => 20]);
+        },
+    },
+    {
+        name => 'openqa_job_groups',
+        uri => 'openqa://job-groups',
+        title => 'openQA Job Groups',
+        description => 'All job groups with their properties',
+        code => sub ($res) {
+            _resource_json(
+                $res,
+                controller => 'JobGroup',
+                action => 'list',
+                method => 'GET',
+                path => '/api/v1/job_groups'
+            );
+        },
+    },
+    {
+        name => 'openqa_workers',
+        uri => 'openqa://workers',
+        title => 'openQA Workers',
+        description => 'All workers with their status, assigned job and reservation',
+        code => sub ($res) {
+            $res->text_resource(encode_json([map { $_->info } _get_schema($res)->resultset('Workers')->all]));
+        },
+    },
+);
+
+my @PROMPTS = (
+    {
+        name => 'triage_job',
+        description => 'Analyse why an openQA job failed and how to triage it',
+        arguments => [{name => 'job_id', required => \1, description => 'Job ID to triage'}],
+        code => sub ($prompt, $args) {
+            my $job = _get_schema($prompt)->resultset('Jobs')->find($args->{job_id});
+            return $prompt->text_prompt("Job $args->{job_id} not found") unless $job;
+            my $summary = sprintf 'Triage openQA job %d (%s, state %s, result %s).',
+              $args->{job_id}, $job->settings->{TEST} // 'unknown', $job->state, $job->result;
+            return $prompt->text_prompt($summary . "\n"
+                  . 'Read its comments with openqa_get_comments, its autoinst-log.txt with openqa_get_log_file and '
+                  . 'its details with openqa_get_job_info. Report the failure reason, whether it is a known '
+                  . 'infrastructure or packaging problem, and which action to take next.');
+        },
+    },
+    {
+        name => 'triage_build',
+        description => 'Summarise the job results of an openQA build in a job group',
+        arguments => [
+            {name => 'group_id', required => \1, description => 'Job group ID'},
+            {name => 'build', required => \1, description => 'Build version to look at'},
+        ],
+        code => sub ($prompt, $args) {
+            my $res = _api_call(
+                $prompt,
+                role => 'user',
+                controller => 'JobGroup',
+                action => 'build_results',
+                method => 'GET',
+                path => "/api/v1/job_groups/$args->{group_id}/build_results",
+                captures => {group_id => $args->{group_id}});
+            return $prompt->text_prompt($res->{error}) if $res->{error};
+            my $build = first { $_->{build} eq $args->{build} } @{$res->{json}{build_results}};
+            return $prompt->text_prompt("Build $args->{build} not found in job group $args->{group_id}") unless $build;
+            return $prompt->text_prompt(
+                    "Summarise build $args->{build} of job group $args->{group_id} with the job counts below, name the "
+                  . 'tests that failed most often and suggest which jobs to restart.
+' . encode_json($build));
+        },
+    },
+);
+
 sub register ($self, $app, $config) {
     my $mode = $config->{mode} // 'read-only';
     my $mcp = MCP::Server->new;
@@ -458,6 +544,18 @@ sub register ($self, $app, $config) {
         },
         code => \&tool_openqa_get_log_file
     );
+
+    $mcp->instructions(
+            'openQA provides read tools for jobs, job groups, workers, comments and search. On a server with '
+          . 'mcp_enabled=read-write it also provides write tools for jobs, comments and ISO scheduling, which '
+          . 'require operator rights. Destructive calls ask for confirmation before they are executed.');
+
+    for my $resource (@RESOURCES) {
+        $mcp->resource(%$resource);
+    }
+    for my $prompt (@PROMPTS) {
+        $mcp->prompt(%$prompt);
+    }
 
     for my $name (sort keys %TOOLS) {
         my $def = $TOOLS{$name};
@@ -630,6 +728,11 @@ sub _params ($args) {
         else { push @pairs, $key => $value }
     }
     return \@pairs;
+}
+
+sub _resource_json ($res, %args) {
+    my $out = _api_call($res, role => 'user', %args);
+    return $res->text_resource($out->{error} // encode_json($out->{json}));
 }
 
 sub _structured ($tool, $data) {
