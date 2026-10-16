@@ -116,9 +116,11 @@ subtest 'worker overview' => sub {
         foo => $broken_worker_id,
         online_test => $online_worker_id
     );
+    disable_timeout;
     is scalar @{$driver->find_elements(delete_button_selector($not_deletable{$_}), 'css')}, 0,
       "$_ does not show delete button"
       for sort keys %not_deletable;
+    enable_timeout;
     is $driver->find_element(delete_button_selector($offline_worker_id))->is_displayed(),
       1, 'offline worker show delete button';
 
@@ -130,16 +132,20 @@ subtest 'worker overview' => sub {
     like $driver->find_element('.popover')->get_text(), qr/Worker status\nJob: 99963/, 'on 99963';
 
     # close the popover and wait until it is actually gone (seems to have a very short animation)
+    disable_timeout;
     $driver->find_element('.dt-paging-button')->click();
     wait_until_element_gone('.popover');
+    enable_timeout;
 
     # check worker 2
     is $driver->find_element('tr#worker_2 .worker')->get_text(), 'remotehost:1', 'remotehost:1 shown';
     $driver->find_element('tr#worker_2 .help_popover')->click();
     wait_for_element(selector => '.popover', description => 'worker status popover is displayed');
     like $driver->find_element('.popover')->get_text(), qr/Worker status\nJob: 99961/, 'working 99961';
+    disable_timeout;
     $driver->find_element('.dt-paging-button')->click();
     wait_until_element_gone('.popover');
+    enable_timeout;
 
     # check worker 3 (broken one added in schema hook)
     is $driver->find_element("tr#worker_$broken_worker_id .worker")->get_text(), 'foo:42', 'foo shown';
