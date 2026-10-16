@@ -26,7 +26,6 @@ function setupHostPreviousJobs() {
 }
 
 function setupWorkerNeedles() {
-  setupHostPreviousJobs();
   const table = $('#previous_jobs').DataTable({
     ajax: $('#previous_jobs').data('ajax-url'),
     deferRender: true,
