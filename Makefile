@@ -247,6 +247,11 @@ node_modules: package-lock.json ## Build web-related dependencies (NPM, JS, CSS)
 	@command -v local-npm-registry >/dev/null 2>&1 || npm clean-install --no-audit --no-fund --ignore-scripts --omit=dev
 	@touch node_modules
 
+.PHONY: prepare-node-env
+prepare-node-env: ## Install Node.js/NPM development dependencies locally (e.g. prettier, eslint)
+	@command -v npm >/dev/null 2>&1 || (echo "Command 'npm' not found, can not install node dependencies. Install Node.js and npm first (e.g. with 'zypper in nodejs-default' or your system package manager)" && false)
+	npm clean-install --no-audit --no-fund --ignore-scripts
+
 .PHONY: test
 ifeq ($(CHECKSTYLE),0)
 checkstyle_tests =

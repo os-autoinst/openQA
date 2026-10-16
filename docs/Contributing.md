@@ -50,7 +50,8 @@ are the right way to contribute improvements and fixes.
   make tidy
   ```
   This ensures your Perl, JavaScript and Python code changes are consistent with
-  the style rules.
+  the style rules (see [JavaScript and CSS](Contributing.md#javascript-and-css)
+  for installing Node.js tooling like `prettier`).
 - All tests are passed. This is ensured by a CI system. You can also run local
   tests in your development environment to verify everything works as
   expected, see [Conducting tests](Contributing.md#conducting-tests))
@@ -714,6 +715,15 @@ third-party code to the root directory of the repository. Do **not** duplicate
 common/existing licenses; extend the `Files:`-section at the beginning of those
 files instead.
 
+Development tooling such as `prettier`, `eslint`, and `stylelint` is defined in
+`devDependencies` in `package.json`. While `make node_modules` only installs
+runtime dependencies (omitting development dependencies), you can install the
+development tooling locally with:
+
+```sh
+make prepare-node-env
+```
+
 ### Perl and other packages
 
 In openQA, there is a `dependencies.yaml` file including a list of
@@ -1120,9 +1130,33 @@ $ make test
 And if you need code examples, there are some plugins
 [included with openQA](https://github.com/os-autoinst/openQA/tree/master/lib/OpenQA/WebAPI/Plugin).
 
-## Checking for JavaScript problems
+## Checking and formatting JavaScript, CSS and Markdown
 
-One can use the tool `jshint` to check for problems within JavaScript code. It can be installed easily via `npm`.
+After installing development dependencies (see
+[JavaScript and CSS](Contributing.md#javascript-and-css)), you can check
+JavaScript, stylesheets, and Markdown documentation for errors and style
+violations:
+
+```sh
+npm run lint
+```
+
+Or run individual tools directly using `npx`:
+
+```sh
+npx prettier --check "docs/**/*.md"
+npx eslint "assets/javascripts/**/*.js"
+```
+
+To automatically fix formatting issues, run:
+
+```sh
+make tidy-js
+# or:
+npm run fix
+```
+
+One can also use the tool `jshint` to check for problems within JavaScript code. It can be installed easily via `npm`.
 
 ```sh
 npm install --no-save --ignore-scripts jshint
@@ -1143,6 +1177,10 @@ Profiling data is extensive. Remove it if you do not need it anymore and disable
 configuration again if not needed anymore.
 
 ## Making documentation changes
+
+Markdown documentation files in `docs/` are formatted and checked using `prettier`
+(see [JavaScript and CSS](Contributing.md#javascript-and-css)). You can check or
+format them using `npx prettier --check "docs/**/*.md"` or `make tidy-js`.
 
 After changing documentation, consider generating documentation locally to
 verify it is rendered correctly using `tools/generate-docs`. It is possible to

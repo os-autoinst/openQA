@@ -5,6 +5,8 @@ JavaScript (Bootstrap).
 
 ## Build & Test Commands
 
+- `make prepare-node-env`: Install Node.js/NPM development dependencies
+  locally (e.g. `prettier`, `eslint`).
 - `make tidy`: Must pass before committing (runs `perltidy` +
   `eslint/prettier`).
 - `make test-checkstyle`: Must pass before committing.
