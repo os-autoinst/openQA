@@ -62,7 +62,8 @@ subtest 'openqa_trigger_job tool' => sub {
 
 subtest 'openqa_restart_job tool' => sub {
     my $result
-      = $client->call_tool('openqa_restart_job', {job_id => 99938, settings => {BUILD => '0043'}, force => true});
+      = $client->call_tool('openqa_restart_job',
+        {job_id => 99938, settings => {BUILD => '0043'}, force => true, confirm => true});
     ok !$result->{isError}, 'not an error';
     my $clone = $result->{structuredContent}{result}[0]{99938};
     ok $clone, 'clone created';
@@ -70,18 +71,34 @@ subtest 'openqa_restart_job tool' => sub {
 };
 
 subtest 'openqa_duplicate_job tool' => sub {
-    my $result = $client->call_tool('openqa_duplicate_job', {job_id => 99936});
+    my $result = $client->call_tool('openqa_duplicate_job', {job_id => 99936, confirm => true});
     ok !$result->{isError}, 'not an error';
     my $clone = $result->{structuredContent}{id};
     ok $clone, 'duplicate id reported for the duplicated job';
     is $jobs->find($clone)->group_id, 1001, 'duplicate is in the job group of the original job';
 };
 
+subtest 'Destructive tools ask for confirmation' => sub {
+    my $result = $client->call_tool('openqa_cancel_job', {job_id => 99927, reason => 'not needed anymore'});
+    is $result->{resultType}, 'input_required', 'confirmation requested';
+    is $result->{inputRequests}{confirm}{type}, 'boolean', 'confirm input request declared';
+    is $jobs->find(99927)->state, 'scheduled', 'job untouched before confirmation';
+    $result = $client->call_tool(
+        'openqa_cancel_job',
+        {job_id => 99927, reason => 'not needed anymore'},
+        {
+            input_responses => {confirm => {action => 'accept', content => {ok => true}}},
+            request_state => $result->{requestState}});
+    is $result->{resultType}, 'complete', 'confirmed call executed';
+    is $jobs->find(99927)->state, 'cancelled', 'job cancelled after confirmation';
+    is audit('job_cancel'), 1, 'confirmation flow records one audit event';
+};
+
 subtest 'openqa_cancel_job tool' => sub {
-    my $result = $client->call_tool('openqa_cancel_job', {job_id => 99928, reason => 'not needed anymore'});
+    my $result
+      = $client->call_tool('openqa_cancel_job', {job_id => 99928, reason => 'not needed anymore', confirm => true});
     ok !$result->{isError}, 'not an error';
     is $jobs->find(99928)->state, 'cancelled', 'scheduled job cancelled';
-    is audit('job_cancel'), 1, 'cancellation recorded in the audit log';
 };
 
 subtest 'Missing job is reported' => sub {
@@ -101,6 +118,7 @@ subtest 'openqa_schedule_iso tool' => sub {
     my $result = $client->call_tool(
         'openqa_schedule_iso',
         {
+            confirm => true,
             settings => {
                 DISTRI => 'opensuse',
                 VERSION => 'Factory',

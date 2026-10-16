@@ -242,6 +242,7 @@ my %TOOLS = (
             force => {type => 'boolean', description => 'Restart despite missing assets'},
             skip_parents => {type => 'boolean'},
             skip_children => {type => 'boolean'},
+            confirm => {type => 'boolean', description => 'Proceed without asking for confirmation'},
         },
         required => ['job_id'],
         output_schema => {type => 'object'},
@@ -259,6 +260,7 @@ my %TOOLS = (
               {type => 'object', description => 'Job settings to override', additionalProperties => {type => 'string'}},
             comment => {type => 'string'},
             prio => {type => 'integer', minimum => 0},
+            confirm => {type => 'boolean', description => 'Proceed without asking for confirmation'},
         },
         required => ['job_id'],
         output_schema => {type => 'object'},
@@ -273,11 +275,14 @@ my %TOOLS = (
         properties => {
             job_id => {type => 'integer', minimum => 1},
             reason => {type => 'string', description => 'Reason recorded in the job comment'},
+            confirm => {type => 'boolean', description => 'Proceed without asking for confirmation'},
         },
         required => ['job_id'],
         output_schema => {type => 'object'},
         call => sub ($tool, $args) {
             my $job_id = delete $args->{job_id};
+            my $confirmed = _confirm($tool, $args, 'Cancel job ' . $job_id . '?');
+            return $confirmed if ref $confirmed;
             _call(
                 $tool,
                 role => 'operator',
@@ -361,10 +366,13 @@ my %TOOLS = (
                 description => 'Reuse the settings of a previous scheduled product'
             },
             async => {type => 'boolean', description => 'Schedule as a Minion job, which is the default'},
+            confirm => {type => 'boolean', description => 'Proceed without asking for confirmation'},
         },
         required => ['settings'],
         output_schema => {type => 'object'},
         call => sub ($tool, $args) {
+            my $confirmed = _confirm($tool, $args, 'Schedule jobs for this build?');
+            return $confirmed if ref $confirmed;
             my $params = _params(delete $args->{settings});
             push @$params, async => 1 unless delete $args->{async};
             push @$params, _params($args);
@@ -591,6 +599,8 @@ sub _api_call ($tool, %args) {
 sub _restart_call ($tool, $action, $args) {
     my $job_id = delete $args->{job_id};
     my $settings = delete $args->{settings};
+    my $confirmed = _confirm($tool, $args, 'Restart job ' . $job_id . '?');
+    return $confirmed if ref $confirmed;
     $args->{set} = [map { "$_=$settings->{$_}" } keys %$settings] if $settings;
     return _call(
         $tool,
@@ -601,6 +611,13 @@ sub _restart_call ($tool, $action, $args) {
         path => "/api/v1/jobs/$job_id/$action",
         captures => {jobid => $job_id},
         params => _params($args));
+}
+
+sub _confirm ($tool, $args, $question) {
+    return 1 if delete $args->{confirm};
+    my $responses = $tool->context->input_responses;
+    return 1 if $responses && ($responses->{confirm}{action} // '') eq 'accept';
+    return $tool->input_required({confirm => {type => 'boolean', title => 'Confirm', description => $question}});
 }
 
 sub _params ($args) {
