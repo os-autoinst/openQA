@@ -1,0 +1,4 @@
+# wait_serial expected: 'a1b2c3d4e5-\\d+-'
+
+# Result:
+warning: virtio-net throughput degraded, the serial console buffered the transcript and the openQA marker was emitted late on br1
