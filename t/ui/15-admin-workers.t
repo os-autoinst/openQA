@@ -310,5 +310,23 @@ subtest 'Worker host administration view and reservation scope' => sub {
     $w2->delete;
 };
 
+subtest 'idle host detection' => sub {
+    my $idle = $workers->create({id => 900, host => 'idle_host', instance => 1, t_seen => $online_timestamp});
+    disable_bootstrap_animations;
+    $driver->get('/admin/workers');
+    wait_for_ajax;
+    my @banners = @{$driver->find_elements('div.alert.alert-warning', 'css')};
+    ok scalar @banners, 'warning banner shown on workers overview';
+    like join(' ', map { $_->get_text() } @banners), qr/idle_host/, 'banner lists the idle host';
+    like join(' ', map { $_->get_text() } @banners), qr/never executed jobs/, 'banner reports never executed jobs';
+
+    $driver->get('/admin/worker_hosts/idle_host');
+    wait_for_ajax;
+    like $driver->find_element_by_xpath('//body')->get_text(),
+      qr/never executed any jobs/, 'host page warns about never executed jobs';
+
+    $idle->delete;
+};
+
 kill_driver();
 done_testing();

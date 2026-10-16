@@ -6,6 +6,20 @@
 % end
 
 <h2><%= title %></h2>
+% if (@$dormant_hosts) {
+<div class="alert alert-warning alert-dismissible fade show" role="alert">
+    <strong>Notice:</strong> The following worker hosts have been online but dormant (0 jobs executed) for over 14 days. Please verify if this hardware can be powered down or decommissioned to save resources.
+    <ul>
+    % for my $h (@$dormant_hosts) {
+        % my $days = int($h->{idle_seconds} / 86400) if $h->{idle_seconds};
+        % my $idle_str = $days ? "$days days" : "never executed jobs";
+        <li><a href="<%= url_for('admin_worker_host_show', worker_host => $h->{host}) %>"><strong><%= $h->{host} %></strong></a> (Idle for: <%= $idle_str %>)</li>
+    % }
+    </ul>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+% }
+
 <div id="summary" class="card">
     <div class="card-header">Statistics</div>
     <div class="card-body row">
@@ -41,6 +55,7 @@
                     <th>Host</th>
                     <th>Class</th>
                     <th>Host Architecture</th>
+                    <th>Last Job Finished</th>
                     <th>Status</th>
                     <th>Websocket Api version</th>
                     <th>os-autoinst version</th>
@@ -66,6 +81,9 @@
                         </td>
                         <td class="arch">
                             <%= exists $worker->{properties} && $worker->{properties}->{CPU_ARCH} ? $worker->{properties}->{CPU_ARCH} : 'unknown' %>
+                        </td>
+                        <td class="last_job_finished">
+                            <%= $worker->{last_job_finished} ? $worker->{last_job_finished} : 'Never' %>
                         </td>
                         <td class="status">
                             % stash(workername => $workername, worker => $worker);
