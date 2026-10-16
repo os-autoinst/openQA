@@ -222,6 +222,17 @@ subtest 'In-process API calls' => sub {
         is $res->{code}, 404, 'missing job renders 404';
         is $res->{json}{error}, 'Job does not exist', 'error message from the controller';
     };
+    subtest 'controller exception is reported as an error' => sub {
+        $c->stash(current_user => {user => $users->find({username => 'percival'})});
+        my $res = OpenQA::WebAPI::Plugin::MCP::_api_call(
+            $tool,
+            controller => 'Job',
+            action => 'no_such_action',
+            method => 'POST',
+            role => 'operator'
+        );
+        like $res->{error}, qr/undefined value as a subroutine/, 'unknown controller action reported as an error';
+    };
 };
 subtest 'openqa_list_jobs tool' => sub {
     my $result = $client->call_tool('openqa_list_jobs', {limit => 5, state => 'done'});
