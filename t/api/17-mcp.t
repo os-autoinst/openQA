@@ -21,7 +21,7 @@ use MCP::Server::Context;
 use OpenQA::WebAPI::Plugin::MCP;
 
 OpenQA::Test::Case->new(config_directory => "$FindBin::Bin/../data/17-mcp")
-  ->init_data(fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl');
+  ->init_data(fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl 04-products.pl');
 
 my $PERSONAL_ACCESS_TOKEN = 'lance:LANCELOTKEY01:MANYPEOPLEKNOW';
 
@@ -72,8 +72,10 @@ subtest 'Start session' => sub {
 subtest 'List tools' => sub {
     my $result = $client->list_tools;
     is_deeply [sort map { $_->{name} } @{$result->{tools}}], [
-        qw(openqa_get_comments openqa_get_info openqa_get_job_info openqa_get_log_file openqa_job_group_overview
-          openqa_list_api_routes openqa_list_job_groups openqa_list_jobs openqa_list_workers openqa_search)
+        qw(openqa_get_comments openqa_get_info openqa_get_job_info openqa_get_log_file openqa_get_needle
+          openqa_job_group_overview openqa_list_api_routes openqa_list_assets openqa_list_job_groups
+          openqa_list_job_templates openqa_list_jobs openqa_list_machines openqa_list_products
+          openqa_list_test_suites openqa_list_workers openqa_search)
       ],
       'read-only tools registered when mode is read-only';
 };
@@ -287,6 +289,53 @@ subtest 'result size limit' => sub {
     my $result = $client->call_tool('openqa_list_jobs', {limit => 5});
     ok $result->{isError}, 'is an error';
     like $result->{content}[0]{text}, qr/Result too large to be transmitted via MCP/, 'size limit reported';
+};
+
+subtest 'openqa_list_products tool' => sub {
+    my $result = $client->call_tool('openqa_list_products', {limit => 2});
+    ok !$result->{isError}, 'not an error';
+    is scalar @{$result->{structuredContent}{Products}}, 2, 'products limited';
+};
+
+subtest 'openqa_list_machines tool' => sub {
+    my $result = $client->call_tool('openqa_list_machines');
+    ok !$result->{isError}, 'not an error';
+    ok scalar grep({ $_->{name} eq '64bit' } @{$result->{structuredContent}{Machines}}), 'machine listed';
+};
+
+subtest 'openqa_list_test_suites tool' => sub {
+    my $result = $client->call_tool('openqa_list_test_suites', {id => 1001});
+    ok !$result->{isError}, 'not an error';
+    is $result->{structuredContent}{TestSuites}[0]{name}, 'textmode', 'test suite found by id';
+};
+
+subtest 'openqa_list_job_templates tool' => sub {
+    my $result = $client->call_tool('openqa_list_job_templates', {group_id => 1001});
+    ok !$result->{isError}, 'not an error';
+    my $templates = $result->{structuredContent}{JobTemplates};
+    is scalar @$templates, 10, 'all templates of the group listed';
+    is_deeply [map { $_->{test_suite}{name} } grep { $_->{id} == 1 } @$templates], ['textmode'], 'test suite included';
+};
+
+subtest 'openqa_list_assets tool' => sub {
+    my $result = $client->call_tool('openqa_list_assets', {limit => 3});
+    ok !$result->{isError}, 'not an error';
+    is scalar @{$result->{structuredContent}{assets}}, 3, 'assets limited';
+};
+
+subtest 'openqa_get_needle tool' => sub {
+    my $schema = $t->app->schema;
+    my $needle = $schema->resultset('Needles')->create(
+        {
+            dir_id => $schema->resultset('NeedleDirs')
+              ->create({path => 't/data/openqa/share/tests/opensuse/needles', name => 'opensuse'})->id,
+            filename => 'inst-timezone-text.json',
+            file_present => 1,
+        });
+    my $result = $client->call_tool('openqa_get_needle', {needle_id => $needle->id});
+    ok !$result->{isError}, 'not an error';
+    is_deeply $result->{structuredContent}{tags}, ['ENV-VIDEOMODE-text', 'inst-timezone'], 'needle tags returned';
+    ok $client->call_tool('openqa_get_needle', {needle_id => 9999})->{isError}, 'missing needle reported';
 };
 
 subtest 'Server instructions, resources and prompts' => sub {

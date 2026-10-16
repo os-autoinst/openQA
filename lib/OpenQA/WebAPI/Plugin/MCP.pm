@@ -12,7 +12,7 @@ use Mojo::Parameters;
 use Mojo::Transaction::HTTP;
 use Feature::Compat::Try;
 use List::Util 'first';
-use Mojo::JSON 'encode_json';
+use Mojo::JSON 'decode_json', 'encode_json';
 
 my %TOOLS = (
     openqa_get_info => {
@@ -169,6 +169,149 @@ my %TOOLS = (
         output_schema => {type => 'array', items => {type => 'object'}},
         call => sub ($tool, $args) {
             _structured($tool, [map { $_->info } _get_schema($tool)->resultset('Workers')->all]);
+        },
+    },
+    openqa_list_products => {
+        title => 'List openQA Products',
+        mode => 'read-only',
+        scopes => ['mcp:read'],
+        annotations => {readOnlyHint => \1, destructiveHint => \0, idempotentHint => \1, openWorldHint => \0},
+        description => 'List products (distri, version, arch, flavor) with their settings.',
+        properties => {
+            id => {type => 'integer', minimum => 1, description => 'Limit the result to one product'},
+            limit => {type => 'integer', minimum => 1},
+            offset => {type => 'integer', minimum => 0},
+        },
+        output_schema => {type => 'object'},
+        call => sub ($tool, $args) {
+            _call(
+                $tool,
+                role => 'user',
+                controller => 'Table',
+                action => 'list',
+                method => 'GET',
+                path => '/api/v1/products',
+                stash => {table => 'Products'},
+                params => _params($args));
+        },
+    },
+    openqa_list_machines => {
+        title => 'List openQA Machines',
+        mode => 'read-only',
+        scopes => ['mcp:read'],
+        annotations => {readOnlyHint => \1, destructiveHint => \0, idempotentHint => \1, openWorldHint => \0},
+        description => 'List machines with their backend and settings.',
+        properties => {
+            id => {type => 'integer', minimum => 1, description => 'Limit the result to one machine'},
+            limit => {type => 'integer', minimum => 1},
+            offset => {type => 'integer', minimum => 0},
+        },
+        output_schema => {type => 'object'},
+        call => sub ($tool, $args) {
+            _call(
+                $tool,
+                role => 'user',
+                controller => 'Table',
+                action => 'list',
+                method => 'GET',
+                path => '/api/v1/machines',
+                stash => {table => 'Machines'},
+                params => _params($args));
+        },
+    },
+    openqa_list_test_suites => {
+        title => 'List openQA Test Suites',
+        mode => 'read-only',
+        scopes => ['mcp:read'],
+        annotations => {readOnlyHint => \1, destructiveHint => \0, idempotentHint => \1, openWorldHint => \0},
+        description => 'List test suites with their settings.',
+        properties => {
+            id => {type => 'integer', minimum => 1, description => 'Limit the result to one test suite'},
+            limit => {type => 'integer', minimum => 1},
+            offset => {type => 'integer', minimum => 0},
+        },
+        output_schema => {type => 'object'},
+        call => sub ($tool, $args) {
+            _call(
+                $tool,
+                role => 'user',
+                controller => 'Table',
+                action => 'list',
+                method => 'GET',
+                path => '/api/v1/test_suites',
+                stash => {table => 'TestSuites'},
+                params => _params($args));
+        },
+    },
+    openqa_list_job_templates => {
+        title => 'List openQA Job Templates',
+        mode => 'read-only',
+        scopes => ['mcp:read'],
+        annotations => {readOnlyHint => \1, destructiveHint => \0, idempotentHint => \1, openWorldHint => \0},
+        description => 'List job templates, i.e. which test suite runs on which machine in a job group.',
+        properties => {
+            job_template_id => {type => 'integer', minimum => 1},
+            group_id => {type => 'integer', minimum => 1},
+            product_id => {type => 'integer', minimum => 1},
+            machine_id => {type => 'integer', minimum => 1},
+            test_suite_id => {type => 'integer', minimum => 1},
+            arch => {type => 'string'},
+            distri => {type => 'string'},
+            flavor => {type => 'string'},
+            version => {type => 'string'},
+            machine_name => {type => 'string'},
+            test_suite_name => {type => 'string'},
+            limit => {type => 'integer', minimum => 1},
+        },
+        output_schema => {type => 'object'},
+        call => sub ($tool, $args) {
+            _call(
+                $tool,
+                role => 'user',
+                controller => 'JobTemplate',
+                action => 'list',
+                method => 'GET',
+                path => '/api/v1/job_templates',
+                params => _params($args));
+        },
+    },
+    openqa_list_assets => {
+        title => 'List openQA Assets',
+        mode => 'read-only',
+        scopes => ['mcp:read'],
+        annotations => {readOnlyHint => \1, destructiveHint => \0, idempotentHint => \1, openWorldHint => \0},
+        description => 'List assets (iso, hdd, repo, core) with their name, size and custom properties.',
+        properties => {
+            limit => {type => 'integer', minimum => 1},
+            offset => {type => 'integer', minimum => 0},
+        },
+        output_schema => {type => 'object'},
+        call => sub ($tool, $args) {
+            _call(
+                $tool,
+                role => 'user',
+                controller => 'Asset',
+                action => 'list',
+                method => 'GET',
+                path => '/api/v1/assets',
+                params => _params($args));
+        },
+    },
+    openqa_get_needle => {
+        title => 'Get openQA Needle',
+        mode => 'read-only',
+        scopes => ['mcp:read'],
+        annotations => {readOnlyHint => \1, destructiveHint => \0, idempotentHint => \1, openWorldHint => \0},
+        description => 'Get the JSON definition of a needle by its ID.',
+        properties => {needle_id => {type => 'integer', minimum => 1}},
+        required => ['needle_id'],
+        output_schema => {type => 'object'},
+        call => sub ($tool, $args) {
+            my $needle = _get_schema($tool)->resultset('Needles')->find($args->{needle_id});
+            return $tool->text_result('Needle does not exist', 1) unless $needle;
+            my $file = path($needle->path);
+            return $tool->text_result('Needle file not found', 1) unless -e $file;
+            return _structured($tool, decode_json($file->slurp));
         },
     },
     openqa_get_comments => {
