@@ -13,9 +13,13 @@ use Mojo::Transaction::HTTP;
 use Feature::Compat::Try;
 use Mojo::JSON 'encode_json';
 
-my %READ_TOOLS = (
+my %TOOLS = (
     openqa_list_jobs => {
         title => 'List openQA Jobs',
+        mode => 'read-only',
+        scopes => ['mcp:read'],
+        annotations => {readOnlyHint => \1, destructiveHint => \0, idempotentHint => \1, openWorldHint => \0},
+
         description => 'List jobs filtered by group, state, result, test name, distri, version, build, arch, flavor '
           . 'or machine. Use latest=1 for the most recent job per test setting combination and scope=relevant for '
           . 'pending, non-obsoleted jobs.',
@@ -49,8 +53,9 @@ my %READ_TOOLS = (
         },
         output_schema => {type => 'object'},
         call => sub ($tool, $args) {
-            _read_call(
+            _call(
                 $tool,
+                role => 'user',
                 controller => 'Job',
                 action => 'list',
                 method => 'GET',
@@ -60,6 +65,10 @@ my %READ_TOOLS = (
     },
     openqa_list_job_groups => {
         title => 'List openQA Job Groups',
+        mode => 'read-only',
+        scopes => ['mcp:read'],
+        annotations => {readOnlyHint => \1, destructiveHint => \0, idempotentHint => \1, openWorldHint => \0},
+
         description =>
           'List all job groups with their properties, or one group given its ID. Set parent=1 to list parent groups.',
         properties => {
@@ -69,8 +78,9 @@ my %READ_TOOLS = (
         output_schema => {type => 'array', items => {type => 'object'}},
         call => sub ($tool, $args) {
             my $parent = delete $args->{parent};
-            _read_call(
+            _call(
                 $tool,
+                role => 'user',
                 controller => 'JobGroup',
                 action => 'list',
                 method => 'GET',
@@ -80,6 +90,10 @@ my %READ_TOOLS = (
     },
     openqa_job_group_overview => {
         title => 'openQA Job Group Build Results',
+        mode => 'read-only',
+        scopes => ['mcp:read'],
+        annotations => {readOnlyHint => \1, destructiveHint => \0, idempotentHint => \1, openWorldHint => \0},
+
         description =>
           'Build results of a job group: the latest builds with their job counts, like the group overview page.',
         properties => {
@@ -93,8 +107,9 @@ my %READ_TOOLS = (
         output_schema => {type => 'object'},
         call => sub ($tool, $args) {
             my $group_id = delete $args->{group_id};
-            _read_call(
+            _call(
                 $tool,
+                role => 'user',
                 controller => 'JobGroup',
                 action => 'build_results',
                 method => 'GET',
@@ -105,6 +120,10 @@ my %READ_TOOLS = (
     },
     openqa_list_workers => {
         title => 'List openQA Workers',
+        mode => 'read-only',
+        scopes => ['mcp:read'],
+        annotations => {readOnlyHint => \1, destructiveHint => \0, idempotentHint => \1, openWorldHint => \0},
+
         description =>
           'List all workers with their status (idle, running, reserved, broken, dead), assigned job and reservation.',
         properties => {},
@@ -115,6 +134,10 @@ my %READ_TOOLS = (
     },
     openqa_get_comments => {
         title => 'Get openQA Comments',
+        mode => 'read-only',
+        scopes => ['mcp:read'],
+        annotations => {readOnlyHint => \1, destructiveHint => \0, idempotentHint => \1, openWorldHint => \0},
+
         description => 'List comments of a job, a job group or a parent group.',
         properties => {
             job_id => {type => 'integer', minimum => 1},
@@ -125,8 +148,9 @@ my %READ_TOOLS = (
         },
         output_schema => {type => 'array', items => {type => 'object'}},
         call => sub ($tool, $args) {
-            _read_call(
+            _call(
                 $tool,
+                role => 'user',
                 controller => 'Comment',
                 action => 'list',
                 method => 'GET',
@@ -136,29 +160,162 @@ my %READ_TOOLS = (
     },
     openqa_search => {
         title => 'Search openQA Tests',
+        mode => 'read-only',
+        scopes => ['mcp:read'],
+        annotations => {readOnlyHint => \1, destructiveHint => \0, idempotentHint => \1, openWorldHint => \0},
+
         description => 'Search for tests by keyword, e.g. a test name, distri, version or build.',
         properties => {q => {type => 'string', minLength => 1, description => 'One or more keywords'}},
         required => ['q'],
         output_schema => {type => 'object'},
         call => sub ($tool, $args) {
-            _read_call(
+            _call(
                 $tool,
+                role => 'user',
                 controller => 'Search',
                 action => 'query',
                 method => 'GET',
                 path => '/api/v1/experimental/search',
-                params => {q => $args->{q}});
+                params => [q => $args->{q}]);
         },
     },
     openqa_list_api_routes => {
         title => 'List openQA API Routes',
+        mode => 'read-only',
+        scopes => ['mcp:read'],
+        annotations => {readOnlyHint => \1, destructiveHint => \0, idempotentHint => \1, openWorldHint => \0},
+
         description => 'List all REST API routes of this openQA instance.',
         properties => {},
         output_schema => {type => 'object'},
         call => sub ($tool, $args) {
-            _read_call($tool, controller => 'Routes', action => 'list', method => 'GET', path => '/api/v1/routes');
+            _call(
+                $tool,
+                role => 'user',
+                controller => 'Routes',
+                action => 'list',
+                method => 'GET',
+                path => '/api/v1/routes'
+            );
         },
     },
+    openqa_trigger_job => {
+        title => 'Trigger openQA Jobs',
+        mode => 'read-write',
+        scopes => ['mcp:write'],
+        annotations => {readOnlyHint => \0, destructiveHint => \0, idempotentHint => \0, openWorldHint => \1},
+        description => 'Trigger jobs by passing job settings, e.g. DISTRI, VERSION, BUILD, TEST. Use _FROM to clone '
+          . 'the settings of an existing job like openqa-clone-job does, and _GROUP to place the new job in a group.',
+        properties => {
+            settings => {
+                type => 'object',
+                description => 'Job settings to trigger, keys like DISTRI, TEST, _FROM, _GROUP',
+                additionalProperties => {type => 'string'},
+            },
+        },
+        required => ['settings'],
+        output_schema => {type => 'object'},
+        call => sub ($tool, $args) {
+            _call(
+                $tool,
+                role => 'operator',
+                controller => 'Job',
+                action => 'create',
+                method => 'POST',
+                path => '/api/v1/jobs',
+                params => _params($args->{settings}));
+        },
+    },
+    openqa_restart_job => {
+        title => 'Restart openQA Job',
+        mode => 'read-write',
+        scopes => ['mcp:write'],
+        annotations => {readOnlyHint => \0, destructiveHint => \0, idempotentHint => \0, openWorldHint => \0},
+        description => 'Restart a job, optionally overriding job settings, forcing it despite missing assets, '
+          . 'skipping parents or children, and adding a comment.',
+        properties => {
+            job_id => {type => 'integer', minimum => 1, description => 'Job ID to restart'},
+            settings =>
+              {type => 'object', description => 'Job settings to override', additionalProperties => {type => 'string'}},
+            comment => {type => 'string'},
+            prio => {type => 'integer', minimum => 0},
+            force => {type => 'boolean', description => 'Restart despite missing assets'},
+            skip_parents => {type => 'boolean'},
+            skip_children => {type => 'boolean'},
+        },
+        required => ['job_id'],
+        output_schema => {type => 'object'},
+        call => sub ($tool, $args) { _restart_call($tool, 'restart', $args); },
+    },
+    openqa_duplicate_job => {
+        title => 'Duplicate openQA Job',
+        mode => 'read-write',
+        scopes => ['mcp:write'],
+        annotations => {readOnlyHint => \0, destructiveHint => \0, idempotentHint => \0, openWorldHint => \0},
+        description => 'Duplicate a job without aborting a running job, optionally overriding job settings.',
+        properties => {
+            job_id => {type => 'integer', minimum => 1, description => 'Job ID to duplicate'},
+            settings =>
+              {type => 'object', description => 'Job settings to override', additionalProperties => {type => 'string'}},
+            comment => {type => 'string'},
+            prio => {type => 'integer', minimum => 0},
+        },
+        required => ['job_id'],
+        output_schema => {type => 'object'},
+        call => sub ($tool, $args) { _restart_call($tool, 'duplicate', $args); },
+    },
+    openqa_cancel_job => {
+        title => 'Cancel openQA Job',
+        mode => 'read-write',
+        scopes => ['mcp:write'],
+        annotations => {readOnlyHint => \0, destructiveHint => \1, idempotentHint => \0, openWorldHint => \0},
+        description => 'Cancel a running or pending job. The result of the job is lost.',
+        properties => {
+            job_id => {type => 'integer', minimum => 1},
+            reason => {type => 'string', description => 'Reason recorded in the job comment'},
+        },
+        required => ['job_id'],
+        output_schema => {type => 'object'},
+        call => sub ($tool, $args) {
+            my $job_id = delete $args->{job_id};
+            _call(
+                $tool,
+                role => 'operator',
+                controller => 'Job',
+                action => 'cancel',
+                method => 'POST',
+                path => "/api/v1/jobs/$job_id/cancel",
+                captures => {jobid => $job_id},
+                params => _params($args));
+        },
+    },
+    openqa_set_job_priority => {
+        title => 'Set openQA Job Priority',
+        mode => 'read-write',
+        scopes => ['mcp:write'],
+        annotations => {readOnlyHint => \0, destructiveHint => \0, idempotentHint => \1, openWorldHint => \0},
+        description => 'Change the priority of a job; a lower number is scheduled earlier.',
+        properties => {
+            job_id => {type => 'integer', minimum => 1},
+            prio => {type => 'integer', minimum => 0, description => 'New priority'},
+        },
+        required => ['job_id', 'prio'],
+        output_schema => {type => 'object'},
+        call => sub ($tool, $args) {
+            my $job_id = delete $args->{job_id};
+            _call(
+                $tool,
+                role => 'operator',
+                controller => 'Job',
+                action => 'prio',
+                method => 'POST',
+                path => "/api/v1/jobs/$job_id/prio",
+                captures => {jobid => $job_id},
+                params => _params($args));
+        },
+    },
+
+
 );
 
 sub register ($self, $app, $config) {
@@ -231,8 +388,9 @@ sub register ($self, $app, $config) {
         code => \&tool_openqa_get_log_file
     );
 
-    for my $name (sort keys %READ_TOOLS) {
-        my $def = $READ_TOOLS{$name};
+    for my $name (sort keys %TOOLS) {
+        my $def = $TOOLS{$name};
+        next if $def->{mode} eq 'read-write' && $mode ne 'read-write';
         $mcp->tool(
             name => $name,
             title => $def->{title},
@@ -244,13 +402,8 @@ sub register ($self, $app, $config) {
                 additionalProperties => \0,
             },
             output_schema => $def->{output_schema},
-            annotations => {
-                title => $def->{title},
-                readOnlyHint => \1,
-                destructiveHint => \0,
-                idempotentHint => \1,
-                openWorldHint => \0,
-            },
+            scopes => $def->{scopes},
+            annotations => {title => $def->{title}, %{$def->{annotations}}},
             code => $def->{call},
         );
     }
@@ -346,7 +499,7 @@ sub _api_call ($tool, %args) {
     return {error => 'Insufficient role'} if $role eq 'operator' && !$user->is_operator;
 
     my $params = Mojo::Parameters->new;
-    $params->append($_, $args{params}{$_}) for keys %{$args{params} // {}};
+    $params->append(@{$args{params} // []});
     my $tx = Mojo::Transaction::HTTP->new(connection => $c->tx->connection);
     my $class = "OpenQA::WebAPI::Controller::API::V1::$args{controller}";
     my $ctrl = $class->new(
@@ -354,6 +507,7 @@ sub _api_call ($tool, %args) {
         tx => $tx,
         stash => {
             current_user => {user => $user},
+            %{$args{captures} // {}},
             'mojo.captures' => {%{$args{captures} // {}}},
             %{$args{stash} // {}}});
     $ctrl->req->method($args{method});
@@ -370,14 +524,32 @@ sub _api_call ($tool, %args) {
 
 # MCP arguments are JSON, controllers expect form parameters, so booleans become 1/0
 # and lists become comma-separated strings
+# restart and duplicate differ only in the controller action and the route
+sub _restart_call ($tool, $action, $args) {
+    my $job_id = delete $args->{job_id};
+    my $settings = delete $args->{settings};
+    $args->{set} = [map { "$_=$settings->{$_}" } keys %$settings] if $settings;
+    return _call(
+        $tool,
+        role => 'operator',
+        controller => 'Job',
+        action => $action,
+        method => 'POST',
+        path => "/api/v1/jobs/$job_id/$action",
+        captures => {jobid => $job_id},
+        params => _params($args));
+}
+
 sub _params ($args) {
-    my %params;
-    for my $key (keys %$args) {
+    my @pairs;
+    for my $key (sort keys %$args) {
         my $value = $args->{$key};
         next unless defined $value;
-        $params{$key} = ref $value ? (ref $value eq 'ARRAY' ? join ',', @$value : ($value ? 1 : 0)) : $value;
+        if (ref $value eq 'ARRAY') { push @pairs, $key => $_ for @$value }
+        elsif (ref $value) { push @pairs, $key => ($value ? 1 : 0) }
+        else { push @pairs, $key => $value }
     }
-    return \%params;
+    return \@pairs;
 }
 
 sub _structured ($tool, $data) {
@@ -386,8 +558,8 @@ sub _structured ($tool, $data) {
     return $tool->structured_result($data);
 }
 
-sub _read_call ($tool, %args) {
-    my $res = _api_call($tool, %args, role => 'user');
+sub _call ($tool, %args) {
+    my $res = _api_call($tool, %args);
     return $tool->text_result($res->{error}, 1) if $res->{error};
     return $tool->text_result($res->{json}{error} // 'Request failed', 1) if $res->{code} >= 400;
     return _structured($tool, $res->{json});
