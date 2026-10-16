@@ -15,6 +15,44 @@ use List::Util 'first';
 use Mojo::JSON 'encode_json';
 
 my %TOOLS = (
+    openqa_get_info => {
+        title => 'Get openQA Server Info',
+        mode => 'read-only',
+        scopes => ['mcp:read'],
+        annotations => {readOnlyHint => \1, destructiveHint => \0, idempotentHint => \1, openWorldHint => \0},
+        description => 'Get information about the openQA server, connected workers and the current user',
+        properties => {},
+        call => \&tool_openqa_get_info,
+    },
+    openqa_get_job_info => {
+        title => 'Get openQA Job Details',
+        mode => 'read-only',
+        scopes => ['mcp:read'],
+        annotations => {readOnlyHint => \1, destructiveHint => \0, idempotentHint => \1, openWorldHint => \0},
+        description => 'Get any information about a specific openQA job, like logs, scheduling etc.',
+        properties =>
+          {job_id => {type => 'integer', minimum => 1, description => 'The job ID of any openQA test suite.'}},
+        required => ['job_id'],
+        call => \&tool_openqa_get_job_info,
+    },
+    openqa_get_log_file => {
+        title => 'Get openQA Job Log File',
+        mode => 'read-only',
+        scopes => ['mcp:read'],
+        annotations => {readOnlyHint => \1, destructiveHint => \0, idempotentHint => \1, openWorldHint => \0},
+        description => 'Get the content of a specific log file for an openQA job',
+        properties => {
+            job_id => {type => 'integer', minimum => 1, description => 'The job ID of the openQA job'},
+            file_name => {
+                type => 'string',
+                minLength => 1,
+                description =>
+                  'Name of the log file to lookup (e.g., autoinst-log.txt, serial0.txt). Only text logs for now'
+            }
+        },
+        required => ['job_id', 'file_name'],
+        call => \&tool_openqa_get_log_file,
+    },
     openqa_list_jobs => {
         title => 'List openQA Jobs',
         mode => 'read-only',
@@ -481,70 +519,6 @@ sub register ($self, $app, $config) {
     $mcp->name('openQA');
     $mcp->version('1.0.0');
 
-    $mcp->tool(
-        name => 'openqa_get_info',
-        title => 'Get openQA Server Info',
-        description => 'Get information about the openQA server, connected workers and the current user',
-        input_schema => {type => 'object', properties => {}, additionalProperties => \0},
-        annotations => {
-            title => 'Get openQA Server Info',
-            readOnlyHint => \1,
-            destructiveHint => \0,
-            idempotentHint => \1,
-            openWorldHint => \0,
-        },
-        code => \&tool_openqa_get_info
-    );
-
-    $mcp->tool(
-        name => 'openqa_get_job_info',
-        title => 'Get openQA Job Details',
-        description => 'Get any information about a specific openQA job, like logs, scheduling etc.',
-        input_schema => {
-            type => 'object',
-            properties =>
-              {job_id => {type => 'integer', minimum => 1, description => 'The job ID of any openQA test suite.'}},
-            required => ['job_id'],
-            additionalProperties => \0,
-        },
-        annotations => {
-            title => 'Get openQA Job Details',
-            readOnlyHint => \1,
-            destructiveHint => \0,
-            idempotentHint => \1,
-            openWorldHint => \0,
-        },
-        code => \&tool_openqa_get_job_info
-    );
-
-    $mcp->tool(
-        name => 'openqa_get_log_file',
-        title => 'Get openQA Job Log File',
-        description => 'Get the content of a specific log file for an openQA job',
-        input_schema => {
-            type => 'object',
-            properties => {
-                job_id => {type => 'integer', minimum => 1, description => 'The job ID of the openQA job'},
-                file_name => {
-                    type => 'string',
-                    minLength => 1,
-                    description =>
-                      'Name of the log file to lookup (e.g., autoinst-log.txt, serial0.txt). Only text logs for now'
-                }
-            },
-            required => ['job_id', 'file_name'],
-            additionalProperties => \0,
-        },
-        annotations => {
-            title => 'Get openQA Job Log File',
-            readOnlyHint => \1,
-            destructiveHint => \0,
-            idempotentHint => \1,
-            openWorldHint => \0,
-        },
-        code => \&tool_openqa_get_log_file
-    );
-
     $mcp->instructions(
             'openQA provides read tools for jobs, job groups, workers, comments and search. On a server with '
           . 'mcp_enabled=read-write it also provides write tools for jobs, comments and ISO scheduling, which '
@@ -570,7 +544,7 @@ sub register ($self, $app, $config) {
                 ($def->{required} ? (required => $def->{required}) : ()),
                 additionalProperties => \0,
             },
-            output_schema => $def->{output_schema},
+            ($def->{output_schema} ? (output_schema => $def->{output_schema}) : ()),
             scopes => $def->{scopes},
             annotations => {title => $def->{title}, %{$def->{annotations}}},
             code => $def->{call},
