@@ -13,6 +13,7 @@ use Test::Warnings ':report_warnings';
 use Test::MockModule;
 use OpenQA::Test::TimeLimit '30';
 use OpenQA::Test::Case;
+use OpenQA::Constants 'DEFAULT_ADMIN';
 use OpenQA::Test::Client 'client';
 use MCP::Client;
 use MCP::Tool;
@@ -42,11 +43,14 @@ subtest 'Origin header check' => sub {
 subtest 'Scopes derived from user role' => sub {
     my $users = $t->app->schema->resultset('Users');
     my $c = $t->app->build_controller;
+    $users->create_user(DEFAULT_ADMIN, is_admin => 1, is_operator => 1)
+      unless $users->find({username => DEFAULT_ADMIN});
     for my $case (
         {mode => 'read-only', username => 'percival', scopes => ['mcp:read']},
         {mode => 'read-write', username => 'https://openid.camelot.uk/lancelot', scopes => ['mcp:read']},
         {mode => 'read-write', username => 'percival', scopes => ['mcp:read', 'mcp:write']},
         {mode => 'read-write', username => 'arthur', scopes => ['mcp:read', 'mcp:write', 'mcp:admin']},
+        {mode => 'read-write', username => DEFAULT_ADMIN, scopes => ['mcp:read', 'mcp:write', 'mcp:admin']},
       )
     {
         $c->stash(current_user => {user => $users->find({username => $case->{username}})});
