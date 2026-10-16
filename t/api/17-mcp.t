@@ -15,7 +15,6 @@ use OpenQA::Test::TimeLimit '30';
 use OpenQA::Test::Case;
 use OpenQA::Test::Client 'client';
 use MCP::Client;
-use MCP;
 use MCP::Tool;
 use MCP::Server::Context;
 use OpenQA::WebAPI::Plugin::MCP;
@@ -55,18 +54,6 @@ subtest 'Scopes derived from user role' => sub {
           {scopes => $case->{scopes}, principal => $case->{username}},
           "$case->{username} gets @{[join ' ', @{$case->{scopes}}]} in $case->{mode} mode";
     }
-};
-
-subtest 'Start session' => sub {
-    if (version->parse(MCP->VERSION) >= version->parse('0.15')) {
-        plan(skip_all => 'Subtest should only be executed with MCP < 0.15');    # uncoverable statement
-    }
-    is $client->session_id, undef, 'no session id';    # uncoverable statement
-    my $result = $client->initialize_session;    # uncoverable statement
-    is $result->{serverInfo}{name}, 'openQA', 'server name';    # uncoverable statement
-    is $result->{serverInfo}{version}, '1.0.0', 'server version';    # uncoverable statement
-    ok $result->{capabilities}, 'has capabilities';    # uncoverable statement
-    ok $client->session_id, 'session id set';    # uncoverable statement
 };
 
 subtest 'List tools' => sub {
