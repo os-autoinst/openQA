@@ -513,6 +513,23 @@ my @PROMPTS = (
     },
 );
 
+sub tool_info ($mode) {
+    my @info;
+    for my $name (sort keys %TOOLS) {
+        my $def = $TOOLS{$name};
+        next if $def->{mode} eq 'read-write' && $mode ne 'read-write';
+        push @info,
+          {
+            name => $name,
+            title => $def->{title},
+            description => $def->{description},
+            role => (($def->{scopes}[0] // 'mcp:read') eq 'mcp:write' ? 'operator' : 'user'),
+            destructive => $def->{annotations}{destructiveHint} ? 'yes' : 'no',
+          };
+    }
+    return \@info;
+}
+
 sub register ($self, $app, $config) {
     my $mode = $config->{mode} // 'read-only';
     my $mcp = MCP::Server->new;
