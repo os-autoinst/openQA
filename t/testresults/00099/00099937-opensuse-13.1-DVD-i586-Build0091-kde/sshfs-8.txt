@@ -1,0 +1,4 @@
+# Command: sudo systemctl is-active guestregister; echo SCRIPT_FINISHEDM98FO-$?-
+# Result:
+active
+# Exit code: 0
