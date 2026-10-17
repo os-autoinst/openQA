@@ -39,6 +39,7 @@ sub finalize_job_settings ($settings, $worker_classes) {
 
     parse_url_settings($settings);
     handle_plus_in_settings($settings);
+    apply_drop_settings($settings);
     return expand_placeholders($settings);
 }
 
@@ -127,6 +128,25 @@ sub handle_plus_in_settings ($settings) {
     for (keys %$settings) {
         if (substr($_, 0, 1) eq '+') {
             $settings->{substr $_, 1} = delete $settings->{$_};
+        }
+    }
+}
+
+sub _pattern_to_re ($pattern) {
+    my $escaped = quotemeta $pattern;
+    $escaped =~ s/\\\*/.*/g;
+    return qr/^$escaped$/;
+}
+
+sub apply_drop_settings ($settings) {
+    my $patterns = $settings->{_DROP_SETTINGS};
+    return unless defined $patterns && length $patterns;
+    for my $pattern (split /\s*,\s*/, $patterns) {
+        $pattern =~ s/^\s+|\s+$//g;
+        next unless length $pattern;
+        my $re = _pattern_to_re($pattern);
+        for my $k (grep { $_ ne '_DROP_SETTINGS' && $_ =~ $re } keys %$settings) {
+            delete $settings->{$k};
         }
     }
 }

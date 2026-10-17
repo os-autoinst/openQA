@@ -1220,4 +1220,35 @@ subtest 'no templates found for product' => sub {
     $schema->txn_rollback;
 };
 
+subtest '_DROP_SETTINGS drops settings and prevents asset creation' => sub {
+    $schema->txn_begin;
+    add_opensuse_test(
+        'drop_test',
+        _DROP_SETTINGS => 'ISO,ASSET_*',
+        TEST_SUITE_SETTING => 'kept',
+    );
+    my $res = schedule_iso(
+        $t,
+        {
+            %iso,
+            _GROUP_ID => '1002',
+            TEST => 'drop_test',
+            ASSET_1 => 'extra1.raw',
+            ASSET_2 => 'extra2.raw',
+        },
+        200
+    );
+    is $res->json->{count}, 1, 'one job scheduled';
+    my $job = $jobs->find($res->json->{ids}->[0]);
+    ok $job, 'job found in database';
+    my $settings = $job->settings_hash;
+    is $settings->{_DROP_SETTINGS}, 'ISO,ASSET_*', '_DROP_SETTINGS remains on job';
+    is $settings->{TEST_SUITE_SETTING}, 'kept', 'unrelated test suite setting is kept';
+    is $settings->{ISO}, undef, 'ISO setting is dropped';
+    is $settings->{ASSET_1}, undef, 'ASSET_1 setting is dropped';
+    is $settings->{ASSET_2}, undef, 'ASSET_2 setting is dropped';
+    is $job->jobs_assets->count, 0, 'no job assets created for dropped settings';
+    $schema->txn_rollback;
+};
+
 done_testing();
