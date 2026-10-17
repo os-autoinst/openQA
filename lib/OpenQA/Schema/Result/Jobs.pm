@@ -2000,7 +2000,7 @@ sub investigate ($self, %args) {
     my $self_file = eval { Mojo::File->new($self->result_dir(), 'vars.json')->slurp };
     my $self_vars = decode_json($self_file // '{}');
     for my $prev (@previous) {
-        if ($prev->should_show_investigation) {
+        if (!$prev->is_final || !$prev->is_ok) {
             $inv{first_bad} = {type => 'link', link => '/tests/' . $prev->id, text => $prev->id};
             next;
         }
@@ -2403,11 +2403,6 @@ sub is_child_of ($self, $job_id) {
 sub has_modules ($self) { $self->modules->count() }
 
 sub should_show_autoinst_log ($self) { $self->state eq DONE && !$self->has_modules && $self->has_autoinst_log }
-
-sub should_show_investigation ($self) {
-    OpenQA::Jobs::Constants::meta_state($self->state) ne OpenQA::Jobs::Constants::FINAL
-      || !OpenQA::Jobs::Constants::is_ok_result($self->result);
-}
 
 sub status ($self) {
     my $state = $self->state;
