@@ -479,6 +479,91 @@ sub show ($self) {
 
 =over 4
 
+=item history()
+
+Returns the progression of related jobs for a given job ID. This includes
+preceding completed jobs, the current job itself, and succeeding scheduled or
+completed jobs.
+
+Options:
+
+=over 4
+
+=item previous_limit
+
+  previous_limit => 10
+
+Limits the number of previous jobs returned in the history. Defaults to the
+system configured limit (typically 10).
+
+=item next_limit
+
+  next_limit => 10
+
+Limits the number of next/subsequent jobs returned in the history. Defaults
+to the system configured limit (typically 10).
+
+=item strict
+
+  strict => 1
+
+If set to 1, the history is strictly isolated by all declared history
+isolation keys for the job (e.g. keeping independent Pull Request histories
+separate).
+
+=item isolation_keys
+
+  isolation_keys => "PR,BRANCH"
+
+An explicit, comma-separated list of job setting keys to isolate the
+history on.
+
+=back
+
+=back
+
+=cut
+
+sub history ($self) {
+    my $job_id = int($self->stash('jobid'));
+    return undef unless my $job = $self->find_job_or_render_not_found($job_id);
+
+    my $validation = $self->validation;
+    $validation->optional('previous_limit')->num;
+    $validation->optional('next_limit')->num;
+    $validation->optional('strict')->num(0, 1);
+    $validation->optional('isolation_keys')->like(qr/^[a-zA-Z0-9_, ]*$/);
+    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
+
+    my $limits = OpenQA::App->singleton->config->{misc_limits};
+    my $p_limit = min($limits->{previous_jobs_max_limit},
+        $validation->param('previous_limit') // $limits->{previous_jobs_default_limit});
+    my $n_limit
+      = min($limits->{next_jobs_max_limit}, $validation->param('next_limit') // $limits->{next_jobs_default_limit});
+
+    my $explicit_keys = [grep { length } split /\s*,\s*/, $validation->param('isolation_keys') // ''];
+    my $isolation_keys = $validation->param('strict') ? undef : $explicit_keys;
+
+    my $jobs_rs = $self->schema->resultset('Jobs');
+    my @jobs = $jobs_rs->next_previous_jobs_query(
+        $job, $job_id,
+        previous_limit => $p_limit,
+        next_limit => $n_limit,
+        isolation_keys => $isolation_keys,
+    )->all;
+
+    undef $jobs[0] if @jobs >= 2 && $jobs[0]->id == $jobs[1]->id;
+    my @results = map {
+        my $hash = $_->to_hash(assets => 1, deps => 1);
+        $hash->{source} = $_->source;
+        $hash;
+    } grep { $_ } @jobs;
+
+    $self->render(json => {jobs => \@results});
+}
+
+=over 4
+
 =item destroy()
 
 Deletes a job from the system.
