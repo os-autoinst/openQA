@@ -763,8 +763,8 @@ padding: 20px;
       config.cnf</a></li>
       </ul></li>
       <li><a href="#building-plugins" id="toc-building-plugins"><span class="toc-section-number">9.12</span> Building plugins</a></li>
-      <li><a href="#checking-for-javascript-problems" id="toc-checking-for-javascript-problems"><span class="toc-section-number">9.13</span> Checking for JavaScript
-      problems</a></li>
+      <li><a href="#checking-and-formatting-javascript-css-and-markdown" id="toc-checking-and-formatting-javascript-css-and-markdown"><span class="toc-section-number">9.13</span> Checking and formatting
+      JavaScript, CSS and Markdown</a></li>
       <li><a href="#profiling-the-web-ui" id="toc-profiling-the-web-ui"><span class="toc-section-number">9.14</span> Profiling the web UI</a>
       <ul>
       <li><a href="#note" id="toc-note"><span class="toc-section-number">9.14.1</span> Note</a></li>
@@ -8190,7 +8190,8 @@ pull request, but you <strong>should</strong> run the tidy scripts
 locally, i.e. before every commit call:
 <div class="sourceCode" id="cb292"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb292-1"><a href="#cb292-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> tidy</span></code></pre></div>
 This ensures your Perl, JavaScript and Python code changes are
-consistent with the style rules.</li>
+consistent with the style rules (see <a href="#javascript-and-css">JavaScript and CSS</a> for installing Node.js
+tooling like <code>prettier</code>).</li>
 <li>All tests are passed. This is ensured by a CI system. You can also
 run local tests in your development environment to verify everything
 works as expected, see <a href="#conducting-tests">Conducting
@@ -8769,6 +8770,13 @@ license(s) for the newly added third-party code to the root directory of
 the repository. Do <strong>not</strong> duplicate common/existing
 licenses; extend the <code>Files:</code>-section at the beginning of
 those files instead.</p>
+<p>Development tooling such as <code>prettier</code>,
+<code>eslint</code>, and <code>stylelint</code> is defined in
+<code>devDependencies</code> in <code>package.json</code>. While
+<code>make node_modules</code> only installs runtime dependencies
+(omitting development dependencies), you can install the development
+tooling locally with:</p>
+<div class="sourceCode" id="cb315"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb315-1"><a href="#cb315-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> prepare-node-env</span></code></pre></div>
 <h3 data-number="9.8.2" id="perl-and-other-packages"><span class="header-section-number">9.8.2</span> Perl and other packages</h3>
 <p>In openQA, there is a <code>dependencies.yaml</code> file including a
 list of dependencies, separated in groups. For example the openQA client
@@ -8845,7 +8853,7 @@ So be sure <strong>to backup your database</strong> before restarting to
 be able to downgrade again if something goes wrong or you just need to
 continue working on another branch. To do so, the following command can
 be used to create a copy:</p>
-<div class="sourceCode" id="cb315"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb315-1"><a href="#cb315-1" aria-hidden="true" tabindex="-1"></a><span class="ex">createdb</span> <span class="at">-O</span> ownername <span class="at">-T</span> originaldb newdb</span></code></pre></div>
+<div class="sourceCode" id="cb316"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb316-1"><a href="#cb316-1" aria-hidden="true" tabindex="-1"></a><span class="ex">createdb</span> <span class="at">-O</span> ownername <span class="at">-T</span> originaldb newdb</span></code></pre></div>
 <p>To initialize or update the database manually before restarting the
 web UI you can run either <code>./script/initdb --init_database</code>
 or <code>./script/upgradedb --upgrade_database</code>.</p>
@@ -8875,7 +8883,7 @@ upgrading a database. Note that those files (and directories) have to be
 created manually.</p>
 <p>Executed SQL statements can be traced by setting the
 <code>DBIC_TRACE</code> environment variable.</p>
-<div class="sourceCode" id="cb316"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb316-1"><a href="#cb316-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">DBIC_TRACE</span><span class="op">=</span>1</span></code></pre></div>
+<div class="sourceCode" id="cb317"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb317-1"><a href="#cb317-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">DBIC_TRACE</span><span class="op">=</span>1</span></code></pre></div>
 <h2 data-number="9.10" id="adding-new-authentication-module"><span class="header-section-number">9.10</span> Adding new authentication
 module</h2>
 <p>openQA comes with two authentication modules providing authentication
@@ -8894,13 +8902,13 @@ is imported on demand.</p>
 <p>Currently there is no login page because all implemented methods use
 either 3rd party page or none.</p>
 <p>Authentication module is expected to return HASH:</p>
-<div class="sourceCode" id="cb317"><pre class="sourceCode perl"><code class="sourceCode perl"><span id="cb317-1"><a href="#cb317-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb317-2"><a href="#cb317-2" aria-hidden="true" tabindex="-1"></a><span class="dt">%res</span> = (</span>
-<span id="cb317-3"><a href="#cb317-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># error = 1 signals auth error</span></span>
-<span id="cb317-4"><a href="#cb317-4" aria-hidden="true" tabindex="-1"></a>    error =&gt; <span class="dv">0</span>|<span class="dv">1</span></span>
-<span id="cb317-5"><a href="#cb317-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># where to redirect the user</span></span>
-<span id="cb317-6"><a href="#cb317-6" aria-hidden="true" tabindex="-1"></a>    redirect =&gt; <span class="ot">&#39;&#39;</span></span>
-<span id="cb317-7"><a href="#cb317-7" aria-hidden="true" tabindex="-1"></a>);</span></code></pre></div>
+<div class="sourceCode" id="cb318"><pre class="sourceCode perl"><code class="sourceCode perl"><span id="cb318-1"><a href="#cb318-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb318-2"><a href="#cb318-2" aria-hidden="true" tabindex="-1"></a><span class="dt">%res</span> = (</span>
+<span id="cb318-3"><a href="#cb318-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># error = 1 signals auth error</span></span>
+<span id="cb318-4"><a href="#cb318-4" aria-hidden="true" tabindex="-1"></a>    error =&gt; <span class="dv">0</span>|<span class="dv">1</span></span>
+<span id="cb318-5"><a href="#cb318-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># where to redirect the user</span></span>
+<span id="cb318-6"><a href="#cb318-6" aria-hidden="true" tabindex="-1"></a>    redirect =&gt; <span class="ot">&#39;&#39;</span></span>
+<span id="cb318-7"><a href="#cb318-7" aria-hidden="true" tabindex="-1"></a>);</span></code></pre></div>
 <p>Authentication module is expected to create or update user entry in
 openQA database after user validation. See included modules for
 inspiration.</p>
@@ -9075,7 +9083,7 @@ circleci local execute --job testfullstack
 circleci local execute --job testdeveloperfullstack</code></pre>
 <h3 data-number="9.11.6" id="changing-configcnf"><span class="header-section-number">9.11.6</span> Changing config.cnf</h3>
 <p>Command to verify the YAML with the <code>circleci</code> tool:</p>
-<div class="sourceCode" id="cb324"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb324-1"><a href="#cb324-1" aria-hidden="true" tabindex="-1"></a><span class="ex">circleci</span> config process .circleci/config.yml</span></code></pre></div>
+<div class="sourceCode" id="cb325"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb325-1"><a href="#cb325-1" aria-hidden="true" tabindex="-1"></a><span class="ex">circleci</span> config process .circleci/config.yml</span></code></pre></div>
 <h2 data-number="9.12" id="building-plugins"><span class="header-section-number">9.12</span> Building plugins</h2>
 <p>Not all code needs to be included in openQA itself. openQA also
 supports the use of 3rd party plugins that follow the standards for
@@ -9090,40 +9098,40 @@ inside the web server.</p>
 <p>Plugin
 Hello<code>, you would install it in one of the include directories of the Perl used to run openQA, and then configure it in </code>openqa.ini<code>. The </code>plugins<code>setting in the</code>global`
 section will tell openQA what plugins to load.</p>
-<div class="sourceCode" id="cb325"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb325-1"><a href="#cb325-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Tell openQA to load the plugin</span></span>
-<span id="cb325-2"><a href="#cb325-2" aria-hidden="true" tabindex="-1"></a><span class="kw">[global]</span></span>
-<span id="cb325-3"><a href="#cb325-3" aria-hidden="true" tabindex="-1"></a><span class="dt">plugins </span><span class="ot">=</span><span class="st"> Hello</span></span>
-<span id="cb325-4"><a href="#cb325-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb325-5"><a href="#cb325-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Plugin specific configuration (optional)</span></span>
-<span id="cb325-6"><a href="#cb325-6" aria-hidden="true" tabindex="-1"></a><span class="kw">[hello_plugin]</span></span>
-<span id="cb325-7"><a href="#cb325-7" aria-hidden="true" tabindex="-1"></a><span class="dt">some </span><span class="ot">=</span><span class="st"> value</span></span></code></pre></div>
+<div class="sourceCode" id="cb326"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb326-1"><a href="#cb326-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Tell openQA to load the plugin</span></span>
+<span id="cb326-2"><a href="#cb326-2" aria-hidden="true" tabindex="-1"></a><span class="kw">[global]</span></span>
+<span id="cb326-3"><a href="#cb326-3" aria-hidden="true" tabindex="-1"></a><span class="dt">plugins </span><span class="ot">=</span><span class="st"> Hello</span></span>
+<span id="cb326-4"><a href="#cb326-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb326-5"><a href="#cb326-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Plugin specific configuration (optional)</span></span>
+<span id="cb326-6"><a href="#cb326-6" aria-hidden="true" tabindex="-1"></a><span class="kw">[hello_plugin]</span></span>
+<span id="cb326-7"><a href="#cb326-7" aria-hidden="true" tabindex="-1"></a><span class="dt">some </span><span class="ot">=</span><span class="st"> value</span></span></code></pre></div>
 <p>The plugin specific configuration is optional, but if defined would
 be available in <code>$app-&gt;config-&gt;{hello_plugin}</code>.</p>
 <p>To extend the UI or HTTP API there are various named routes already
 defined that will take care of authentication for your plugin. You just
 attach the plugin routes to them and only authenticated requests will
 get through.</p>
-<div class="sourceCode" id="cb326"><pre class="sourceCode perl"><code class="sourceCode perl"><span id="cb326-1"><a href="#cb326-1" aria-hidden="true" tabindex="-1"></a><span class="kw">package</span> <span class="fu">OpenQA::WebAPI</span>::<span class="fu">Plugin</span>::<span class="fu">Hello</span>;</span>
-<span id="cb326-2"><a href="#cb326-2" aria-hidden="true" tabindex="-1"></a><span class="fu">use</span> <span class="fu">Mojo::Base</span> <span class="ot">&#39;</span><span class="ss">Mojolicious::Plugin</span><span class="ot">&#39;</span>;</span>
-<span id="cb326-3"><a href="#cb326-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb326-4"><a href="#cb326-4" aria-hidden="true" tabindex="-1"></a><span class="kw">sub </span><span class="fu">register</span> {</span>
-<span id="cb326-5"><a href="#cb326-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">my</span> (<span class="dt">$self</span>, <span class="dt">$app</span>, <span class="dt">$config</span>) = <span class="dt">@_</span>;</span>
-<span id="cb326-6"><a href="#cb326-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb326-7"><a href="#cb326-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Only operators may use our plugin</span></span>
-<span id="cb326-8"><a href="#cb326-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">my</span> <span class="dt">$ensure_operator</span> = <span class="dt">$app</span>-&gt;<span class="dt">routes</span>-&gt;<span class="dt">find</span>(<span class="ot">&#39;</span><span class="ss">ensure_operator</span><span class="ot">&#39;</span>);</span>
-<span id="cb326-9"><a href="#cb326-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">my</span> <span class="dt">$plugin_prefix</span> = <span class="dt">$ensure_operator</span>-&gt;<span class="dt">any</span>(<span class="ot">&#39;</span><span class="ss">/hello_plugin</span><span class="ot">&#39;</span>);</span>
-<span id="cb326-10"><a href="#cb326-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb326-11"><a href="#cb326-11" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Plain text response (under &quot;/admin/hello_plugin/&quot;)</span></span>
-<span id="cb326-12"><a href="#cb326-12" aria-hidden="true" tabindex="-1"></a>    <span class="dt">$plugin_prefix</span>-&gt;<span class="dt">get</span>(<span class="ot">&#39;</span><span class="ss">/</span><span class="ot">&#39;</span> =&gt; <span class="kw">sub </span>{</span>
-<span id="cb326-13"><a href="#cb326-13" aria-hidden="true" tabindex="-1"></a>      <span class="kw">my</span> <span class="dt">$c</span> = <span class="fu">shift</span>;</span>
-<span id="cb326-14"><a href="#cb326-14" aria-hidden="true" tabindex="-1"></a>      <span class="dt">$c</span>-&gt;<span class="dt">render</span>(text =&gt; <span class="ot">&#39;</span><span class="ss">Hello openQA!</span><span class="ot">&#39;</span>);</span>
-<span id="cb326-15"><a href="#cb326-15" aria-hidden="true" tabindex="-1"></a>    })-&gt;name(<span class="ot">&#39;</span><span class="ss">hello_plugin_index</span><span class="ot">&#39;</span>);</span>
-<span id="cb326-16"><a href="#cb326-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb326-17"><a href="#cb326-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Add a link to the UI menu</span></span>
-<span id="cb326-18"><a href="#cb326-18" aria-hidden="true" tabindex="-1"></a>    <span class="dt">$app</span>-&gt;<span class="dt">config</span>-&gt;{plugin_links}{operator}{<span class="ot">&#39;</span><span class="ss">Hello</span><span class="ot">&#39;</span>} = <span class="ot">&#39;</span><span class="ss">hello_plugin_index</span><span class="ot">&#39;</span>;</span>
-<span id="cb326-19"><a href="#cb326-19" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb326-20"><a href="#cb326-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb326-21"><a href="#cb326-21" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb327"><pre class="sourceCode perl"><code class="sourceCode perl"><span id="cb327-1"><a href="#cb327-1" aria-hidden="true" tabindex="-1"></a><span class="kw">package</span> <span class="fu">OpenQA::WebAPI</span>::<span class="fu">Plugin</span>::<span class="fu">Hello</span>;</span>
+<span id="cb327-2"><a href="#cb327-2" aria-hidden="true" tabindex="-1"></a><span class="fu">use</span> <span class="fu">Mojo::Base</span> <span class="ot">&#39;</span><span class="ss">Mojolicious::Plugin</span><span class="ot">&#39;</span>;</span>
+<span id="cb327-3"><a href="#cb327-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb327-4"><a href="#cb327-4" aria-hidden="true" tabindex="-1"></a><span class="kw">sub </span><span class="fu">register</span> {</span>
+<span id="cb327-5"><a href="#cb327-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">my</span> (<span class="dt">$self</span>, <span class="dt">$app</span>, <span class="dt">$config</span>) = <span class="dt">@_</span>;</span>
+<span id="cb327-6"><a href="#cb327-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb327-7"><a href="#cb327-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Only operators may use our plugin</span></span>
+<span id="cb327-8"><a href="#cb327-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">my</span> <span class="dt">$ensure_operator</span> = <span class="dt">$app</span>-&gt;<span class="dt">routes</span>-&gt;<span class="dt">find</span>(<span class="ot">&#39;</span><span class="ss">ensure_operator</span><span class="ot">&#39;</span>);</span>
+<span id="cb327-9"><a href="#cb327-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">my</span> <span class="dt">$plugin_prefix</span> = <span class="dt">$ensure_operator</span>-&gt;<span class="dt">any</span>(<span class="ot">&#39;</span><span class="ss">/hello_plugin</span><span class="ot">&#39;</span>);</span>
+<span id="cb327-10"><a href="#cb327-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb327-11"><a href="#cb327-11" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Plain text response (under &quot;/admin/hello_plugin/&quot;)</span></span>
+<span id="cb327-12"><a href="#cb327-12" aria-hidden="true" tabindex="-1"></a>    <span class="dt">$plugin_prefix</span>-&gt;<span class="dt">get</span>(<span class="ot">&#39;</span><span class="ss">/</span><span class="ot">&#39;</span> =&gt; <span class="kw">sub </span>{</span>
+<span id="cb327-13"><a href="#cb327-13" aria-hidden="true" tabindex="-1"></a>      <span class="kw">my</span> <span class="dt">$c</span> = <span class="fu">shift</span>;</span>
+<span id="cb327-14"><a href="#cb327-14" aria-hidden="true" tabindex="-1"></a>      <span class="dt">$c</span>-&gt;<span class="dt">render</span>(text =&gt; <span class="ot">&#39;</span><span class="ss">Hello openQA!</span><span class="ot">&#39;</span>);</span>
+<span id="cb327-15"><a href="#cb327-15" aria-hidden="true" tabindex="-1"></a>    })-&gt;name(<span class="ot">&#39;</span><span class="ss">hello_plugin_index</span><span class="ot">&#39;</span>);</span>
+<span id="cb327-16"><a href="#cb327-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb327-17"><a href="#cb327-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Add a link to the UI menu</span></span>
+<span id="cb327-18"><a href="#cb327-18" aria-hidden="true" tabindex="-1"></a>    <span class="dt">$app</span>-&gt;<span class="dt">config</span>-&gt;{plugin_links}{operator}{<span class="ot">&#39;</span><span class="ss">Hello</span><span class="ot">&#39;</span>} = <span class="ot">&#39;</span><span class="ss">hello_plugin_index</span><span class="ot">&#39;</span>;</span>
+<span id="cb327-19"><a href="#cb327-19" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb327-20"><a href="#cb327-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb327-21"><a href="#cb327-21" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span>;</span></code></pre></div>
 <p>The <code>plugin_links</code> configuration setting can be modified
 by plugins to add links to the <code>operator</code> and
 <code>admin</code> sections of the openQA UI menu. Route names or fully
@@ -9131,10 +9139,10 @@ qualified URLs can be used as link targets. If your plugin uses
 templates, you should reuse the <code>bootstrap</code> layout provided
 by openQA. This will ensure a consistent look, and make the UI menu
 available everywhere.</p>
-<div class="sourceCode" id="cb327"><pre class="sourceCode perl"><code class="sourceCode perl"><span id="cb327-1"><a href="#cb327-1" aria-hidden="true" tabindex="-1"></a>% layout <span class="ot">&#39;</span><span class="ss">bootstrap</span><span class="ot">&#39;</span>;</span>
-<span id="cb327-2"><a href="#cb327-2" aria-hidden="true" tabindex="-1"></a>% title <span class="ot">&#39;</span><span class="ss">Hello openQA!</span><span class="ot">&#39;</span>;</span>
-<span id="cb327-3"><a href="#cb327-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb327-4"><a href="#cb327-4" aria-hidden="true" tabindex="-1"></a>  &lt;h2&gt;Hello openQA!&lt;/h2&gt;</span></code></pre></div>
+<div class="sourceCode" id="cb328"><pre class="sourceCode perl"><code class="sourceCode perl"><span id="cb328-1"><a href="#cb328-1" aria-hidden="true" tabindex="-1"></a>% layout <span class="ot">&#39;</span><span class="ss">bootstrap</span><span class="ot">&#39;</span>;</span>
+<span id="cb328-2"><a href="#cb328-2" aria-hidden="true" tabindex="-1"></a>% title <span class="ot">&#39;</span><span class="ss">Hello openQA!</span><span class="ot">&#39;</span>;</span>
+<span id="cb328-3"><a href="#cb328-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb328-4"><a href="#cb328-4" aria-hidden="true" tabindex="-1"></a>  &lt;h2&gt;Hello openQA!&lt;/h2&gt;</span></code></pre></div>
 <p>For UI plugins there are two named authentication routes defined:</p>
 <ol type="1">
 <li><code>ensure_operator</code>: under <code>/admin/</code>, only
@@ -9157,21 +9165,33 @@ allows authenticated nusers with <code>admin</code> privileges</li>
 <p>To generate a minimal installable plugin with a CPAN distribution
 directory structure you can use the Mojolicious tools. It can be
 packaged just like any other Perl module from CPAN.</p>
-<div class="sourceCode" id="cb328"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb328-1"><a href="#cb328-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> mojo generate plugin <span class="at">-f</span> OpenQA::WebAPI::Plugin::Hello</span>
-<span id="cb328-2"><a href="#cb328-2" aria-hidden="true" tabindex="-1"></a><span class="ex">...</span></span>
-<span id="cb328-3"><a href="#cb328-3" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> cd OpenQA-WebAPI-Plugin-Hello/</span>
-<span id="cb328-4"><a href="#cb328-4" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> perl Makefile.PL</span>
-<span id="cb328-5"><a href="#cb328-5" aria-hidden="true" tabindex="-1"></a><span class="ex">...</span></span>
-<span id="cb328-6"><a href="#cb328-6" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> make test</span>
-<span id="cb328-7"><a href="#cb328-7" aria-hidden="true" tabindex="-1"></a><span class="ex">...</span></span></code></pre></div>
+<div class="sourceCode" id="cb329"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb329-1"><a href="#cb329-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> mojo generate plugin <span class="at">-f</span> OpenQA::WebAPI::Plugin::Hello</span>
+<span id="cb329-2"><a href="#cb329-2" aria-hidden="true" tabindex="-1"></a><span class="ex">...</span></span>
+<span id="cb329-3"><a href="#cb329-3" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> cd OpenQA-WebAPI-Plugin-Hello/</span>
+<span id="cb329-4"><a href="#cb329-4" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> perl Makefile.PL</span>
+<span id="cb329-5"><a href="#cb329-5" aria-hidden="true" tabindex="-1"></a><span class="ex">...</span></span>
+<span id="cb329-6"><a href="#cb329-6" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> make test</span>
+<span id="cb329-7"><a href="#cb329-7" aria-hidden="true" tabindex="-1"></a><span class="ex">...</span></span></code></pre></div>
 <p>And if you need code examples, there are some plugins <a href="https://github.com/os-autoinst/openQA/tree/master/lib/OpenQA/WebAPI/Plugin">included
 with openQA</a>.</p>
-<h2 data-number="9.13" id="checking-for-javascript-problems"><span class="header-section-number">9.13</span> Checking for JavaScript
-problems</h2>
-<p>One can use the tool <code>jshint</code> to check for problems within
-JavaScript code. It can be installed easily via <code>npm</code>.</p>
-<div class="sourceCode" id="cb329"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb329-1"><a href="#cb329-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install <span class="at">--no-save</span> <span class="at">--ignore-scripts</span> jshint</span>
-<span id="cb329-2"><a href="#cb329-2" aria-hidden="true" tabindex="-1"></a><span class="ex">node_modules/jshint/bin/jshint</span> path/to/javascript.js</span></code></pre></div>
+<h2 data-number="9.13" id="checking-and-formatting-javascript-css-and-markdown"><span class="header-section-number">9.13</span> Checking and formatting
+JavaScript, CSS and Markdown</h2>
+<p>After installing development dependencies (see <a href="#javascript-and-css">JavaScript and CSS</a>), you can check
+JavaScript, stylesheets, and Markdown documentation for errors and style
+violations:</p>
+<div class="sourceCode" id="cb330"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb330-1"><a href="#cb330-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run lint</span></code></pre></div>
+<p>Or run individual tools directly using <code>npx</code>:</p>
+<div class="sourceCode" id="cb331"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb331-1"><a href="#cb331-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npx</span> prettier <span class="at">--check</span> <span class="st">&quot;docs/**/*.md&quot;</span></span>
+<span id="cb331-2"><a href="#cb331-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npx</span> eslint <span class="st">&quot;assets/javascripts/**/*.js&quot;</span></span></code></pre></div>
+<p>To automatically fix formatting issues, run:</p>
+<div class="sourceCode" id="cb332"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb332-1"><a href="#cb332-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> tidy-js</span>
+<span id="cb332-2"><a href="#cb332-2" aria-hidden="true" tabindex="-1"></a><span class="co"># or:</span></span>
+<span id="cb332-3"><a href="#cb332-3" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run fix</span></code></pre></div>
+<p>One can also use the tool <code>jshint</code> to check for problems
+within JavaScript code. It can be installed easily via
+<code>npm</code>.</p>
+<div class="sourceCode" id="cb333"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb333-1"><a href="#cb333-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install <span class="at">--no-save</span> <span class="at">--ignore-scripts</span> jshint</span>
+<span id="cb333-2"><a href="#cb333-2" aria-hidden="true" tabindex="-1"></a><span class="ex">node_modules/jshint/bin/jshint</span> path/to/javascript.js</span></code></pre></div>
 <h2 data-number="9.14" id="profiling-the-web-ui"><span class="header-section-number">9.14</span> Profiling the web UI</h2>
 <ol type="1">
 <li>Install NYTProf, under openSUSE Tumbleweed:
@@ -9190,6 +9210,10 @@ and disable the <code>profiling_enabled</code> configuration again if
 not needed anymore.</p>
 <h2 data-number="9.15" id="making-documentation-changes"><span class="header-section-number">9.15</span> Making documentation
 changes</h2>
+<p>Markdown documentation files in <code>docs/</code> are formatted and
+checked using <code>prettier</code> (see <a href="#javascript-and-css">JavaScript and CSS</a>). You can check or
+format them using <code>npx prettier --check &quot;docs/**/*.md&quot;</code> or
+<code>make tidy-js</code>.</p>
 <p>After changing documentation, consider generating documentation
 locally to verify it is rendered correctly using
 <code>tools/generate-docs</code>. It is possible to do that inside the
