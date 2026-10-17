@@ -560,6 +560,13 @@ scenario name in the tab "Next & previous results" Screenshot:
 <img src="images/test_details-link_to_latest.png" alt="Link to latest in scenario" />
 </figure>
 
+### Test setting lifecycle alerts
+
+When deprecated or restricted job settings are used, they are visualized on the
+"Settings" tab of a test result details page. A matching lifecycle rule will
+display a yellow (warning) or red (error) badge and list an alert with the
+configured explanation of why that setting is deprecated.
+
 ### Add `latest' query route <a href="https://github.com/os-autoinst/openQA/pull/815" id="815">gh</a>
 
 Should always refer to most recent job for the specified scenario.
