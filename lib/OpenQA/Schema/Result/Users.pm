@@ -20,6 +20,10 @@ __PACKAGE__->add_columns(
     username => {
         data_type => 'text',
     },
+    password => {
+        data_type => 'text',
+        is_nullable => 1,
+    },
     provider => {
         data_type => 'text',
         default_value => '',
@@ -55,6 +59,10 @@ __PACKAGE__->add_columns(
     deleted_at => {
         data_type => 'timestamp',
         is_nullable => 1,
+    },
+    session_epoch => {
+        data_type => 'integer',
+        default_value => 0,
     },
 );
 __PACKAGE__->add_timestamps;
