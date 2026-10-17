@@ -22,6 +22,7 @@ RUN zypper ar -p 95 -f https://download.opensuse.org/repositories/devel:openQA/1
     zypper in -yl kmod && \
     (zypper in -yl qemu-ovmf-x86_64 ||:) && \
     (zypper in -yl qemu-uefi-aarch64 ||:) && \
+    (zypper in -yl swtpm ||:) && \
     zypper clean && \
     mkdir -p /root/qemu
 
