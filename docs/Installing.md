@@ -770,6 +770,57 @@ where:
 
 By default, job groups with "Development" in the name add +50 to the priority.
 
+### Test setting lifecycle management
+
+Administrators can manage the lifecycle of test settings (variables) to
+identify and eventually phase out deprecated, experimental, or forbidden
+configurations. This is configured via the `[job_settings_lifecycle]` section
+in `openqa.ini`.
+
+Each entry in this section represents a lifecycle rule with the following
+syntax:
+
+    rule_id = KEY:PATTERN:LEVEL[:PRIO_ADJUSTMENT]:EXPLANATION
+
+Where:
+
+- `rule_id`: A unique identifier for the rule.
+- `KEY`: The setting name (variable) to check.
+- `PATTERN`: The matching pattern for the setting value. Matching uses regular
+  expressions:
+  - Prefixing with `=~` (or no prefix) matches if the value satisfies the
+    regex.
+  - Prefixing with `!~` matches if the value does _not_ satisfy the regex.
+  - Colons inside the pattern can be escaped as `\:`.
+- `LEVEL`: The enforcement level, which can be:
+  - `info`: For informational or experimental logging or announcements.
+  - `warning`: Displays an alert and badges on the WebUI (test details
+    settings tab) and stashes warnings.
+  - `error`: Blocks and rejects the creation or update of settings in machine,
+    product, test suite, and job template YAML schedules, returning a `400 Bad
+Request` HTTP error with the explanation.
+- `PRIO_ADJUSTMENT` (optional): An integer value (e.g., `-100` or `+50`) that
+  automatically adjusts the job priority (via priority throttling integration)
+  when a matching warning, info, or error is encountered on jobs.
+- `EXPLANATION`: A descriptive text explaining why the rule exists and how to
+  resolve or replace the setting.
+
+#### Phase-out workflow
+
+A recommended workflow for phasing out a legacy setting is:
+
+1. **Introduction/Warning Phase**: Create a rule with the `warning` level (and
+   optionally a negative `PRIO_ADJUSTMENT` to lower the priority of jobs using
+   deprecated settings). This alerts test developers via the web UI without
+   breaking active scheduling.
+2. **Error Enforcement Phase**: Upgrade the rule's level to `error`. This
+   actively blocks any new or updated configurations using the deprecated
+   setting.
+3. **Cleanup Phase**: Clean up any remaining definitions in test templates,
+   YAML schedules, products, machines, and test suites.
+4. **Rule Deletion**: Delete the rule from the configuration once the setting
+   is completely retired.
+
 ## Run the web UI
 
 To start openQA and enable it to run on each boot call
