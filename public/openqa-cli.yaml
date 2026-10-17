@@ -166,6 +166,14 @@ subcommands:
     options:
       - asset-size-limit|l=i   --Asset size limit in bytes
       - with-thumbnails|t      --Download thumbnails as well
+    parameters:
+      - name: job_id
+        summary: ID of the job to archive
+        required: true
+      - name: path
+        summary: Path to directory where to store files
+        type: file
+        required: true
 
   reservation:
     summary: Manage worker reservations
@@ -178,11 +186,21 @@ subcommands:
       - force|f                --Force reservation even if worker is already reserved
       - release|r              --Release an existing reservation
       - worker-host=s          --Reserve or release an entire worker host instead of individual WORKER_ID
+    parameters:
+      - name: worker_id
+        summary: ID (int) of worker
+        required: true
 
   schedule:
     summary: Schedules a set of jobs (via "isos post" creating a schedule product)
     description: |
       Usage: openqa-cli schedule [OPTIONS] DISTRI=… VERSION=… FLAVOR=… ARCH=… [ISO=… …]
+
+      Example:
+
+        openqa-cli schedule --o3 \
+          --param-file SCENARIO_DEFINITIONS_YAML=scenario-definitions.yaml \
+          DISTRI=openQA VERSION=Tumbleweed FLAVOR=dev ARCH=x86_64
     options:
       - *param_file
       - |
@@ -193,6 +211,9 @@ subcommands:
         follow|f          --Use the newest clone of each monitored job
       - &poll_intervall
         poll-interval|i=i --Specifies the poll interval used with --monitor
+    parameters:
+      - name: parameters
+        summary: Query parameters (DISTRI=… VERSION=… FLAVOR=… ARCH=… [ISO=… …])
 
   monitor:
     summary: Monitors a set of jobs
@@ -204,3 +225,7 @@ subcommands:
     options:
       - *poll_intervall
       - *follow
+    parameters:
+      - name: job_id
+        multiple: true
+        summary: Jobs to monitor
