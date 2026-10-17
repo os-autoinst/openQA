@@ -3,6 +3,7 @@
 
 package OpenQA::Task::Asset::Download;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
+use OpenQA::Constants qw(DEFAULT_DOWNLOAD_REPO_TIMEOUT);
 use OpenQA::Task::SignalGuard;
 use OpenQA::Utils qw(check_download_url);
 use OpenQA::Downloader;
@@ -25,7 +26,8 @@ sub _create_symlinks ($job, $ctx, $assetpath, $other_destinations) {
     return undef;
 }
 
-sub _download ($job, $url, $assetpaths, $do_extract) {
+sub _download ($job, $url, $assetpaths, $do_extract, $options = {}) {
+    $options //= {};
     my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($job);
     my $app = $job->app;
     my $job_id = $job->id;
@@ -76,16 +78,22 @@ sub _download ($job, $url, $assetpaths, $do_extract) {
     if ($do_extract) { $ctx->debug(qq{Downloading and uncompressing "$url" to "$assetpath"}) }
     else { $ctx->debug(qq{Downloading "$url" to "$assetpath"}) }
 
-    my $downloader = OpenQA::Downloader->new(log => $ctx, tmpdir => $ENV{MOJO_TMPDIR});
-    my $options = {
+    my $downloader = OpenQA::Downloader->new(
+        log => $ctx,
+        tmpdir => $ENV{MOJO_TMPDIR},
+        rsync_password_file => $app->config->{global}->{rsync_password_file},
+        repo_timeout => $app->config->{global}->{download_repo_timeout} // DEFAULT_DOWNLOAD_REPO_TIMEOUT,
+    );
+    my $dl_options = {
+        %$options,
         extract => $do_extract,
         on_success => sub {
-            chmod 0644, $assetpath;
+            -d $assetpath ? chmod 0755, $assetpath : chmod 0644, $assetpath;
             $ctx->debug(qq{Download of "$assetpath" successful});
         }
     };
     return _create_symlinks($job, $ctx, $assetpath, \@other_destinations)
-      unless my $err = $downloader->download($url, $assetpath, $options);
+      unless my $err = $downloader->download($url, $assetpath, $dl_options);
     my $res = $downloader->res;
     $ctx->error(my $msg = qq{Downloading "$url" failed with: $err});
     return !$err && $res && $res->is_success ? $job->finish($msg) : $job->user_fail($msg);

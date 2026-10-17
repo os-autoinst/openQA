@@ -10,6 +10,7 @@ use utf8;
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 
+use OpenQA::Constants qw(DEFAULT_DOWNLOAD_REPO_TIMEOUT);
 use OpenQA::Downloader;
 use Mojo::Server::Daemon;
 use Mojo::Log;
@@ -19,7 +20,7 @@ use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 use OpenQA::Utils qw(make_listen_url make_access_url to_plain_service_port);
 use OpenQA::Test::Utils qw(fake_asset_server wait_for_or_bail_out);
 use OpenQA::Test::TimeLimit '10';
-use Mojo::File qw(tempdir);
+use Mojo::File qw(path tempdir);
 use Test::MockModule;
 
 # Capture logs
@@ -194,6 +195,146 @@ subtest 'Error when decompressing archive' => sub {
     like $cache_log, qr/Extracting ".*fake-archive\.tar\.xz" to ".*fake-archive"/, 'Extracting download';
     like $cache_log, qr/Extracting ".*fake-archive\.tar\.xz" failed:.*Unrecognized archive format.*/,
       'Extracting failed';
+    $cache_log = '';
+};
+
+subtest 'Repository download with unsupported scheme' => sub {
+    my $repo_dir = $tempdir->child('repo', 'myrepo');
+    my $from = 'unsupported://example.com/myrepo';
+    like $downloader->download($from, $repo_dir, {is_repo => 1}),
+      qr/Unsupported URL scheme "unsupported" for repository download/, 'Unsupported scheme fails';
+    ok !-e $repo_dir, 'Target repo not created';
+    $cache_log = '';
+};
+
+subtest 'Repository download with rsync command execution' => sub {
+    my $repo_dir = $tempdir->child('repo', 'rsyncrepo');
+    my $from = 'rsync://example.com/repos/standard';
+    my $called_cmd;
+    my $utils_mock = Test::MockModule->new('OpenQA::Utils');
+    $utils_mock->redefine(
+        run_cmd_with_log_return_error => sub ($cmd, %args) {
+            $called_cmd = $cmd;
+            my $tmp_dest = $cmd->[-1];
+            path($tmp_dest, 'repodata')->make_path->child('repomd.xml')->spurt('<repomd/>');
+            return {status => 1, return_code => 0, exit_status => 0, stdout => '', stderr => ''};
+        });
+    is $downloader->download($from, $repo_dir, {exclude => '*.src.rpm,*-debuginfo*', timeout => 1800}), undef,
+      'rsync download succeeds';
+    ok -d $repo_dir, 'Repository directory created';
+    ok -e $repo_dir->child('repodata', 'repomd.xml'), 'Repomd file exists in repo directory';
+    is_deeply [splice @$called_cmd, 0, 8],
+      [qw(rsync -avH --delete --timeout=1800 --exclude *.src.rpm --exclude *-debuginfo*)],
+      'rsync command invoked correctly with excludes and timeout';
+    $cache_log = '';
+};
+
+subtest 'Repository download with rsync link-dest deduplication' => sub {
+    my $baseline = $tempdir->child('repo', 'fixed', 'standard-CURRENT');
+    $baseline->make_path;
+    my $repo_dir = $tempdir->child('repo', 'standard-Build1234');
+    my $from = 'rsync://example.com/repos/standard';
+    my $called_cmd;
+    my $utils_mock = Test::MockModule->new('OpenQA::Utils');
+    $utils_mock->redefine(
+        run_cmd_with_log_return_error => sub ($cmd, %args) {
+            $called_cmd = $cmd;
+            my $tmp_dest = $cmd->[-1];
+            path($tmp_dest, 'repodata')->make_path->child('repomd.xml')->spurt('<repomd/>');
+            return {status => 1, return_code => 0, exit_status => 0, stdout => '', stderr => ''};
+        });
+    is $downloader->download($from, $repo_dir), undef, 'rsync download succeeds with auto link-dest';
+    ok -d $repo_dir, 'Repository directory created';
+    ok + (grep { $_ eq "--link-dest=$baseline" } @$called_cmd), 'auto link-dest passed to rsync';
+
+    is $downloader->download($from, $repo_dir, {link_dest => 'standard-CURRENT'}), undef,
+      'rsync download succeeds with explicit link-dest';
+    ok + (grep { $_ eq "--link-dest=$baseline" } @$called_cmd), 'explicit link-dest passed to rsync';
+    $cache_log = '';
+};
+
+subtest 'Repository download with rsync password file' => sub {
+    my $pwd_file = $tempdir->child('rsync.secret');
+    $pwd_file->spurt("secret\n");
+    my $repo_dir = $tempdir->child('repo', 'authrepo');
+    my $from = 'rsync://example.com/repos/standard';
+    my $called_cmd;
+    my $utils_mock = Test::MockModule->new('OpenQA::Utils');
+    $utils_mock->redefine(
+        run_cmd_with_log_return_error => sub ($cmd, %args) {
+            $called_cmd = $cmd;
+            my $tmp_dest = $cmd->[-1];
+            path($tmp_dest, 'repodata')->make_path->child('repomd.xml')->spurt('<repomd/>');
+            return {status => 1, return_code => 0, exit_status => 0, stdout => '', stderr => ''};
+        });
+    my $auth_downloader = OpenQA::Downloader->new(
+        log => $log,
+        tmpdir => $mojo_tmpdir,
+        rsync_password_file => $pwd_file->to_string,
+    );
+    is $auth_downloader->download($from, $repo_dir), undef, 'rsync download succeeds with password file';
+    ok -d $repo_dir, 'Repository directory created';
+    ok + (grep { $_ eq "--password-file=$pwd_file" } @$called_cmd), 'password-file passed to rsync';
+    $cache_log = '';
+};
+
+subtest 'Repository download with wget command execution' => sub {
+    my $repo_dir = $tempdir->child('repo', 'httprepo');
+    my $from = 'http://example.com/repos/openSUSE/standard/';
+    my $called_cmd;
+    my $utils_mock = Test::MockModule->new('OpenQA::Utils');
+    $utils_mock->redefine(
+        run_cmd_with_log_return_error => sub ($cmd, %args) {
+            $called_cmd = $cmd;
+            my $tmp_dest = $cmd->[-2];
+            path($tmp_dest, 'repodata')->make_path->child('repomd.xml')->spurt('<repomd/>');
+            return {status => 1, return_code => 0, exit_status => 0, stdout => '', stderr => ''};
+        });
+    is $downloader->download($from, $repo_dir, {exclude => '*.src.rpm,subdir/'}), undef, 'wget download succeeds';
+    ok -d $repo_dir, 'Repository directory created';
+    ok -e $repo_dir->child('repodata', 'repomd.xml'), 'Repomd file exists in repo directory';
+    is $called_cmd->[4], '--cut-dirs=3', 'cut-dirs calculated correctly';
+    ok + (grep { $_ eq '--timeout=' . DEFAULT_DOWNLOAD_REPO_TIMEOUT } @$called_cmd), 'default timeout passed to wget';
+    ok + (grep { $_ eq '--reject' } @$called_cmd), 'reject flag passed for file pattern';
+    ok + (grep { $_ eq '--exclude-directories' } @$called_cmd), 'exclude-directories flag passed for dir pattern';
+    $cache_log = '';
+};
+
+subtest 'Repository download failure and cleanup' => sub {
+    my $repo_dir = $tempdir->child('repo', 'failedrepo');
+    my $from = 'http://example.com/repos/failed/';
+    my $utils_mock = Test::MockModule->new('OpenQA::Utils');
+    $utils_mock->redefine(
+        run_cmd_with_log_return_error => sub ($cmd, %args) {
+            return {
+                status => 0,
+                return_code => 8,
+                exit_status => 8,
+                stdout => '',
+                stderr => 'ERROR 404: File not found.'
+            };
+        });
+    like $downloader->download($from, $repo_dir), qr/ERROR 404: File not found/, 'Failed repo download reported';
+    ok !-e $repo_dir, 'Failed repo target not created';
+    $cache_log = '';
+};
+
+subtest 'Repository download server error 500 and retries' => sub {
+    my $repo_dir = $tempdir->child('repo', 'retryrepo');
+    my $from = 'http://example.com/repos/retry/';
+    my $utils_mock = Test::MockModule->new('OpenQA::Utils');
+    $utils_mock->redefine(
+        run_cmd_with_log_return_error => sub ($cmd, %args) {
+            return {
+                status => 0,
+                return_code => 8,
+                exit_status => 8,
+                stdout => '',
+                stderr => 'ERROR 500: Internal Server Error'
+            };
+        });
+    like $downloader->download($from, $repo_dir), qr/ERROR 500: Internal Server Error/, 'Failed repo download reported';
+    like $cache_log, qr/Download error 500, waiting .* seconds for next try \(2 remaining\)/, '2 tries remaining';
     $cache_log = '';
 };
 

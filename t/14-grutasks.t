@@ -861,6 +861,24 @@ subtest 'download assets with correct permissions' => sub {
         is $info->{state}, 'failed', 'job failed due to symlinking problem';
     };
     path($_)->remove for @destinations;
+
+    my $repo_dest = "$cwd/t/data/openqa/share/factory/repo/newrepo";
+    my $repo_source = "http://$local_domain/repo/newrepo";
+    subtest 'successful repo download with correct directory permissions' => sub {
+        my $mock = Test::MockModule->new('OpenQA::Downloader');
+        $mock->redefine(
+            download => sub ($self, $url, $target, $options) {
+                path($target)->make_path;
+                $options->{on_success}->();
+                return undef;
+            });
+        combined_like { $info = run_gru_job($t->app, 'download_asset' => [$repo_source, $repo_dest, 0]) }
+        qr/Download of "$repo_dest" successful/, 'repo download logged';
+        ok -d $repo_dest, 'repo directory exists';
+        is S_IMODE((stat $repo_dest)[2]), 0755, 'repo directory created with 0755 permissions';
+        is $info->{state}, 'finished', 'job considered finished (repo download)';
+        path($repo_dest)->remove_tree;
+    };
 };
 
 subtest 'finalize job results' => sub {
