@@ -40,6 +40,8 @@ For the installation of openQA in general see the
 existing instance see the [Users Guide](UsersGuide.md#usersguide).
 More advanced topics can be found in other documents. All documents are also
 available in the [official repository](https://github.com/os-autoinst/openQA).
+For the surrounding tools, public instances, learning resources, and community
+see the [Ecosystem guide](Ecosystem.md#ecosystem).
 
 ## Architecture
 
