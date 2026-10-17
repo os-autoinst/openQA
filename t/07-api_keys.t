@@ -20,5 +20,9 @@ my $arthur = $t->app->schema->resultset('Users')->find({username => 'arthur'});
 my $key = $t->app->schema->resultset('ApiKeys')->create({user_id => $arthur->id});
 like $key->key, qr/[0-9a-fA-F]{16}/, 'new keys have a valid random key attribute';
 like $key->secret, qr/[0-9a-fA-F]{16}/, 'new keys have a valid random secret attribute';
+is $key->comment, undef, 'api key created without comment has undefined comment';
+
+my $commented_key = $t->app->schema->resultset('ApiKeys')->create({user_id => $arthur->id, comment => 'test key'});
+is $commented_key->comment, 'test key', 'api key created with comment stores and returns the comment';
 
 done_testing();
