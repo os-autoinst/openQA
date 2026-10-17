@@ -14,6 +14,32 @@ use Feature::Compat::Try;
 use List::Util 'first';
 use Mojo::JSON 'decode_json', 'encode_json';
 
+sub _table_tool ($table, $label, $singular, $description) {
+    return {
+        title => "List openQA $label",
+        mode => 'read-only',
+        scopes => ['mcp:read'],
+        annotations => {readOnlyHint => \1, destructiveHint => \0, idempotentHint => \1, openWorldHint => \0},
+        description => $description,
+        properties => {
+            id => {type => 'integer', minimum => 1, description => "Limit the result to one $singular"},
+            limit => {type => 'integer', minimum => 1},
+            offset => {type => 'integer', minimum => 0},
+        },
+        output_schema => {type => 'object'},
+        call => sub ($tool, $args) {
+            _call(
+                $tool,
+                role => 'user',
+                controller => 'Table',
+                action => 'list',
+                method => 'GET',
+                stash => {table => $table},
+                params => _params($args));
+        },
+    };
+}
+
 my %TOOLS = (
     openqa_get_info => {
         title => 'Get openQA Server Info',
@@ -98,7 +124,6 @@ my %TOOLS = (
                 controller => 'Job',
                 action => 'list',
                 method => 'GET',
-                path => '/api/v1/jobs',
                 params => _params($args));
         },
     },
@@ -123,7 +148,6 @@ my %TOOLS = (
                 controller => 'JobGroup',
                 action => 'list',
                 method => 'GET',
-                path => ($parent ? '/api/v1/parent_groups' : '/api/v1/job_groups'),
                 params => _params($args));
         },
     },
@@ -152,7 +176,6 @@ my %TOOLS = (
                 controller => 'JobGroup',
                 action => 'build_results',
                 method => 'GET',
-                path => "/api/v1/job_groups/$group_id/build_results",
                 captures => {group_id => $group_id},
                 params => _params($args));
         },
@@ -168,81 +191,19 @@ my %TOOLS = (
         properties => {},
         output_schema => {type => 'array', items => {type => 'object'}},
         call => sub ($tool, $args) {
-            _structured($tool, [map { $_->info } _get_schema($tool)->resultset('Workers')->all]);
+            _structured($tool, _worker_infos($tool));
         },
     },
-    openqa_list_products => {
-        title => 'List openQA Products',
-        mode => 'read-only',
-        scopes => ['mcp:read'],
-        annotations => {readOnlyHint => \1, destructiveHint => \0, idempotentHint => \1, openWorldHint => \0},
-        description => 'List products (distri, version, arch, flavor) with their settings.',
-        properties => {
-            id => {type => 'integer', minimum => 1, description => 'Limit the result to one product'},
-            limit => {type => 'integer', minimum => 1},
-            offset => {type => 'integer', minimum => 0},
-        },
-        output_schema => {type => 'object'},
-        call => sub ($tool, $args) {
-            _call(
-                $tool,
-                role => 'user',
-                controller => 'Table',
-                action => 'list',
-                method => 'GET',
-                path => '/api/v1/products',
-                stash => {table => 'Products'},
-                params => _params($args));
-        },
-    },
-    openqa_list_machines => {
-        title => 'List openQA Machines',
-        mode => 'read-only',
-        scopes => ['mcp:read'],
-        annotations => {readOnlyHint => \1, destructiveHint => \0, idempotentHint => \1, openWorldHint => \0},
-        description => 'List machines with their backend and settings.',
-        properties => {
-            id => {type => 'integer', minimum => 1, description => 'Limit the result to one machine'},
-            limit => {type => 'integer', minimum => 1},
-            offset => {type => 'integer', minimum => 0},
-        },
-        output_schema => {type => 'object'},
-        call => sub ($tool, $args) {
-            _call(
-                $tool,
-                role => 'user',
-                controller => 'Table',
-                action => 'list',
-                method => 'GET',
-                path => '/api/v1/machines',
-                stash => {table => 'Machines'},
-                params => _params($args));
-        },
-    },
-    openqa_list_test_suites => {
-        title => 'List openQA Test Suites',
-        mode => 'read-only',
-        scopes => ['mcp:read'],
-        annotations => {readOnlyHint => \1, destructiveHint => \0, idempotentHint => \1, openWorldHint => \0},
-        description => 'List test suites with their settings.',
-        properties => {
-            id => {type => 'integer', minimum => 1, description => 'Limit the result to one test suite'},
-            limit => {type => 'integer', minimum => 1},
-            offset => {type => 'integer', minimum => 0},
-        },
-        output_schema => {type => 'object'},
-        call => sub ($tool, $args) {
-            _call(
-                $tool,
-                role => 'user',
-                controller => 'Table',
-                action => 'list',
-                method => 'GET',
-                path => '/api/v1/test_suites',
-                stash => {table => 'TestSuites'},
-                params => _params($args));
-        },
-    },
+    openqa_list_products => _table_tool(
+        'Products',
+        'Products',
+        'product',
+        'List products (distri, version, arch, flavor) with their settings.'
+    ),
+    openqa_list_machines =>
+      _table_tool('Machines', 'Machines', 'machine', 'List machines with their backend and settings.'),
+    openqa_list_test_suites =>
+      _table_tool('TestSuites', 'Test Suites', 'test suite', 'List test suites with their settings.'),
     openqa_list_job_templates => {
         title => 'List openQA Job Templates',
         mode => 'read-only',
@@ -271,7 +232,6 @@ my %TOOLS = (
                 controller => 'JobTemplate',
                 action => 'list',
                 method => 'GET',
-                path => '/api/v1/job_templates',
                 params => _params($args));
         },
     },
@@ -293,7 +253,6 @@ my %TOOLS = (
                 controller => 'Asset',
                 action => 'list',
                 method => 'GET',
-                path => '/api/v1/assets',
                 params => _params($args));
         },
     },
@@ -336,7 +295,6 @@ my %TOOLS = (
                 controller => 'Comment',
                 action => 'list',
                 method => 'GET',
-                path => '/api/v1/comments',
                 params => _params($args));
         },
     },
@@ -357,7 +315,6 @@ my %TOOLS = (
                 controller => 'Search',
                 action => 'query',
                 method => 'GET',
-                path => '/api/v1/experimental/search',
                 params => [q => $args->{q}]);
         },
     },
@@ -377,7 +334,6 @@ my %TOOLS = (
                 controller => 'Routes',
                 action => 'list',
                 method => 'GET',
-                path => '/api/v1/routes'
             );
         },
     },
@@ -404,7 +360,6 @@ my %TOOLS = (
                 controller => 'Job',
                 action => 'create',
                 method => 'POST',
-                path => '/api/v1/jobs',
                 params => _params($args->{settings}));
         },
     },
@@ -471,7 +426,6 @@ my %TOOLS = (
                 controller => 'Job',
                 action => 'cancel',
                 method => 'POST',
-                path => "/api/v1/jobs/$job_id/cancel",
                 captures => {jobid => $job_id},
                 params => _params($args));
         },
@@ -496,7 +450,6 @@ my %TOOLS = (
                 controller => 'Job',
                 action => 'prio',
                 method => 'POST',
-                path => "/api/v1/jobs/$job_id/prio",
                 captures => {jobid => $job_id},
                 params => _params($args));
         },
@@ -524,7 +477,6 @@ my %TOOLS = (
                 controller => 'Comment',
                 action => 'create',
                 method => 'POST',
-                path => ($job_id ? "/api/v1/jobs/$job_id/comments" : '/api/v1/comments'),
                 params => _params($args));
         },
     },
@@ -564,7 +516,6 @@ my %TOOLS = (
                 controller => 'Iso',
                 action => 'create',
                 method => 'POST',
-                path => '/api/v1/isos',
                 params => $params
             );
         },
@@ -583,7 +534,6 @@ my @RESOURCES = (
                 controller => 'Job',
                 action => 'list',
                 method => 'GET',
-                path => '/api/v1/jobs',
                 params => [limit => 20]);
         },
     },
@@ -598,7 +548,6 @@ my @RESOURCES = (
                 controller => 'JobGroup',
                 action => 'list',
                 method => 'GET',
-                path => '/api/v1/job_groups'
             );
         },
     },
@@ -608,7 +557,7 @@ my @RESOURCES = (
         title => 'openQA Workers',
         description => 'All workers with their status, assigned job and reservation',
         code => sub ($res) {
-            $res->text_resource(encode_json([map { $_->info } _get_schema($res)->resultset('Workers')->all]));
+            $res->text_resource(encode_json(_worker_infos($res)));
         },
     },
 );
@@ -643,7 +592,6 @@ my @PROMPTS = (
                 controller => 'JobGroup',
                 action => 'build_results',
                 method => 'GET',
-                path => "/api/v1/job_groups/$args->{group_id}/build_results",
                 captures => {group_id => $args->{group_id}});
             return $prompt->text_prompt($res->{error}) if $res->{error};
             my $build = first { $_->{build} eq $args->{build} } @{$res->{json}{build_results}};
@@ -656,17 +604,20 @@ my @PROMPTS = (
     },
 );
 
+sub _visible_tools ($mode) {
+    return grep { $mode eq 'read-write' || $TOOLS{$_}{mode} eq 'read-only' } sort keys %TOOLS;
+}
+
 sub tool_info ($mode) {
     my @info;
-    for my $name (sort keys %TOOLS) {
+    for my $name (_visible_tools($mode)) {
         my $def = $TOOLS{$name};
-        next if $def->{mode} eq 'read-write' && $mode ne 'read-write';
         push @info,
           {
             name => $name,
             title => $def->{title},
             description => $def->{description},
-            role => (($def->{scopes}[0] // 'mcp:read') eq 'mcp:write' ? 'operator' : 'user'),
+            role => ($def->{scopes}[0] eq 'mcp:write' ? 'operator' : 'user'),
             destructive => $def->{annotations}{destructiveHint} ? 'yes' : 'no',
           };
     }
@@ -674,7 +625,7 @@ sub tool_info ($mode) {
 }
 
 sub register ($self, $app, $config) {
-    my $mode = $config->{mode} // 'read-only';
+    my $mode = $config->{mode};
     my $mcp = MCP::Server->new;
     $mcp->name('openQA');
     $mcp->version('1.0.0');
@@ -691,9 +642,8 @@ sub register ($self, $app, $config) {
         $mcp->prompt(%$prompt);
     }
 
-    for my $name (sort keys %TOOLS) {
+    for my $name (_visible_tools($mode)) {
         my $def = $TOOLS{$name};
-        next if $def->{mode} eq 'read-write' && $mode ne 'read-write';
         $mcp->tool(
             name => $name,
             title => $def->{title},
@@ -826,7 +776,7 @@ sub _api_call ($tool, %args) {
 }
 
 # MCP arguments are JSON, controllers expect form parameters, so booleans become 1/0
-# and lists become comma-separated strings
+# and lists become repeated parameters
 # restart and duplicate differ only in the controller action and the route
 sub _restart_call ($tool, $action, $args) {
     my $job_id = delete $args->{job_id};
@@ -840,7 +790,6 @@ sub _restart_call ($tool, $action, $args) {
         controller => 'Job',
         action => $action,
         method => 'POST',
-        path => "/api/v1/jobs/$job_id/$action",
         captures => {jobid => $job_id},
         params => _params($args));
 }
@@ -862,6 +811,10 @@ sub _params ($args) {
         else { push @pairs, $key => $value }
     }
     return \@pairs;
+}
+
+sub _worker_infos ($obj) {
+    [map { $_->info } _get_schema($obj)->resultset('Workers')->all]
 }
 
 sub _resource_json ($res, %args) {
