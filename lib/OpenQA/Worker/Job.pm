@@ -4,7 +4,8 @@
 package OpenQA::Worker::Job;
 use Mojo::Base 'Mojo::EventEmitter', -signatures;
 
-use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME DEFAULT_UPLOAD_CHUNK_SIZE DEFAULT_MAX_SETUP_TIME WORKER_COMMAND_ABORT
+use OpenQA::Constants
+  qw(DEFAULT_MAX_JOB_TIME DEFAULT_TIMEOUT_SCALE DEFAULT_UPLOAD_CHUNK_SIZE DEFAULT_MAX_SETUP_TIME WORKER_COMMAND_ABORT
   WORKER_COMMAND_QUIT WORKER_COMMAND_CANCEL WORKER_COMMAND_OBSOLETE WORKER_SR_BROKEN WORKER_SR_SETUP_FAILURE
   WORKER_SR_API_FAILURE WORKER_SR_TIMEOUT WORKER_SR_DONE WORKER_SR_DIED);
 use OpenQA::Jobs::Constants;
@@ -180,7 +181,8 @@ sub _compute_timeouts ($job_settings) {
     my $timeout_scale = $job_settings->{TIMEOUT_SCALE};
     $max_job_time = DEFAULT_MAX_JOB_TIME unless looks_like_number $max_job_time;
     $max_setup_time = DEFAULT_MAX_SETUP_TIME unless looks_like_number $max_setup_time;
-    $max_job_time *= $timeout_scale if looks_like_number $timeout_scale;
+    $timeout_scale = DEFAULT_TIMEOUT_SCALE unless looks_like_number $timeout_scale;
+    $max_job_time *= $timeout_scale;
     return ($max_job_time, $max_setup_time);
 }
 

@@ -1,6 +1,7 @@
 include::GettingStarted.md[]
 include::Installing.md[]
 include::UsersGuide.md[]
+include::JobImpact.md[]
 include::WritingTests.md[]
 include::ExternalResults.md[]
 include::Client.md[]
