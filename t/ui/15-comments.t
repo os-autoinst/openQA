@@ -311,17 +311,33 @@ subtest 'commenting in test results including labels' => sub {
     write_comment $test_message, 'comment added';
 
     subtest 'add job status icons' => sub {
+        $schema->resultset('Jobs')->create(
+            {
+                id => 80005,
+                state => 'done',
+                result => 'parallel_failed',
+                TEST => 'parallel_job',
+                t_finished => '2020-01-01 00:00:00',
+                t_started => '2020-01-01 00:00:00',
+                t_created => '2020-01-01 00:00:00',
+                priority => 50,
+            });
         my $urls = <<"EOM";
 Can you see status circles after the URLs?
 
 - I'm green! $url/t80000
 - I'm red! $url/t99938
+- I'm also red! $url/t80005
 EOM
         write_comment $urls, 'comment with job status icons';
         $driver->refresh;
         my $status_sel = 'div.comment-body span.openqa-testref i.status';
         ok wait_for_element(selector => "$status_sel.result_passed"), 'icon for passed job shown';
         ok wait_for_element(selector => "$status_sel.result_failed"), 'icon for failed job shown';
+        ok wait_for_element(selector => "$status_sel.result_parallel_failed"), 'icon for parallel_failed job shown';
+        is $driver->find_element("$status_sel.result_parallel_failed")->get_css_attribute('color'),
+          $driver->find_element("$status_sel.result_failed")->get_css_attribute('color'),
+          'parallel_failed icon is rendered red like failed';
     };
 
     subtest 'check comment availability sign on test result overview' => sub {
