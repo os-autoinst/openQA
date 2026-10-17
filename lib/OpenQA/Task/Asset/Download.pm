@@ -48,11 +48,14 @@ sub _download ($job, $url, $assetpaths, $do_extract) {
     my $log = $app->log;
     my $ctx = $log->context("[#$job_id]");
 
-    # skip download if the one dest file exists (in case multiple downloads of same ISO are scheduled)
+    my $is_repo = path($assetpath)->dirname->basename eq 'repo' || (Mojo::URL->new($url)->scheme // '') eq 'rsync';
+
+    # skip download if the one dest file exists (in case multiple downloads of same ISO are scheduled);
+    # repo assets must not be skipped because re-syncing an existing directory is the point
     my @existing_dest_files;
     my @missing_dest_files;
     -e ? push @existing_dest_files, $_ : push @missing_dest_files, $_ for @$assetpaths;
-    if (@existing_dest_files) {
+    if (@existing_dest_files && !$is_repo) {
         $ctx->info(my $msg = qq{Skipping download of "$url" because file "$existing_dest_files[0]" already exists});
         _create_symlinks($job, $ctx, $existing_dest_files[0], \@missing_dest_files) if @missing_dest_files;
         return undef;
@@ -79,8 +82,9 @@ sub _download ($job, $url, $assetpaths, $do_extract) {
     my $downloader = OpenQA::Downloader->new(log => $ctx, tmpdir => $ENV{MOJO_TMPDIR});
     my $options = {
         extract => $do_extract,
+        is_repo => $is_repo,
         on_success => sub {
-            chmod 0644, $assetpath;
+            -d $assetpath ? chmod 0755, $assetpath : chmod 0644, $assetpath;
             $ctx->debug(qq{Download of "$assetpath" successful});
         }
     };
