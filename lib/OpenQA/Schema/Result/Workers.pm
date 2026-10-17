@@ -349,15 +349,32 @@ sub reschedule_assigned_jobs ($self, $currently_assigned_jobs = undef) {
     }
 }
 
-sub vnc_argument ($self) {
+sub _vnc_endpoint ($self) {
     my $hostname = $self->get_property('WORKER_HOSTNAME') || $self->host;
     my $instance = $self->instance + VNC_PORT;
-    return "$hostname:$instance";
+    return ($hostname, $instance);
 }
+
+sub vnc_argument ($self) { join ':', $self->_vnc_endpoint }
 
 sub developer_connection_hint ($self) {
     my $hint = trim($self->get_property('DEVELOPER_CONNECTION_HINT') // '');
-    return length $hint ? $hint : undef;
+    return undef unless length $hint;
+
+    my ($hostname, $vnc_port) = $self->_vnc_endpoint;
+    my %vars = (
+        port => $vnc_port,
+        vnc_port => $vnc_port,
+        host => $hostname,
+        worker_hostname => $hostname,
+        instance => $self->instance,
+        vnc_arg => "$hostname:$vnc_port",
+    );
+    $hint =~ s{%([A-Za-z_]+)%}{
+        my $key = lc $1;
+        exists $vars{$key} ? $vars{$key} : "%$1%"
+    }ge;
+    return $hint;
 }
 
 1;
