@@ -181,7 +181,7 @@ subtest 'Update configuration from Plugin requirements' => sub {
 subtest 'listing assets (for installation/Makefile)' => sub {
     my $app = Mojolicious->new(home => Mojo::Home->new("$FindBin::Bin/.."));
     my $output = combined_from { OpenQA::Assets::list($app) };
-    my @expected_extensions = qw(scss css js png svg woff2);
+    my @expected_extensions = qw(scss css js png svg ttf);
     like $output, qr{^(assets|node_modules)/.*\.$_$}m, "$_ file listed" for @expected_extensions;
 };
 
