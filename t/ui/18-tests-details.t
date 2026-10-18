@@ -97,9 +97,6 @@ sub find_candidate_needles ($enabled_expected = 1) {
     is $candidates_menu->is_enabled, $enabled_expected, 'candidates menu is enabled/disabled';
     return {} unless $candidates_menu->is_enabled;
 
-    # save implicit waiting time as long as we are only looking for elements
-    # that should be visible already
-    disable_timeout;
     $candidates_menu->click;
 
     # read the tags/needles from the HTML structure
@@ -132,7 +129,6 @@ sub find_candidate_needles ($enabled_expected = 1) {
 
     # close the candidates menu again, return results
     $driver->find_element('#candidatesMenu')->click();
-    enable_timeout;
     return \%needles_by_tag;
 }
 
@@ -150,7 +146,7 @@ subtest 'error handling when loading test modules' => sub {
 
 subtest 'tab navigation via history' => sub {
     $driver->get('/tests');
-    $driver->find_element('a[href="/tests/99982"]')->click();
+    wait_for_element(selector => 'a[href="/tests/99982"]', description => 'job 99982 listed on tests page')->click();
     is current_tab, 'Details', 'starting on Details tab for completed job';
     $driver->find_element_by_link_text('Settings')->click();
     is current_tab, 'Settings', 'switched to settings tab';
@@ -161,6 +157,7 @@ subtest 'tab navigation via history' => sub {
 $driver->get('/tests/99937');
 
 subtest 'show job modules execution time' => sub {
+    wait_for_element(selector => '.component', description => 'job modules displayed');
     my $tds = $driver->find_elements('.component');
     my %modules_execution_time = (
         aplay => '2m 26s',
@@ -178,7 +175,7 @@ subtest 'show job modules execution time' => sub {
 };
 
 subtest 'displaying audio result' => sub {
-    my $aplay_step = $driver->find_element('[href="#step/aplay/4"]');
+    my $aplay_step = wait_for_element(selector => '[href="#step/aplay/4"]', description => 'aplay step link displayed');
     $aplay_step->click;
     my $audio_element = wait_for_element selector => '#preview_container_in audio', desc => 'audio player shown';
     like $audio_element->get_attribute('src'), qr|/tests/99937/file/aplay-3\.wav$|, 'expected audio file referenced';
@@ -186,7 +183,7 @@ subtest 'displaying audio result' => sub {
 };
 
 subtest 'displaying image result with candidates' => sub {
-    my $step_el = $driver->find_element('[href="#step/bootloader/1"]');
+    my $step_el = wait_for_element(selector => '[href="#step/bootloader/1"]');
     $step_el->click();
     my $needles = find_candidate_needles;
     is_deeply $needles, {'inst-bootmenu' => ['100%: bootmenu-dvd-12.3']}, 'correct tags displayed'
@@ -195,7 +192,7 @@ subtest 'displaying image result with candidates' => sub {
 };
 
 subtest 'displaying image result with deleted candidate' => sub {
-    my $step_el = $driver->find_element('[href="#step/installer_timezone/1"]');
+    my $step_el = wait_for_element(selector => '[href="#step/installer_timezone/1"]');
     $step_el->click();
     my $needles = find_candidate_needles;
     my $inst_timezone_list = $needles->{'inst-timezone'} // [];
@@ -206,7 +203,7 @@ subtest 'displaying image result with deleted candidate' => sub {
 
 subtest 'displaying image result with present candidate' => sub {
     $driver->get('/tests/99946');
-    my $step_el = $driver->find_element('[href="#step/installer_timezone/1"]');
+    my $step_el = wait_for_element(selector => '[href="#step/installer_timezone/1"]');
     $step_el->click();
     my $needles = find_candidate_needles;
     my $inst_timezone_list = $needles->{'inst-timezone'} // [];
@@ -231,22 +228,40 @@ subtest 'filtering' => sub {
     };
 
     # check initial state (no filters enabled)
-    ok !$driver->find_element('#details-name-filter')->is_displayed(), 'name filter initially not displayed';
-    ok !$driver->find_element('#details-only-failed-filter')->is_displayed(), 'failed filter initially not displayed';
+    wait_for_element(
+        selector => '#details-name-filter',
+        is_displayed => 0,
+        description => 'name filter initially not displayed'
+    );
+    wait_for_element(
+        selector => '#details-only-failed-filter',
+        is_displayed => 0,
+        description => 'failed filter initially not displayed'
+    );
     is $count_steps->('ok'), 6, 'number of passed steps without filter';
     is $count_steps->('failed'), 2, 'number of failed steps without filter';
     is $count_headings->(), 3, 'number of module headings without filter';
 
     # show filter form
-    $driver->find_element('#details-filter-toggle')->click();
+    wait_for_element(selector => '#details-filter-toggle')->click();
 
     # enable name filter
+    wait_for_element(
+        selector => '#details-name-filter',
+        is_displayed => 1,
+        description => 'name filter displayed after opening the filter form'
+    );
     $driver->find_element('#details-name-filter')->send_keys('er');
     is $count_steps->('ok'), 2, 'number of passed steps only with name filter';
     is $count_steps->('failed'), 1, 'number of failed steps only with name filter';
     is $count_headings->(), 0, 'no module headings shown when filter active';
 
     # enable failed filter
+    wait_for_element(
+        selector => '#details-only-failed-filter',
+        is_displayed => 1,
+        description => 'failed filter displayed after opening the filter form'
+    );
     $driver->find_element('#details-only-failed-filter')->click();
     is $count_steps->('ok'), 0, 'number of passed steps with both filters';
     is $count_steps->('failed'), 1, 'number of failed steps with both filters';
@@ -270,9 +285,11 @@ subtest 'filtering' => sub {
 };
 
 subtest 'expand and collapse all rows' => sub {
-    my $expand_all = $driver->find_element('#expand-all-rows');
+    my $expand_all
+      = wait_for_element(selector => '#expand-all-rows', description => 'expand-all-rows button displayed');
     ok $expand_all->is_displayed(), 'expand-all-rows button is displayed';
-    my $collapse_all = $driver->find_element('#collapse-all-rows');
+    my $collapse_all
+      = wait_for_element(selector => '#collapse-all-rows', description => 'collapse-all-rows button displayed');
     ok $collapse_all->is_displayed(), 'collapse-all-rows button is displayed';
 
     my $expand_btns_count = $driver->execute_script(q{return $('button.logview_expand_btn').length;});
@@ -324,7 +341,7 @@ subtest 'bug reporting' => sub {
     subtest 'screenshot' => sub {
         my @previews = $driver->find_elements('.links_a.current_preview');
         if (!@previews) {
-            $driver->find_element('[href="#step/bootloader/1"]')->click();
+            wait_for_element(selector => '[href="#step/bootloader/1"]')->click();
             wait_for_element(selector => '#preview_container_in .report', is_displayed => 1);
         }
         # note: image of bootloader step from previous test 'correct tags displayed' is still shown
@@ -373,7 +390,7 @@ subtest 'reason and log details on incomplete jobs' => sub {
     like $log_element->get_attribute('data-src'), qr/autoinst-log.txt/, 'log file embedded';
     like $log_element->get_text(), qr/Crashed\?/, 'log contents loaded';
     $driver->find_element_by_link_text('Investigation')->click;
-    $driver->find_element('table#investigation_status_entry')
+    wait_for_element(selector => 'table#investigation_status_entry', description => 'investigation status entry shown')
       ->text_like(qr/cannot provide hints/, 'investigation status content shown as table');
 };
 
@@ -568,10 +585,9 @@ subtest 'render log links from steps' => sub {
 
             $link->click;
             wait_for_ajax msg => 'log contents';
+            my $sl = wait_for_element(selector => '.source-link', description => 'source link shown');
             like $driver->find_element('.embedded-logfile')->get_text,
               qr/ \[step:installation,bootloader,$step\].* called /, 'test';
-            my @source_links = $driver->find_element_by_class('source-link');
-            my $sl = $source_links[0];
             is $sl->get_attribute('href'),
               'https://example.org/fortest/blob/c0ffee/tests/installaton/bootloader.pm#L5', 'source link ok';
             $driver->go_back;
@@ -581,12 +597,12 @@ subtest 'render log links from steps' => sub {
 
 subtest 'render video link if frametime is available' => sub {
     $driver->find_element_by_link_text('Details')->click();
-    $driver->find_element('[href="#step/bootloader/1"]')->click();
+    wait_for_element(selector => '[href="#step/bootloader/1"]')->click();
     wait_for_ajax(msg => 'first step of bootloader test module loaded');
     my @links = $driver->find_elements('.step_actions .fa-file-video');
     is $#links, -1, 'no link without frametime';
 
-    $driver->find_element('[href="#step/bootloader/2"]')->click();
+    wait_for_element(selector => '[href="#step/bootloader/2"]')->click();
     wait_for_ajax(msg => 'second step of bootloader test module loaded');
 
     my @video_link_elems
@@ -608,7 +624,7 @@ subtest 'arrow key navigation between steps' => sub {
     $driver->find_element_by_link_text('Details')->click();
     wait_for_ajax(msg => 'details tab loaded');
 
-    $driver->find_element('[href="#step/bootloader/1"]')->click();
+    wait_for_element(selector => '[href="#step/bootloader/1"]')->click();
     wait_for_ajax(msg => 'first step of bootloader loaded');
     my $first_step_url = $driver->get_current_url();
     like $first_step_url, qr/#step\/bootloader\/1/, 'first step selected';
@@ -656,7 +672,9 @@ subtest 'misc details: title, favicon, go back, go to source view, go to log vie
     $driver->find_element_by_link_text('autoinst-log.txt')->click;
 
     wait_for_ajax msg => 'log contents';
-    like $driver->find_element('.embedded-logfile .ansi-blue-fg')->get_text, qr/send(autotype|key)/, 'log is colorful';
+    my $colorful
+      = wait_for_element(selector => '.embedded-logfile .ansi-blue-fg', description => 'colorful log line shown');
+    like $colorful->get_text, qr/send(autotype|key)/, 'log is colorful';
     like $driver->find_element('.embedded-logfile')->get_text, qr{/usr/bin/qemu-kvm}, 'qemu-kvm is shown in log viewer';
 
     $driver->find_element('#filter-log-file')->send_keys('kate');
@@ -895,7 +913,7 @@ subtest 'test candidate list' => sub {
             ++$clicks;
         })->click;
     like
-      $driver->find_element('.needle-info-table')->get_text(),
+      wait_for_element(selector => '.needle-info-table', description => 'needle info table shown')->get_text(),
       qr/Last match.*T.*Last seen.*T.*/s,
       'last match and last seen shown',
       ;
@@ -995,7 +1013,7 @@ subtest 'additional investigation notes provided on new failed' => sub {
     wait_for_ajax(msg => 'details tab for job 99947 loaded to test investigation');
     $driver->find_element('#clones a')->click;    # navigates to 99982
     $driver->find_element_by_link_text('Investigation')->click;
-    $driver->find_element('#investigation_status_entry')
+    wait_for_element(selector => '#investigation_status_entry', description => 'investigation status entry shown')
       ->text_like(qr/No result dir/, 'investigation status content shown as table');
 };
 
@@ -1007,12 +1025,15 @@ subtest 'alert box shown if not already on first bad' => sub {
     $driver->get('/tests/99940');
     wait_for_ajax(msg => 'details tab for job 99940 loaded to test investigation');
     $driver->find_element_by_link_text('Investigation')->click;
-    $driver->find_element(q{//div[@class='alert alert-info']}, 'xpath')
-      ->text_like(qr/Investigate the first bad test directly: 99938/);
+    wait_for_element(
+        selector => q{//div[@class='alert alert-info']},
+        method => 'xpath',
+        description => 'alert box shown'
+    )->text_like(qr/Investigate the first bad test directly: 99938/);
 
     $driver->find_element_by_xpath(q{//div[@class='alert alert-info']/a[@class='alert-link']})->click;
     wait_for_ajax(msg => 'details tab for job 99938 loaded to test investigation');
-    $driver->find_element('#investigation_status_entry')
+    wait_for_element(selector => '#investigation_status_entry', description => 'investigation status entry shown')
       ->text_like(qr/error\nNo previous job in this scenario, cannot provide hints/,
         'linked to investigation tab directly');
     $driver->find_element_by_xpath(q{//div[@class='tab-content']})
@@ -1098,8 +1119,11 @@ subtest 'render log links from steps when viewing via route to latest' => sub {
 
     $link->click;
     wait_for_ajax msg => 'log contents';
-    like $driver->find_element('.embedded-logfile')->get_text,
-      qr/ \[step:installation,bootloader,$step\].* called /, 'log file view loaded successfully';
+    wait_for_element(
+        selector => '.embedded-logfile',
+        like => qr/ \[step:installation,bootloader,$step\].* called /,
+        description => 'log file view loaded successfully'
+    );
     $driver->get('/tests/99946');
     wait_for_ajax(msg => 'test 99946 loaded');
 };
