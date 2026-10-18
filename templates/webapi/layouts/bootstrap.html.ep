@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme-preference="<%= current_theme %>" data-halloween-season="<%= is_halloween_season ? 'true' : 'false' %>">
   <head>
       <!-- Meta, title, CSS, favicons, etc. -->
       <meta charset="utf-8">
@@ -77,10 +77,8 @@
               </div>
             </div>
       </footer>
-      <script>
-        let theme = '<%= current_theme %>';
-        if (theme === 'detect') theme = window.matchMedia('(prefers-color-scheme: dark)').matches === true ? 'dark' : 'light';
-        document.documentElement.dataset.bsTheme = theme;
-      </script>
+% if (current_theme ne 'light') {
+%= include 'layouts/halloween'
+% }
   </body>
 </html>

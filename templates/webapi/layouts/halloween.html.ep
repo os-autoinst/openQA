@@ -1,0 +1,55 @@
+<svg id="hw-defs" aria-hidden="true">
+  <defs>
+    <symbol id="hw-web" viewBox="0 0 100 100">
+      <g fill="none" stroke="currentColor" stroke-width="1.4">
+        <path d="M0 0 100 0M0 0 96.6 25.9M0 0 86.6 50M0 0 70.7 70.7M0 0 50 86.6M0 0 25.9 96.6M0 0 0 100" />
+        <path d="M30 0A30 30 0 0 1 0 30M60 0A60 60 0 0 1 0 60M90 0A90 90 0 0 1 0 90M100 0A100 100 0 0 1 0 100" />
+      </g>
+    </symbol>
+    <symbol id="hw-bat" viewBox="0 0 100 50">
+      <path fill="currentColor" d="M50 18C42 9 27 7 16 16c7-4 13-2 15 4C21 18 12 24 8 32c10-6 18-4 24 2 8-6 14-6 18-2 4-4 10-4 18 2 6-6 14-8 22-2-4-8-13-14-23-12 2-6 8-8 15-4C73 7 58 9 50 18Z" />
+      <path fill="currentColor" d="M46 12 50 5 54 12Z" />
+    </symbol>
+    <symbol id="hw-ghost" viewBox="0 0 60 80">
+      <path fill="currentColor" d="M30 4C15 4 8 19 8 33v27l6-6 6 10 10-10 10 10 6-10 6 6V33C52 19 45 4 30 4Z" />
+      <circle cx="22" cy="28" r="4" fill="#111" />
+      <circle cx="38" cy="28" r="4" fill="#111" />
+      <path d="M24 40q6 6 12 0" stroke="#111" stroke-width="2" fill="none" />
+    </symbol>
+    <symbol id="hw-pumpkin" viewBox="0 0 100 90">
+      <path fill="#ff7b00" d="M50 18C30 18 12 34 12 54c0 20 18 32 38 32s38-12 38-32C88 34 70 18 50 18Z" />
+      <path fill="#2e7d32" d="M48 18q2-12 6-12-2 6-2 12Z" />
+      <path fill="#111" d="M35 45h10l-5 12ZM55 45h10l-5 12ZM30 62q10 8 20 0 10 8 20 0l-2 6q-10 8-18 0-10 8-18 0Z" />
+    </symbol>
+    <symbol id="hw-zombie" viewBox="0 0 80 60">
+      <path fill="#7cb342" d="M10 60V30C10 12 30 6 40 6s30 6 30 24v30Z" />
+      <circle cx="28" cy="32" r="6" fill="#fff" />
+      <circle cx="52" cy="32" r="6" fill="#fff" />
+      <circle cx="28" cy="32" r="2.5" fill="#222" />
+      <circle cx="52" cy="32" r="2.5" fill="#222" />
+      <path d="M22 48q18 10 36 0" stroke="#222" stroke-width="3" fill="none" />
+    </symbol>
+    <symbol id="hw-spider" viewBox="0 0 40 60">
+      <line x1="20" y1="0" x2="20" y2="26" stroke="currentColor" stroke-width="1" />
+      <ellipse cx="20" cy="34" rx="6" ry="8" fill="currentColor" />
+      <circle cx="20" cy="26" r="3.5" fill="currentColor" />
+      <path d="M20 28 8 18M20 28 32 18M20 30 6 30M20 30 34 30M20 36 8 46M20 36 32 46M20 38 12 52M20 38 28 52" stroke="currentColor" stroke-width="1.2" fill="none" />
+    </symbol>
+  </defs>
+</svg>
+<div id="halloween-overlay" aria-hidden="true">
+  <div class="hw-web hw-tl"><svg class="hw-svg"><use href="#hw-web" /></svg></div>
+  <div class="hw-web hw-tr"><svg class="hw-svg"><use href="#hw-web" /></svg></div>
+  <div class="hw-web hw-bl"><svg class="hw-svg"><use href="#hw-web" /></svg></div>
+  <div class="hw-web hw-br"><svg class="hw-svg"><use href="#hw-web" /></svg></div>
+  <div class="hw-spider"><svg class="hw-svg"><use href="#hw-spider" /></svg></div>
+  <div class="hw-bat hw-bat1"><svg class="hw-svg"><use href="#hw-bat" /></svg></div>
+  <div class="hw-bat hw-bat2"><svg class="hw-svg"><use href="#hw-bat" /></svg></div>
+  <div class="hw-bat hw-bat3"><svg class="hw-svg"><use href="#hw-bat" /></svg></div>
+  <div class="hw-bat hw-bat4"><svg class="hw-svg"><use href="#hw-bat" /></svg></div>
+  <div class="hw-bat hw-bat5"><svg class="hw-svg"><use href="#hw-bat" /></svg></div>
+  <div class="hw-ghost"><svg class="hw-svg"><use href="#hw-ghost" /></svg></div>
+  <div class="hw-pumpkin hw-pumpkin-bl"><svg class="hw-svg"><use href="#hw-pumpkin" /></svg></div>
+  <div class="hw-pumpkin hw-pumpkin-br"><svg class="hw-svg"><use href="#hw-pumpkin" /></svg></div>
+  <div class="hw-zombie"><svg class="hw-svg"><use href="#hw-zombie" /></svg></div>
+</div>

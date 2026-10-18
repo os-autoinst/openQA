@@ -48,6 +48,8 @@ subtest 'We can switch to theme detection' => sub {
       ->element_exists_not('select option[selected][value="dark"]');
     $t->get_ok('/appearance')->status_is(200)->element_exists('select option[selected][value="detect"]')
       ->element_exists_not('select option[selected][value="dark"]');
+    $t->get_ok('/')->status_is(200)->element_exists('html[data-theme-preference="detect"]')
+      ->element_exists('div#halloween-overlay');
 };
 
 subtest 'We can switch back to light theme' => sub {
@@ -58,6 +60,23 @@ subtest 'We can switch back to light theme' => sub {
       ->element_exists_not('select option[selected][value="detect"]');
     $t->get_ok('/appearance')->status_is(200)->element_exists('select option[selected][value="light"]')
       ->element_exists_not('select option[selected][value="detect"]');
+    $t->get_ok('/')->status_is(200)->element_exists('html[data-theme-preference="light"]')
+      ->element_exists_not('div#halloween-overlay');
+};
+
+subtest 'We can switch to the Halloween dark theme' => sub {
+    $t->get_ok('/appearance')->status_is(200)->element_exists('select option[selected][value="light"]')
+      ->element_exists_not('select option[selected][value="dark_halloween"]');
+    $t->post_ok('/appearance' => form => {theme => 'dark_halloween'})->status_is(200)
+      ->element_exists('select option[selected][value="dark_halloween"]')
+      ->element_exists_not('select option[selected][value="light"]');
+    is $t->tx->res->dom->at('select option[value="dark_halloween"]')->text, 'Dark mode (Halloween season)',
+      'Halloween option label is sentence case';
+    $t->get_ok('/appearance')->status_is(200)->element_exists('select option[selected][value="dark_halloween"]')
+      ->element_exists_not('select option[selected][value="light"]');
+    my $season = (localtime)[4] == 9 ? 'true' : 'false';
+    $t->get_ok('/')->status_is(200)->element_exists('html[data-theme-preference="dark_halloween"]')
+      ->element_exists(qq{html[data-halloween-season="$season"]})->element_exists('div#halloween-overlay');
 };
 
 done_testing();

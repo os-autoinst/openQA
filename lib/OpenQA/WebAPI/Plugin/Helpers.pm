@@ -81,6 +81,7 @@ sub register ($self, $app, $config) {
 
     $app->helper(current_job => sub ($c) { $c->stash('job') });
     $app->helper(current_theme => sub ($c) { $c->session->{theme} || 'light' });
+    $app->helper(is_halloween_season => sub ($c) { (localtime)[4] == 9 });
     $app->helper(is_operator_js => sub ($c) { Mojo::ByteStream->new($c->helpers->is_operator ? 'true' : 'false') });
     $app->helper(is_admin_js => sub ($c) { Mojo::ByteStream->new($c->helpers->is_admin ? 'true' : 'false') });
 

@@ -12,6 +12,7 @@
                       % my $theme = current_theme;
                       <option value="light"<%= $theme eq 'light' ? ' selected' : '' %>>Light mode</option>
                       <option value="dark"<%= $theme eq 'dark' ? ' selected' : '' %>>Dark mode</option>
+                      <option value="dark_halloween"<%= $theme eq 'dark_halloween' ? ' selected' : '' %>>Dark mode (Halloween season)</option>
                       <option value="detect"<%= $theme eq 'detect' ? ' selected' : '' %>>Detect from browser</option>
                     </select>
                 </div>
