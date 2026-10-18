@@ -156,7 +156,22 @@ subtest 'delete offline worker' => sub {
     $driver->find_element(delete_button_selector($offline_worker_id))->click();
     my $e = wait_for_element(selector => 'div#flash-messages .alert span', description => 'delete message displayed');
     is $e->get_text(), 'Delete worker offline_test:1 successfully.', 'delete offline worker successfully';
-    is scalar @{$driver->find_elements('table#workers tbody tr')}, 4, 'worker deleted not shown';
+    wait_for_element_count('table#workers tbody tr', 4, description => 'worker deleted not shown');
+};
+
+subtest 'presence helpers with explicit timeout' => sub {
+    $driver->get('/admin/workers');
+    disable_bootstrap_animations;
+    $driver->find_element_by_xpath(q{//select[@id='workers_online']/option[1]})->click();
+    my $popover_trigger = wait_for_element(selector => 'tr#worker_1 .help_popover');
+    $popover_trigger->click();
+    element_visible(
+        '.popover', qr/Worker status/, undef, 'popover shown after clicking help popover trigger',
+        timeout => 4,
+        check_interval => 0.2
+    );
+    $driver->find_element('.dt-paging-button')->click();
+    wait_until_element_gone('.popover');
 };
 
 $driver->find_element('tr#worker_1 .worker a')->click();
