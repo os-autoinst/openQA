@@ -6,8 +6,7 @@ use Mojo::Base 'Exporter', -signatures;
 require OpenQA::Test::Database;
 
 our @EXPORT =    ## no critic (Modules::ProhibitAutomaticExportation)
-  qw(driver_missing check_driver_modules enable_timeout
-  disable_timeout start_driver
+  qw(driver_missing check_driver_modules start_driver
   call_driver kill_driver wait_for_ajax disable_bootstrap_animations
   wait_for_ajax_and_animations
   open_new_tab mock_js_functions element_visible element_hidden
@@ -42,14 +41,6 @@ sub _start_app ($args) {
     $STARTINGPID = $$;
     $WEBAPI = OpenQA::Test::Utils::create_webapi($MOJOPORT);
     return $MOJOPORT;
-}
-
-sub enable_timeout () {
-    $_DRIVER->set_implicit_wait_timeout(2000);
-}
-
-sub disable_timeout () {
-    $_DRIVER->set_implicit_wait_timeout(0);
 }
 
 sub start_driver ($mojoport) {
@@ -97,8 +88,8 @@ sub start_driver ($mojoport) {
         my $startup_timeout = OpenQA::Test::TimeLimit::scale_timeout($ENV{OPENQA_SELENIUM_TEST_STARTUP_TIMEOUT} // 10);
         $_DRIVER = Test::Selenium::Chrome->new(%opts, startup_timeout => $startup_timeout);
         $_DRIVER->{is_wd3} = 0;    # ensure the Selenium::Remote::Driver instance uses JSON Wire protocol
-        enable_timeout;
-        # Scripts are considered stuck after this timeout
+
+        # scripts are considered stuck after this timeout
         $_DRIVER->set_timeout(script => $ENV{OPENQA_SELENIUM_SCRIPT_TIMEOUT_MS} // 2000);
         try { $_DRIVER->set_window_size(600, 800) }
         catch ($e) {
@@ -379,30 +370,22 @@ sub wait_for_element (%args) {
     my $like = $args{like};
 
     my $element;
-    disable_timeout();
-    try {
-        wait_until(
-            sub {
-                $trigger_function->() if $trigger_function;
-                my @elements = $_DRIVER->find_elements($selector, $method);
-                if (   scalar @elements >= 1
-                    && (!defined $expected_is_displayed || $elements[0]->is_displayed == $expected_is_displayed)
-                    && (!defined $like || eval { $elements[0]->get_text =~ $like }))
-                {
-                    $element = $elements[0];
-                }
-                return defined $element;
-            },
-            $args{description} // $args{desc} // ($selector . ' present'),
-            $args{timeout},
-            $args{check_interval},
-        );
-    }
-    catch ($e) {
-        enable_timeout();    # uncoverable statement
-        die $e;    # uncoverable statement
-    }
-    enable_timeout();
+    wait_until(
+        sub {
+            $trigger_function->() if $trigger_function;
+            my @elements = $_DRIVER->find_elements($selector, $method);
+            if (   scalar @elements >= 1
+                && (!defined $expected_is_displayed || $elements[0]->is_displayed == $expected_is_displayed)
+                && (!defined $like || eval { $elements[0]->get_text =~ $like }))
+            {
+                $element = $elements[0];
+            }
+            return defined $element;
+        },
+        $args{description} // $args{desc} // ($selector . ' present'),
+        $args{timeout},
+        $args{check_interval},
+    );
     like $element->get_text, $like, "$selector text" if $element && $like;
     return $element;
 }

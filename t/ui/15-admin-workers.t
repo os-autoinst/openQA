@@ -13,6 +13,7 @@ use OpenQA::Constants 'DEFAULT_WORKER_TIMEOUT';
 use OpenQA::Test::TimeLimit '40';
 use OpenQA::Test::Case;
 use OpenQA::Test::Utils qw(assume_all_assets_exist embed_server_for_testing wait_for);
+use Time::HiRes qw(clock_gettime CLOCK_MONOTONIC);
 use Date::Format 'time2str';
 use OpenQA::WebSockets::Client;
 use OpenQA::SeleniumTest;
@@ -172,6 +173,13 @@ subtest 'presence helpers with explicit timeout' => sub {
     );
     $driver->find_element('.dt-paging-button')->click();
     wait_until_element_gone('.popover');
+};
+
+subtest 'absence check does not pay a waiting budget' => sub {
+    my $start = clock_gettime(CLOCK_MONOTONIC);
+    element_not_present('tr#worker_999999 .action [post_delete_url]', 'delete button of absent worker not present');
+    cmp_ok clock_gettime(CLOCK_MONOTONIC) - $start, '<', OpenQA::Test::TimeLimit::scale_timeout(0.5),
+      'absence check completes without waiting';
 };
 
 $driver->find_element('tr#worker_1 .worker a')->click();
