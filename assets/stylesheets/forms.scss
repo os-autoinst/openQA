@@ -89,6 +89,10 @@
   --bs-btn-disabled-bg: #{$btn-light-bg-dark};
   --bs-btn-disabled-border-color: #{$btn-light-bg-dark};
 }
+[data-bs-theme='dark'] .text-bg-light {
+  background-color: $btn-light-bg-dark !important;
+  color: $default-font-color-dark !important;
+}
 
 // wells (used for comments)
 .well-lg {
