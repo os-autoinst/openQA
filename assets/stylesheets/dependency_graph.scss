@@ -79,3 +79,34 @@
     }
   }
 }
+[data-bs-theme='dark'] #dependencygraph {
+  .node rect {
+    stroke: $default-font-color-dark;
+    fill: lighten($default-bg-color-dark, 8%);
+  }
+  .cluster rect {
+    fill: #0d2a38;
+  }
+  .edgePath path {
+    stroke: $default-font-color-dark;
+  }
+  marker path {
+    fill: $default-font-color-dark;
+    stroke: $default-font-color-dark;
+  }
+  table {
+    color: $default-font-color-dark;
+    tr {
+      border-color: $table-border-color-dark;
+      &.current {
+        border-color: $default-font-color-dark;
+        td:first-child {
+          background-color: #5c5a1a;
+        }
+      }
+    }
+    td:last-child {
+      background-color: lighten($default-bg-color-dark, 20%);
+    }
+  }
+}

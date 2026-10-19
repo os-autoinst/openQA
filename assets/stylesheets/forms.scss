@@ -75,11 +75,23 @@
     }
   }
 }
-.darkmode {
-  .btn.btn-light {
-    background-color: #070605;
-    border-color: #070605;
-  }
+[data-bs-theme='dark'] .btn-light {
+  --bs-btn-color: #{$default-font-color-dark};
+  --bs-btn-bg: #{$btn-light-bg-dark};
+  --bs-btn-border-color: #{$btn-light-bg-dark};
+  --bs-btn-hover-color: #{$default-font-color-dark};
+  --bs-btn-hover-bg: #101010;
+  --bs-btn-hover-border-color: #101010;
+  --bs-btn-active-color: #{$default-font-color-dark};
+  --bs-btn-active-bg: #101010;
+  --bs-btn-active-border-color: #101010;
+  --bs-btn-disabled-color: #{$default-font-color-dark};
+  --bs-btn-disabled-bg: #{$btn-light-bg-dark};
+  --bs-btn-disabled-border-color: #{$btn-light-bg-dark};
+}
+[data-bs-theme='dark'] .text-bg-light {
+  background-color: $btn-light-bg-dark !important;
+  color: $default-font-color-dark !important;
 }
 
 // wells (used for comments)

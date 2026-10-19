@@ -127,8 +127,9 @@ table.overview {
     }
   }
 }
-[data-bs-theme='dark'] .failedmodule {
-  background: #8c2b2b;
+[data-bs-theme='dark'] table.overview .failedmodule {
+  background-color: #8c2b2b;
+  border-color: #b34a4a;
   color: #fff;
 }
 table.fixedheader {
