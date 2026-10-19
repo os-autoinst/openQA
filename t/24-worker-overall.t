@@ -749,6 +749,28 @@ subtest 'check VLAN assignments via the Open vSwitch D-Bus service' => sub {
         is_deeply \@checked_devices, ['tap10', 'tap11'], 'tested specified required tap devices';
         delete $worker->settings->global_settings->{REQUIRED_TAP_DEVS};
     };
+
+    subtest 'TAPDEV and NICOFFSET honoured like os-autoinst' => sub {
+        my @checked_devices;
+        $fake_switch->set_vlan_result(sub ($dev, $tag) { push @checked_devices, $dev; return (0, '') });
+        my $global_settings = $worker->settings->global_settings;
+        $global_settings->{TAPDEV} = 'tap42';
+        $worker->ovs_dbus_service_error;
+        is_deeply \@checked_devices, ['tap42'], 'explicit TAPDEV is tested';
+        @checked_devices = ();
+        $global_settings->{TAPDEV} = 'auto, tap7,auto';
+        $worker->ovs_dbus_service_error;
+        is_deeply \@checked_devices, [qw(tap0 tap7 tap128)], 'auto entries computed with default NICOFFSET';
+        @checked_devices = ();
+        $global_settings->{NICOFFSET} = 10;
+        $worker->ovs_dbus_service_error;
+        is_deeply \@checked_devices, [qw(tap0 tap7 tap20)], 'auto entries computed with custom NICOFFSET';
+        @checked_devices = ();
+        $global_settings->{REQUIRED_TAP_DEVS} = 'tap10';
+        $worker->ovs_dbus_service_error;
+        is_deeply \@checked_devices, ['tap10'], 'REQUIRED_TAP_DEVS takes precedence over TAPDEV';
+        delete $global_settings->@{qw(TAPDEV NICOFFSET REQUIRED_TAP_DEVS)};
+    };
 };
 
 
