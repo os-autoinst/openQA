@@ -88,26 +88,6 @@ package Test::FakeCacheServiceClientInfo {
     has availability_error => 'Cache service info error: Connection refused';
 }    # uncoverable statement
 
-package Test::FakeDBusSwitch {
-    use Mojo::Base -base, -signatures;
-    has set_vlan_result => sub { [0, ''] };
-    has unset_vlan_result => sub { [0, ''] };
-
-    sub set_vlan ($self, $dev, $tag) {
-        ref $self->set_vlan_result eq 'CODE' ? $self->set_vlan_result->($dev, $tag) : @{$self->set_vlan_result};
-    }
-
-    sub unset_vlan ($self, $dev, $tag) {
-        ref $self->unset_vlan_result eq 'CODE' ? $self->unset_vlan_result->($dev, $tag) : @{$self->unset_vlan_result};
-    }
-}    # uncoverable statement
-
-package Test::FakeDBusService {
-    use Mojo::Base -base, -signatures;
-    has mock_switch => sub { Test::FakeDBusSwitch->new };
-    sub get_object ($self, $path, $name = undef) { $self->mock_switch }
-}    # uncoverable statement
-
 package Test::FakeDBusObject {
     use Mojo::Base -base, -signatures;
     sub disconnect_from_signal ($self, $signal, $id) { }
@@ -115,12 +95,8 @@ package Test::FakeDBusObject {
 
 package Test::FakeDBus {
     use Mojo::Base -base, -signatures;
-    has mock_service_value => sub { Test::FakeDBusService->new };
-
-    sub get_service ($self, $service_name) {
-        my $val = $self->mock_service_value;
-        return ref $val eq 'CODE' ? $val->($service_name) : $val;
-    }
+    has mock_service_value => 1;
+    sub get_service ($self, $service_name) { $self->mock_service_value }
     sub get_bus_object ($self) { Test::FakeDBusObject->new }
 }    # uncoverable statement
 
@@ -684,68 +660,13 @@ subtest 'check availability of Open vSwitch related D-Bus service' => sub {
     is $worker->check_availability, undef, 'worker considered always available if not a tap worker';
 };
 
-subtest 'check VLAN assignments via the Open vSwitch D-Bus service' => sub {
-    subtest 'service is unavailable' => sub {
-        my $mock_net_dbus = Test::MockObject->new;
-        $worker->{_system_dbus} = $mock_net_dbus;
-        $mock_net_dbus->mock(get_service => sub { die "Fake error\n" });
-        like $worker->ovs_dbus_service_error, qr/Unable.*D-Bus.*Fake error/,
-          'OvS D-Bus service failed on failing get_service';
-        $mock_net_dbus->mock(get_service => sub { undef });
-        is $worker->ovs_dbus_service_error, "D-Bus service 'org.opensuse.os_autoinst.switch' is not running",
-          'OvS D-Bus service failed on missing service';
-    };
-
-    subtest 'system D-Bus initialization when not yet defined' => sub {
-        undef $worker->{_system_dbus};
-        $dbus_mock->redefine(system => sub { die "Connection refused\n" });
-        is $worker->ovs_dbus_service_error, 'Unable to connect to system D-Bus',
-          'error when connecting to system D-Bus fails';
-        $dbus_mock->redefine(system => sub (@) { Test::FakeDBus->new });
-        is $worker->ovs_dbus_service_error, undef, 'OvS D-Bus service passed with working D-Bus and switch';
-        ok defined $worker->{_system_dbus}, 'system D-Bus initialized';
-    };
-
-    subtest 'does not interfere with running or pending jobs' => sub {
-        my $fake_client = Test::FakeClient->new;
-        my $fake_job = OpenQA::Worker::Job->new($worker, $fake_client, {id => 42});
-        $worker->current_job($fake_job);
-        is $worker->ovs_dbus_service_error, undef,
-          'returns undef without checking switch when job is currently running';
-        $worker->current_job(undef);
-        $worker->{_queue} = {pending_jobs => [42]};
-        is $worker->ovs_dbus_service_error, undef, 'returns undef without checking switch when jobs are pending';
-        $worker->{_queue} = undef;
-    };
-
-    my $fake_service = Test::FakeDBusService->new(mock_switch => undef);
-    subtest 'switch object missing' => sub {
-        $worker->{_system_dbus}->mock_service_value($fake_service);
-        is $worker->ovs_dbus_service_error, "D-Bus method 'org.opensuse.os_autoinst.switch/switch' is not available",
-          'returns error if switch object not available';
-    };
-
-    my $fake_switch = Test::FakeDBusSwitch->new(set_vlan_result => [1, "'tap1' is not connected to 'br1'"]);
-    subtest 'set_vlan failure' => sub {
-        $fake_service->mock_switch($fake_switch);
-        is $worker->ovs_dbus_service_error, "'tap1' is not connected to 'br1'", 'returns error if set_vlan fails';
-    };
-
-    subtest 'unset_vlan failure' => sub {
-        $fake_switch->set_vlan_result([0, '']);
-        $fake_switch->unset_vlan_result([1, "'tap1' could not be unset"]);
-        is $worker->ovs_dbus_service_error, "'tap1' could not be unset", 'returns error if unset_vlan fails';
-    };
-
-    subtest 'custom REQUIRED_TAP_DEVS' => sub {
-        $fake_switch->unset_vlan_result([0, '']);
-        my @checked_devices;
-        $fake_switch->set_vlan_result(sub ($dev, $tag) { push @checked_devices, $dev; return (0, '') });
-        $worker->settings->global_settings->{REQUIRED_TAP_DEVS} = 'tap10,tap11';
-        is $worker->ovs_dbus_service_error, undef, 'succeeds with custom REQUIRED_TAP_DEVS';
-        is_deeply \@checked_devices, ['tap10', 'tap11'], 'tested specified required tap devices';
-        delete $worker->settings->global_settings->{REQUIRED_TAP_DEVS};
-    };
+subtest 'check is_ovs_dbus_service_running of D-Bus service' => sub {
+    my $mock_net_dbus = Test::MockObject->new();
+    $worker->{_system_dbus} = $mock_net_dbus;
+    $mock_net_dbus->set_true('get_service');
+    is $worker->is_ovs_dbus_service_running, 1, 'OvS D-Bus service passed on passing get_service';
+    $mock_net_dbus->mock(get_service => sub { die 'Fake error' });
+    is $worker->is_ovs_dbus_service_running, 0, 'OvS D-Bus service failed on failing get_service';
 };
 
 

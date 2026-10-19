@@ -692,36 +692,19 @@ sub is_qemu_running ($self) {
     return undef;
 }
 
-sub ovs_dbus_service_error ($self) {
-    my $name = $self->{_ovs_dbus_service_name};
+sub is_ovs_dbus_service_running ($self) {
     try { defined &Net::DBus::system or require Net::DBus }
-    catch ($e) { return 'Perl module "Net::DBus" is not available' }    # uncoverable statement
-    if (!defined $self->{_system_dbus}) {
+    catch ($e) { return 0 }    # uncoverable statement
+    unless (defined $self->{_system_dbus}) {
         my $dbus;
         try { $dbus = Net::DBus->system(nomainloop => 1) }
-        catch ($e) { return 'Unable to connect to system D-Bus' }    # uncoverable statement
+        catch ($e) { return 0 }    # uncoverable statement
         $self->{_system_dbus} = $dbus;
         # this avoids piling up signals we never do anything with - POO #183833
         $self->{_system_dbus}->get_bus_object->disconnect_from_signal('NameOwnerChanged', 1);
     }
-    try {
-        my $ovs = $self->{_system_dbus}->get_service($name);
-        return "D-Bus service '$name' is not running" unless defined $ovs;
-        return undef if $self->current_job || $self->has_pending_jobs;    # do not interfere with running jobs
-        my $switch = $ovs->get_object('/switch', $name);
-        return "D-Bus method '$name/switch' is not available" unless defined $switch;
-        # check whether VLAN assignments work for required tap devices
-        my $settings = $self->settings->global_settings;
-        my @devices = split /,/, $settings->{REQUIRED_TAP_DEVS} // ('tap' . $self->instance_number);
-        for my $device (@devices) {
-            my ($res, $msg) = $switch->set_vlan($device, 1);    # test set_vlan
-            return $msg if $res != 0;    # return e.g. "'tap1' is not connected to 'br1'" in case of improper setup
-            ($res, $msg) = $switch->unset_vlan($device, 1);    # clean temporarily VLAN assignment up
-            return $msg if $res != 0;
-        }
-        return undef;
-    }
-    catch ($e) { return "Unable to query D-Bus service '$name': $e" }
+    try { return defined $self->{_system_dbus}->get_service('org.opensuse.os_autoinst.switch') }
+    catch ($e) { return 0 }
 }
 
 # returns whether the worker is available and a reason
@@ -754,9 +737,8 @@ sub check_availability ($self) {
     return (1, 'Unable to determine worker address (WORKER_HOSTNAME)') unless $settings->auto_detect_worker_address;
 
     # check org.opensuse.os_autoinst.switch if it is a MM-capable worker slot
-    if (my $ovs_error = $settings->has_class('tap') ? $self->ovs_dbus_service_error : '') {
-        return (1, $ovs_error);
-    }
+    return (1, "D-Bus service '$self->{_ovs_dbus_service_name}' is not running")
+      if $settings->has_class('tap') && !$self->is_ovs_dbus_service_running;
 
     # continue with enqueued jobs in any case but avoid picking up new jobs if system utilization is critical
     if (my $system_utilization_error = $self->_check_system_utilization) {
