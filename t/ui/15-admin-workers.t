@@ -182,6 +182,13 @@ subtest 'absence check does not pay a waiting budget' => sub {
       'absence check completes without waiting';
 };
 
+subtest 'script timeout scales with the TimeLimit factor' => sub {
+    my $factor = OpenQA::Test::TimeLimit::scale_timeout(1);
+    is script_timeout_ms(), 2000 * $factor, 'default script timeout scaled';
+    local $ENV{OPENQA_SELENIUM_SCRIPT_TIMEOUT_MS} = 1000;
+    is script_timeout_ms(), 1000 * $factor, 'configured script timeout scaled';
+};
+
 $driver->find_element('tr#worker_1 .worker a')->click();
 $driver->title_is('openQA: Worker localhost:1', 'on worker 1');
 is scalar @{$driver->find_elements('#content h3', 'css')}, 2, 'table properties shown';

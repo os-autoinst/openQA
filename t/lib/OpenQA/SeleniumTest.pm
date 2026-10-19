@@ -13,7 +13,7 @@ our @EXPORT =    ## no critic (Modules::ProhibitAutomaticExportation)
   element_not_present javascript_console_has_no_warnings_or_errors
   wait_until wait_until_element_gone wait_for_element wait_for_element_count
   wait_for_url
-  element_prop element_prop_by_selector map_elements);
+  element_prop element_prop_by_selector map_elements script_timeout_ms);
 
 use Carp;
 use Data::Dump 'pp';
@@ -41,6 +41,11 @@ sub _start_app ($args) {
     $STARTINGPID = $$;
     $WEBAPI = OpenQA::Test::Utils::create_webapi($MOJOPORT);
     return $MOJOPORT;
+}
+
+# the timeout chromedriver applies to a script run via execute_script
+sub script_timeout_ms () {
+    return OpenQA::Test::TimeLimit::scale_timeout($ENV{OPENQA_SELENIUM_SCRIPT_TIMEOUT_MS} // 2000);
 }
 
 sub start_driver ($mojoport) {
@@ -89,8 +94,10 @@ sub start_driver ($mojoport) {
         $_DRIVER = Test::Selenium::Chrome->new(%opts, startup_timeout => $startup_timeout);
         $_DRIVER->{is_wd3} = 0;    # ensure the Selenium::Remote::Driver instance uses JSON Wire protocol
 
-        # scripts are considered stuck after this timeout
-        $_DRIVER->set_timeout(script => $ENV{OPENQA_SELENIUM_SCRIPT_TIMEOUT_MS} // 2000);
+        # scripts are considered stuck after this timeout; scaling it like the
+        # startup timeout above keeps the headroom of a slow CI runner in sync
+        # with the budgets of the explicit waits
+        $_DRIVER->set_timeout(script => script_timeout_ms());
         try { $_DRIVER->set_window_size(600, 800) }
         catch ($e) {
             # uncoverable statement
