@@ -1,0 +1,242 @@
+// Seasonal decorations: cartoonish, unobtrusive decorations layered behind the content.
+// The layout renders the decoration markup only when decorations are enabled (the
+// "Seasonal decorations" setting is on, or auto during October) and the theme is not
+// light, so pages in light mode and pages outside the season ship no decoration markup.
+// The activation key is the server-provided data-seasonal-decorations; CSS resolves the
+// browser preference of a "detect" user with the dark color scheme media query, so the
+// client never adds a theme state the server did not decide.
+// AssetPack serves assets below /asset/<checksum>/, so a relative url() in the bundled
+// CSS would resolve to the CSS asset itself and an absolute path breaks under a baseurl,
+// so the cursor has to stay an inline data URI.
+#hw-defs {
+  display: none;
+}
+#halloween-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0.45;
+  > div {
+    position: absolute;
+  }
+  .hw-svg {
+    width: 100%;
+    height: 100%;
+  }
+  .hw-web {
+    width: 130px;
+    height: 130px;
+    color: #8a8a8a;
+    animation: hw-sway 6s ease-in-out infinite;
+  }
+  .hw-tl {
+    top: 0;
+    left: 0;
+  }
+  .hw-tr {
+    top: 0;
+    right: 0;
+    .hw-svg {
+      transform: scaleX(-1);
+    }
+  }
+  .hw-bl {
+    bottom: 0;
+    left: 0;
+    .hw-svg {
+      transform: scaleY(-1);
+    }
+  }
+  .hw-br {
+    bottom: 0;
+    right: 0;
+    .hw-svg {
+      transform: scale(-1, -1);
+    }
+  }
+  .hw-spider {
+    top: 0;
+    right: 18vw;
+    width: 40px;
+    height: 120px;
+    color: #444;
+    transform-origin: top center;
+    animation: hw-swing 4s ease-in-out infinite;
+  }
+  .hw-bat {
+    width: 34px;
+    height: 17px;
+    color: #777;
+    animation: hw-fly 18s linear infinite;
+    .hw-svg {
+      animation: hw-flap 0.4s ease-in-out infinite;
+    }
+  }
+  .hw-bat1 {
+    top: 12vh;
+  }
+  .hw-bat2 {
+    top: 22vh;
+    animation-delay: -6s;
+    animation-duration: 22s;
+  }
+  .hw-bat3 {
+    top: 8vh;
+    animation-delay: -12s;
+    animation-duration: 26s;
+  }
+  .hw-bat4 {
+    top: 18vh;
+    animation-delay: -9s;
+    animation-duration: 24s;
+  }
+  .hw-bat5 {
+    top: 26vh;
+    animation-delay: -3s;
+    animation-duration: 20s;
+  }
+  .hw-ghost {
+    top: 30vh;
+    right: 12vw;
+    width: 50px;
+    height: 66px;
+    color: #cdd6ff;
+    opacity: 0.7;
+    animation: hw-bob 4s ease-in-out infinite;
+  }
+  .hw-pumpkin {
+    bottom: 0;
+    width: 70px;
+    height: 63px;
+    animation: hw-flicker 3s ease-in-out infinite;
+  }
+  .hw-pumpkin-bl {
+    left: 2vw;
+  }
+  .hw-pumpkin-br {
+    right: 2vw;
+    animation-delay: -1.5s;
+  }
+  .hw-zombie {
+    bottom: 0;
+    left: 50%;
+    width: 60px;
+    height: 45px;
+    animation: hw-peek 5s ease-in-out infinite;
+  }
+}
+@mixin seasonal-active {
+  body {
+    // cursor is inherited by all descendants
+    /* stylelint-disable @stylistic/selector-list-comma-space-after */
+    cursor:
+      url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24'><path fill='%23ff7b00' d='M12 8C6 8 2 12 2 17c0 5 4 7 10 7s10-2 10-7C22 12 18 8 12 8Z'/><path fill='%232e7d32' d='M11 8q1-3 3-3-1 1.5-1 3Z'/><path fill='%23111' d='M8 14h3l-1.5 4ZM13 14h3l-1.5 4ZM7 20q3 2 6 0 3 2 6 0l-1 1.5q-3 2-5 0-3 2-5 0Z'/><g stroke='%23111' stroke-width='0.8' fill='none'><circle cx='12' cy='4' r='1.5' fill='%23111'/><path d='M12 4 8 1M12 4 16 1M12 4 7 4M12 4 17 4M12 5 8 7M12 5 16 7'/></g></svg>")
+        12 1,
+      auto;
+    /* stylelint-enable @stylistic/selector-list-comma-space-after */
+  }
+  .card, .navbar, .footer, .progress, .well {
+    box-shadow: 0 0 10px rgba(255, 120, 0, 18%);
+  }
+  #content, .footer {
+    position: relative;
+    z-index: 2;
+  }
+  .navbar {
+    position: relative;
+    z-index: 10;
+  }
+  #halloween-overlay {
+    display: block;
+  }
+}
+html[data-seasonal-decorations='true'][data-theme-preference='dark'] {
+  @include seasonal-active;
+}
+@media (prefers-color-scheme: dark) {
+  html[data-seasonal-decorations='true'][data-theme-preference='detect'] {
+    @include seasonal-active;
+  }
+}
+@keyframes hw-sway {
+  0% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(1.5deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+@keyframes hw-fly {
+  0% {
+    transform: translateX(-12vw);
+  }
+  100% {
+    transform: translateX(112vw);
+  }
+}
+@keyframes hw-flap {
+  0% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(0.55);
+  }
+  100% {
+    transform: scaleY(1);
+  }
+}
+@keyframes hw-bob {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-14px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+@keyframes hw-flicker {
+  0% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0.55;
+  }
+}
+@keyframes hw-peek {
+  0% {
+    transform: translateY(18px);
+  }
+  50% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(18px);
+  }
+}
+@keyframes hw-swing {
+  0% {
+    transform: rotate(-6deg);
+  }
+  50% {
+    transform: rotate(6deg);
+  }
+  100% {
+    transform: rotate(-6deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #halloween-overlay, #halloween-overlay * {
+    animation: none !important;
+  }
+}

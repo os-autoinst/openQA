@@ -1,5 +1,7 @@
+% my $theme = current_theme;
+% my $decorations = seasonal_decorations_enabled;
 <!DOCTYPE html>
-<html lang="en" data-theme-preference="<%= current_theme %>">
+<html lang="en" data-theme-preference="<%= $theme %>" data-seasonal-decorations="<%= $decorations ? 'true' : 'false' %>">
   <head>
       <!-- Meta, title, CSS, favicons, etc. -->
       <meta charset="utf-8">
@@ -77,5 +79,8 @@
               </div>
             </div>
       </footer>
+% if ($decorations && $theme ne 'light') {
+%= include 'layouts/halloween'
+% }
   </body>
 </html>
