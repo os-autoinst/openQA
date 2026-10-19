@@ -712,10 +712,10 @@ sub ovs_dbus_service_error ($self) {
         return "D-Bus method '$name/switch' is not available" unless defined $switch;
         # check whether VLAN assignments work for required tap devices
         my $settings = $self->settings->global_settings;
-        my @devices = split /,/, $settings->{REQUIRED_TAP_DEVS} // ('tap' . $self->instance_number);
+        my @devices = split /,/, $settings->{REQUIRED_TAP_DEVS} // ('tap' . ($self->instance_number - 1));
         for my $device (@devices) {
             my ($res, $msg) = $switch->set_vlan($device, 1);    # test set_vlan
-            return $msg if $res != 0;    # return e.g. "'tap1' is not connected to 'br1'" in case of improper setup
+            return $msg if $res != 0;    # return e.g. "'tap0' is not connected to 'br1'" in case of improper setup
             ($res, $msg) = $switch->unset_vlan($device, 1);    # clean temporarily VLAN assignment up
             return $msg if $res != 0;
         }

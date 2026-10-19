@@ -725,22 +725,25 @@ subtest 'check VLAN assignments via the Open vSwitch D-Bus service' => sub {
           'returns error if switch object not available';
     };
 
-    my $fake_switch = Test::FakeDBusSwitch->new(set_vlan_result => [1, "'tap1' is not connected to 'br1'"]);
+    my $fake_switch = Test::FakeDBusSwitch->new(set_vlan_result => [1, "'tap0' is not connected to 'br1'"]);
     subtest 'set_vlan failure' => sub {
         $fake_service->mock_switch($fake_switch);
-        is $worker->ovs_dbus_service_error, "'tap1' is not connected to 'br1'", 'returns error if set_vlan fails';
+        is $worker->ovs_dbus_service_error, "'tap0' is not connected to 'br1'", 'returns error if set_vlan fails';
     };
 
     subtest 'unset_vlan failure' => sub {
         $fake_switch->set_vlan_result([0, '']);
-        $fake_switch->unset_vlan_result([1, "'tap1' could not be unset"]);
-        is $worker->ovs_dbus_service_error, "'tap1' could not be unset", 'returns error if unset_vlan fails';
+        $fake_switch->unset_vlan_result([1, "'tap0' could not be unset"]);
+        is $worker->ovs_dbus_service_error, "'tap0' could not be unset", 'returns error if unset_vlan fails';
     };
 
-    subtest 'custom REQUIRED_TAP_DEVS' => sub {
+    subtest 'default tap device and custom REQUIRED_TAP_DEVS' => sub {
         $fake_switch->unset_vlan_result([0, '']);
         my @checked_devices;
         $fake_switch->set_vlan_result(sub ($dev, $tag) { push @checked_devices, $dev; return (0, '') });
+        is $worker->ovs_dbus_service_error, undef, 'succeeds with default tap device';
+        is_deeply \@checked_devices, ['tap0'], 'instance 1 tests tap0 (matching os-autoinst tapdev calculation)';
+        @checked_devices = ();
         $worker->settings->global_settings->{REQUIRED_TAP_DEVS} = 'tap10,tap11';
         is $worker->ovs_dbus_service_error, undef, 'succeeds with custom REQUIRED_TAP_DEVS';
         is_deeply \@checked_devices, ['tap10', 'tap11'], 'tested specified required tap devices';
