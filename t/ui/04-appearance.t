@@ -60,4 +60,8 @@ subtest 'We can switch back to light theme' => sub {
       ->element_exists_not('select option[selected][value="detect"]');
 };
 
+subtest 'Invalid parameters are rejected' => sub {
+    $t->post_ok('/appearance' => form => {theme => 'bogus'})->status_is(500);
+};
+
 done_testing();

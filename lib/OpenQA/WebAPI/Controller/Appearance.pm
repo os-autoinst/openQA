@@ -11,7 +11,8 @@ sub index ($self) {
 sub save ($self) {
     my $validation = $self->validation;
     $validation->required('theme')->in('light', 'dark', 'detect');
-    return $self->reply->exception('Invalid theme settings') unless $validation->is_valid;
+    # is_valid would only look at the last validated field
+    return $self->reply->exception('Invalid theme settings') if $validation->has_error;
 
     my $theme = $validation->param('theme');
     $self->session->{theme} = $theme;
