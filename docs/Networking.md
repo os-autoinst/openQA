@@ -195,6 +195,14 @@ WORKER_CLASS = qemu_x86_64,tap
 > worker instances. For example, if you have set up 3 worker instances, the same
 > number of tap devices should be configured.
 
+While idle, each worker instance with the `tap` worker class checks via
+os-autoinst-openvswitch whether VLAN tags can be assigned to the tap devices it
+would use, as computed from `TAPDEV`, `NICOFFSET` and the instance number. If
+the check fails, the worker is reported as broken. Set `REQUIRED_TAP_DEVS` to a
+comma-separated list (e.g. `REQUIRED_TAP_DEVS = tap0,tap64`) to check
+different devices instead, preferably in the section of the specific worker
+instance.
+
 Enable worker instances to be started on system boot:
 
 ```sh
