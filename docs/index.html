@@ -4253,9 +4253,10 @@ previous jobs executed across all worker slots on the machine.</li>
 <p>openQA includes a <em>client</em> script which - depending on the
 distribution - is packaged independently to allow interfacing with an
 existing openQA instance without needing to install openQA itself. Call
-<code>openqa-cli --help</code> for help. The sub-commands provide
-further help, e.g. <code>openqa-cli api --help</code> contains a lot of
-examples.</p>
+<code>openqa-cli --help</code> or <code>man openqa-cli</code> for help,
+or view the <a href="https://manpages.opensuse.org/Tumbleweed/openQA-client/openqa-cli.1">online
+manpage</a>. The sub-commands provide further help, e.g.
+<code>openqa-cli api --help</code> contains a lot of examples.</p>
 <p>Shell completion for <code>bash</code> and <code>zsh</code> is
 available via the <code>openqa-client-bash-completion</code> and
 <code>openqa-client-zsh-completion</code> packages.</p>
@@ -7358,11 +7359,15 @@ parameters can be passed along as <code>key=value</code> pairs.</p>
 <h2 data-number="6.1" id="help"><span class="header-section-number">6.1</span> Help</h2>
 <p>The <code>api</code> subcommand is not the only one available and
 more will be added over time. To get a complete list of all currently
-available subcommands you can use the <code>--help</code> option.</p>
-<div class="sourceCode" id="cb239"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb239-1"><a href="#cb239-1" aria-hidden="true" tabindex="-1"></a><span class="ex">openqa-cli</span> <span class="at">--help</span></span></code></pre></div>
+available subcommands you can use the <code>--help</code> option or
+<code>man</code>.</p>
+<div class="sourceCode" id="cb239"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb239-1"><a href="#cb239-1" aria-hidden="true" tabindex="-1"></a><span class="ex">openqa-cli</span> <span class="at">--help</span></span>
+<span id="cb239-2"><a href="#cb239-2" aria-hidden="true" tabindex="-1"></a><span class="fu">man</span> openqa-cli</span></code></pre></div>
 <p>And each subcommand also contains descriptions for all its available
 options, as well as many common usage examples.</p>
 <div class="sourceCode" id="cb240"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb240-1"><a href="#cb240-1" aria-hidden="true" tabindex="-1"></a><span class="ex">openqa-cli</span> api <span class="at">--help</span></span></code></pre></div>
+<p>See also the <a href="https://manpages.opensuse.org/Tumbleweed/openQA-client/openqa-cli.1">online
+manpage</a>.</p>
 <h2 data-number="6.2" id="authentication-1"><span class="header-section-number">6.2</span> Authentication</h2>
 <p>Not all REST endpoints are public, many will return a
 <code>403 Forbidden</code> error if you try to access them without
