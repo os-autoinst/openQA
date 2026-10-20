@@ -93,6 +93,9 @@ use constant DEFAULT_MAX_JOB_TIME => 2 * ONE_HOUR;
 # The max. time the job setup (asset caching, test syncing) is allowed to take before the worker stops it.
 use constant DEFAULT_MAX_SETUP_TIME => ONE_HOUR;
 
+# The max. time uploading assets and logs is allowed to take before the worker stops it.
+use constant DEFAULT_MAX_UPLOAD_TIME => 4 * ONE_HOUR;
+
 # The smallest time difference of database timestamps we usually distinguish in seconds
 # note: PostgreSQL actually provides a higher accuracy for the timestamp type. However,
 #       the automatic timestamp handling provided by DBIx only stores whole seconds. The
@@ -135,7 +138,7 @@ our @EXPORT_OK = qw(
   MAX_TIMER MIN_TIMER
   DEFAULT_MAX_JOB_TIME
   DEFAULT_MAX_SETUP_TIME
-  DEFAULT_UPLOAD_CHUNK_SIZE API_KEY_COMMENT_MAX_LENGTH
+  DEFAULT_MAX_UPLOAD_TIME DEFAULT_UPLOAD_CHUNK_SIZE API_KEY_COMMENT_MAX_LENGTH
   DB_TIMESTAMP_ACCURACY
   VIDEO_FILE_NAME_START VIDEO_FILE_NAME_REGEX
   FRAGMENT_REGEX
