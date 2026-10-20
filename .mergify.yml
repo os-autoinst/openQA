@@ -19,7 +19,9 @@ pull_request_rules:
           # https://trello.com/c/0N3jHq5M/2257-report-back-to-scm-when-build-results-arent-failed-and-succeeded
           # So we need to require the number of tests explicitly:
           - '#check-success>=39'
-          - status-success=openqa-in-openqa-tests
+          # the openQA-in-openQA checks are not configured yet, the PR adding them
+          # is still under discussion, see https://progress.opensuse.org/issues/208764
+          # - status-success=openqa-in-openqa-tests
           - '#check-pending=0'
       - and:
           - '#approved-reviews-by>=2'
@@ -46,7 +48,8 @@ pull_request_rules:
   - name: automatic merge on merge-skip-obs-tests
     conditions:
       - and: *core_checks
-      - status-success=openqa-in-openqa-tests
+      # see comment about the openQA-in-openQA checks above
+      # - status-success=openqa-in-openqa-tests
       - label=merge-skip-obs-tests
       - -label=merge-skip-extended-tests
     actions: *merge
