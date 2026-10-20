@@ -94,6 +94,8 @@ sub test_default_usage ($id, $asset) {
         wait_for_or_bail_out { $cache_client->status($asset_request)->is_processed } 'asset';
     }
     ok $cache_client->asset_exists('localhost', $asset), "Asset $asset downloaded";
+    is sprintf('%04o', (stat $cache_client->asset_path('localhost', $asset))[2] & 07777), '0644',
+      "Asset $asset has 0644 permissions";
     ok $asset_request->minion_id, 'Minion job id recorded in the request object' or die always_explain $asset_request;
 }
 
