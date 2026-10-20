@@ -2405,11 +2405,6 @@ sub has_modules ($self) { $self->modules->count() }
 
 sub should_show_autoinst_log ($self) { $self->state eq DONE && !$self->has_modules && $self->has_autoinst_log }
 
-sub should_show_investigation ($self) {
-    OpenQA::Jobs::Constants::meta_state($self->state) ne OpenQA::Jobs::Constants::FINAL
-      || !OpenQA::Jobs::Constants::is_ok_result($self->result);
-}
-
 sub status ($self) {
     my $state = $self->state;
     my $meta_state = OpenQA::Jobs::Constants::meta_state($state);
