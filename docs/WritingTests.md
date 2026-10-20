@@ -592,7 +592,7 @@ In addition to that, the following variables can be found in the file
 This file is upload when a test run has concluded and can be found under the
 "Logs & Assets" tab.
 
-There is also the "Investigation" tab on failed tests. It shows what has changed
+There is also the "Investigation" tab on finished tests. It shows what has changed
 since the last good test run.
 
 The next section explains how to keep track of the test environment.
@@ -605,7 +605,7 @@ There are two sets of packages that can be included in test logs:
 2. Packages installed on SUT - stored as `sut_packages.txt`.
 
 For both sets, if present, openQA will include the difference to the last good
-job in the "Investigation" tab of a failed job.
+job in the "Investigation" tab.
 
 To enable logging of worker package versions, set `PACKAGES_CMD` in
 `workers.ini`. The command should print installed packages with their version to

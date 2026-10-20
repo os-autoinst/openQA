@@ -54,11 +54,9 @@
                         <a href="#dependencies" aria-controls="dependencies" role="tab" data-bs-toggle="tab" class="nav-link">Dependencies</a>
                     </li>
                 % }
-                % if ($show_investigation) {
-                    <li role="presentation" class="nav-itemtab-hidden-by-default" id="nav-item-for-investigation">
-                        <a href="#investigation" aria-controls="investigation" role="tab" data-bs-toggle="tab" class="nav-link">Investigation</a>
-                    </li>
-                % }
+                <li role="presentation" class="nav-item" id="nav-item-for-investigation">
+                    <a href="#investigation" aria-controls="investigation" role="tab" data-bs-toggle="tab" class="nav-link">Investigation</a>
+                </li>
                 <li role="presentation" class="nav-item" id="nav-item-for-comments">
                     <a href="#comments" aria-controls="comments" role="tab" data-bs-toggle="tab" class="nav-link">Comments (<%= $job->comments->count %>)</a>
                 </li>
@@ -88,12 +86,10 @@
                     % end
                     <div role="tabpanel" class="tab-pane" id="dependencies" data-src="<%= url_for('test_dependencies', testid => $testid) %>" data-current-job-id="<%= $testid %>"></div>
                 % }
-                % if ($show_investigation) {
-                    <div role="tabpanel" class="tab-pane" id="investigation" data-src="<%= url_for('test_investigation', testid => $testid) %>">
-                        %= include 'test/strict_scenario_checkbox', id => 'investigation_strict', checked => 1
-                        <div id="investigation_content"></div>
-                    </div>
-                % }
+                <div role="tabpanel" class="tab-pane" id="investigation" data-src="<%= url_for('test_investigation', testid => $testid) %>">
+                    %= include 'test/strict_scenario_checkbox', id => 'investigation_strict', checked => 1
+                    <div id="investigation_content"></div>
+                </div>
                 <div role="tabpanel" class="tab-pane" id="comments" data-src="<%= url_for('test_comments', testid => $testid) %>"></div>
                 <div role="tabpanel" class="tab-pane" id="next_previous">
                     %= include 'test/job_next_previous'

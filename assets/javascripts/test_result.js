@@ -66,7 +66,7 @@ const tabConfiguration = {
   investigation: {
     descriptiveName: 'investigation info',
     conditionForShowingNavItem: function () {
-      return testStatus.state === 'done' && (testStatus.result === 'failed' || testStatus.result === 'incomplete');
+      return testStatus.state === 'done';
     },
     renderContents: renderInvestigationTab
   },
