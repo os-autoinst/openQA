@@ -799,9 +799,39 @@ subtest 'handle client status changes' => sub {
         $worker->_handle_client_status_changed($fake_client, {status => 'connected', reason => 'test'});
         is $job->status, 'accepting', 'attempted to accept job';
         is $job->remaining_accept_attempts, 1, 'this cost the job one accept attempt';
-        $worker->current_job(undef);
     }
     qr/Registered and connected.*with.*host some-host and worker ID 42.*Trying to accept.*43/s, 'connected logged';
+
+    # reconnect while job is stopping concludes ongoing upload if any
+    $job->{_status} = 'stopping';
+    $job->{_is_uploading_results} = 1;
+    combined_like {
+        $worker->_handle_client_status_changed($fake_client, {status => 'connected', reason => 'test'});
+        ok !$job->is_uploading_results, 'ongoing upload concluded on reconnect';
+    }
+    qr/Registered and connected.*with.*host some-host and worker ID 42.*Re-connected while job 43 is stopping/s,
+      'stopping job handled on reconnect';
+
+    # reconnect while job is active
+    $job->{_status} = 'running';
+    $job->{_upload_results_timer} = 1234;
+    combined_like {
+        $worker->_handle_client_status_changed($fake_client, {status => 'connected', reason => 'test'});
+    }
+    qr/Registered and connected.*with.*host some-host and worker ID 42.*Re-connected while job 43 is active/s,
+      'active job handled on reconnect';
+
+    # client from different host does not touch current job
+    $fake_client_2->worker_id(43);
+    combined_like {
+        $worker->_handle_client_status_changed($fake_client_2, {status => 'connected', reason => 'test'});
+    }
+    qr/Registered and connected.*with.*host yet-another-host/s,
+      'reconnect of different host logged without touching job';
+    is $job->status, 'running', 'job still in status running';
+
+    $job->{_status} = 'accepting';
+    $worker->current_job(undef);
 
     # assume one of the clients is disabled; it should be ignored
     $fake_client->status('disabled');
