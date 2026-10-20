@@ -188,8 +188,9 @@ overall result from the following list.
   via `record_soft_failure` (from os-autoinst) or a job failure has been ignored
   explicitly via a [job label](UsersGuide.md#labels).
 
-- **timeout_exceeded** The job was aborted because `MAX_JOB_TIME` or `MAX_SETUP_TIME`
-  has been exceeded, see [Changing timeout](WritingTests.md#changing_timeouts) for details.
+- **timeout_exceeded** The job was aborted because `MAX_JOB_TIME`, `MAX_SETUP_TIME`
+  or `MAX_UPLOAD_TIME` has been exceeded, see [Changing timeout](WritingTests.md#changing_timeouts)
+  for details.
 
 - **skipped** Dependencies failed so the job was not started.
 
