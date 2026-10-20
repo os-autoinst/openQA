@@ -2000,11 +2000,12 @@ sub investigate ($self, %args) {
     my $self_file = eval { Mojo::File->new($self->result_dir(), 'vars.json')->slurp };
     my $self_vars = decode_json($self_file // '{}');
     for my $prev (@previous) {
-        if ($prev->should_show_investigation) {
+        # _previous_scenario_jobs restricts the history to jobs in state done with a complete result, so the
+        # first bad job is simply the first one whose result is not ok (softfailed counts as good)
+        if (!$prev->is_ok) {
             $inv{first_bad} = {type => 'link', link => '/tests/' . $prev->id, text => $prev->id};
             next;
         }
-        next unless $prev->result =~ /(?:passed|softfailed)/;
         $inv{last_good} = {type => 'link', link => '/tests/' . $prev->id, text => $prev->id};
         last unless $prev->result_dir;
         my $prev_file = eval { Mojo::File->new($prev->result_dir(), 'vars.json')->slurp };
