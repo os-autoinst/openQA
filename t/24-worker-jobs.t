@@ -568,6 +568,61 @@ subtest 'Conclude uploading results if ongoing' => sub {
     $job->conclude_upload_if_ongoing;
     is $upload_concluded, 1, 'callback invoked if upload was ongoing';
     ok !$job->is_uploading_results, 'job not considered uploading anymore';
+
+    my $callback_invoked = 0;
+    $job->{_is_uploading_results} = 1;
+    $job->{_upload_results_callback} = sub { ++$callback_invoked };
+    $job->conclude_upload_if_ongoing;
+    Mojo::IOLoop->one_tick;
+    is $callback_invoked, 1, 'callback associated with upload invoked when concluded early';
+};
+
+subtest 'Handle reconnect' => sub {
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 4, URL => $engine_url, settings => {}});
+    my $job_mock = Test::MockModule->new('OpenQA::Worker::Job');
+
+    subtest 'job supposed to start' => sub {
+        my $accepted = 0;
+        $job_mock->redefine(accept => sub { ++$accepted });
+        $job->{_status} = 'new';
+        combined_like { $job->handle_reconnect } qr/Trying to accept current job 4 again/,
+          'log message on reconnect when new';
+        is $accepted, 1, 'accept invoked';
+        $job_mock->unmock('accept');
+    };
+
+    subtest 'job is stopping' => sub {
+        $job->{_status} = 'stopping';
+        my $upload_concluded = 0;
+        $job->once(uploading_results_concluded => sub { ++$upload_concluded });
+        $job->{_is_uploading_results} = 1;
+        combined_like { $job->handle_reconnect }
+        qr/Re-connected while job 4 is stopping; concluding ongoing upload if any/,
+          'log message on reconnect when stopping';
+        is $upload_concluded, 1, 'ongoing upload concluded';
+    };
+
+    subtest 'job is active' => sub {
+        my $uploaded = 0;
+        $job_mock->redefine(_upload_results => sub { ++$uploaded });
+
+        $job->{_status} = 'setup';
+        combined_like { $job->handle_reconnect } qr/Re-connected while job 4 is active/,
+          'log message on reconnect when setup';
+        is $uploaded, 0, 'no upload results triggered during setup';
+
+        $job->{_status} = 'running';
+        $job->{_upload_results_timer} = 1234;
+        combined_like { $job->handle_reconnect } qr/Re-connected while job 4 is active/,
+          'log message on reconnect when running with timer';
+        is $uploaded, 0, 'no upload results triggered when timer exists';
+
+        delete $job->{_upload_results_timer};
+        combined_like { $job->handle_reconnect } qr/Re-connected while job 4 is active/,
+          'log message on reconnect when running without timer';
+        is $uploaded, 1, 'upload results triggered when running without timer';
+        $job_mock->unmock('_upload_results');
+    };
 };
 
 subtest 'Successful job' => sub {
