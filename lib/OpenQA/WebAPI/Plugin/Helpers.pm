@@ -81,6 +81,13 @@ sub register ($self, $app, $config) {
 
     $app->helper(current_job => sub ($c) { $c->stash('job') });
     $app->helper(current_theme => sub ($c) { $c->session->{theme} || 'light' });
+    $app->helper(seasonal_decorations => sub ($c) { $c->session->{seasonal_decorations} || 'auto' });
+    $app->helper(is_seasonal_period => sub ($c = undef) { (localtime)[4] == 9 });
+    $app->helper(
+        seasonal_decorations_enabled => sub ($c) {
+            my $mode = $c->seasonal_decorations;
+            $mode eq 'on' || ($mode eq 'auto' && $c->is_seasonal_period);
+        });
     $app->helper(is_operator_js => sub ($c) { Mojo::ByteStream->new($c->helpers->is_operator ? 'true' : 'false') });
     $app->helper(is_admin_js => sub ($c) { Mojo::ByteStream->new($c->helpers->is_admin ? 'true' : 'false') });
 
