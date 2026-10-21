@@ -14,6 +14,7 @@ use OpenQA::Utils (
     qw(run_cmd_with_log_return_error needledir testcasedir git_commit_url find_video_files)
 );
 use OpenQA::App;
+use OpenQA::Constants qw(DOWNLOAD_PERMISSION);
 use OpenQA::Jobs::Constants;
 use OpenQA::JobDependencies::Constants;
 use OpenQA::Markdown 'markdown_to_html';
@@ -1406,8 +1407,7 @@ sub create_asset ($self, $asset, $scope, $local = undef) {
     # Worker and WebUI are on the same host (much faster)
     if ($local) {
         path($local)->copy_to($temp_final_file);
-        $temp_final_file->move_to($final_file);
-        chmod 0644, $final_file;
+        $temp_final_file->move_to($final_file)->chmod(DOWNLOAD_PERMISSION);
         $temp_chunk_folder->remove_tree;
         return 0, $fname, $type, 1;
     }
@@ -1441,11 +1441,7 @@ sub create_asset ($self, $asset, $scope, $local = undef) {
             $temp_chunk_folder->remove_tree
               && die Mojo::Exception->new("Checksum mismatch expected $sum got: $real_sum (weak check on last bytes)")
               unless $sum eq $real_sum;
-
-            $temp_final_file->move_to($final_file);
-
-            chmod 0644, $final_file;
-
+            $temp_final_file->move_to($final_file)->chmod(DOWNLOAD_PERMISSION);
             $temp_chunk_folder->remove_tree;
         }
         $chunk->content(\undef);

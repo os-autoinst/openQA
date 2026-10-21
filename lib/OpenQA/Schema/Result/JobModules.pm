@@ -5,6 +5,7 @@ package OpenQA::Schema::Result::JobModules;
 
 use Mojo::Base 'DBIx::Class::Core', -signatures;
 
+use OpenQA::Constants qw(DOWNLOAD_PERMISSION);
 use OpenQA::Jobs::Constants;
 use Mojo::JSON qw(decode_json encode_json);
 use Mojo::File qw(path tempfile);
@@ -206,7 +207,8 @@ sub save_results ($self, $results, $known_md5_sums = undef, $known_file_names = 
 
     my $dir = $self->job->result_dir;
     my $tmpfile = tempfile(DIR => $dir);
-    $tmpfile->spew(encode_json($results))->chmod(0644)->move_to(path($dir, 'details-' . $self->name . '.json'));
+    $tmpfile->spew(encode_json($results));
+    $tmpfile->chmod(DOWNLOAD_PERMISSION)->move_to(path($dir, 'details-' . $self->name . '.json'));
 }
 
 # incorporate textual step data into details JSON
@@ -237,7 +239,7 @@ sub finalize_results ($self) {
     my $new_file_contents = encode_json($results);
     my $tmpfile = tempfile(DIR => $file->dirname);
     $tmpfile->spew($new_file_contents);
-    $tmpfile->chmod(0644)->move_to($file);
+    $tmpfile->chmod(DOWNLOAD_PERMISSION)->move_to($file);
 
     # cleanup incorporated files
     for my $step (@$details) {

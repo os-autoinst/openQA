@@ -7,6 +7,7 @@ use Mojo::Base -base, -signatures;
 use Mojo::Loader 'load_class';
 use Mojo::File 'path';
 use Mojo::URL;
+use OpenQA::Constants 'DOWNLOAD_PERMISSION';
 use OpenQA::UserAgent;
 use OpenQA::Utils 'human_readable_size';
 use Time::HiRes 'sleep';
@@ -90,7 +91,7 @@ sub _get ($self, $url, $target, $options) {
     my $code = $res->code;
     my $error = $res->error // {message => 'Unknown error'};
     if (defined $code && $code == HTTP_NOT_MODIFIED) {
-        $target->chmod(0644) if my $exists = -e $target;
+        $target->chmod(DOWNLOAD_PERMISSION) if my $exists = -e $target;
         $options->{on_unchanged}->() if $options->{on_unchanged};
         return (undef, $exists ? undef : $error->{message});
     }
@@ -127,7 +128,7 @@ sub _get ($self, $url, $target, $options) {
         }
         else {
             $asset->move_to($target);
-            $target->chmod(0644);
+            $target->chmod(DOWNLOAD_PERMISSION);
         }
 
         $options->{on_success}->($res) if $options->{on_success};
