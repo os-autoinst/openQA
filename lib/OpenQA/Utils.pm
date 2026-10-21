@@ -392,7 +392,7 @@ sub asset_type_from_setting ($setting, $value = undef) {
     return 'hdd' if $setting =~ /^HDD_\d+$/;
     # non-absolute-path value of UEFI_PFLASH_(CODE|VARS) treated as HDD asset
     return 'hdd' if $setting =~ /^UEFI_PFLASH_(?:CODE|VARS)$/ && ($value // '') !~ m{^/};
-    return 'repo' if $setting =~ /^REPO_\d+$/;
+    return 'repo' if $setting eq 'REPO' || $setting =~ /^REPO_\d+$/;
     return 'other' if $setting =~ /^ASSET_\d+$/ || $setting eq 'KERNEL' || $setting eq 'INITRD';
     # empty string if this doesn't look like an asset type
     return '';
@@ -572,7 +572,8 @@ sub create_downloads_list ($job_settings) {
         # Find where we should download the file to
         my $fullpath = locate_asset($assettype, $filename, mustexist => 0);
 
-        unless (-s $fullpath) {
+        my $exists = $assettype eq 'repo' ? -e $fullpath : -s $fullpath;
+        unless ($exists) {
             # if the file doesn't exist, add the url/target path and extraction
             # flag as a key/value pair to the %downloads hash
             $downloads{$url} = [$fullpath, $do_extract];
