@@ -6,7 +6,7 @@ use Mojo::Base 'Mojo::EventEmitter', -signatures;
 
 use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME DEFAULT_UPLOAD_CHUNK_SIZE DEFAULT_MAX_SETUP_TIME WORKER_COMMAND_ABORT
   WORKER_COMMAND_QUIT WORKER_COMMAND_CANCEL WORKER_COMMAND_OBSOLETE WORKER_SR_BROKEN WORKER_SR_SETUP_FAILURE
-  WORKER_SR_API_FAILURE WORKER_SR_TIMEOUT WORKER_SR_DONE WORKER_SR_DIED);
+  WORKER_SR_API_FAILURE WORKER_SR_TIMEOUT WORKER_SR_DONE WORKER_SR_DIED DOWNLOAD_PERMISSION);
 use OpenQA::Jobs::Constants;
 use OpenQA::Worker::Engines::isotovideo;
 use OpenQA::Worker::Isotovideo::Client;
@@ -991,7 +991,7 @@ sub _upload_asset ($self, $upload_parameter) {
     $ua->upload->once(
         'upload_local.prepare' => sub ($upload) {
             log_info("$filename: local upload (no chunks needed)", channels => \@channels_worker_only, default => 1);
-            chmod 0644, $file;
+            chmod DOWNLOAD_PERMISSION, $file;
         });
     $ua->upload->once(
         'upload_chunk.prepare' => sub ($upload, $pieces) {

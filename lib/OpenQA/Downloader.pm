@@ -7,6 +7,7 @@ use Mojo::Base -base, -signatures;
 use Mojo::Loader 'load_class';
 use Mojo::File 'path';
 use Mojo::URL;
+use OpenQA::Constants 'DOWNLOAD_PERMISSION';
 use OpenQA::UserAgent;
 use OpenQA::Utils 'human_readable_size';
 use Time::HiRes 'sleep';
@@ -75,7 +76,8 @@ sub _get ($self, $url, $target, $options) {
     my $ua = $self->ua;
     my $log = $self->log;
 
-    my $file = path($target)->basename;
+    $target = path($target);
+    my $file = $target->basename;
     $log->info(qq{Downloading "$file" from "$url"});
 
     # Assets might be deleted by a sysadmin
@@ -89,8 +91,9 @@ sub _get ($self, $url, $target, $options) {
     my $code = $res->code;
     my $error = $res->error // {message => 'Unknown error'};
     if (defined $code && $code == HTTP_NOT_MODIFIED) {
+        $target->chmod(DOWNLOAD_PERMISSION) if my $exists = -e $target;
         $options->{on_unchanged}->() if $options->{on_unchanged};
-        return (undef, -e $target ? undef : $error->{message});
+        return (undef, $exists ? undef : $error->{message});
     }
 
     if (!$res->is_success) {
@@ -112,7 +115,6 @@ sub _get ($self, $url, $target, $options) {
             my $tempfile = path($ENV{MOJO_TMPDIR}, Mojo::URL->new($url)->path->parts->[-1])->to_string;
             $log->info(qq{Extracting "$tempfile" to "$target"});
             $asset->move_to($tempfile);
-            $target = path($target);
             $err = $self->_extract_asset($tempfile, $target);
             unlink $tempfile;
             if ($err) {
@@ -124,7 +126,10 @@ sub _get ($self, $url, $target, $options) {
                 }
             }
         }
-        else { $asset->move_to($target) }
+        else {
+            $asset->move_to($target);
+            $target->chmod(DOWNLOAD_PERMISSION);
+        }
 
         $options->{on_success}->($res) if $options->{on_success};
     }

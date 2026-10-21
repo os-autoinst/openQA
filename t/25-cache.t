@@ -238,14 +238,17 @@ like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200\@64bit.qcow2" from/,
 like $cache_log, qr/Download of ".*sle-12-SP3-x86_64-0368-200.*" successful \([\d\.]+ \w+\/s\), new cache size is 1024/,
   'Full download logged';
 like $cache_log, qr/Size of .* is 1024 Byte, with ETag "andi \$a3, \$t1, 41399"/, 'Etag and size are logged';
-ok -e $cachedir->child($host, 'sle-12-SP3-x86_64-0368-200@64bit.qcow2'), 'Asset exist in cache';
-is $cache->asset($cachedir->child($host, 'sle-12-SP3-x86_64-0368-200@64bit.qcow2')->to_string)->{pending}, 0,
-  'Pending flag unset after download';
+ok -e (my $cached_asset = $cachedir->child($host, 'sle-12-SP3-x86_64-0368-200@64bit.qcow2')), 'Asset exist in cache';
+is sprintf('%04o', (stat $cached_asset)[2] & 07777), '0644', 'Cached asset has 0644 permissions';
+is $cache->asset($cached_asset->to_string)->{pending}, 0, 'Pending flag unset after download';
 $cache_log = '';
 
+chmod 0600, $cached_asset;
 $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
 like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200\@64bit.qcow2" from/, 'Asset download attempt';
 like $cache_log, qr/Content of ".*0368-200\@64bit.qcow2" has not changed, updating last use/, 'Content has not changed';
+is sprintf('%04o', (stat $cached_asset)[2] & 07777), '0644',
+  'Cached asset permissions updated to 0644 on unchanged check';
 $cache_log = '';
 
 $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
