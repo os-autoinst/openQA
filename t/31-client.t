@@ -9,13 +9,10 @@ use OpenQA::Test::TimeLimit '6';
 
 use Test::Mojo;
 use Test::MockModule;
-use Test::MockObject;
 use Test::Mock::Time;
 use Test::Output;
 use Test::Warnings ':report_warnings';
 use OpenQA::Client;
-use OpenQA::WebAPI;
-use OpenQA::Test::Case;
 use OpenQA::Test::FakeWorker;
 use OpenQA::Scheduler::Client;
 use OpenQA::WebSockets::Client;

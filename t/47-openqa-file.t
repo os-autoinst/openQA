@@ -8,7 +8,6 @@ use Test::Warnings ':report_warnings';
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
-use OpenQA::Client;
 use OpenQA::File;
 use Digest::SHA 'sha1_base64';
 use Mojo::File qw(path tempfile tempdir);
