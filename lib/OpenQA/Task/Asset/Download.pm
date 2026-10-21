@@ -79,10 +79,7 @@ sub _download ($job, $url, $assetpaths, $do_extract) {
     my $downloader = OpenQA::Downloader->new(log => $ctx, tmpdir => $ENV{MOJO_TMPDIR});
     my $options = {
         extract => $do_extract,
-        on_success => sub {
-            chmod 0644, $assetpath;
-            $ctx->debug(qq{Download of "$assetpath" successful});
-        }
+        on_success => sub { $ctx->debug(qq{Download of "$assetpath" successful}) },
     };
     return _create_symlinks($job, $ctx, $assetpath, \@other_destinations)
       unless my $err = $downloader->download($url, $assetpath, $options);

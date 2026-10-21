@@ -118,13 +118,11 @@ sub get_asset ($self, $host, $job, $type, $asset) {
             $start = [gettimeofday()];
         },
         on_unchanged => sub () {
-            chmod 0644, $asset;
             $log->info(qq{Content of "$asset" has not changed, updating last use});
             $self->_update_asset_last_use($asset);
         },
         on_downloaded => sub () { $self->_cache_sync },
         on_success => sub ($res) {
-            chmod 0644, $asset;
             my $end = [gettimeofday()];
             my $headers = $res->headers;
             my $etag = $headers->etag;
