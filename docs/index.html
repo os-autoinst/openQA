@@ -7861,6 +7861,14 @@ the number of the running worker instances. For example, if you have set
 up 3 worker instances, the same number of tap devices should be
 configured.</p>
 </blockquote>
+<p>While idle, each worker instance with the <code>tap</code> worker
+class checks via os-autoinst-openvswitch whether VLAN tags can be
+assigned to the tap devices it would use, as computed from
+<code>TAPDEV</code>, <code>NICOFFSET</code> and the instance number. If
+the check fails, the worker is reported as broken. Set
+<code>REQUIRED_TAP_DEVS</code> to a comma-separated list (e.g.
+<code>REQUIRED_TAP_DEVS = tap0,tap64</code>) to check different devices
+instead, preferably in the section of the specific worker instance.</p>
 <p>Enable worker instances to be started on system boot:</p>
 <div class="sourceCode" id="cb277"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb277-1"><a href="#cb277-1" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> enable openqa-worker@<span class="dt">{</span><span class="dv">1</span><span class="dt">..</span><span class="dv">3</span><span class="dt">}</span></span></code></pre></div>
 <h3 data-number="8.2.2" id="verify-the-setup"><span class="header-section-number">8.2.2</span> Verify the setup</h3>
