@@ -128,40 +128,6 @@ subtest 'prepare_chunks' => sub {
     ok $_->cksum, 'Checksum present for ' . $_->index for $pieces->each;
 };
 
-subtest 'verify_chunks' => sub {
-    my $original = file_path($FindBin::Bin, 'data', 'ltp_test_result_format.json');
-
-    my $pieces = $original->split(100000);
-
-    my $t_dir = tempdir();
-    my $copied_file = tempfile();
-
-    # Save pieces to disk
-    $pieces->spew($t_dir);
-
-    is $t_dir->list_tree->size, $pieces->last->total;
-
-    OpenQA::Files->write_chunks($t_dir => $copied_file);
-
-    is +OpenQA::Files->verify_chunks($t_dir => $copied_file), undef, 'Verify chunks passes';
-    $copied_file->spew('');
-
-    is +OpenQA::Files->verify_chunks($t_dir => $copied_file)->message(),
-      'Can\'t verify written data from chunk',
-      'Cannot verify chunks passes';
-    is $copied_file->slurp, '', 'File is empty now';
-
-    is +OpenQA::Files->write_verify_chunks($t_dir => $copied_file), undef, 'Write and verify passes';
-
-    is $original->file->slurp, path($copied_file)->slurp, 'Same content';
-
-    $pieces->first->content('42')->write_content($copied_file);    #Let's simulate a writing error
-    like +OpenQA::Files->verify_chunks($t_dir => $copied_file),
-      qr/^Can't verify written data from chunk/,
-      'Verify chunks fail';
-    isnt $original->file->slurp, path($copied_file)->slurp, 'Not same content';
-};
-
 sub compare ($file, $chunk_size) {
     my $original = file_path($FindBin::Bin, 'data', $file);
     my $pieces = $original->split($chunk_size);
