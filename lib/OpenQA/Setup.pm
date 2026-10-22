@@ -147,7 +147,7 @@ sub default_config () {
             auto_duplicate_stale_jobs => 1,
             search_results_limit => 50000,
             auto_clone_regex =>
-'^(cache failure: |terminated prematurely: |api failure: Failed to register .* 503|backend died: .*VNC.*(timeout|timed out|refused)|QEMU terminated: Failed to allocate KVM HPT of order 25.* Cannot allocate memory|backend died: Open vSwitch command .* failed:)',
+'^(cache failure: |terminated prematurely: |api failure: Failed to register .* 503|backend died: .*VNC.*(timeout|timed out|refused)|QEMU terminated: Failed to allocate KVM HPT of order 25.* Cannot allocate memory|api failure: 403 response: timestamp mismatch|backend died: Open vSwitch command .* failed:)',
             auto_clone_limit => 20,
             force_result_regex => '',
             parallel_children_collapsable_results => join(' ', OK_RESULTS),
