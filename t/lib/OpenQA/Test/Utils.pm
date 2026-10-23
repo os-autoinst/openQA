@@ -595,15 +595,23 @@ sub prepare_default_needle ($dir) {
     return $dest;
 }
 
+package Test::FakeSubprocess {
+    use Mojo::Base 'Mojo::EventEmitter', -signatures;
+    has pid => 12345;
+    sub progress ($self, @args) { $self->emit(progress => @args) }
+}
+
 sub mock_io_loop (%args) {
     my $io_loop_mock = Test::MockModule->new('Mojo::IOLoop');
     $io_loop_mock->redefine(    # avoid forking to prevent coverage analysis from slowing down the test significantly
         subprocess => sub ($io_loop, $function, $callback) {
+            my $proc = Test::FakeSubprocess->new;
             my @result;
             my $error = '';
-            try { @result = $function->() }
+            try { @result = $function->($proc) }
             catch ($e) { $error = $e }
-            $io_loop->next_tick(sub { $callback->(undef, $error, @result) });
+            $io_loop->next_tick(sub { $callback->($proc, $error, @result) });
+            return $proc;
         }) if $args{subprocess};
     return $io_loop_mock;
 }
