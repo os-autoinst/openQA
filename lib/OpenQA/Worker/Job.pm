@@ -64,6 +64,7 @@ sub last_screenshot ($self) { $self->{_last_screenshot} }
 sub test_order ($self) { $self->{_test_order} }
 sub current_test_module ($self) { $self->{_current_test_module} }
 sub progress_info ($self) { $self->{_progress_info} }
+sub upload_results_timer ($self) { $self->{_upload_results_timer} }
 sub engine ($self) { $self->{_engine} }
 
 sub new ($class, $worker, $client, $job_info) {
@@ -173,6 +174,22 @@ sub stop_if_out_of_acceptance_attempts ($self) {
 }
 
 sub remaining_accept_attempts ($self) { $self->{_accept_attempts} }
+
+sub handle_reconnect ($self) {
+    my $job_id = $self->id;
+    if ($self->is_supposed_to_start) {
+        log_info("Trying to accept current job $job_id again");
+        return $self->accept;
+    }
+    if ($self->is_stopped_or_stopping) {
+        log_info("Re-connected while job $job_id is stopping; concluding ongoing upload if any");
+        return $self->conclude_upload_if_ongoing;
+    }
+    log_info("Re-connected while job $job_id is active");
+    $self->conclude_upload_if_ongoing;
+    $self->_upload_results(sub { }) if $self->status eq 'running' && !$self->upload_results_timer;
+    return 1;
+}
 
 sub _compute_timeouts ($job_settings) {
     my $max_job_time = $job_settings->{MAX_JOB_TIME};
@@ -686,7 +703,9 @@ sub _calculate_upload_results_interval ($self) {
     return $interval;
 }
 
-sub _conclude_upload ($self, $callback, $result = {}) {
+sub _conclude_upload ($self, $callback = undef, $result = {}) {
+    my $existing_callback = delete $self->{_upload_results_callback};
+    $callback //= $existing_callback;
     $self->{_is_uploading_results} = 0;
     $self->emit(uploading_results_concluded => $result);
     Mojo::IOLoop->next_tick($callback) if $callback;
@@ -714,7 +733,12 @@ sub _upload_results ($self, $callback) {
 
     $self->{_is_uploading_results} = 1;
     $self->{_result_upload_error} = undef;
-    $self->_upload_results_step_0_prepare($callback);
+    my $concluded = 0;
+    my $safe_callback = sub (@args) {
+        $callback->(@args) if $concluded++ == 0 && $callback;    # ensure we invoke $callback only once
+    };
+    $self->{_upload_results_callback} = $safe_callback;
+    $self->_upload_results_step_0_prepare($safe_callback);
 }
 
 sub _upload_results_step_0_prepare ($self, $callback) {

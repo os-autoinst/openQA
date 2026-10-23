@@ -797,13 +797,11 @@ sub _handle_client_status_changed ($self, $client, $event_data) {
     my $webui_host = $client->webui_host;
     return log_info("Registering with openQA $webui_host") if $status eq 'registering';
     return log_info('Establishing ws connection via ' . $event_data->{url}) if $status eq 'establishing_ws';
-    my $worker_id = $client->worker_id;
+    my $worker_id = $client->worker_id // '?';
     if ($status eq 'connected') {
         log_info("Registered and connected via websockets with openQA host $webui_host and worker ID $worker_id");
         my $current_job = $self->current_job;
-        return undef unless $current_job && $current_job->is_supposed_to_start;
-        log_info('Trying to accept current job ' . $current_job->id . ' again');
-        $current_job->accept;
+        $current_job->handle_reconnect if $current_job && $current_job->client && $current_job->client == $client;
     }
     elsif ($status eq 'disabled') {
         # handle case when trying to connect to web UI should *not* be attempted again
