@@ -49,4 +49,24 @@ sub update ($self) {
     }
 }
 
+sub delete ($self) {
+    my $user_id = $self->param('id') // $self->param('userid');
+    my $user = $self->schema->resultset('Users')->find($user_id);
+    return $self->render(text => "Can't find that user", status => HTTP_NOT_FOUND) unless $user;
+
+    return $self->render(text => 'Cannot delete system user', status => HTTP_FORBIDDEN)
+      if ($user->provider // '') eq '' && $user->username eq 'system';
+
+    $self->schema->resultset('AuditEvents')->create(
+        {
+            user_id => $user->id,
+            event => 'user_delete_account',
+            event_data => '{}',
+        });
+    $user->anonymize;
+
+    $self->flash(info => 'User deleted successfully.');
+    return $self->redirect_to($self->url_for('admin_users'));
+}
+
 1;
