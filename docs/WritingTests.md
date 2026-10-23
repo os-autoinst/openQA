@@ -498,10 +498,15 @@ limit, set the test variable `MAX_JOB_TIME` to the desired number of seconds.
 
 The download of assets, synchronization of tests and other setup tasks do
 **not** count into `MAX_JOB_TIME`. However, the setup time is limited by default
-to one hour. This can be changed by setting `MAX_SETUP_TIME`. The variable
-`TIMEOUT_SCALE` allows to scale `MAX_JOB_TIME` and timeouts within the backend,
-for example the [test API](#api). This is supposed to be set within the worker
-settings on slow worker hosts. It has no influence on the video setting.
+to one hour. This can be changed by setting `MAX_SETUP_TIME`. Similarly, the
+teardown and upload phase is limited by default to 4 hours, which can be
+changed by setting `MAX_UPLOAD_TIME`. Additionally, an inactivity timeout of
+by default 20 minutes applies during upload, which can be changed via
+`UPLOAD_INACTIVITY_TIMEOUT`. The variable `TIMEOUT_SCALE` allows to scale
+`MAX_JOB_TIME`, `MAX_UPLOAD_TIME`, `UPLOAD_INACTIVITY_TIMEOUT`, and timeouts
+within the backend, for example the [test API](#api). This is supposed to be
+set within the worker settings on slow worker hosts. It has no influence on the
+video setting.
 
 ### Enabling UEFI with QEMU
 

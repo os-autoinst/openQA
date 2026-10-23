@@ -28,9 +28,10 @@ use Mojo::JSON qw(encode_json decode_json);
 use Mojo::UserAgent;
 use Mojo::URL;
 use Mojo::IOLoop;
-use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME DEFAULT_MAX_SETUP_TIME DEFAULT_UPLOAD_CHUNK_SIZE WORKER_COMMAND_CANCEL
-  WORKER_COMMAND_QUIT WORKER_COMMAND_OBSOLETE WORKER_SR_SETUP_FAILURE WORKER_SR_TIMEOUT WORKER_EC_ASSET_FAILURE
-  WORKER_EC_CACHE_FAILURE WORKER_SR_API_FAILURE WORKER_SR_DIED WORKER_SR_DONE WORKER_SR_BROKEN);
+use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME DEFAULT_MAX_SETUP_TIME DEFAULT_MAX_UPLOAD_TIME
+  DEFAULT_UPLOAD_INACTIVITY_TIMEOUT DEFAULT_UPLOAD_CHUNK_SIZE WORKER_COMMAND_CANCEL WORKER_COMMAND_QUIT
+  WORKER_COMMAND_OBSOLETE WORKER_SR_SETUP_FAILURE WORKER_SR_TIMEOUT WORKER_EC_ASSET_FAILURE WORKER_EC_CACHE_FAILURE
+  WORKER_SR_API_FAILURE WORKER_SR_DIED WORKER_SR_DONE WORKER_SR_BROKEN);
 use OpenQA::Worker::Job;
 use OpenQA::Worker::Settings;
 use OpenQA::Test::FakeWebSocketTransaction;
@@ -1377,23 +1378,38 @@ subtest '_read_result_file and _reduce_test_order' => sub {
     #       uploaded results for might still be in progress and still needs to be considered on further uploads.
 };
 
-subtest 'computing max job time and max setup time' => sub {
+subtest 'computing timeouts' => sub {
     my %settings;
-    my ($max_job_time, $max_setup_time) = OpenQA::Worker::Job::_compute_timeouts(\%settings);
+    my ($max_job_time, $max_setup_time, $max_upload_time, $upload_inactivity_timeout)
+      = OpenQA::Worker::Job::_compute_timeouts(\%settings);
     is $max_job_time, DEFAULT_MAX_JOB_TIME, 'default scenario: default max job time)';
     is $max_setup_time, DEFAULT_MAX_SETUP_TIME, 'default scenario: default max setup time)';
+    is $max_upload_time, DEFAULT_MAX_UPLOAD_TIME, 'default scenario: default max upload time';
+    is $upload_inactivity_timeout, DEFAULT_UPLOAD_INACTIVITY_TIMEOUT,
+      'default scenario: default upload inactivity timeout';
 
     $settings{MAX_JOB_TIME} = sprintf '%d', DEFAULT_MAX_JOB_TIME / 2;
     $settings{MAX_SETUP_TIME} = sprintf '%d', DEFAULT_MAX_SETUP_TIME / 3;
-    ($max_job_time, $max_setup_time) = OpenQA::Worker::Job::_compute_timeouts(\%settings);
+    $settings{MAX_UPLOAD_TIME} = sprintf '%d', DEFAULT_MAX_UPLOAD_TIME / 4;
+    $settings{UPLOAD_INACTIVITY_TIMEOUT} = sprintf '%d', DEFAULT_UPLOAD_INACTIVITY_TIMEOUT / 5;
+    ($max_job_time, $max_setup_time, $max_upload_time, $upload_inactivity_timeout)
+      = OpenQA::Worker::Job::_compute_timeouts(\%settings);
     is $max_job_time, DEFAULT_MAX_JOB_TIME / 2, 'short scenario: max job time taken from settings';
     is $max_setup_time, DEFAULT_MAX_SETUP_TIME / 3, 'short scenario: max setup time taken from settings';
+    is $max_upload_time, DEFAULT_MAX_UPLOAD_TIME / 4, 'short scenario: max upload time taken from settings';
+    is $upload_inactivity_timeout, DEFAULT_UPLOAD_INACTIVITY_TIMEOUT / 5,
+      'short scenario: upload inactivity timeout taken from settings';
 
     $settings{TIMEOUT_SCALE} = '4';
     delete $settings{MAX_SETUP_TIME};
-    ($max_job_time, $max_setup_time) = OpenQA::Worker::Job::_compute_timeouts(\%settings);
+    delete $settings{MAX_UPLOAD_TIME};
+    delete $settings{UPLOAD_INACTIVITY_TIMEOUT};
+    ($max_job_time, $max_setup_time, $max_upload_time, $upload_inactivity_timeout)
+      = OpenQA::Worker::Job::_compute_timeouts(\%settings);
     is $max_job_time, DEFAULT_MAX_JOB_TIME * 2, 'max job time scaled';
     is $max_setup_time, DEFAULT_MAX_SETUP_TIME, 'max setup time not scaled';
+    is $max_upload_time, DEFAULT_MAX_UPLOAD_TIME * 4, 'max upload time scaled';
+    is $upload_inactivity_timeout, DEFAULT_UPLOAD_INACTIVITY_TIMEOUT * 4, 'upload inactivity timeout scaled';
     is_deeply [sort keys %settings], [qw(MAX_JOB_TIME TIMEOUT_SCALE)], 'no extra settings added so far';
 };
 
@@ -1408,6 +1424,67 @@ subtest 'handling timeout' => sub {
     is $event_data->{reason}, WORKER_SR_TIMEOUT, 'stop reason is timeout';
     combined_like { wait_until_job_status_ok($job, 'stopped') } qr/stopped because it exceeded MAX_JOB_TIME/,
       'timeout logged';
+};
+
+subtest 'handling upload timeout' => sub {
+    my ($job, $event_data) = OpenQA::Worker::Job->new($worker, $client, {id => 2, URL => $engine_url});
+    $job->_set_status(stopping => {reason => WORKER_SR_DONE});
+    $job->on(status_changed => sub ($job, $data) { $event_data = $data });
+
+    my $proc = Test::MockObject->new->set_always(pid => 1_234_567);
+    $job->{_upload_subprocess} = $proc;
+    my $img_proc = Test::MockObject->new->set_always(pid => 1_234_568);
+    $job->{_upload_images_subprocess} = $img_proc;
+    $job->{_is_uploading_results} = 1;
+
+    combined_like {
+        $job->_handle_upload_timeout;
+        wait_until_job_status_ok($job, 'stopped');
+    }
+    qr/stopped because upload exceeded MAX_UPLOAD_TIME/, 'upload timeout logged';
+
+    is $job->status, 'stopped', 'job is stopped';
+    is $event_data->{reason}, WORKER_SR_TIMEOUT, 'stop reason is timeout';
+    ok !defined $job->{_upload_subprocess}, 'upload subprocess cleaned up';
+    ok !defined $job->{_upload_images_subprocess}, 'upload images subprocess cleaned up';
+    ok !$job->is_uploading_results, 'ongoing upload concluded';
+    is $job->_format_reason(undef, TIMEOUT_EXCEEDED, WORKER_SR_TIMEOUT),
+      'timeout: upload exceeded MAX_UPLOAD_TIME', 'format reason for upload timeout';
+
+    subtest 'test inactivity timeout' => sub {
+        ($job, $event_data) = OpenQA::Worker::Job->new($worker, $client, {id => 3, URL => $engine_url});
+        $job->_set_status(stopping => {reason => WORKER_SR_DONE});
+        $job->on(status_changed => sub ($job, $data) { $event_data = $data });
+        $job->{_upload_subprocess} = Test::MockObject->new->set_always(pid => 1_234_569);
+        $job->{_is_uploading_results} = 1;
+
+        combined_like {
+            $job->_handle_upload_inactivity_timeout;
+            wait_until_job_status_ok($job, 'stopped');
+        }
+        qr/stopped because upload exceeded UPLOAD_INACTIVITY_TIMEOUT/, 'upload inactivity timeout logged';
+
+        is $job->status, 'stopped', 'job is stopped';
+        is $event_data->{reason}, WORKER_SR_TIMEOUT, 'stop reason is timeout';
+        ok !defined $job->{_upload_subprocess}, 'upload subprocess cleaned up';
+        ok !$job->is_uploading_results, 'ongoing upload concluded';
+        is $job->_format_reason(undef, TIMEOUT_EXCEEDED, WORKER_SR_TIMEOUT),
+          'timeout: upload exceeded UPLOAD_INACTIVITY_TIMEOUT', 'format reason for upload inactivity timeout';
+    };
+
+    subtest 'test reset inactivity timeout' => sub {
+        my $job4 = OpenQA::Worker::Job->new($worker, $client, {id => 4, URL => $engine_url});
+        $job4->_set_status(stopping => {reason => WORKER_SR_DONE});
+        $job4->_set_upload_inactivity_timeout(100);
+        my $old_timer = $job4->{_upload_inactivity_timer};
+        ok $old_timer, 'inactivity timer set';
+        $job4->_reset_upload_inactivity_timeout;
+        my $new_timer = $job4->{_upload_inactivity_timer};
+        ok $new_timer, 'inactivity timer reset';
+        isnt $new_timer, $old_timer, 'timer replaced with new one';
+        $job4->_set_status(stopped => {});
+        ok !defined $job4->{_upload_inactivity_timer}, 'timer removed when stopped';
+    };
 };
 
 subtest 'ignoring known images and files' => sub {
