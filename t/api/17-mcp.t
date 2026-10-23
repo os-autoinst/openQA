@@ -13,12 +13,15 @@ use Test::Warnings ':report_warnings';
 use Test::MockModule;
 use OpenQA::Test::TimeLimit '30';
 use OpenQA::Test::Case;
+use OpenQA::Constants 'DEFAULT_ADMIN';
 use OpenQA::Test::Client 'client';
 use MCP::Client;
-use MCP;
+use MCP::Tool;
+use MCP::Server::Context;
+use OpenQA::WebAPI::Plugin::MCP;
 
 OpenQA::Test::Case->new(config_directory => "$FindBin::Bin/../data/17-mcp")
-  ->init_data(fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl');
+  ->init_data(fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl 04-products.pl');
 
 my $PERSONAL_ACCESS_TOKEN = 'lance:LANCELOTKEY01:MANYPEOPLEKNOW';
 
@@ -32,24 +35,40 @@ subtest 'Authentication' => sub {
     $t->get_ok('/mcp')->status_is(405);
 };
 
-subtest 'Start session' => sub {
-    if (version->parse(MCP->VERSION) >= version->parse('0.15')) {
-        plan(skip_all => 'Subtest should only be executed with MCP < 0.15');    # uncoverable statement
+subtest 'Origin header check' => sub {
+    $t->get_ok('/mcp', {Origin => 'http://evil.example.com'})->status_is(403)->json_is({error => 'Origin not allowed'});
+    $t->get_ok('/mcp', {Origin => 'http://openqa.example.com'})->status_is(405);
+};
+
+subtest 'Scopes derived from user role' => sub {
+    my $users = $t->app->schema->resultset('Users');
+    my $c = $t->app->build_controller;
+    $users->create_user(DEFAULT_ADMIN, is_admin => 1, is_operator => 1)
+      unless $users->find({username => DEFAULT_ADMIN});
+    for my $case (
+        {mode => 'read-only', username => 'percival', scopes => ['mcp:read']},
+        {mode => 'read-write', username => 'https://openid.camelot.uk/lancelot', scopes => ['mcp:read']},
+        {mode => 'read-write', username => 'percival', scopes => ['mcp:read', 'mcp:write']},
+        {mode => 'read-write', username => 'arthur', scopes => ['mcp:read', 'mcp:write', 'mcp:admin']},
+        {mode => 'read-write', username => DEFAULT_ADMIN, scopes => ['mcp:read', 'mcp:write', 'mcp:admin']},
+      )
+    {
+        $c->stash(current_user => {user => $users->find({username => $case->{username}})});
+        is_deeply OpenQA::WebAPI::Plugin::MCP::_auth_scopes($c, $case->{mode}),
+          {scopes => $case->{scopes}, principal => $case->{username}},
+          "$case->{username} gets @{[join ' ', @{$case->{scopes}}]} in $case->{mode} mode";
     }
-    is $client->session_id, undef, 'no session id';    # uncoverable statement
-    my $result = $client->initialize_session;    # uncoverable statement
-    is $result->{serverInfo}{name}, 'openQA', 'server name';    # uncoverable statement
-    is $result->{serverInfo}{version}, '1.0.0', 'server version';    # uncoverable statement
-    ok $result->{capabilities}, 'has capabilities';    # uncoverable statement
-    ok $client->session_id, 'session id set';    # uncoverable statement
 };
 
 subtest 'List tools' => sub {
     my $result = $client->list_tools;
-    is scalar @{$result->{tools}}, 3, 'three tools available';
-    is $result->{tools}[0]{name}, 'openqa_get_info', 'right tool name';
-    is $result->{tools}[1]{name}, 'openqa_get_job_info', 'right tool name';
-    is $result->{tools}[2]{name}, 'openqa_get_log_file', 'right tool name';
+    is_deeply [sort map { $_->{name} } @{$result->{tools}}], [
+        qw(openqa_get_comments openqa_get_info openqa_get_job_info openqa_get_log_file openqa_get_needle
+          openqa_job_group_overview openqa_list_api_routes openqa_list_assets openqa_list_job_groups
+          openqa_list_job_templates openqa_list_jobs openqa_list_machines openqa_list_products
+          openqa_list_test_suites openqa_list_workers openqa_search)
+      ],
+      'read-only tools registered when mode is read-only';
 };
 
 subtest 'openqa_get_info tool' => sub {
@@ -161,6 +180,179 @@ subtest 'openqa_get_log_file tool' => sub {
         my $text = $result->{content}[0]{text};
         like $text, qr/File too large to be transmitted via MCP/, 'error message';
     };
+};
+
+
+subtest 'In-process API calls' => sub {
+    my $users = $t->app->schema->resultset('Users');
+    my $tool = MCP::Tool->new(name => 'openqa_set_job_priority', code => sub { 1 });
+    my $context = MCP::Server::Context->new(controller => $t->app->build_controller);
+    $tool->{context} = $context;
+    my $c = $context->controller;
+    my $call = sub ($username, $role, $job_id, $prio) {
+        $c->stash(current_user => {user => $users->find({username => $username})});
+        return OpenQA::WebAPI::Plugin::MCP::_api_call(
+            $tool,
+            controller => 'Job',
+            action => 'prio',
+            method => 'POST',
+            role => $role,
+            stash => {jobid => $job_id},
+            params => [prio => $prio]);
+    };
+
+    subtest 'operator call reaches the controller' => sub {
+        my $res = $call->('percival', 'operator', 99938, 100);
+        is $res->{code}, 200, 'controller rendered 200';
+        is $t->app->schema->resultset('Jobs')->find(99938)->priority, 100, 'priority changed in the database';
+    };
+    subtest 'non-operator is rejected' => sub {
+        my $res = $call->('https://openid.camelot.uk/lancelot', 'operator', 99938, 50);
+        is $res->{error}, 'Insufficient role', 'non-operator rejected for operator role';
+        is $t->app->schema->resultset('Jobs')->find(99938)->priority, 100, 'priority unchanged';
+    };
+    subtest 'operator is rejected for admin role' => sub {
+        my $res = $call->('percival', 'admin', 99938, 50);
+        is $res->{error}, 'Insufficient role', 'operator rejected for admin role';
+        is $t->app->schema->resultset('Jobs')->find(99938)->priority, 100, 'priority unchanged';
+    };
+    subtest 'admin call reaches the controller' => sub {
+        my $res = $call->('arthur', 'admin', 99938, 200);
+        is $res->{code}, 200, 'admin accepted for admin role';
+        is $t->app->schema->resultset('Jobs')->find(99938)->priority, 200, 'priority changed by admin';
+    };
+    subtest 'missing job is reported as 404' => sub {
+        my $res = $call->('percival', 'operator', 999_999_999, 50);
+        is $res->{code}, 404, 'missing job renders 404';
+        is $res->{json}{error}, 'Job does not exist', 'error message from the controller';
+    };
+    subtest 'controller exception is reported as an error' => sub {
+        $c->stash(current_user => {user => $users->find({username => 'percival'})});
+        my $res = OpenQA::WebAPI::Plugin::MCP::_api_call(
+            $tool,
+            controller => 'Job',
+            action => 'no_such_action',
+            method => 'POST',
+            role => 'operator'
+        );
+        like $res->{error}, qr/undefined value as a subroutine/, 'unknown controller action reported as an error';
+    };
+};
+subtest 'openqa_list_jobs tool' => sub {
+    my $result = $client->call_tool('openqa_list_jobs', {limit => 5, state => 'done'});
+    ok !$result->{isError}, 'not an error';
+    my @jobs = @{$result->{structuredContent}{jobs}};
+    ok @jobs, 'jobs returned';
+    is scalar(grep { $_->{state} ne 'done' } @jobs), 0, 'state filter applied';
+};
+
+subtest 'openqa_list_job_groups tool' => sub {
+    my $result = $client->call_tool('openqa_list_job_groups');
+    ok !$result->{isError}, 'not an error';
+    is_deeply [sort map { $_->{name} } @{$result->{structuredContent}}], ['opensuse', 'opensuse test'],
+      'fixture job groups listed';
+};
+
+subtest 'openqa_job_group_overview tool' => sub {
+    my $result = $client->call_tool('openqa_job_group_overview', {group_id => 1001});
+    ok !$result->{isError}, 'not an error';
+    is $result->{structuredContent}{group}{id}, 1001, 'group reported in build results';
+    ok exists $result->{structuredContent}{build_results}, 'build results included';
+};
+
+subtest 'openqa_list_workers tool' => sub {
+    my $result = $client->call_tool('openqa_list_workers');
+    ok !$result->{isError}, 'not an error';
+    my @workers = @{$result->{structuredContent}};
+    is scalar @workers, 2, 'both fixture workers listed';
+    is $workers[0]{status}, 'dead', 'offline worker reported as dead';
+};
+
+subtest 'openqa_get_comments tool' => sub {
+    my $result = $client->call_tool('openqa_get_comments', {job_id => 99764});
+    ok !$result->{isError}, 'not an error';
+    like $result->{structuredContent}[0]{text}, qr/Just a test comment/, 'comment of job 99764 listed';
+};
+
+subtest 'openqa_search tool' => sub {
+    my $result = $client->call_tool('openqa_search', {q => 'minimalx'});
+    ok !$result->{isError}, 'not an error';
+    ok exists $result->{structuredContent}{data}, 'search data included';
+};
+
+subtest 'openqa_list_api_routes tool' => sub {
+    my $result = $client->call_tool('openqa_list_api_routes');
+    ok !$result->{isError}, 'not an error';
+    ok scalar grep({ $_->{path} eq '/api/v1/jobs' } @{$result->{structuredContent}{routes}}), 'jobs route listed';
+};
+
+subtest 'result size limit' => sub {
+    local $t->app->config->{misc_limits}{mcp_max_result_size} = 10;
+    my $result = $client->call_tool('openqa_list_jobs', {limit => 5});
+    ok $result->{isError}, 'is an error';
+    like $result->{content}[0]{text}, qr/Result too large to be transmitted via MCP/, 'size limit reported';
+};
+
+subtest 'openqa_list_products tool' => sub {
+    my $result = $client->call_tool('openqa_list_products', {limit => 2});
+    ok !$result->{isError}, 'not an error';
+    is scalar @{$result->{structuredContent}{Products}}, 2, 'products limited';
+};
+
+subtest 'openqa_list_machines tool' => sub {
+    my $result = $client->call_tool('openqa_list_machines');
+    ok !$result->{isError}, 'not an error';
+    ok scalar grep({ $_->{name} eq '64bit' } @{$result->{structuredContent}{Machines}}), 'machine listed';
+};
+
+subtest 'openqa_list_test_suites tool' => sub {
+    my $result = $client->call_tool('openqa_list_test_suites', {id => 1001});
+    ok !$result->{isError}, 'not an error';
+    is $result->{structuredContent}{TestSuites}[0]{name}, 'textmode', 'test suite found by id';
+};
+
+subtest 'openqa_list_job_templates tool' => sub {
+    my $result = $client->call_tool('openqa_list_job_templates', {group_id => 1001});
+    ok !$result->{isError}, 'not an error';
+    my $templates = $result->{structuredContent}{JobTemplates};
+    is scalar @$templates, 10, 'all templates of the group listed';
+    is_deeply [map { $_->{test_suite}{name} } grep { $_->{id} == 1 } @$templates], ['textmode'], 'test suite included';
+};
+
+subtest 'openqa_list_assets tool' => sub {
+    my $result = $client->call_tool('openqa_list_assets', {limit => 3});
+    ok !$result->{isError}, 'not an error';
+    is scalar @{$result->{structuredContent}{assets}}, 3, 'assets limited';
+};
+
+subtest 'openqa_get_needle tool' => sub {
+    my $schema = $t->app->schema;
+    my $needle = $schema->resultset('Needles')->create(
+        {
+            dir_id => $schema->resultset('NeedleDirs')
+              ->create({path => 't/data/openqa/share/tests/opensuse/needles', name => 'opensuse'})->id,
+            filename => 'inst-timezone-text.json',
+            file_present => 1,
+        });
+    my $result = $client->call_tool('openqa_get_needle', {needle_id => $needle->id});
+    ok !$result->{isError}, 'not an error';
+    is_deeply $result->{structuredContent}{tags}, ['ENV-VIDEOMODE-text', 'inst-timezone'], 'needle tags returned';
+    ok $client->call_tool('openqa_get_needle', {needle_id => 9999})->{isError}, 'missing needle reported';
+};
+
+subtest 'Server instructions, resources and prompts' => sub {
+    like $client->discover->{instructions}, qr/mcp_enabled=read-write/, 'instructions describe the tool set';
+    is_deeply [map { $_->{uri} } @{$client->list_resources->{resources}}],
+      ['openqa://jobs/recent', 'openqa://job-groups', 'openqa://workers'], 'resources listed';
+    like $client->read_resource('openqa://job-groups')->{contents}[0]{text}, qr/opensuse test/,
+      'job group resource returns the groups';
+    is_deeply [map { $_->{name} } @{$client->list_prompts->{prompts}}], [qw(triage_job triage_build)], 'prompts listed';
+    like $client->get_prompt('triage_job', {job_id => 99938})->{messages}[0]{content}{text},
+      qr/Triage openQA job 99938 \(.*state done, result failed\)/, 'job triage prompt built';
+    like $client->get_prompt('triage_build', {group_id => 1001, build => '0048'})->{messages}[0]{content}{text},
+      qr/Summarise build 0048 of job group 1001/, 'build triage prompt built';
+    like $client->get_prompt('triage_build', {group_id => 1001, build => '42'})->{messages}[0]{content}{text},
+      qr/not found/, 'missing build reported';
 };
 
 done_testing();
