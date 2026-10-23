@@ -98,8 +98,10 @@ subtest 'invoke Git commands for real testing error handling' => sub {
     };
 
     subtest 'error handling when checking whether working directory is clean' => sub {
-        my $test_file = $empty_tmp_dir->child('foo')->touch;
-        combined_like { $git->commit({add => ['foo'], message => 'test'}) } qr/commit.*foo.*cmd returned 0/is,
+        my $testfile = 'testfile.txt';
+        my $msg = 'commit msg';
+        my $test_file = $empty_tmp_dir->child($testfile)->touch;
+        combined_like { $git->commit({add => [$testfile], message => $msg}) } qr/commit.*testfile.*cmd returned 0/is,
           'commit created';
         stdout_like { ok $git->is_workdir_clean, 'return code 0 interpreted correctly' }
         qr/\[info\].*cmd returned 0\n/i, 'no error (only info) logged if check returns true';
@@ -110,16 +112,21 @@ subtest 'invoke Git commands for real testing error handling' => sub {
     };
 
     subtest 'log diff computation helper of job' => sub {
-        like OpenQA::Schema::Result::Jobs::git_log_diff(undef, $empty_tmp_dir, 'HEAD'), qr/test.*foo/s,
+        my $msg = 'commit msg';
+        like OpenQA::Schema::Result::Jobs::git_log_diff(undef, $empty_tmp_dir, 'HEAD'), qr/$msg.*testfile/s,
+          'commit and file mentioned';
+        like OpenQA::Schema::Result::Jobs::git_log_diff(undef, $empty_tmp_dir, 'HEAD', stat => '15,10'),
+          qr/$msg.*\.\.\.ile.txt/s,
           'commit and file mentioned';
     };
 
     subtest 'cache_ref' => sub {
-        my $test_file = $empty_tmp_dir->child('foo')->touch;
+        my $testfile = 'testfile.txt';
+        my $test_file = $empty_tmp_dir->child($testfile)->touch;
         my $test_file_2 = "$empty_tmp_dir/bar";
-        is $git->cache_ref('HEAD', undef, 'foo', $test_file),
+        is $git->cache_ref('HEAD', undef, $testfile, $test_file),
           undef, 'return undef if output file already exists and could be touched';
-        is $git->cache_ref('HEAD', undef, 'foo', $test_file_2), undef, 'checkout file with ref';
+        is $git->cache_ref('HEAD', undef, $testfile, $test_file_2), undef, 'checkout file with ref';
         ok -f $test_file_2, 'checkout succeeded';
 
         # and now with remote other than origin
@@ -131,7 +138,7 @@ subtest 'invoke Git commands for real testing error handling' => sub {
         my $test_file_3 = "$empty_tmp_dir/baz";
         my $ref = qx{git -C "$git_remote_dir" rev-parse HEAD};
         chomp $ref;
-        is $git->cache_ref($ref, "file://$git_remote_dir/.git", 'foo', $test_file_3),
+        is $git->cache_ref($ref, "file://$git_remote_dir/.git", $testfile, $test_file_3),
           undef, 'checkout file from remote origin with ref';
         ok -f $test_file_3, 'checkout succeeded';
 
