@@ -474,6 +474,8 @@ function hasMatchAreas(areas) {
 
 function saveNeedle(overwrite) {
   const form = document.getElementById('save_needle_form');
+  const valMode = form.dataset.validation || 'disabled';
+  const valRules = (form.dataset.validationRules || '').split(',');
   const errors = [];
   const tagSelection = window.needles[$('#tags_select').val()];
   if (!tagSelection.tags.length) {
@@ -484,6 +486,37 @@ function saveNeedle(overwrite) {
   if (!hasMatchAreas(takeMatches ? areaSelection.matches : areaSelection.area)) {
     errors.push('At least one match area must be defined.');
   }
+
+  if (valMode === 'block') {
+    const needleName = $('#needleeditor_name').val() || '';
+    if (valRules.includes('timestamp')) {
+      const tmp = needleName.replace(/[_-][0-9]{1,2}$/, '');
+      const parts = tmp.split('-');
+      const timestamp = (parts[parts.length - 1] || '').replace(/_.*$/, '');
+      const isNumeric = /^[0-9]+$/.test(timestamp);
+      if (!isNumeric || timestamp.length < 8 || parseInt(timestamp, 10) < 20130000) {
+        errors.push(
+          `Needle '${needleName}' has missing or invalid timestamp suffix (valid suffixes: -YYYYMMDD or -YYYYMMDD_n with n=0…99) at the end!`
+        );
+      }
+    }
+    if (valRules.includes('workaround_bugref') && $('#property_workaround').prop('checked')) {
+      const bugrefRegex = /((poo|bsc|bnc|boo|kde)#?[a-zA-Z0-9]+|jsc#?[a-zA-Z]+-[0-9]+)/i;
+      if (!bugrefRegex.test(needleName)) {
+        errors.push(`Needle '${needleName}' includes a workaround tag but has no bug-ID in filename!`);
+      }
+    }
+    if (valRules.includes('single_click_area')) {
+      const currentAreas = takeMatches ? areaSelection.matches : areaSelection.area;
+      if (Array.isArray(currentAreas)) {
+        const clickCount = currentAreas.filter(area => area.type === 'click').length;
+        if (clickCount > 1) {
+          errors.push(`Needle '${needleName}' has ${clickCount} areas with type=click while only one is allowed!`);
+        }
+      }
+    }
+  }
+
   if (errors.length) {
     addFlash('danger', '<strong>Unable to save needle:</strong><ul><li>' + errors.join('</li><li>') + '</li></ul>');
     return false;
@@ -542,6 +575,14 @@ function saveNeedle(overwrite) {
           response.success += " - <a href='#' data-url='" + response.restart + "' class='restart-link'>restart job</a>";
         }
         addFlash('info', response.success);
+        if (response.validation_warnings && response.validation_warnings.length) {
+          addFlash(
+            'warning',
+            '<strong>Saved with validation warnings:</strong><ul><li>' +
+              response.validation_warnings.join('</li><li>') +
+              '</li></ul>'
+          );
+        }
       } else {
         throw `<b>Unknown Error:</b><code>${response}</code>`;
       }
