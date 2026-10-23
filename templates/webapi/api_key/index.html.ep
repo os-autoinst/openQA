@@ -17,6 +17,10 @@
                     %= datetime_field 't_expiration', id => 'expiration-datetime-field', size => 14, class => 'form-control', value => DateTime->now()->add(years => 1)->strftime('%FT%H:%M')
                 </div>
                 <div class="mb-3">
+                    <label class="form-label" for="comment">Comment</label>
+                    <input type="text" class="form-control" id="comment" name="comment" placeholder="Optional description or purpose of this key">
+                </div>
+                <div class="mb-3">
                     %= submit_button 'Create', class => 'btn btn-primary'
                 </div>
             % end
@@ -25,13 +29,14 @@
 
     <table class="table table-striped">
         <thead>
-            <tr><th>Key</th><th>Secret</th><th>Expires</th><th>Action</th></tr>
+            <tr><th>Key</th><th>Secret</th><th>Comment</th><th>Expires</th><th>Action</th></tr>
         </thead>
         <tbody id="api-keys-tbody">
             % for my $key (@$keys) {
                 <tr id="api_key_<%= $key->id %>">
                     <td class="key"><%= $key->key %></td>
                     <td class="secret"><%= $key->secret %></td>
+                    <td class="comment"><%= $key->comment // '' %></td>
                     <td class="expiration"><%= format_time($key->t_expiration) || 'never' %></td>
                     <td class="action">
                         <a class="btn btn-light" href="<%= url_for('api_key', apikeyid => $key->id) %>" data-method="delete" title="Delete">
