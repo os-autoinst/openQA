@@ -308,7 +308,7 @@ sub startup ($self) {
 
 
     $api_public_r->get('/routes')->name('api_v1_list_routes')->to('routes#list');
-    push @api_routes, $api_ru, $api_ro, $api_ra, $api_public_r;
+    push @api_routes, $api_ru, $api_ro, $api_ra, $api_public_r, $api_maybe_auth_r;
     # this is fallback redirect if one does not use apache
     $api_public_r->websocket(
         '/ws/<workerid:num>' => sub ($c) {
@@ -352,6 +352,7 @@ sub startup ($self) {
     my $job_r = $api_ro->any('/jobs/<jobid:num>');
     push @api_routes, $job_r;
     $api_maybe_auth_r->any('/jobs/<jobid:num>')->name('apiv1_job')->to('job#show');
+    $api_maybe_auth_r->get('/jobs/<jobid:num>/history')->name('apiv1_job_history')->to('job#history');
     $api_public_r->get('/experimental/jobs/<jobid:num>/status')->name('apiv1_get_status')->to('job#get_status');
     $api_maybe_auth_r->any('/jobs/<jobid:num>/details')->name('apiv1_job')->to('job#show', details => 1);
 
