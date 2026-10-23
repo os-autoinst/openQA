@@ -1332,6 +1332,21 @@ subtest 'history isolation keys separate the scenario history' => sub {
         $t->get_ok('/tests/' . $cur->id . '/investigation_ajax?strict=0')->status_is(200);
         $t->json_is('/last_good/link' => '/tests/' . $good_other->id);
     };
+
+    subtest 'investigation ignores previous jobs which are not final' => sub {
+        my %nofinal = (%settings, TEST => 'invnofinal', DISTRI => 'invnof-distri');
+        my $scheduled = _job_create(\%nofinal);
+        my $bad = $mk->(%nofinal);
+        $bad->update({state => DONE, result => FAILED});
+        $bad->discard_changes;
+        my $cur = _job_create(\%nofinal);
+        $cur->update({state => DONE, result => FAILED});
+        $cur->discard_changes;
+        $cur->create_result_dir;
+        my $inv = $cur->investigate;
+        is $inv->{first_bad}{link}, '/tests/' . $bad->id, 'scheduled job is not the first bad job';
+        is $inv->{last_good}, 'not found', 'scheduled job is not the last good job';
+    };
 };
 
 done_testing();
