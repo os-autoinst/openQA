@@ -595,18 +595,32 @@ sub prepare_default_needle ($dir) {
     return $dest;
 }
 
+my @FAKE_PROCESSES;
+
+package Test::FakeSubprocess {
+    use Mojo::Base 'Mojo::EventEmitter', -signatures;
+    has pid => 12345;
+    has progress_args => sub { [] };
+    sub progress ($self, @args) { push @{$self->progress_args}, [@args]; $self->emit(progress => @args) }
+}
+
 sub mock_io_loop (%args) {
     my $io_loop_mock = Test::MockModule->new('Mojo::IOLoop');
     $io_loop_mock->redefine(    # avoid forking to prevent coverage analysis from slowing down the test significantly
         subprocess => sub ($io_loop, $function, $callback) {
+            my $proc = Test::FakeSubprocess->new;
             my @result;
             my $error = '';
-            try { @result = $function->() }
+            push @FAKE_PROCESSES, $proc;
+            try { @result = $function->($proc) }
             catch ($e) { $error = $e }
-            $io_loop->next_tick(sub { $callback->(undef, $error, @result) });
+            $io_loop->next_tick(sub { $callback->($proc, $error, @result) });
+            return $proc;
         }) if $args{subprocess};
     return $io_loop_mock;
 }
+
+sub last_fake_process () { pop @FAKE_PROCESSES }
 
 sub assume_all_assets_exist () { OpenQA::Schema->singleton->resultset('Assets')->search({})->update({size => 0}) }
 
