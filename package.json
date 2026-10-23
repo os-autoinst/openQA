@@ -13,7 +13,7 @@
   "homepage": "https://github.com/os-autoinst/openQA#readme",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@stylistic/stylelint-plugin": "^5.0.1",
+    "@stylistic/stylelint-plugin": "^5.3.1",
     "eslint": "^10.2.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
