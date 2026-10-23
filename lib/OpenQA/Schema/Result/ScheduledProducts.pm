@@ -245,8 +245,11 @@ sub _log_wrong_parents ($self, $parent, $cluster_parents, $failed_job_info) {
     push @$failed_job_info, {job_id => $job_id, error_messages => [$error_msg]};
 }
 
-sub _create_jobs_in_database ($self, $jobs, $failed_job_info, $skip_chained_deps, $include_children,
-    $successful_job_ids, $minion_ids = undef)
+sub _create_jobs_in_database (
+    $self, $jobs, $failed_job_info, $skip_chained_deps, $include_children, $successful_job_ids,
+    $minion_ids = undef,
+    $warnings = undef
+  )
 {
     my $schema = $self->result_source->schema;
     my $jobs_resultset = $schema->resultset('Jobs');
@@ -258,6 +261,28 @@ sub _create_jobs_in_database ($self, $jobs, $failed_job_info, $skip_chained_deps
     my %job_ids_by_test_machine;    # key: "TEST@MACHINE", value: "array of job ids"
 
     for my $settings (@{$jobs || []}) {
+        my @matches = OpenQA::JobSettings::Lifecycle::lifecycle_matches(OpenQA::App->singleton->config, $settings);
+        my @errors = grep { $_->{level} eq 'error' } @matches;
+        if (@errors) {
+            my @err_msgs = map {
+                sprintf "Setting '%s' has deprecated value '%s': %s", $_->{key}, $_->{value} // '', $_->{explanation}
+            } @errors;
+            my $err_msg = join "\n", @err_msgs;
+            push @$failed_job_info,
+              {job_name => $settings->{TEST}, error_messages => \@err_msgs, error_message => $err_msg};
+            next;
+        }
+
+        my @warn_matches = grep { $_->{level} ne 'error' } @matches;
+        if (@warn_matches && $warnings) {
+            my %seen = map { $_ => 1 } @$warnings;
+            for my $w (@warn_matches) {
+                my $msg = sprintf "Setting '%s' has deprecated value '%s': %s", $w->{key}, $w->{value} // '',
+                  $w->{explanation};
+                push @$warnings, $msg unless $seen{$msg}++;
+            }
+        }
+
         # create a new job with these parameters and count if successful, do not send job notifies yet
         $schema->svp_begin('try_create_job_from_settings');
         try {
@@ -401,17 +426,18 @@ sub _schedule_iso ($self, $args, $guard) {
     my @successful_job_ids;
     my @failed_job_info;
     my @minion_ids;
+    my @warnings;
     my $gru = OpenQA::App->singleton->gru;
 
     try {
         $schema->txn_do_retry_on_deadlock(
             sub {
                 $self->_create_jobs_in_database($jobs, \@failed_job_info, $skip_chained_deps, $include_children,
-                    \@successful_job_ids, \@minion_ids);
+                    \@successful_job_ids, \@minion_ids, \@warnings);
             },
             sub {   # this handler is generally covered but tests are unable to reproduce the deadlock 100 % of the time
                 $gru->obsolete_minion_jobs(\@minion_ids);    # uncoverable statement
-                (@successful_job_ids, @failed_job_info, @minion_ids) = ();    # uncoverable statement
+                (@successful_job_ids, @failed_job_info, @minion_ids, @warnings) = ();    # uncoverable statement
             });
     }
     catch ($e) {
@@ -437,6 +463,7 @@ sub _schedule_iso ($self, $args, $guard) {
         failed_job_info => \@failed_job_info,
     );
     $results{notes} = \@notes if (@notes);
+    $results{warnings} = \@warnings if (@warnings);
     return \%results;
 }
 
