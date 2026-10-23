@@ -1,0 +1,88 @@
+---
+# yamllint disable rule:line-length
+name: openqa-pr-check
+
+on:
+  pull_request_target:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to test'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  OPENQA_HOST: ${{ secrets.OPENQA_URL || 'https://openqa.opensuse.org' }}
+  OPENQA_API_KEY: ${{ secrets.OPENQA_API_KEY }}
+  OPENQA_API_SECRET: ${{ secrets.OPENQA_API_SECRET }}
+  OPENQA_GROUP_ID: ${{ secrets.OPENQA_GROUP_ID || '1' }}
+  PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+
+jobs:
+  openqa-in-openqa-tests:
+    name: openqa-in-openqa-tests
+    runs-on: ubuntu-latest
+    container:
+      image: registry.opensuse.org/devel/openqa/containers/tumbleweed:client
+    env:
+      OPENQA_REPO_URL: https://download.opensuse.org/repositories/devel:/openQA:/GitHub:/os-autoinst:/openQA:/PR-${{ github.event.pull_request.number || inputs.pr_number }}/openSUSE_Tumbleweed/
+    steps:
+      - name: Validate environment
+        run: |
+          if [ -z "$PR_NUMBER" ]; then
+            echo "Error: PR number could not be determined."
+            exit 1
+          fi
+          if [ -z "$OPENQA_API_KEY" ] || [ -z "$OPENQA_API_SECRET" ]; then
+            echo "::warning::OPENQA_API_KEY or OPENQA_API_SECRET not set in secrets."
+            exit 1
+          fi
+      - name: Wait for OBS repository publication
+        run: |
+          echo "Waiting for OBS repository $OPENQA_REPO_URL to be published..."
+          for i in $(seq 1 60); do
+            if curl -sSf -I "${OPENQA_REPO_URL}repodata/repomd.xml" >/dev/null 2>&1; then
+              echo "OBS repository is published."
+              exit 0
+            fi
+            echo "Repository metadata not ready yet (attempt $i/60), sleeping 30s..."
+            sleep 30
+          done
+          echo "Timeout waiting for OBS repository to be published."
+          exit 1
+      - name: Fetch scenario definitions
+        run: >-
+          curl -sSfL
+          https://raw.githubusercontent.com/os-autoinst/os-autoinst-distri-openQA/master/scenario-definitions.yaml
+          -o scenario-definitions.yaml
+      - name: Get latest build
+        id: latest_build
+        run: >-
+          echo build=$(openqa-cli api
+          --host "$OPENQA_HOST"
+          job_groups/$OPENQA_GROUP_ID/build_results only_tagged=1
+          | jq -r '[ .build_results[] | select(.tag.description=="published") | .build ][0]'
+          ) >> "$GITHUB_OUTPUT"
+      - name: Link to test result overview page
+        run: |
+          build="PR-${PR_NUMBER}"
+          overview_url="$OPENQA_HOST/tests/overview?flavor=dev&build=$build"
+          echo "Overview URL: $overview_url"
+          echo "### openQA-in-openQA Test Run" >> "$GITHUB_STEP_SUMMARY"
+          echo "[$build Overview]($overview_url)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Trigger and monitor openQA test
+        run: >-
+          openqa-cli schedule
+          --monitor
+          --host "$OPENQA_HOST/"
+          --apikey "$OPENQA_API_KEY" --apisecret "$OPENQA_API_SECRET"
+          --param-file SCENARIO_DEFINITIONS_YAML=scenario-definitions.yaml
+          DISTRI=openQA VERSION=Tumbleweed FLAVOR=dev ARCH=x86_64
+          HDD_1="opensuse-Tumbleweed-x86_64-${{ steps.latest_build.outputs.build }}-minimalx@uefi.qcow2"
+          BUILD="PR-${PR_NUMBER}" _GROUP_ID=0
+          _OBSOLETE=1 _ONLY_OBSOLETE_SAME_BUILD=1
+          OPENQA_REPO_URL="$OPENQA_REPO_URL"
+          OPENQA_OBS_PROJECT="devel:openQA:GitHub:os-autoinst:openQA:PR-${PR_NUMBER}"
