@@ -65,7 +65,7 @@ sub delete_self ($self) {
 
 =item create_api_key()
 
-Create a new API key.
+Create a new API key. Accepts optional C<expiration> datetime.
 Returns the key, secret, and expiration.
 
 =back
@@ -76,6 +76,8 @@ sub create_api_key ($self) {
     my $user = $self->current_user;
     my $expiration;
     my $validation = $self->validation;
+    my $json = $self->req->json;
+    $validation->input($json) if ref $json eq 'HASH';
     $validation->optional('expiration', 'seconds_optional')->datetime;
     return $self->render(
         json => {error => 'Date must be in format ' . DateTime::Format::Pg->format_datetime(DateTime->now())},
