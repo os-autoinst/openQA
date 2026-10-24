@@ -15,7 +15,7 @@
             % }
               class="page-link" aria-label="Previous">
                 <span aria-hidden="true">&laquo;</span>
-                <span class="sr-only">Previous</span>
+                <span class="visually-hidden">Previous</span>
             % if ($current_page_is_the_first) {
                 </span>
             % }
@@ -48,7 +48,7 @@
             % }
                 class="page-link" aria-label="Next">
                   <span aria-hidden="true">&raquo;</span>
-                  <span class="sr-only">Next</span>
+                  <span class="visually-hidden">Next</span>
             % if ($current_page_is_the_last) {
                 </span>
             % }

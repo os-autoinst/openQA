@@ -199,7 +199,7 @@
   <div id="liveview-loading">
     <div class="d-flex justify-content-center">
       <i class="fa-solid fa-circle-notch fa-spin fa-4x" role="status">
-        <span class="sr-only">Loading…</span>
+        <span class="visually-hidden">Loading…</span>
       </i>
     </div>
   </div>

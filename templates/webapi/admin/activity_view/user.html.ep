@@ -11,7 +11,7 @@
     <div id="flash-messages"></div>
     <p id="progress-indication" style="display: none">
         <i class="fa-solid fa-gear fa-spin fa-3x fa-fw"></i>
-        <span class="sr-only">Loading…</span>
+        <span class="visually-hidden">Loading…</span>
     </p>
     <div id="results" class="list-group">
     </div>
