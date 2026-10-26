@@ -285,8 +285,7 @@ subtest 'CreateZipArchive Minion task' => sub {
     my $mock_minion = Test::MockModule->new('Minion');
     my @guard_calls;
     $mock_minion->mock(
-        guard => sub {
-            my ($self, $name, $duration, $options) = @_;
+        guard => sub ($self, $name, $duration, $options) {
             push @guard_calls, {name => $name, duration => $duration, options => $options};
             return 'mock_guard';
         });
