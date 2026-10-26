@@ -6,7 +6,7 @@ package OpenQA::Schema::ResultSet::Comments;
 use Mojo::Base 'DBIx::Class::ResultSet', -signatures;
 use DBIx::Class::Timestamps;
 use OpenQA::App;
-use OpenQA::Utils qw(find_bugrefs href_to_bugref url_from_label);
+use OpenQA::Utils qw(href_to_bugref url_from_label);
 use Feature::Compat::Try;
 
 =over 4
@@ -78,7 +78,7 @@ Return a hashref of all bugs referenced by job comments.
 sub referenced_bugs ($self) {
 
     my $comments = $self->search({-not => {job_id => undef}});
-    my %bugrefs = map { $_ => 1 } map { @{find_bugrefs($_->text)} } $comments->all;
+    my %bugrefs = map { $_ => 1 } map { @{$_->bugrefs} } $comments->all;
     return \%bugrefs;
 }
 

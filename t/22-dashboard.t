@@ -283,6 +283,12 @@ is_deeply \@tags, [], 'tag is not shown on parent-level because version does not
 @h4 = $t->tx->res->dom->find('div.children-collapsed .h4 a')->map('text')->each;
 is_deeply \@h4, [], 'also no tagged builds on parent-level shown';
 
+# tags in a comment with flag:verbatim are ignored
+$tag_for_0092_comment->update({text => 'flag:verbatim quoting tag:0092:important:some_tag', user_id => 99901});
+$t->get_ok('/dashboard_build_results?limit_builds=20&only_tagged=1')->status_is(200);
+@h4 = $t->tx->res->dom->find('div.children-collapsed .h4 a')->map('text')->each;
+is_deeply \@h4, [], 'no tagged builds shown for a verbatim comment';
+
 # now tag build 0091 to check build tagging when there are common builds
 $tag_for_0092_comment->delete();
 my $tag_for_0091_comment

@@ -295,6 +295,30 @@ subtest 'can update job result with special label comment' => sub {
     is $job->result, PASSED, 'result of cancelled job has been updated';
 };
 
+subtest 'bugrefs, labels and flags in comments with flag:verbatim are ignored' => sub {
+    my $job_id = 99940;
+    my $jobs = $t->app->schema->resultset('Jobs');
+    my $bugs = $t->app->schema->resultset('Bugs');
+    my $text = 'flag:verbatim quoting bsc#1234567, label:force_result:passed, label:foo and flag:carryover';
+    my $id = test_create_comment('jobs', $job_id, $text);
+    is $jobs->find($job_id)->result, FAILED, 'force_result label is not applied';
+    ok !$bugs->find({bugid => 'bsc#1234567'}), 'no bug is created';
+    my $comment = $comments->find($id);
+    is $comment->bugref, undef, 'no bugref';
+    is_deeply $comment->bugrefs, [], 'no bugrefs';
+    is $comment->label, undef, 'no label';
+    is_deeply $comment->text_flags, {verbatim => undef}, 'only the verbatim flag';
+    ok !$comments->referenced_bugs->{'bsc#1234567'}, 'bugref is not referenced';
+    my $data = $comments->comment_data_for_jobs([$jobs->find($job_id)])->{$job_id};
+    is_deeply $data, {comments => 1}, 'job is not reviewed';
+    $t->delete_ok("/api/v1/jobs/$job_id/comments/$id")->status_is(403, 'force_result label still prevents deletion');
+    $comment->update({text => 'bsc#1234567 label:foo'});
+    is $comment->bugref, 'bsc#1234567', 'bugref is found once the flag is edited away';
+    $data = $comments->comment_data_for_jobs([$jobs->find($job_id)])->{$job_id};
+    ok $data->{reviewed}, 'job is reviewed once the flag is gone';
+    $t->delete_ok("/api/v1/jobs/$job_id/comments/$id")->status_is(200, 'comment can be deleted');
+};
+
 subtest 'unauthorized users can only read' => sub {
     my $app = $t->app;
     $t->ua(OpenQA::Client->new()->ioloop(Mojo::IOLoop->singleton));
