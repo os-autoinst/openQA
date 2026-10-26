@@ -31,6 +31,8 @@ is qx{git grep -I -l '<script' templates/ ':!templates/webapi/layouts/bootstrap.
 
 is qx{git grep -I -lw 'var' assets/javascripts/ ':!assets/javascripts/shapes.js'}, '',
   'No legacy "var" keyword in modern JavaScript files (use const or let)';
+is qx{git grep -I -lw 'sr-only' templates/ assets/javascripts/}, '',
+  'No Font Awesome sr-only helper, Bootstrap 5 defines only visually-hidden';
 is
 qx{git grep -l -e '^sub \\S\\+ [^(]\\+' --and --not -e 'sub [(\{]' --and --not -e 'sub \\S\\+(' --and --not -e 'sub \\S\\+;' --and --not -e '# no:style:signatures' ':!contrib/' ':!external/' ':!docs/'},
   '', 'All files use sub signatures everywhere (nameless and in-place definitions still allowed)';
