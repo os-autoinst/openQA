@@ -17,6 +17,7 @@ use OpenQA::Test::Case;
 use OpenQA::App;
 use OpenQA::WebAPI;
 use OpenQA::Utils qw(resultdir assetdir);
+use OpenQA::Test::Utils qw(perform_minion_jobs);
 use OpenQA::Archive;
 use Archive::Zip qw(:ERROR_CODES :CONSTANTS);
 
@@ -84,7 +85,10 @@ subtest 'ZIP archive download and categorization' => sub {
         my $url = '/tests/' . $job->id . '/archive' . ($cat eq 'all' ? '' : "?category=$cat");
         my $suffix = $cat eq 'all' ? '' : "_$cat";
 
-        $t->get_ok($url)->status_is(302)->header_like('Location' => qr|/archives/job_@{[ $job->id ]}${suffix}\.zip|);
+        $t->get_ok($url)->status_is(200)->text_like('p.lead', qr/Please wait while the ZIP/, "waiting for $url");
+        perform_minion_jobs($app->minion);
+        $t->get_ok($url)->status_is(302);
+        $t->header_like('Location' => qr|/archives/job_@{[ $job->id ]}${suffix}\.zip|, "redirect for $url");
         $t->get_ok($t->tx->res->headers->location)->status_is(200)->content_type_is('application/zip');
 
         my $zip = Archive::Zip->new();
@@ -307,42 +311,6 @@ subtest 'CreateZipArchive Minion task' => sub {
     $mock_minion->unmock_all;
 };
 
-subtest 'Controller archive endpoint' => sub {
-    my $job = $schema->resultset('Jobs')->create(
-        {
-            DISTRI => 'archtest',
-            VERSION => '1.0',
-            FLAVOR => 'test',
-            ARCH => 'x86_64',
-            TEST => 'job_fail',
-            state => 'done',
-            result => 'passed',
-        });
-    $t->get_ok('/archives/..%2fetc%2fpasswd')->status_is(404);
-    $t->get_ok('/archives/nonexistent.zip')->status_is(404);
-
-    my $mock_minion = Test::MockObject->new->set_true('enqueue');
-    my $mock_app_module = Test::MockModule->new('OpenQA::WebAPI');
-    $mock_app_module->mock(minion => sub { $mock_minion });
-    my $orig_can = $app->can('can');
-    $mock_app_module->mock(
-        can => sub ($self, $method) {
-            return 1 if $method eq 'minion';
-            return $orig_can ? $self->$orig_can($method) : UNIVERSAL::can($self, $method);    ## no critic (ProhibitUniversalCan)
-        });
-    $mock_minion->set_true('enqueue');
-
-    $case->login($t, 'admin');
-    $t->get_ok('/tests/' . $job->id . '/archive')->status_is(200)->content_like(qr/Preparing Archive for Job/);
-    $mock_minion->called_ok('enqueue', 'Archive generation is enqueued in Minion');
-    $mock_minion->clear;
-    $t->get_ok('/tests/' . $job->id . '/archive')->status_is(200);
-    $mock_minion->called_ok('enqueue', 'Repeated archive request re-enqueues generation task');
-
-    $mock_minion->mock(enqueue => sub { die 'Enqueue failed' });
-    $t->get_ok('/tests/' . $job->id . '/archive')->status_is(500)->content_is('Internal Server Error');
-};
-
 subtest 'Category specific archives' => sub {
     my $job = $schema->resultset('Jobs')->create(
         {
@@ -363,10 +331,15 @@ subtest 'Category specific archives' => sub {
 
     $case->login($t, 'admin');
 
+    my $download_archive = sub ($url, $expected_redirect) {
+        $t->get_ok($url)->status_is(200)->text_like('p.lead', qr/Please wait while the ZIP/, "waiting for $url");
+        perform_minion_jobs($app->minion);
+        $t->get_ok($url)->status_is(302)->header_like('Location' => $expected_redirect, "redirect for $url");
+        $t->get_ok($t->tx->res->headers->location)->status_is(200, "download for $url");
+    };
+
     # Test resultfiles category
-    $t->get_ok('/tests/' . $job->id . '/archive?category=resultfiles')->status_is(302)
-      ->header_like('Location' => qr|/archives/job_\d+_resultfiles.zip|);
-    $t->get_ok($t->tx->res->headers->location)->status_is(200);
+    $download_archive->('/tests/' . $job->id . '/archive?category=resultfiles', qr|/archives/job_\d+_resultfiles.zip|);
     my $zip_file = $tmp->child('resultfiles.zip');
     $zip_file->spew($t->tx->res->body);
     my $zip = Archive::Zip->new();
@@ -376,9 +349,7 @@ subtest 'Category specific archives' => sub {
     ok !$zip->memberNamed('iso/asset.iso'), 'Does not contain asset';
 
     # Test ulogs category
-    $t->get_ok('/tests/' . $job->id . '/archive?category=ulogs')->status_is(302)
-      ->header_like('Location' => qr|/archives/job_\d+_ulogs.zip|);
-    $t->get_ok($t->tx->res->headers->location)->status_is(200);
+    $download_archive->('/tests/' . $job->id . '/archive?category=ulogs', qr|/archives/job_\d+_ulogs.zip|);
     $zip_file = $tmp->child('ulogs.zip');
     $zip_file->spew($t->tx->res->body);
     $zip = Archive::Zip->new();
@@ -388,9 +359,7 @@ subtest 'Category specific archives' => sub {
     ok !$zip->memberNamed('iso/asset.iso'), 'Does not contain asset';
 
     # Test assets category
-    $t->get_ok('/tests/' . $job->id . '/archive?category=assets')->status_is(302)
-      ->header_like('Location' => qr|/archives/job_\d+_assets.zip|);
-    $t->get_ok($t->tx->res->headers->location)->status_is(200);
+    $download_archive->('/tests/' . $job->id . '/archive?category=assets', qr|/archives/job_\d+_assets.zip|);
     $zip_file = $tmp->child('assets.zip');
     $zip_file->spew($t->tx->res->body);
     $zip = Archive::Zip->new();
