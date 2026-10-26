@@ -448,8 +448,8 @@ subtest 'carry over, including soft-fails' => sub {
         my $got_limit = 0;
         my $got_diff_limit = 0;
         $job_mock->redefine(
-            git_log_diff => sub ($self, $dir, $range, $limit) {
-                $got_limit = $limit;
+            git_log_diff => sub ($self, $dir, $range, %options) {
+                $got_limit = $options{limit};
                 return $fake_git_log;
             });
         $job_mock->redefine(
