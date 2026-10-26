@@ -66,9 +66,8 @@ jobs:
 
       - name: Load images into the Cluster
         run: |
-          kind load docker-image --name chart-testing \
-          $REGISTRY_PATH/openqa_webui:latest \
-          $REGISTRY_PATH/openqa_worker:latest
+          docker exec chart-testing-control-plane crictl pull $REGISTRY_PATH/openqa_webui:latest
+          docker exec chart-testing-control-plane crictl pull $REGISTRY_PATH/openqa_worker:latest
 
       - name: Run chart-testing
         run: make test-helm-install
