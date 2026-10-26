@@ -720,6 +720,10 @@ where:
   needs. When it is missing or zero, the throttling isn't applied for the
   parameter n.
 
+A parameter value is evaluated by its leading numeric prefix: `RETRY=3:poo123`
+counts as `3`, the colon and everything after it are ignored. A value without a
+numeric prefix contributes no adjustment.
+
 `MAX_JOB_TIME`, the max duration of the job in seconds, can also have a
 throttling scale configured to encourage shorter test runtimes. When this
 parameter is missing in the settings, a `DEFAULT_MAX_JOB_TIME` value is assumed
