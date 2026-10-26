@@ -292,20 +292,21 @@ subtest 'CreateZipArchive Minion task' => sub {
         });
     my $orig_limit = $app->config->{misc_limits}->{create_zip_archive_limit};
 
-    # default limit (2)
-    delete $app->config->{misc_limits}->{create_zip_archive_limit};
-    $mock_archive_module->mock(create_job_archive => sub { path('/tmp/dummy.zip') });
-    @guard_calls = ();
-    OpenQA::Task::Job::CreateZipArchive::_create_zip_archive($mock_minion_job, 4567);
-    is_deeply \@guard_calls, [{name => 'create_zip_archive_task', duration => 86400, options => {limit => 2}}],
-      'called guard with default limit';
-
-    # custom configured limit (5)
-    $app->config->{misc_limits}->{create_zip_archive_limit} = 5;
-    @guard_calls = ();
-    OpenQA::Task::Job::CreateZipArchive::_create_zip_archive($mock_minion_job, 4567);
-    is_deeply \@guard_calls, [{name => 'create_zip_archive_task', duration => 86400, options => {limit => 5}}],
-      'called guard with custom configured limit';
+    subtest 'default limit (2)' => sub {
+        delete $app->config->{misc_limits}->{create_zip_archive_limit};
+        $mock_archive_module->mock(create_job_archive => sub { path('/tmp/dummy.zip') });
+        @guard_calls = ();
+        OpenQA::Task::Job::CreateZipArchive::_create_zip_archive($mock_minion_job, 4567);
+        is_deeply \@guard_calls, [{name => 'create_zip_archive_task', duration => 86400, options => {limit => 2}}],
+          'called guard with default limit';
+    };
+    subtest 'custom configured limit (5)' => sub {
+        $app->config->{misc_limits}->{create_zip_archive_limit} = 5;
+        @guard_calls = ();
+        OpenQA::Task::Job::CreateZipArchive::_create_zip_archive($mock_minion_job, 4567);
+        is_deeply \@guard_calls, [{name => 'create_zip_archive_task', duration => 86400, options => {limit => 5}}],
+          'called guard with custom configured limit';
+    };
 
     $app->config->{misc_limits}->{create_zip_archive_limit} = $orig_limit;
     $mock_minion->unmock_all;
@@ -337,36 +338,39 @@ subtest 'Category specific archives' => sub {
         $t->get_ok($url)->status_is(302)->header_like('Location' => $expected_redirect, "redirect for $url");
         $t->get_ok($t->tx->res->headers->location)->status_is(200, "download for $url");
     };
-
-    # Test resultfiles category
-    $download_archive->('/tests/' . $job->id . '/archive?category=resultfiles', qr|/archives/job_\d+_resultfiles.zip|);
-    my $zip_file = $tmp->child('resultfiles.zip');
-    $zip_file->spew($t->tx->res->body);
-    my $zip = Archive::Zip->new();
-    is $zip->read($zip_file->to_string), AZ_OK, 'Resultfiles zip is valid';
-    ok $zip->memberNamed('testresults/vars.json'), 'Contains result file';
-    ok !$zip->memberNamed('testresults/ulogs/ulog.txt'), 'Does not contain ulog';
-    ok !$zip->memberNamed('iso/asset.iso'), 'Does not contain asset';
-
-    # Test ulogs category
-    $download_archive->('/tests/' . $job->id . '/archive?category=ulogs', qr|/archives/job_\d+_ulogs.zip|);
-    $zip_file = $tmp->child('ulogs.zip');
-    $zip_file->spew($t->tx->res->body);
-    $zip = Archive::Zip->new();
-    is $zip->read($zip_file->to_string), AZ_OK, 'Ulogs zip is valid';
-    ok !$zip->memberNamed('testresults/vars.json'), 'Does not contain result file';
-    ok $zip->memberNamed('testresults/ulogs/ulog.txt'), 'Contains ulog';
-    ok !$zip->memberNamed('iso/asset.iso'), 'Does not contain asset';
-
-    # Test assets category
-    $download_archive->('/tests/' . $job->id . '/archive?category=assets', qr|/archives/job_\d+_assets.zip|);
-    $zip_file = $tmp->child('assets.zip');
-    $zip_file->spew($t->tx->res->body);
-    $zip = Archive::Zip->new();
-    is $zip->read($zip_file->to_string), AZ_OK, 'Assets zip is valid';
-    ok !$zip->memberNamed('testresults/vars.json'), 'Does not contain result file';
-    ok !$zip->memberNamed('testresults/ulogs/ulog.txt'), 'Does not contain ulog';
-    ok $zip->memberNamed('iso/asset.iso'), 'Contains asset';
+    subtest 'resultfiles category' => sub {
+        $download_archive->(
+            '/tests/' . $job->id . '/archive?category=resultfiles',
+            qr|/archives/job_\d+_resultfiles.zip|
+        );
+        my $zip_file = $tmp->child('resultfiles.zip');
+        $zip_file->spew($t->tx->res->body);
+        my $zip = Archive::Zip->new;
+        is $zip->read($zip_file->to_string), AZ_OK, 'Resultfiles zip is valid';
+        ok $zip->memberNamed('testresults/vars.json'), 'Contains result file';
+        ok !$zip->memberNamed('testresults/ulogs/ulog.txt'), 'Does not contain ulog';
+        ok !$zip->memberNamed('iso/asset.iso'), 'Does not contain asset';
+    };
+    subtest 'ulogs category' => sub {
+        $download_archive->('/tests/' . $job->id . '/archive?category=ulogs', qr|/archives/job_\d+_ulogs.zip|);
+        my $zip_file = $tmp->child('ulogs.zip');
+        $zip_file->spew($t->tx->res->body);
+        my $zip = Archive::Zip->new;
+        is $zip->read($zip_file->to_string), AZ_OK, 'Ulogs zip is valid';
+        ok !$zip->memberNamed('testresults/vars.json'), 'Does not contain result file';
+        ok $zip->memberNamed('testresults/ulogs/ulog.txt'), 'Contains ulog';
+        ok !$zip->memberNamed('iso/asset.iso'), 'Does not contain asset';
+    };
+    subtest 'assets category' => sub {
+        $download_archive->('/tests/' . $job->id . '/archive?category=assets', qr|/archives/job_\d+_assets.zip|);
+        my $zip_file = $tmp->child('assets.zip');
+        $zip_file->spew($t->tx->res->body);
+        my $zip = Archive::Zip->new;
+        is $zip->read($zip_file->to_string), AZ_OK, 'Assets zip is valid';
+        ok !$zip->memberNamed('testresults/vars.json'), 'Does not contain result file';
+        ok !$zip->memberNamed('testresults/ulogs/ulog.txt'), 'Does not contain ulog';
+        ok $zip->memberNamed('iso/asset.iso'), 'Contains asset';
+    };
 };
 
 done_testing;
