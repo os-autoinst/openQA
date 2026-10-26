@@ -290,10 +290,9 @@ subtest 'CreateZipArchive Minion task' => sub {
             push @guard_calls, {name => $name, duration => $duration, options => $options};
             return 'mock_guard';
         });
-    my $orig_limit = $app->config->{misc_limits}->{create_zip_archive_limit};
 
     subtest 'default limit (2)' => sub {
-        delete $app->config->{misc_limits}->{create_zip_archive_limit};
+        delete local $app->config->{misc_limits}->{create_zip_archive_limit};
         $mock_archive_module->mock(create_job_archive => sub { path('/tmp/dummy.zip') });
         @guard_calls = ();
         OpenQA::Task::Job::CreateZipArchive::_create_zip_archive($mock_minion_job, 4567);
@@ -301,15 +300,12 @@ subtest 'CreateZipArchive Minion task' => sub {
           'called guard with default limit';
     };
     subtest 'custom configured limit (5)' => sub {
-        $app->config->{misc_limits}->{create_zip_archive_limit} = 5;
+        local $app->config->{misc_limits}->{create_zip_archive_limit} = 5;
         @guard_calls = ();
         OpenQA::Task::Job::CreateZipArchive::_create_zip_archive($mock_minion_job, 4567);
         is_deeply \@guard_calls, [{name => 'create_zip_archive_task', duration => 86400, options => {limit => 5}}],
           'called guard with custom configured limit';
     };
-
-    $app->config->{misc_limits}->{create_zip_archive_limit} = $orig_limit;
-    $mock_minion->unmock_all;
 };
 
 subtest 'Category specific archives' => sub {
