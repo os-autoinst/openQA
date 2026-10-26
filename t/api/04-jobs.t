@@ -1210,6 +1210,31 @@ subtest 'priority correctly assigned when posting job' => sub {
         is $new_job_args{priority}, $default_prio + $add, 'increased prio value';
     };
 
+    subtest 'priority scaled by numeric prefix of colon-separated setting value' => sub {
+        my $config = OpenQA::Setup::read_config($t->app);
+        $config->{misc_limits}->{prio_throttling_parameters} = 'RETRY:10';
+        $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($t->app, $config);
+
+        subtest 'RETRY with numeric prefix and ticket reference: prio scaled by prefix' => sub {
+            my %new_job_args = (priority => $default_prio);
+            local $jobs_post_params{RETRY} = '3:poo119230';
+            OpenQA::Schema::ResultSet::Jobs::_apply_prio_throttling($jobs, \%jobs_post_params, \%new_job_args);
+            is $new_job_args{priority}, $default_prio + 30, 'prio scaled by numeric prefix of RETRY';
+        };
+        subtest 'RETRY with ticket reference only: prio not scaled' => sub {
+            my %new_job_args = (priority => $default_prio);
+            local $jobs_post_params{RETRY} = 'poo119230';
+            OpenQA::Schema::ResultSet::Jobs::_apply_prio_throttling($jobs, \%jobs_post_params, \%new_job_args);
+            is $new_job_args{priority}, $default_prio, 'prio not scaled for non-numeric RETRY';
+        };
+        subtest 'RETRY empty: prio not scaled' => sub {
+            my %new_job_args = (priority => $default_prio);
+            local $jobs_post_params{RETRY} = '';
+            OpenQA::Schema::ResultSet::Jobs::_apply_prio_throttling($jobs, \%jobs_post_params, \%new_job_args);
+            is $new_job_args{priority}, $default_prio, 'prio not scaled for empty RETRY';
+        };
+    };
+
     subtest 'priority adjustment based on prio_throttling_patterns' => sub {
         my $limits = $t->app->config->{misc_limits};
         local $limits->{prio_throttling_parameters} = '';
