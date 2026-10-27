@@ -330,6 +330,13 @@ subtest 'Category specific archives' => sub {
     my $download_archive = sub ($url, $expected_redirect) {
         $t->get_ok($url)->status_is(200)->text_like('p.lead', qr/Please wait while the ZIP/, "waiting for $url");
         perform_minion_jobs($app->minion);
+        my $jobs = $app->minion->jobs({tasks => ['create_zip_archive']});
+        state $seen = {};
+        while (my $info = $jobs->next) {
+            next if $seen->{my $id = $info->{id}}++;
+            my $res = $info->{result} // 'no result';
+            note "create_zip_archive job: $id: $info->{state} ($res)";
+        }
         $t->get_ok($url)->status_is(302)->header_like('Location' => $expected_redirect, "redirect for $url");
         $t->get_ok($t->tx->res->headers->location)->status_is(200, "download for $url");
     };
