@@ -336,9 +336,10 @@ function renderTestLists() {
             reasons[row.reason] = (reasons[row.reason] || 0) + 1;
           }
         });
-        let text = json.data.length + ' scheduled jobs';
-        if (blockedCount > 0) {
-          text += ' (' + blockedCount + ' blocked by other jobs)';
+        let text = `${json.total_count ?? json.data.length} scheduled jobs`;
+        const blocked = json.blocked_count ?? blockedCount;
+        if (blocked > 0) {
+          text += ` (${blocked} blocked by other jobs)`;
         }
         $('#scheduled_jobs_heading').text(text);
         $('#scheduled_jobs_warning').toggleClass('d-none', !json.job_skipped_by_disk_limits);
