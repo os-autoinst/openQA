@@ -17,6 +17,7 @@ use OpenQA::Test::Case;
 use OpenQA::App;
 use OpenQA::WebAPI;
 use OpenQA::Utils qw(resultdir assetdir);
+use OpenQA::Task::Job::CreateZipArchive;
 use OpenQA::Test::Utils qw(perform_minion_jobs);
 use OpenQA::Archive;
 use Archive::Zip qw(:ERROR_CODES :CONSTANTS);
@@ -258,7 +259,6 @@ subtest 'Create archive failure' => sub {
 };
 
 subtest 'CreateZipArchive Minion task' => sub {
-    require OpenQA::Task::Job::CreateZipArchive;
     my $mock_minion_job = Test::MockObject->new->set_always(app => $app)->set_true('finish')->set_true('fail');
     my $mock_schema_obj = Test::MockObject->new;
     my $mock_rs = Test::MockObject->new;
