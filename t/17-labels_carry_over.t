@@ -149,6 +149,18 @@ subtest 'failed->failed flag:carryover comments are carried over' => sub {
 
 # Reset to a clean state
 $schema->txn_rollback;
+$schema->txn_begin;
+
+subtest 'failed->failed flag:verbatim comments are not carried over' => sub {
+    my $comment_text = 'flag:verbatim quoting bsc#1234 flag:carryover label:force_result:softfailed:bsc#1257825';
+    $t->post_ok("/api/v1/jobs/$old_job/comments", $auth => form => {text => $comment_text})->status_is(200);
+    $t->post_ok("/api/v1/jobs/$job/set_done", $auth => form => {result => FAILED})->status_is(200);
+    is scalar @{comments("/tests/$job")}, 0, 'comment with flag:verbatim not carried over';
+    is $jobs->find($job)->result, FAILED, 'force_result label from a verbatim comment is not applied';
+};
+
+# Reset to a clean state
+$schema->txn_rollback;
 
 my ($prev_job, $curr_job) = map { $jobs->find($_) } (99962, 99963);
 

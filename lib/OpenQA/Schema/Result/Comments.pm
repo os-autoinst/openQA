@@ -8,7 +8,7 @@ use OpenQA::App;
 use OpenQA::Jobs::Constants;
 use OpenQA::Utils qw(find_labels find_flags find_bugref find_bugrefs);
 use OpenQA::Markdown qw(markdown_to_html);
-use List::Util qw(first);
+use List::Util qw(any);
 
 __PACKAGE__->load_components(qw(Core));
 __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
@@ -88,17 +88,36 @@ __PACKAGE__->belongs_to(
 );
 
 
+=head2 is_verbatim
+
+Returns whether C<$self> contains C<flag:verbatim>. Bugrefs, labels, tags and other flags in such a comment are ignored.
+=cut
+
+sub is_verbatim ($self) {
+    any { $_ eq 'verbatim' } @{$self->_parsed_flags};
+}
+
+# keyed on the text so an edited comment is parsed again
+sub _parsed_flags ($self) {
+    my $text = $self->text;
+    my $cached = $self->{_parsed_flags};
+    return $cached->[1] if $cached && $cached->[0] eq $text;
+    my $flags = find_flags($text);
+    $self->{_parsed_flags} = [$text, $flags];
+    return $flags;
+}
+
 =head2 bugref
 
 Returns the first bugref if C<$self> contains a bugref, e.g. 'bug#1234'.
 =cut
-sub bugref ($self) { find_bugref($self->text) }
+sub bugref ($self) { $self->is_verbatim ? undef : find_bugref($self->text) }
 
 =head2 bugrefs
 
 Returns all bugrefs in C<$self>, e.g. 'bug#1234 poo#1234'.
 =cut
-sub bugrefs ($self) { find_bugrefs($self->text) }
+sub bugrefs ($self) { $self->is_verbatim ? [] : find_bugrefs($self->text) }
 
 =head2 label
 
@@ -106,7 +125,7 @@ Returns label value if C<$self> is label, e.g. 'label:my_label' returns 'my_labe
 =cut
 
 sub label ($self) {
-    return find_labels($self->text)->[0];
+    return $self->is_verbatim ? undef : find_labels($self->text)->[0];
 }
 
 =head2 text_flags
@@ -115,7 +134,7 @@ Returns flag values if C<$self> has flags, e.g. 'flag:carryover flag:foobar' ret
 =cut
 
 sub text_flags ($self) {
-    my $flags = find_flags($self->text);
+    my $flags = $self->is_verbatim ? ['verbatim'] : $self->_parsed_flags;
     my %flag_hash;
     @flag_hash{@$flags} = ();
     return \%flag_hash;
@@ -129,6 +148,7 @@ Returns new result value if C<$self> is a special "force_result" label, e.g.
 =cut
 
 sub force_result ($self) {
+    return (undef, undef) if $self->is_verbatim;
     for my $label (@{find_labels($self->text)}) {
         next unless $label =~ /^force_result:(\w+):?(\w*)/;
         return ($1, $2);
@@ -147,6 +167,7 @@ e.g. 'tag:0123:important:GM' returns a list of '0123', 'important' and 'GM'.
 =cut
 
 sub tag ($self) {
+    return () if $self->is_verbatim;
     $self->text =~ m{
         \b tag :
         (?:

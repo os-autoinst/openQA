@@ -269,7 +269,7 @@ sub delete ($self) {
     return $self->render(
         json => {error => "Comment $comment_id has 'force_result' label, deleting not allowed"},
         status => 403
-    ) if grep { defined } $comment->force_result;
+    ) if grep { /^force_result:/ } @{find_labels($comment->text)};
     return $self->render(json => {error => 'Forbidden (must be author or admin)'}, status => 403)
       unless ($self->current_user->is_admin || $comment->user_id == $self->current_user->id);
     $self->emit_event('openqa_comment_delete', {id => $comment_id});
