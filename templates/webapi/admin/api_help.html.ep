@@ -1,5 +1,10 @@
 % layout 'bootstrap';
 % title 'API help';
+
+% content_for 'head' => begin
+%= asset $_ for qw(swagger-ui.js swagger_init.js swagger-ui.css)
+% end
+
 <div>
     <h2><%= title %></h2>
 
@@ -14,4 +19,12 @@
     error page with all available routes as help. E.g. try <%= link_to 'this
     link' => url_for('not_found') %>.
     </p>
+
+    <h3>Swagger UI - Experimental</h3>
+    <p>We also offer this experimental Swagger UI, which might be wrong or
+    incomplete at this point. If you find a mistake, leave us a pull request
+    :)</p>
+
+    <div id="swagger-ui"></div>
+
 </div>
