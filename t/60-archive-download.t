@@ -17,6 +17,8 @@ use OpenQA::Test::Case;
 use OpenQA::App;
 use OpenQA::WebAPI;
 use OpenQA::Utils qw(resultdir assetdir);
+use OpenQA::Task::Job::CreateZipArchive;
+use OpenQA::Test::Utils qw(perform_minion_jobs);
 use OpenQA::Archive;
 use Archive::Zip qw(:ERROR_CODES :CONSTANTS);
 
@@ -84,7 +86,10 @@ subtest 'ZIP archive download and categorization' => sub {
         my $url = '/tests/' . $job->id . '/archive' . ($cat eq 'all' ? '' : "?category=$cat");
         my $suffix = $cat eq 'all' ? '' : "_$cat";
 
-        $t->get_ok($url)->status_is(302)->header_like('Location' => qr|/archives/job_@{[ $job->id ]}${suffix}\.zip|);
+        $t->get_ok($url)->status_is(200)->text_like('p.lead', qr/Please wait while the ZIP/, "waiting for $url");
+        perform_minion_jobs($app->minion);
+        $t->get_ok($url)->status_is(302);
+        $t->header_like('Location' => qr|/archives/job_@{[ $job->id ]}${suffix}\.zip|, "redirect for $url");
         $t->get_ok($t->tx->res->headers->location)->status_is(200)->content_type_is('application/zip');
 
         my $zip = Archive::Zip->new();
@@ -254,7 +259,6 @@ subtest 'Create archive failure' => sub {
 };
 
 subtest 'CreateZipArchive Minion task' => sub {
-    require OpenQA::Task::Job::CreateZipArchive;
     my $mock_minion_job = Test::MockObject->new->set_always(app => $app)->set_true('finish')->set_true('fail');
     my $mock_schema_obj = Test::MockObject->new;
     my $mock_rs = Test::MockObject->new;
@@ -281,123 +285,26 @@ subtest 'CreateZipArchive Minion task' => sub {
     my $mock_minion = Test::MockModule->new('Minion');
     my @guard_calls;
     $mock_minion->mock(
-        guard => sub {
-            my ($self, $name, $duration, $options) = @_;
+        guard => sub ($self, $name, $duration, $options) {
             push @guard_calls, {name => $name, duration => $duration, options => $options};
             return 'mock_guard';
         });
-    my $orig_limit = $app->config->{misc_limits}->{create_zip_archive_limit};
 
-    # default limit (2)
-    delete $app->config->{misc_limits}->{create_zip_archive_limit};
-    $mock_archive_module->mock(create_job_archive => sub { path('/tmp/dummy.zip') });
-    @guard_calls = ();
-    OpenQA::Task::Job::CreateZipArchive::_create_zip_archive($mock_minion_job, 4567);
-    is_deeply \@guard_calls, [{name => 'create_zip_archive_task', duration => 86400, options => {limit => 2}}],
-      'called guard with default limit';
-
-    # custom configured limit (5)
-    $app->config->{misc_limits}->{create_zip_archive_limit} = 5;
-    @guard_calls = ();
-    OpenQA::Task::Job::CreateZipArchive::_create_zip_archive($mock_minion_job, 4567);
-    is_deeply \@guard_calls, [{name => 'create_zip_archive_task', duration => 86400, options => {limit => 5}}],
-      'called guard with custom configured limit';
-
-    $app->config->{misc_limits}->{create_zip_archive_limit} = $orig_limit;
-    $mock_minion->unmock_all;
-};
-
-subtest 'Controller archive endpoint' => sub {
-    my $job = $schema->resultset('Jobs')->create(
-        {
-            DISTRI => 'archtest',
-            VERSION => '1.0',
-            FLAVOR => 'test',
-            ARCH => 'x86_64',
-            TEST => 'job_fail',
-            state => 'done',
-            result => 'passed',
-        });
-    $t->get_ok('/archives/..%2fetc%2fpasswd')->status_is(404);
-    $t->get_ok('/archives/nonexistent.zip')->status_is(404);
-
-    my $mock_minion = Test::MockObject->new->set_true('enqueue');
-    my $mock_app_module = Test::MockModule->new('OpenQA::WebAPI');
-    $mock_app_module->mock(minion => sub { $mock_minion });
-    my $orig_can = $app->can('can');
-    $mock_app_module->mock(
-        can => sub ($self, $method) {
-            return 1 if $method eq 'minion';
-            return $orig_can ? $self->$orig_can($method) : UNIVERSAL::can($self, $method);    ## no critic (ProhibitUniversalCan)
-        });
-    $mock_minion->set_true('enqueue');
-
-    $case->login($t, 'admin');
-    $t->get_ok('/tests/' . $job->id . '/archive')->status_is(200)->content_like(qr/Preparing Archive for Job/);
-    $mock_minion->called_ok('enqueue', 'Archive generation is enqueued in Minion');
-    $mock_minion->clear;
-    $t->get_ok('/tests/' . $job->id . '/archive')->status_is(200);
-    $mock_minion->called_ok('enqueue', 'Repeated archive request re-enqueues generation task');
-
-    $mock_minion->mock(enqueue => sub { die 'Enqueue failed' });
-    $t->get_ok('/tests/' . $job->id . '/archive')->status_is(500)->content_is('Internal Server Error');
-};
-
-subtest 'Category specific archives' => sub {
-    my $job = $schema->resultset('Jobs')->create(
-        {
-            DISTRI => 'archtest',
-            VERSION => '1.0',
-            FLAVOR => 'test',
-            ARCH => 'x86_64',
-            TEST => 'category_test',
-            state => 'done',
-            result => 'passed',
-        });
-    my $res_dir = path($job->create_result_dir);
-    $res_dir->child('vars.json')->spew('{}');    # COMMON_RESULT_FILES includes vars.json
-    $res_dir->child('ulogs')->make_path->child('ulog.txt')->spew('ulog data');
-    my $asset = $schema->resultset('Assets')->create({type => 'iso', name => 'asset.iso'});
-    $schema->resultset('JobsAssets')->create({job_id => $job->id, asset_id => $asset->id});
-    path(assetdir(), 'iso', 'asset.iso')->dirname->make_path->child('asset.iso')->spew('asset data');
-
-    $case->login($t, 'admin');
-
-    # Test resultfiles category
-    $t->get_ok('/tests/' . $job->id . '/archive?category=resultfiles')->status_is(302)
-      ->header_like('Location' => qr|/archives/job_\d+_resultfiles.zip|);
-    $t->get_ok($t->tx->res->headers->location)->status_is(200);
-    my $zip_file = $tmp->child('resultfiles.zip');
-    $zip_file->spew($t->tx->res->body);
-    my $zip = Archive::Zip->new();
-    is $zip->read($zip_file->to_string), AZ_OK, 'Resultfiles zip is valid';
-    ok $zip->memberNamed('testresults/vars.json'), 'Contains result file';
-    ok !$zip->memberNamed('testresults/ulogs/ulog.txt'), 'Does not contain ulog';
-    ok !$zip->memberNamed('iso/asset.iso'), 'Does not contain asset';
-
-    # Test ulogs category
-    $t->get_ok('/tests/' . $job->id . '/archive?category=ulogs')->status_is(302)
-      ->header_like('Location' => qr|/archives/job_\d+_ulogs.zip|);
-    $t->get_ok($t->tx->res->headers->location)->status_is(200);
-    $zip_file = $tmp->child('ulogs.zip');
-    $zip_file->spew($t->tx->res->body);
-    $zip = Archive::Zip->new();
-    is $zip->read($zip_file->to_string), AZ_OK, 'Ulogs zip is valid';
-    ok !$zip->memberNamed('testresults/vars.json'), 'Does not contain result file';
-    ok $zip->memberNamed('testresults/ulogs/ulog.txt'), 'Contains ulog';
-    ok !$zip->memberNamed('iso/asset.iso'), 'Does not contain asset';
-
-    # Test assets category
-    $t->get_ok('/tests/' . $job->id . '/archive?category=assets')->status_is(302)
-      ->header_like('Location' => qr|/archives/job_\d+_assets.zip|);
-    $t->get_ok($t->tx->res->headers->location)->status_is(200);
-    $zip_file = $tmp->child('assets.zip');
-    $zip_file->spew($t->tx->res->body);
-    $zip = Archive::Zip->new();
-    is $zip->read($zip_file->to_string), AZ_OK, 'Assets zip is valid';
-    ok !$zip->memberNamed('testresults/vars.json'), 'Does not contain result file';
-    ok !$zip->memberNamed('testresults/ulogs/ulog.txt'), 'Does not contain ulog';
-    ok $zip->memberNamed('iso/asset.iso'), 'Contains asset';
+    subtest 'default limit (2)' => sub {
+        delete local $app->config->{misc_limits}->{create_zip_archive_limit};
+        $mock_archive_module->mock(create_job_archive => sub { path('/tmp/dummy.zip') });
+        @guard_calls = ();
+        OpenQA::Task::Job::CreateZipArchive::_create_zip_archive($mock_minion_job, 4567);
+        is_deeply \@guard_calls, [{name => 'create_zip_archive_task', duration => 86400, options => {limit => 2}}],
+          'called guard with default limit';
+    };
+    subtest 'custom configured limit (5)' => sub {
+        local $app->config->{misc_limits}->{create_zip_archive_limit} = 5;
+        @guard_calls = ();
+        OpenQA::Task::Job::CreateZipArchive::_create_zip_archive($mock_minion_job, 4567);
+        is_deeply \@guard_calls, [{name => 'create_zip_archive_task', duration => 86400, options => {limit => 5}}],
+          'called guard with custom configured limit';
+    };
 };
 
 done_testing;

@@ -6,6 +6,7 @@ use Mojo::Base -strict, -signatures;
 
 use Archive::Zip qw(:ERROR_CODES :CONSTANTS);
 use Mojo::File 'path';
+use Mojo::Util qw(scope_guard);
 use OpenQA::Utils qw(resultdir assetdir check_df locate_asset human_readable_size random_hex);
 use OpenQA::Log qw(log_info log_error log_debug);
 use OpenQA::App;
@@ -36,24 +37,21 @@ sub get_watermark_percentage () {
       // 80;
 }
 
-sub job_archive_filename ($job_id, $category = 'all') {
+sub job_archive_filename ($job_id, $category) {
     return $category eq 'all' ? "job_$job_id.zip" : "job_${job_id}_$category.zip";
 }
 
 sub create_job_archive ($job, $category = 'all') {
     my $job_id = $job->id;
-    my $cache_dir = path(archive_cache_dir());
-    $cache_dir->make_path unless -d $cache_dir;
+    my $cache_dir = path(archive_cache_dir())->make_path;
     my $archive_name = job_archive_filename($job_id, $category);
     my $archive_path = $cache_dir->child($archive_name);
     my $lock_path = $cache_dir->child("$archive_name.lock");
     open my $lock_fh, '>', $lock_path->to_string
       or die "Could not open lock file $lock_path: $!";
+    my $lock_guard = scope_guard sub () { close $lock_fh };
     flock $lock_fh, LOCK_EX or die "Could not lock $lock_path: $!";
-    if (-e $archive_path) {
-        close $lock_fh;
-        return $archive_path;
-    }
+    return $archive_path if -e $archive_path;
     log_info "Creating archive for job $job_id (category: $category) at $archive_path";
     # Archive::Zip does not keep all member data in memory. When using addFile or
     # addTree, it only remembers the filenames. writeToFileNamed then streams
@@ -103,13 +101,11 @@ sub create_job_archive ($job, $category = 'all') {
     my $status = $zip->writeToFileNamed($temp_path->to_string);
     unless ($status == AZ_OK) {
         $temp_path->remove if -e $temp_path;
-        close $lock_fh;
         log_error "Failed to write archive for job $job_id to $temp_path: $status";
         die "Failed to create archive: $status";
     }
     rename $temp_path->to_string, $archive_path->to_string
       or die "Could not rename $temp_path to $archive_path: $!";
-    close $lock_fh;
     return $archive_path;
 }
 
