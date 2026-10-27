@@ -221,6 +221,12 @@ wait_for_ajax(msg => 'DataTables on "All tests" page with limit');
     'Last 1 finished jobs'
 );
 is_deeply \@header_texts, \@expected, 'limit for finished tests can be adjusted with query parameter';
+like $driver->find_element_by_id('scheduled_info')->get_text(),
+  qr/^Showing 1 to 1 of 4 entries$/, 'info line reports the true total while the scheduled listing is capped';
+$driver->get('/tests?limit=4');
+wait_for_ajax(msg => 'DataTables on "All tests" page with uncapped scheduled listing');
+like $driver->find_element_by_id('scheduled_info')->get_text(),
+  qr/^Showing 1 to 4 of 4 entries$/, 'info line matches the listing size when the listing is not capped';
 
 $t->get_ok('/tests/99963')->status_is(200);
 $t->content_like(qr/State.*running/, 'Running jobs are marked');
