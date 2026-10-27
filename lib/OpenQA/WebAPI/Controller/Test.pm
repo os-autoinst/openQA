@@ -390,6 +390,8 @@ sub list_scheduled_ajax ($self) {
         ],
     );
 
+    my $total_count = $jobs_rs->count;
+    my $blocked_count = $jobs_rs->search({-not => {'me.blocked_by_id' => undef}})->count;
     my @jobs = $limit ? $jobs_rs->search({}, {rows => $limit})->all : $jobs_rs->all;
     my $job_ids = [map { $_->id } @jobs];
     my $ancestors_by_job = $self->schema->resultset('Jobs')->ancestors_count_for_jobs($job_ids);
@@ -403,7 +405,7 @@ sub list_scheduled_ajax ($self) {
         $job_data->{reason} = $job->reason;
         push @scheduled, $job_data;
     }
-    my %response = (data => \@scheduled);
+    my %response = (data => \@scheduled, total_count => $total_count, blocked_count => $blocked_count);
     $response{job_skipped_by_disk_limits} = 1
       if any { ($_->{reason} // '') eq 'storage space below threshold' } @scheduled;
     $self->render(json => \%response);
