@@ -36,7 +36,7 @@ sub get_watermark_percentage () {
       // 80;
 }
 
-sub job_archive_filename ($job_id, $category = 'all') {
+sub job_archive_filename ($job_id, $category) {
     return $category eq 'all' ? "job_$job_id.zip" : "job_${job_id}_$category.zip";
 }
 
