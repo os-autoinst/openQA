@@ -5,6 +5,7 @@ package OpenQA::Task::Job::CreateZipArchive;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use OpenQA::Archive;
+use OpenQA::Task::SignalGuard;
 use Feature::Compat::Try;
 use Time::Seconds;
 
@@ -13,6 +14,7 @@ sub register ($self, $app, @args) {
 }
 
 sub _create_zip_archive ($minion_job, $job_id, $category = 'all') {
+    my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($minion_job);
     my $app = $minion_job->app;
 
     # avoid running too many archive generation jobs in parallel
