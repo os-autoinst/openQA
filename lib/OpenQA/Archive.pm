@@ -42,8 +42,7 @@ sub job_archive_filename ($job_id, $category) {
 
 sub create_job_archive ($job, $category = 'all') {
     my $job_id = $job->id;
-    my $cache_dir = path(archive_cache_dir());
-    $cache_dir->make_path unless -d $cache_dir;
+    my $cache_dir = path(archive_cache_dir())->make_path;
     my $archive_name = job_archive_filename($job_id, $category);
     my $archive_path = $cache_dir->child($archive_name);
     my $lock_path = $cache_dir->child("$archive_name.lock");
