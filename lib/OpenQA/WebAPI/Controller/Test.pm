@@ -375,7 +375,7 @@ sub list_scheduled_ajax ($self) {
     my $limit = min($limits->{generic_max_limit}, $self->param('limit') // $limits->{generic_default_limit});
     $self->validation->optional('job_setting', 'not_empty')->like(qr/.+=.*/);
 
-    my $scheduled = $self->schema->resultset('Jobs')->complex_query(
+    my $jobs_rs = $self->schema->resultset('Jobs')->complex_query(
         state => [OpenQA::Jobs::Constants::PRE_EXECUTION_STATES],
         match => $self->get_match_param,
         comment_text => $self->param('comment'),
@@ -388,11 +388,9 @@ sub list_scheduled_ajax ($self) {
               blocked_by_id priority reason
             )
         ],
-
-        limit => $limit,
     );
 
-    my @jobs = $scheduled->all;
+    my @jobs = $limit ? $jobs_rs->search({}, {rows => $limit})->all : $jobs_rs->all;
     my $job_ids = [map { $_->id } @jobs];
     my $ancestors_by_job = $self->schema->resultset('Jobs')->ancestors_count_for_jobs($job_ids);
 
