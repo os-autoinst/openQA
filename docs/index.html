@@ -3537,11 +3537,19 @@ the carry over will only happen when the comment <strong>also</strong>
 contains a bug reference or <code>flag:carryover</code>.</p>
 </blockquote>
 <h4 data-number="3.3.4.3" id="flags"><span class="header-section-number">3.3.4.3</span> Flags</h4>
-<p>Currently there is only one flag for job comments supported.</p>
+<p>The following flags are supported for job comments.</p>
 <h5 data-number="3.3.4.3.1" id="flagcarryover"><span class="header-section-number">3.3.4.3.1</span> flag:carryover</h5>
 <p>Adding <code>flag:carryover</code> to a comment, will result in this
 comment being <a href="#carry-over">carried over</a> to a new job
 failing for the same reason, without a bugref required.</p>
+<h5 data-number="3.3.4.3.2" id="flagverbatim"><span class="header-section-number">3.3.4.3.2</span> flag:verbatim</h5>
+<p>Adding <code>flag:verbatim</code> to a comment makes openQA ignore
+all bug references, labels, tags and other flags in it: the comment does
+not mark the job as reviewed, it is not carried over, it does not tag a
+build and <code>force_result</code> labels in it are not applied. A
+<code>force_result</code> label in it still prevents deleting the
+comment. Bug references are still rendered as links. This is meant for
+comments posted by tools that quote text from logs.</p>
 <h3 data-number="3.3.5" id="distinguish-product-and-test-issues-bugref-gh708"><span class="header-section-number">3.3.5</span> Distinguish product and test
 issues bugref <a href="https://github.com/os-autoinst/openQA/pull/708">gh#708</a></h3>
 <p>&quot;progress.opensuse.org&quot; is used to track test issues, bugzilla for
