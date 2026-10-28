@@ -1826,6 +1826,58 @@ paths:
       summary: Duplicate job
       tags:
         - jobs
+  /jobs/{jobid}/history:
+    get:
+      description: >
+        Returns the progression of related jobs for a given job ID. This
+        includes preceding completed jobs, the current job itself, and
+        succeeding scheduled or completed jobs.
+      operationId: getJobHistory
+      parameters:
+        - in: path
+          name: jobid
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: previous_limit
+          description: >
+            Limits the number of previous jobs returned in the history.
+            Defaults to the system configured limit (typically 10).
+          schema:
+            type: integer
+        - in: query
+          name: next_limit
+          description: >
+            Limits the number of next/subsequent jobs returned in the history.
+            Defaults to the system configured limit (typically 10).
+          schema:
+            type: integer
+        - in: query
+          name: strict
+          description: >
+            If set to 1, the history is strictly isolated by all declared
+            history isolation keys for the job (e.g. keeping independent Pull
+            Request histories separate).
+          schema:
+            type: integer
+            enum:
+              - 1
+              - 0
+        - in: query
+          name: isolation_keys
+          description: >
+            An explicit, comma-separated list of job setting keys to isolate
+            the history on.
+          schema:
+            type: string
+            pattern: '^[a-zA-Z0-9_, ]*$'
+      responses:
+        '200':
+          description: OK
+      summary: Get job status
+      tags:
+        - jobs
   /jobs/{jobid}/prio:
     post:
       description: Sets priority for a given job.
