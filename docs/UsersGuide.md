@@ -720,8 +720,6 @@ autologin-user=tux
 autologin-timeout=0
 ```
 
-<a id="investigation"></a>
-
 ### Investigation of failed jobs
 
 The "Investigation" tab of a failed job, also available as JSON from
@@ -735,13 +733,18 @@ that are involved in the failure:
 - needles considered by failed screen checks and needles with the tags of those
   checks
 
-The commits are taken from the checkouts on the web UI host, up to the commit
-the job was tested with (`TEST_GIT_HASH`, `NEEDLES_GIT_HASH`). Without a last
-good job the commits of the 5 days before the job started are listed. Each line
-is `<10-char sha> <title> (#<pull request>)`; the pull request is added if
-the commit was merged by a "Merge pull request" commit. Jobs with a `CASEDIR`
-that is a URL or absolute path usually have no matching checkout on the web UI
-host, which is reported instead of a log.
+The files are looked up in the commit the job was tested with
+(`TEST_GIT_HASH`, `NEEDLES_GIT_HASH`) within the checkouts on the web UI host,
+so later renames or removals do not change the result. Without a last good job
+the commits of the 5 days before the job started are listed. Each line is
+`<10-char sha> <title> (#<pull request>)`; the pull request is added if the
+commit was merged by a "Merge pull request" commit. The tab links it for
+GitHub and Gitea/Forgejo repositories.
+
+Instead of a log the keys contain a message if the tested commit is not
+available on the web UI host (e.g. for a `CASEDIR` that is a URL or absolute
+path) or if git took longer than `job_investigate_git_timeout` in total or
+failed. Pull request numbers are skipped if time runs out.
 
 <a id="carry-over"></a>
 

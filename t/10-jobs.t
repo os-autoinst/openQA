@@ -552,7 +552,6 @@ subtest 'carry over, including soft-fails' => sub {
             chomp(my $hash = qx{git -C "$repo" rev-parse HEAD});
             return $hash;
         };
-        my $needle = '{"tags": ["foo-tag"]}';
         $git->(qw(init -q -b main));
         $commit->('tests/x.pm', 'Ancient change', 'Ancient change', 946_684_800);
         $git->(qw(switch -q -c feature));
@@ -562,32 +561,47 @@ subtest 'carry over, including soft-fails' => sub {
         $git->(qw(merge -q --no-ff -m), 'Merge pull request #42 from fork/feature', 'feature');
         chomp(my $merge = qx{git -C "$repo" rev-parse HEAD});
         $commit->('tests/x.pm', 'Squash fix (#43)');
+        $commit->('tests/old.pm', 'Add old');
         $commit->('needles/foo-1.png', 'Add foo needle png');
-        $commit->('needles/foo-1.json', 'Add foo needle', $needle);
+        $commit->('needles/foo-1.json', 'Add foo needle', '{"tags": ["foo-tag"]}');
         $commit->('needles/bar.json', 'Add bar needle', '{"tags": ["bar"]}');
-        my $head = $commit->('needles/foo-2.json', 'Retag needle', '{"tags": ["foo-tag", "other"]}');
-        my $outside = tempdir->child('outside.pm')->spew('x');
-        symlink $outside, $repo->child('tests/link.pm');
+        $commit->('needles/foo-2.json', 'Retag needle', '{"tags": ["foo-tag", "other"]}');
+        $commit->('needles/area.json', 'Add area needle', '{"tags": ["area-tag"], "area": [{"xpos": 1}]}');
+        $commit->('needles/gone.json', 'Add gone needle', '{"tags": ["removed-tag"]}');
+        $commit->('needles/foo-1.png', 'Update foo png only');
+        $commit->('needles/area.json', 'Move area', '{"tags": ["area-tag"], "area": [{"xpos": 2}]}');
+        my $tested = $commit->('needles/gone.json', 'Drop tag from gone needle', '{"tags": ["other"]}');
+        $git->(qw(rm -q tests/old.pm));
+        $git->(qw(commit -q -m), 'Remove old');
+        my $head = $commit->('tests/later.pm', 'Later');
 
         my $trace = join "\n", '# Test died: oops', '--- # stack trace',
           "testapi::assert_script_run('x') called at tests/x.pm line 19",
-          'prepare::y at /var/lib/openqa/pool/1/tests/missing.pm line 7', 'at ../outside.pm line 3',
-          'at tests/link.pm line 5', 'at .git/hook.pm line 1';
-        my $needle_step = {result => 'fail', tags => ['foo-tag', 'v1.2'], needles => [{json => 'foo-1.json'}]};
-        my $text_step = {result => 'fail', text_data => "no candidate needle with tag(s) 'bar, baz'"};
-        $job->update_module('b',
-            {result => 'fail', details => [{result => 'fail', text_data => $trace}, $needle_step, $text_step]});
+          'prepare::y at /var/lib/openqa/pool/1/tests/old.pm line 7', 'at ../outside.pm line 3',
+          'at .git/hook.pm line 1';
+        my $needle_step = {
+            result => 'fail',
+            tags => ['foo-tag', 'v1.2'],
+            needles => [{json => '/var/lib/openqa/needles/foo-1.json'}]};
+        my $text_step = {result => 'fail', text_data => "no candidate needle with tag(s) 'bar, removed-tag'"};
+        my $area_step = {result => 'fail', tags => ['area-tag']};
+        $job->update_module(
+            'b',
+            {
+                result => 'fail',
+                details => [{result => 'fail', text_data => $trace}, $needle_step, $text_step, $area_step]});
         $job->insert_module({name => 'c', category => 'c', script => 'tests/x.pm', flags => {}});
         $job->update_module('c', {result => 'fail', details => []});
 
         my $job_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs', no_auto => 1);
         $job_mock->redefine(testcasedir => sub (@) { "$repo" });
         $job_mock->redefine(needledir => sub (@) { $repo->child('needles')->to_string });
-        my $set_vars = sub ($j, $hash) {
-            path($j->result_dir, 'vars.json')->spew(encode_json {TEST_GIT_HASH => $hash, NEEDLES_GIT_HASH => $hash});
+        my $set_vars = sub ($j, $hash, %extra) {
+            path($j->result_dir, 'vars.json')
+              ->spew(encode_json {TEST_GIT_HASH => $hash, NEEDLES_GIT_HASH => $hash, %extra});
         };
         my $last_good = ($job->_previous_scenario_jobs)[1];
-        $set_vars->($job, $head);
+        $set_vars->($job, $tested);
 
         subtest 'window before the job started without last good vars.json' => sub {
             unlink path($last_good->result_dir, 'vars.json');
@@ -596,13 +610,16 @@ subtest 'carry over, including soft-fails' => sub {
             like $log, qr/^[0-9a-f]{10} Break x \(#42\)$/m, 'commit merged via merge commit links its pull request';
             like $log, qr/^[0-9a-f]{10} Squash fix \(#43\)$/m, 'pull request of squashed commit not added twice';
             like $log, qr/tests\/x\.pm \|/, 'diff stat of involved file shown';
+            like $log, qr/^[0-9a-f]{10} Add old$/m, 'file removed after the tested commit still considered';
             unlike $log, qr/Ancient change/, 'commit older than the window not listed';
-            unlike $log, qr/Unrelated|link\.pm|missing\.pm|outside\.pm|hook\.pm/, 'uninvolved or unsafe files ignored';
+            unlike $log, qr/Unrelated|Later|Remove old|outside|hook/, 'uninvolved or later changes ignored';
             $log = $inv->{failure_needles_log};
             like $log, qr/^[0-9a-f]{10} Add foo needle$/m, 'commit of candidate needle listed';
-            like $log, qr/foo-1\.png/, 'png of candidate needle considered';
+            like $log, qr/^[0-9a-f]{10} Update foo png only$/m, 'commit changing only the png of a candidate listed';
             like $log, qr/^[0-9a-f]{10} Retag needle$/m, 'commit changing a needle with the failed tag listed';
             like $log, qr/^[0-9a-f]{10} Add bar needle$/m, 'tag from text of failed step considered';
+            like $log, qr/^[0-9a-f]{10} Move area$/m, 'commit not touching the tag lines of a needle with it listed';
+            like $log, qr/^[0-9a-f]{10} Drop tag from gone needle$/m, 'commit removing the failed tag listed';
             is scalar(() = $log =~ /Add foo needle$/mg), 1, 'commits found twice only listed once';
         };
 
@@ -611,7 +628,7 @@ subtest 'carry over, including soft-fails' => sub {
             my $inv = $job->investigate(git_limit => 200);
             unlike $inv->{failure_test_log}, qr/Break x/, 'commits before the last good job not listed';
             like $inv->{failure_test_log}, qr/Squash fix \(#43\)/, 'commits after the last good job listed';
-            $set_vars->($last_good, $head);
+            $set_vars->($last_good, $tested);
             $inv = $job->investigate(git_limit => 200);
             is $inv->{failure_test_log}, 'No recent changes to the test files involved in the failure', 'no changes';
             like $inv->{failure_needles_log}, qr/^No recent changes to the needles/, 'no needle changes';
@@ -622,6 +639,58 @@ subtest 'carry over, including soft-fails' => sub {
             my $inv = $job->investigate(git_limit => 200);
             like $inv->{failure_test_log}, qr/unknown or not available/, 'message about missing commit';
             like $inv->{failure_needles_log}, qr/unknown or not available/, 'message for needles as well';
+            $set_vars->($job, $tested);
+        };
+
+        subtest 'git problems are not reported as missing changes' => sub {
+            my $global = $t->app->config->{global};
+            {
+                local $global->{job_investigate_git_timeout} = 0;
+                my $inv = $job->investigate(git_limit => 200);
+                is $inv->{failure_test_log}, 'Computing changes timed out', 'timeout of test log reported';
+                is $inv->{failure_needles_log}, 'Computing changes timed out', 'timeout of needles log reported';
+            }
+            my $run_cmd = $job_mock->original('run_cmd_with_log_return_error');
+            $job_mock->redefine(
+                run_cmd_with_log_return_error => sub ($cmd, %args) {
+                    return {status => 0, return_code => 128, stdout => '', stderr => 'fatal'}
+                      if grep { $_ eq 'log' } @$cmd;
+                    return $run_cmd->($cmd, %args);
+                });
+            my $inv = $job->investigate(git_limit => 200);
+            is $inv->{failure_test_log}, 'Cannot list changes because of a git problem', 'failure of test log reported';
+            is $inv->{failure_needles_log}, 'Cannot list changes because of a git problem', 'needles failure reported';
+            $job_mock->redefine(run_cmd_with_log_return_error => $run_cmd);
+        };
+
+        subtest 'pull requests are looked up as far as time allows' => sub {
+            chomp(my $short = qx{git -C "$repo" rev-parse --short=10 $head});
+            my $log = "$short Later\n";
+            my $run_cmd = $job_mock->original('run_cmd_with_log_return_error');
+            my @commands;
+            $job_mock->redefine(
+                run_cmd_with_log_return_error => sub ($cmd, %args) { push @commands, $cmd; $run_cmd->($cmd, %args) });
+            is $job->_annotate_pull_requests("$repo", $log, $head, deadline => time + 20), $log, 'direct commit as is';
+            is scalar @commands, 1, 'merge commits not searched for a commit on the first-parent line';
+            @commands = ();
+            is $job->_annotate_pull_requests("$repo", $log, $head, deadline => time - 1), $log, 'log kept if too late';
+            is scalar @commands, 0, 'no git command run after the deadline';
+            $job_mock->redefine(run_cmd_with_log_return_error => $run_cmd);
+        };
+
+        subtest 'no previous job in the scenario' => sub {
+            $job_mock->redefine(_previous_scenario_jobs => sub (@) { () });
+            $set_vars->(
+                $job, $tested,
+                TEST_GIT_URL => 'https://github.com/o/r.git',
+                NEEDLES_GIT_URL => 'git@gitea.example.com:o/n.git'
+            );
+            my $inv = $job->investigate(git_limit => 200);
+            like $inv->{error}, qr/No previous job/, 'error reported';
+            like $inv->{failure_test_log}, qr/^[0-9a-f]{10} Break x \(#42\)$/m, 'test changes of the window listed';
+            like $inv->{failure_needles_log}, qr/^[0-9a-f]{10} Move area$/m, 'needle changes of the window listed';
+            is $inv->{testgiturl}, 'https://github.com/o/r/commit/', 'repository URL of tests provided for links';
+            is $inv->{needlegiturl}, 'https://gitea.example.com/o/n/commit/', 'repository URL of needles provided';
         };
     };
 
