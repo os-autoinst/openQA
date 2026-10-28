@@ -930,15 +930,33 @@ function githashToLink(value, repo) {
   return commits;
 }
 
+// "(#<number>)" is only known to mean a pull request on GitHub and Gitea/Forgejo hosts
+const PULL_REQUEST_PATHS = [
+  [/^github\.com$/, 'pull/'],
+  [/^(?:src\.opensuse\.org|codeberg\.org)$|gitea|forgejo/, 'pulls/']
+];
+
+function pullRequestUrl(commitUrl, number) {
+  let url;
+  try {
+    url = new URL(commitUrl);
+  } catch {
+    return null;
+  }
+  const path = PULL_REQUEST_PATHS.find(([host]) => host.test(url.hostname));
+  return path && commitUrl.endsWith('/commit/') ? commitUrl.replace(/commit\/$/, path[1]) + number : null;
+}
+
 function commitMessageToNode(msg, repoUrl) {
   const fragment = document.createDocumentFragment();
   const match = msg.match(/^(.*) \(#(\d+)\)$/);
-  if (!match) {
+  const href = match && pullRequestUrl(repoUrl, match[2]);
+  if (!href) {
     fragment.append(msg);
     return fragment;
   }
   const link = document.createElement('a');
-  link.href = repoUrl.replace(/commit\/$/, repoUrl.includes('github.com/') ? 'pull/' : 'pulls/') + match[2];
+  link.href = href;
   link.textContent = '#' + match[2];
   fragment.append(match[1] + ' (', link, ')');
   return fragment;
@@ -1167,8 +1185,9 @@ function renderInvestigationTab(response) {
   const needlegiturl = response.needlegiturl;
   delete response.testgiturl;
   delete response.needlegiturl;
-  document.getElementById('investigation').setAttribute('data-testgiturl', testgiturl);
-  document.getElementById('investigation').setAttribute('data-needlegiturl', needlegiturl);
+  const investigation = document.getElementById('investigation');
+  if (testgiturl) investigation.setAttribute('data-testgiturl', testgiturl);
+  if (needlegiturl) investigation.setAttribute('data-needlegiturl', needlegiturl);
 
   const theadElement = document.createElement('thead');
   const headTrElement = document.createElement('tr');

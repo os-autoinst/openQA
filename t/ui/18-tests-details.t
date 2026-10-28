@@ -1001,7 +1001,14 @@ subtest 'helper functions of investigation tab' => sub {
       'pull request linked and message escaped for GitHub';
     like $html->('Fix foo (#42)', 'https://gitea.example.com/o/r/commit/'),
       qr{href="https://gitea.example.com/o/r/pulls/42"},
-      'pull request linked for other forges';
+      'pull request linked for Gitea';
+    like $html->('Fix foo (#42)', 'https://src.opensuse.org/o/r/commit/'),
+      qr{href="https://src.opensuse.org/o/r/pulls/42"},
+      'pull request linked for src.opensuse.org';
+    is $html->('Fix foo (#42)', 'https://gitlab.com/o/r/commit/'), 'Fix foo (#42)', 'no link for GitLab';
+    is $html->('Fix foo (#42)', 'https://github.example.com/o/r/commit/'), 'Fix foo (#42)', 'no link for unknown host';
+    is $html->('Fix foo (#42)', 'https://github.com/o/r/'), 'Fix foo (#42)', 'no link for unexpected URL';
+    is $html->('Fix foo (#42)', 'undefined'), 'Fix foo (#42)', 'no link without repository URL';
     is $html->('Fix foo', 'https://github.com/o/r/commit/'), 'Fix foo', 'message without pull request unchanged';
 };
 
@@ -1030,6 +1037,8 @@ subtest 'alert box shown if not already on first bad' => sub {
     $driver->find_element('#investigation_status_entry')
       ->text_like(qr/error\nNo previous job in this scenario, cannot provide hints/,
         'linked to investigation tab directly');
+    is $driver->find_element_by_id('investigation')->get_attribute('data-testgiturl'), undef,
+      'no repository URL set if unknown';
     $driver->find_element_by_xpath(q{//div[@class='tab-content']})
       ->text_unlike(qr/Investigate the first bad test/, 'no alert shown for first bad itself');
 };
