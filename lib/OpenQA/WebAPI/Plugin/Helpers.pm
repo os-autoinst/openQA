@@ -111,6 +111,7 @@ sub register ($self, $app, $config) {
         });
 
     $app->helper(favicon_url => \&_favicon_url);
+    $app->helper(status_border_class => \&_status_border_class);
 
     $app->helper(
         # generate popover help button with title, content and optional details_url
@@ -344,6 +345,22 @@ sub _favicon_url ($c, $suffix) {
         return $c->icon_url("logo-aggregate-$agg_status$suffix") if $agg_status ne 'none';
     }
     return $c->icon_url("logo$suffix");
+}
+
+sub _status_border_class ($c, $status) {
+    state $status_border_class = {
+        running => 'border-primary',
+        scheduled => 'border-info',
+        blocked => 'border-info',
+        softfailed => 'border-warning',
+        failed => 'border-danger',
+        not_complete => 'border-danger',
+        passed => 'border-success',
+        aborted => 'border-secondary',
+        cancelled => 'border-secondary',
+        none => 'border-secondary',
+    };
+    return $status_border_class->{$status} // 'border-secondary';
 }
 
 sub _populate_hash_with_needle_timestamps_and_urls ($c, $needle, $hash) {

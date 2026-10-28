@@ -207,31 +207,53 @@ subtest 'Advanced query parameters' => sub {
 };
 
 subtest 'summary card border' => sub {
+    $schema->txn_begin;
+
     my $softfailed_job = create_job(
-        result => OpenQA::Jobs::Constants::SOFTFAILED,
+        result => SOFTFAILED,
         TEST => 'softfailed_test',
         VERSION => 'SoftFailVersion',
         DISTRI => 'softfail_distri',
     );
-
-    $t->get_ok('/tests/overview' => form => {distri => 'softfail_distri', version => 'SoftFailVersion'})
-      ->status_is(200);
-    $t->element_exists('#summary.border-success', 'softfailed results in border-success');
+    $t->get_ok('/tests/overview' => form => {distri => 'softfail_distri', version => 'SoftFailVersion'});
+    $t->status_is(200);
+    $t->element_exists('#summary.border-warning', 'softfailed results in border-warning');
     $t->element_exists_not('#summary.border-danger', 'softfailed does NOT result in border-danger');
+    $t->element_exists_not('#summary.border-success', 'softfailed does NOT result in border-success');
 
     my $failed_job = create_job(
-        result => OpenQA::Jobs::Constants::FAILED,
+        result => FAILED,
         TEST => 'failed_test',
         VERSION => 'SoftFailVersion',
         DISTRI => 'softfail_distri',
     );
-
-    $t->get_ok('/tests/overview' => form => {distri => 'softfail_distri', version => 'SoftFailVersion'})
-      ->status_is(200);
+    $t->get_ok('/tests/overview' => form => {distri => 'softfail_distri', version => 'SoftFailVersion'});
+    $t->status_is(200);
     $t->element_exists('#summary.border-danger', 'failed + softfailed results in border-danger');
 
-    $softfailed_job->delete();
-    $failed_job->delete();
+    my $scheduled_job = create_job(
+        state => SCHEDULED,
+        TEST => 'scheduled_test',
+        VERSION => 'SoftFailVersion',
+        DISTRI => 'softfail_distri',
+    );
+    $t->get_ok('/tests/overview' => form => {distri => 'softfail_distri', version => 'SoftFailVersion'});
+    $t->status_is(200);
+    $t->element_exists('#summary.border-info', 'scheduled + failed + softfailed results in border-info');
+
+    my $running_job = create_job(
+        state => RUNNING,
+        TEST => 'running_test',
+        VERSION => 'SoftFailVersion',
+        DISTRI => 'softfail_distri',
+    );
+
+    $t->get_ok('/tests/overview' => form => {distri => 'softfail_distri', version => 'SoftFailVersion'});
+    $t->status_is(200);
+    $t->element_exists('#summary.border-primary',
+        'running + scheduled + failed + softfailed results in border-primary');
+
+    $schema->txn_rollback;
 };
 
 subtest 'clickable summary buttons' => sub {

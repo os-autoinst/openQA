@@ -1,5 +1,5 @@
 // info box in the test results
-#info_box .card-border-warning .card-header {
+#info_box.border-warning .card-header, #info_box .card-border-warning .card-header {
   background-color: $color-softfailed;
   color: $color-result;
 }

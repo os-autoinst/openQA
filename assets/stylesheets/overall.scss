@@ -175,6 +175,19 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
     background-color: #1d1800;
   }
 }
+.card.border-primary {
+  border-color: #b8daff;
+  .card-header {
+    color: #004085;
+    background-color: #cce5ff;
+  }
+}
+[data-bs-theme='dark'] {
+  .card.border-primary .card-header {
+    color: #6ea8fe;
+    background-color: #031633;
+  }
+}
 .card.border-info {
   border-color: #bce8f1;
   .card-header {
