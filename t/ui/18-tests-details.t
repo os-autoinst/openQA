@@ -988,6 +988,21 @@ subtest 'helper functions of investigation tab' => sub {
     $value = '9b8aaf060 Containers: Inc…\n stat1\n stat2\na54a4bb34Remove select…\n stat3\n stat4\n';
     $links = $driver->execute_script(qq{return githashToLink("$value", 'test/')});
     is_deeply $links, undef, 'null returned as second line is invalid' or always_explain $links;
+
+    my $html = sub ($msg, $repo) {
+        $driver->execute_script(
+            'const d = document.createElement("div"); d.appendChild(commitMessageToNode(arguments[0], arguments[1]));'
+              . 'return d.innerHTML;',
+            $msg, $repo
+        );
+    };
+    is $html->('Fix <b>foo</b> (#42)', 'https://github.com/o/r/commit/'),
+      'Fix &lt;b&gt;foo&lt;/b&gt; (<a href="https://github.com/o/r/pull/42">#42</a>)',
+      'pull request linked and message escaped for GitHub';
+    like $html->('Fix foo (#42)', 'https://gitea.example.com/o/r/commit/'),
+      qr{href="https://gitea.example.com/o/r/pulls/42"},
+      'pull request linked for other forges';
+    is $html->('Fix foo', 'https://github.com/o/r/commit/'), 'Fix foo', 'message without pull request unchanged';
 };
 
 subtest 'additional investigation notes provided on new failed' => sub {

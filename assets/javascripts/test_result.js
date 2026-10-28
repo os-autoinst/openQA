@@ -930,6 +930,20 @@ function githashToLink(value, repo) {
   return commits;
 }
 
+function commitMessageToNode(msg, repoUrl) {
+  const fragment = document.createDocumentFragment();
+  const match = msg.match(/^(.*) \(#(\d+)\)$/);
+  if (!match) {
+    fragment.append(msg);
+    return fragment;
+  }
+  const link = document.createElement('a');
+  link.href = repoUrl.replace(/commit\/$/, repoUrl.includes('github.com/') ? 'pull/' : 'pulls/') + match[2];
+  link.textContent = '#' + match[2];
+  fragment.append(match[1] + ' (', link, ')');
+  return fragment;
+}
+
 function setupTestDetailsFilter(tabConfig) {
   if (tabConfig._hasFilterHandlers) return;
 
@@ -1228,7 +1242,8 @@ function renderInvestigationTab(response) {
             const logDetailsDiv = document.createElement('div');
             logDetailsDiv.id = 'collapse' + key + i;
             logDetailsDiv.className = 'collapse';
-            spanElem.innerHTML = gitstats[i].link + ' ' + gitstats[i].msg;
+            spanElem.innerHTML = gitstats[i].link + ' ';
+            spanElem.appendChild(commitMessageToNode(gitstats[i].msg, repoUrl));
             logDetailsDiv.innerHTML = gitstats[i].stat.join('\n');
             statItem.append(collapseSign, spanElem, logDetailsDiv);
 
@@ -1297,7 +1312,12 @@ function toggleSign(elem) {
 }
 
 function getInvestigationDataAttr(key) {
-  const attrs = {test_log: 'data-testgiturl', needles_log: 'data-needlegiturl'};
+  const attrs = {
+    test_log: 'data-testgiturl',
+    needles_log: 'data-needlegiturl',
+    failure_test_log: 'data-testgiturl',
+    failure_needles_log: 'data-needlegiturl'
+  };
   const investigation = document.getElementById('investigation');
   return investigation ? investigation.getAttribute(attrs[key]) : null;
 }
