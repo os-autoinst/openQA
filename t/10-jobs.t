@@ -562,6 +562,7 @@ subtest 'carry over, including soft-fails' => sub {
         chomp(my $merge = qx{git -C "$repo" rev-parse HEAD});
         $commit->('tests/x.pm', 'Squash fix (#43)');
         $commit->('tests/old.pm', 'Add old');
+        $commit->('lib/helper.pm', 'Change helper');
         $commit->('needles/foo-1.png', 'Add foo needle png');
         $commit->('needles/foo-1.json', 'Add foo needle', '{"tags": ["foo-tag"]}');
         $commit->('needles/bar.json', 'Add bar needle', '{"tags": ["bar"]}');
@@ -592,6 +593,12 @@ subtest 'carry over, including soft-fails' => sub {
                 details => [{result => 'fail', text_data => $trace}, $needle_step, $text_step, $area_step]});
         $job->insert_module({name => 'c', category => 'c', script => 'tests/x.pm', flags => {}});
         $job->update_module('c', {result => 'fail', details => []});
+        my $needle_trace = join "\n", "# Test died: no candidate needle with tag(s) 'foo-tag' matched",
+          '--- # stack trace',
+          'testapi::assert_screen("foo-tag") called at lib/helper.pm line 94',
+          'tests::other::run() called at tests/other.pm line 5';
+        $job->insert_module({name => 'd', category => 'd', script => 'tests/other.pm', flags => {}});
+        $job->update_module('d', {result => 'fail', details => [{result => 'fail', text_data => $needle_trace}]});
 
         my $job_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs', no_auto => 1);
         $job_mock->redefine(testcasedir => sub (@) { "$repo" });
@@ -611,6 +618,7 @@ subtest 'carry over, including soft-fails' => sub {
             like $log, qr/^[0-9a-f]{10} Squash fix \(#43\)$/m, 'pull request of squashed commit not added twice';
             like $log, qr/tests\/x\.pm \|/, 'diff stat of involved file shown';
             like $log, qr/^[0-9a-f]{10} Add old$/m, 'file removed after the tested commit still considered';
+            like $log, qr/^[0-9a-f]{10} Change helper$/m, 'shared library of a failed needle check considered';
             unlike $log, qr/Ancient change/, 'commit older than the window not listed';
             unlike $log, qr/Unrelated|Later|Remove old|outside|hook/, 'uninvolved or later changes ignored';
             $log = $inv->{failure_needles_log};
