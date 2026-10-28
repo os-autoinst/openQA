@@ -611,7 +611,7 @@ subtest 'carry over, including soft-fails' => sub {
         $set_vars->($job, $tested);
 
         subtest 'window before the job started without last good vars.json' => sub {
-            unlink path($last_good->result_dir, 'vars.json');
+            path($last_good->result_dir, 'vars.json')->remove;
             my $inv = $job->investigate;
             my $log = $inv->{failure_test_log};
             like $log, qr/^[0-9a-f]{10} Break x \(#42\)$/m, 'commit merged via merge commit links its pull request';
@@ -658,7 +658,7 @@ subtest 'carry over, including soft-fails' => sub {
                 is $inv->{failure_test_log}, 'Computing changes timed out', 'timeout of test log reported';
                 is $inv->{failure_needles_log}, 'Computing changes timed out', 'timeout of needles log reported';
             }
-            my $run_cmd = $job_mock->original('run_cmd_with_log_return_error');
+            my $run_cmd = \&OpenQA::Schema::Result::Jobs::run_cmd_with_log_return_error;
             $job_mock->redefine(
                 run_cmd_with_log_return_error => sub ($cmd, %args) {
                     return {status => 0, return_code => 128, stdout => '', stderr => 'fatal'}
@@ -674,7 +674,7 @@ subtest 'carry over, including soft-fails' => sub {
         subtest 'pull requests are looked up as far as time allows' => sub {
             chomp(my $short = qx{git -C "$repo" rev-parse --short=10 $head});
             my $log = "$short Later\n";
-            my $run_cmd = $job_mock->original('run_cmd_with_log_return_error');
+            my $run_cmd = \&OpenQA::Schema::Result::Jobs::run_cmd_with_log_return_error;
             my @commands;
             $job_mock->redefine(
                 run_cmd_with_log_return_error => sub ($cmd, %args) { push @commands, $cmd; $run_cmd->($cmd, %args) });
@@ -699,7 +699,9 @@ subtest 'carry over, including soft-fails' => sub {
             like $inv->{failure_needles_log}, qr/^[0-9a-f]{10} Move area$/m, 'needle changes of the window listed';
             is $inv->{testgiturl}, 'https://github.com/o/r/commit/', 'repository URL of tests provided for links';
             is $inv->{needlegiturl}, 'https://gitea.example.com/o/n/commit/', 'repository URL of needles provided';
+            $job_mock->unmock('_previous_scenario_jobs');
         };
+        $job_mock->unmock_all;
     };
 
     subtest 'external hook is called on done job if specified' => sub {
