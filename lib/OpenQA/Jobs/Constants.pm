@@ -5,6 +5,7 @@ package OpenQA::Jobs::Constants;
 use Mojo::Base -base, -signatures;
 
 use Exporter 'import';
+use List::Util qw(first);
 
 # define regex for validating test names in accordance with `JobScenarios-01.yaml` and `JobTemplates-01.yaml`
 # note: In contrast to the YAML schema a few more characters are allowed here as they are useful for manually
@@ -114,8 +115,6 @@ use constant META_MAPPING => {
     },
 };
 
-use constant OVERVIEW_STATUS_PRIORITY => qw(failed not_complete softfailed running scheduled passed aborted);
-
 # results for particular job modules
 use constant MODULE_RESULTS => (CANCELLED, FAILED, NONE, PASSED, RUNNING, SKIPPED, SOFTFAILED);
 
@@ -131,8 +130,9 @@ use constant
 # default for new jobs that are useful outside the schema
 use constant DEFAULT_JOB_PRIORITY => 50;
 
-# priority for status aggregation (worst result first)
-use constant STATUS_PRIORITY => (FAILED, NOT_COMPLETE, SOFTFAILED, ABORTED, RUNNING, SCHEDULED, NONE);
+# priority for status aggregation (running/scheduled first, then worst finished result)
+use constant STATUS_PRIORITY =>
+  (RUNNING, SCHEDULED, FAILED, NOT_COMPLETE, SOFTFAILED, ABORTED, CANCELLED, PASSED, NONE);
 
 # the "column" to query for a tag ID in accordance with parse_tags_from_comments() and _important_builds()
 use constant TAG_ID_COLUMN => "concat(VERSION, '-', BUILD)";
@@ -185,13 +185,13 @@ our @EXPORT =    ## no critic (Modules::ProhibitAutomaticExportation)
   META_RESULTS
   META_STATES
   META_MAPPING
-  OVERVIEW_STATUS_PRIORITY
   COMMON_RESULT_FILES
   TIMEOUT_EXCEEDED
   DEFAULT_JOB_PRIORITY
   RESULT_CLEANUP_LOG_FILES
   TAG_ID_COLUMN
   STATUS_PRIORITY
+  calculate_aggregate_status
   );
 
 # mapping from any specific job state/result to a meta state/result
@@ -210,4 +210,9 @@ sub meta_result ($result) { $META_RESULT_MAPPING{$result} // NONE }
 
 sub is_ok_result ($result) {
     !!grep { $result eq $_ } OK_RESULTS;
+}
+
+sub calculate_aggregate_status ($aggregated) {
+    my %counts = (%$aggregated, failed => ($aggregated->{failed} // 0) || ($aggregated->{unknown} // 0));
+    return (first { $counts{$_} } STATUS_PRIORITY) // NONE;
 }

@@ -18,7 +18,7 @@ use Mojo::File 'path';
 use File::Basename;
 use POSIX 'strftime';
 use Mojo::JSON qw(to_json decode_json);
-use List::Util qw(any first min);
+use List::Util qw(any min);
 use HTTP::Status qw(:constants);
 
 use constant DEPENDENCY_DEBUG_INFO => $ENV{OPENQA_DEPENDENCY_DEBUG_INFO};
@@ -703,11 +703,9 @@ sub _gather_overview_results ($self, %args) {
 sub overview_badge ($self) {
     my $data = $self->_gather_overview_results(only_aggregated => 1);
     return undef unless $data;
-    my $aggregated = $data->{aggregated};
-
-    my $status = (grep { $aggregated->{$_} } OVERVIEW_STATUS_PRIORITY)[0] // 'none';
 
     state $mapping = {not_complete => 'incomplete', aborted => 'cancelled', none => 'cancelled'};
+    my $status = calculate_aggregate_status($data->{aggregated});
     my $badge_color_key = $mapping->{$status} // $status;
 
     my $badge_text = $status =~ tr/_/ /r;
@@ -1005,9 +1003,6 @@ sub overview ($self) {
     my $version = $search_args->{version};
     my $exceeded_limit = @$latest_job_ids >= $limit ? $limit - 1 : 0;
 
-    my %counts = (%$aggregated, failed => $aggregated->{failed} || ($aggregated->{unknown} // 0));
-    my $aggregate_status = (first { $counts{$_} } STATUS_PRIORITY) // 'passed';
-
     # determine distri/version from job results if not explicitly specified via search args
     my @distris = keys %$results;
     my $formatted_distri;
@@ -1052,7 +1047,7 @@ sub overview ($self) {
         archs => $archs,
         results => $results,
         aggregated => $aggregated,
-        aggregate_status => $aggregate_status,
+        aggregate_status => calculate_aggregate_status($aggregated),
         job_ids => $job_ids,
         until => $search_args->{until},
         parallel_children_collapsable_results_sel => $config->{global}->{parallel_children_collapsable_results_sel},

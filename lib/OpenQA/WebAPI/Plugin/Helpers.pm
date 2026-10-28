@@ -340,6 +340,7 @@ sub _favicon_url ($c, $suffix) {
         return $c->icon_url("logo-$status$suffix");
     }
     if (my $agg_status = $c->stash('aggregate_status')) {
+        $agg_status = 'aborted' if $agg_status eq 'cancelled';
         return $c->icon_url("logo-aggregate-$agg_status$suffix") if $agg_status ne 'none';
     }
     return $c->icon_url("logo$suffix");
