@@ -720,6 +720,29 @@ autologin-user=tux
 autologin-timeout=0
 ```
 
+<a id="investigation"></a>
+
+### Investigation of failed jobs
+
+The "Investigation" tab of a failed job, also available as JSON from
+`/tests/<job id>/investigation_ajax`, lists what changed since the last good
+job in the same scenario. For jobs with failed modules the keys
+`failure_test_log` and `failure_needles_log` only list the commits to the files
+that are involved in the failure:
+
+- test code files named in the stack traces of the failed modules, or else the
+  module's own file
+- needles considered by failed screen checks and needles with the tags of those
+  checks
+
+The commits are taken from the checkouts on the web UI host, up to the commit
+the job was tested with (`TEST_GIT_HASH`, `NEEDLES_GIT_HASH`). Without a last
+good job the commits of the 5 days before the job started are listed. Each line
+is `<10-char sha> <title> (#<pull request>)`; the pull request is added if
+the commit was merged by a "Merge pull request" commit. Jobs with a `CASEDIR`
+that is a URL or absolute path usually have no matching checkout on the web UI
+host, which is reported instead of a log.
+
 <a id="carry-over"></a>
 
 ### Carry over of bug references from previous jobs in same scenario

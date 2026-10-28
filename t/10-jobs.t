@@ -538,6 +538,93 @@ subtest 'carry over, including soft-fails' => sub {
         like $inv->{diff_packages_to_last_good}, qr/^\+python/m, 'diff packages for job is shown';
     };
 
+    subtest 'investigation lists recent changes to files involved in the failure' => sub {
+        my $repo = tempdir;
+        my $git = sub (@args) { system 'git', '-C', "$repo", '-c', 'commit.gpgsign=false', @args };
+        local @ENV{qw(GIT_AUTHOR_NAME GIT_AUTHOR_EMAIL GIT_COMMITTER_NAME GIT_COMMITTER_EMAIL)}
+          = qw(t t@e.com t t@e.com);
+        my $commit = sub ($file, $message, $content = $message, $date = time) {
+            local @ENV{qw(GIT_AUTHOR_DATE GIT_COMMITTER_DATE)} = ("$date +0000") x 2;
+            $repo->child($file)->dirname->make_path;
+            $repo->child($file)->spew($content);
+            $git->(qw(add -A));
+            $git->(qw(commit -q -m), $message);
+            chomp(my $hash = qx{git -C "$repo" rev-parse HEAD});
+            return $hash;
+        };
+        my $needle = '{"tags": ["foo-tag"]}';
+        $git->(qw(init -q -b main));
+        $commit->('tests/x.pm', 'Ancient change', 'Ancient change', 946_684_800);
+        $git->(qw(switch -q -c feature));
+        $commit->('tests/x.pm', 'Break x');
+        $commit->('tests/unrelated.pm', 'Unrelated');
+        $git->(qw(switch -q main));
+        $git->(qw(merge -q --no-ff -m), 'Merge pull request #42 from fork/feature', 'feature');
+        chomp(my $merge = qx{git -C "$repo" rev-parse HEAD});
+        $commit->('tests/x.pm', 'Squash fix (#43)');
+        $commit->('needles/foo-1.png', 'Add foo needle png');
+        $commit->('needles/foo-1.json', 'Add foo needle', $needle);
+        $commit->('needles/bar.json', 'Add bar needle', '{"tags": ["bar"]}');
+        my $head = $commit->('needles/foo-2.json', 'Retag needle', '{"tags": ["foo-tag", "other"]}');
+        my $outside = tempdir->child('outside.pm')->spew('x');
+        symlink $outside, $repo->child('tests/link.pm');
+
+        my $trace = join "\n", '# Test died: oops', '--- # stack trace',
+          "testapi::assert_script_run('x') called at tests/x.pm line 19",
+          'prepare::y at /var/lib/openqa/pool/1/tests/missing.pm line 7', 'at ../outside.pm line 3',
+          'at tests/link.pm line 5', 'at .git/hook.pm line 1';
+        my $needle_step = {result => 'fail', tags => ['foo-tag', 'v1.2'], needles => [{json => 'foo-1.json'}]};
+        my $text_step = {result => 'fail', text_data => "no candidate needle with tag(s) 'bar, baz'"};
+        $job->update_module('b',
+            {result => 'fail', details => [{result => 'fail', text_data => $trace}, $needle_step, $text_step]});
+        $job->insert_module({name => 'c', category => 'c', script => 'tests/x.pm', flags => {}});
+        $job->update_module('c', {result => 'fail', details => []});
+
+        my $job_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs', no_auto => 1);
+        $job_mock->redefine(testcasedir => sub (@) { "$repo" });
+        $job_mock->redefine(needledir => sub (@) { $repo->child('needles')->to_string });
+        my $set_vars = sub ($j, $hash) {
+            path($j->result_dir, 'vars.json')->spew(encode_json {TEST_GIT_HASH => $hash, NEEDLES_GIT_HASH => $hash});
+        };
+        my $last_good = ($job->_previous_scenario_jobs)[1];
+        $set_vars->($job, $head);
+
+        subtest 'window before the job started without last good vars.json' => sub {
+            unlink path($last_good->result_dir, 'vars.json');
+            my $inv = $job->investigate;
+            my $log = $inv->{failure_test_log};
+            like $log, qr/^[0-9a-f]{10} Break x \(#42\)$/m, 'commit merged via merge commit links its pull request';
+            like $log, qr/^[0-9a-f]{10} Squash fix \(#43\)$/m, 'pull request of squashed commit not added twice';
+            like $log, qr/tests\/x\.pm \|/, 'diff stat of involved file shown';
+            unlike $log, qr/Ancient change/, 'commit older than the window not listed';
+            unlike $log, qr/Unrelated|link\.pm|missing\.pm|outside\.pm|hook\.pm/, 'uninvolved or unsafe files ignored';
+            $log = $inv->{failure_needles_log};
+            like $log, qr/^[0-9a-f]{10} Add foo needle$/m, 'commit of candidate needle listed';
+            like $log, qr/foo-1\.png/, 'png of candidate needle considered';
+            like $log, qr/^[0-9a-f]{10} Retag needle$/m, 'commit changing a needle with the failed tag listed';
+            like $log, qr/^[0-9a-f]{10} Add bar needle$/m, 'tag from text of failed step considered';
+            is scalar(() = $log =~ /Add foo needle$/mg), 1, 'commits found twice only listed once';
+        };
+
+        subtest 'range to the last good job' => sub {
+            $set_vars->($last_good, $merge);
+            my $inv = $job->investigate(git_limit => 200);
+            unlike $inv->{failure_test_log}, qr/Break x/, 'commits before the last good job not listed';
+            like $inv->{failure_test_log}, qr/Squash fix \(#43\)/, 'commits after the last good job listed';
+            $set_vars->($last_good, $head);
+            $inv = $job->investigate(git_limit => 200);
+            is $inv->{failure_test_log}, 'No recent changes to the test files involved in the failure', 'no changes';
+            like $inv->{failure_needles_log}, qr/^No recent changes to the needles/, 'no needle changes';
+        };
+
+        subtest 'tested commit not available' => sub {
+            $set_vars->($job, 'a' x 40);
+            my $inv = $job->investigate(git_limit => 200);
+            like $inv->{failure_test_log}, qr/unknown or not available/, 'message about missing commit';
+            like $inv->{failure_needles_log}, qr/unknown or not available/, 'message for needles as well';
+        };
+    };
+
     subtest 'external hook is called on done job if specified' => sub {
         my $task_mock = Test::MockModule->new('OpenQA::Task::Job::HookScript', no_auto => 1);
         $task_mock->redefine(

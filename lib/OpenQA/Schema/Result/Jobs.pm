@@ -37,8 +37,10 @@ use Text::Diff;
 use OpenQA::File;
 use OpenQA::Parser 'parser';
 use OpenQA::WebSockets::Client;
-use List::Util qw(any all);
+use List::Util qw(any all uniq);
 use Scalar::Util qw(looks_like_number);
+use Cwd ();
+use Time::Piece ();
 # The state and results constants are duplicated in the Python client:
 # if you change them or add any, please also update const.py.
 
@@ -53,6 +55,10 @@ use constant MAIN_SETTINGS => qw(DISTRI VERSION FLAVOR ARCH TEST MACHINE BUILD);
 
 use constant MAX_LENGTH_REASON => 300;
 use constant JOB_INVESTIGATE_GIT_TIMEOUT => 20;
+use constant JOB_INVESTIGATE_FAILURE_WINDOW_DAYS => 5;
+use constant JOB_INVESTIGATE_FAILURE_MODULES_MAX => 3;
+use constant JOB_INVESTIGATE_FAILURE_FILES_MAX => 50;
+use constant JOB_INVESTIGATE_PULL_REQUESTS_MAX => 200;
 use constant RETURN_CODE_TIMEOUT_EXCEEDED => 124;    # see `man timeout`
 
 __PACKAGE__->table('jobs');
@@ -1938,11 +1944,16 @@ sub git_log_diff ($self, $dir, $refspec_range, %options) {
     return "Invalid range $refspec_range" if $refspec_range =~ m/UNKNOWN|unreadable git hash/;
     my $limit = $options{limit};
     my $stat = $options{stat} // '300,200';
+    my @abbrev = $options{abbrev} ? "--abbrev=$options{abbrev}" : ();
+    my @since = $options{since} ? "--since=$options{since}" : ();
+    my @pickaxe = $options{pickaxe} ? "-G$options{pickaxe}" : ();
+    my @paths = $options{paths} ? ('--', @{$options{paths}}) : ();
+    my @timeout = $options{timeout} ? ('timeout', $options{timeout}) : ();
     my $res = run_cmd_with_log_return_error(
         [
-            'git', '-C', $dir, 'log',
-            ($limit ? "-$limit" : ()), "--stat=$stat", '--pretty=oneline', '--abbrev-commit',
-            '--no-merges', $refspec_range
+            @timeout, 'git', '-C', $dir, 'log', ($limit ? "-$limit" : ()),
+            "--stat=$stat", '--pretty=oneline',
+            '--abbrev-commit', @abbrev, '--no-merges', @since, @pickaxe, $refspec_range, @paths
         ],
         stdout => 'trace'
     );
@@ -1980,6 +1991,126 @@ sub git_diff ($self, $dir, $refspec_range, $limit = undef) {
     return $out;
 }
 
+# returns the path relative to the git checkout $dir, i.e. the longest suffix of $path that is a file in there
+sub _repo_file ($dir, $path) {
+    return undef unless defined $path && defined(my $root = Cwd::realpath($dir));
+    my @parts = grep { length } split m{/}, $path;
+    return undef if any { $_ eq '..' || $_ eq '.git' } @parts;
+    for (; @parts; shift @parts) {
+        my $rel = join '/', @parts;
+        next unless -f "$root/$rel";
+        my $real = Cwd::realpath("$root/$rel");
+        return $rel if defined $real && index($real, "$root/") == 0;
+    }
+    return undef;
+}
+
+sub _git_has_commit ($dir, $hash) {
+    return 0 unless defined $hash && $hash =~ m/^[0-9a-f]{7,40}$/i;
+    return run_cmd_with_log_return_error(['git', '-C', $dir, 'cat-file', '-e', "$hash^{commit}"])->{status};
+}
+
+# returns the test files and needle files/tags involved in the failed modules, found via their stack traces
+# and failed screen steps, as array references
+sub _failed_module_inputs ($self, $casedir, $needles_dir) {
+    my (@files, @needle_files, @tags);
+    my %attrs = (order_by => 't_updated', rows => JOB_INVESTIGATE_FAILURE_MODULES_MAX);
+    my $modules = $self->modules->search({result => 'failed'}, \%attrs);
+    while (my $module = $modules->next) {
+        my @steps = grep { ($_->{result} // '') eq 'fail' } @{$module->results->{details} // []};
+        my @module_files = map { _repo_file($casedir, $_) // () } map { /(\S+\.(?:pm|py)) line \d+/g }
+          map { $_->{text_data} // () } @steps;
+        push @files, @module_files ? @module_files : (_repo_file($casedir, $module->script) // ());
+        for my $step (@steps) {
+            for my $needle (map { _repo_file($needles_dir, $_->{json}) // () } @{$step->{needles} // []}) {
+                my $png = $needle =~ s/\.json$/.png/r;
+                push @needle_files, $needle, $png ne $needle && -f "$needles_dir/$png" ? $png : ();
+            }
+            my @missing = ($step->{text_data} // '') =~ /no candidate needle with tag\(s\) '([^']+)'/g;
+            push @tags, grep { /^[A-Za-z0-9_.:+-]+$/ } @{$step->{tags} // []}, map { split /[\s,]+/ } @missing;
+        }
+    }
+    my @inputs = map { [uniq @$_] } \@files, \@needle_files, \@tags;
+    splice @$_, JOB_INVESTIGATE_FAILURE_FILES_MAX for @inputs;
+    return @inputs;
+}
+
+sub _failure_window_start ($self) {
+    my $started = $self->get_column('t_started');
+    my $epoch = $started ? Time::Piece->strptime($started =~ s/\..*//r, '%Y-%m-%d %H:%M:%S')->epoch : time;
+    return $epoch - JOB_INVESTIGATE_FAILURE_WINDOW_DAYS * 24 * 60 * 60;
+}
+
+# adds " (#<number>)" to commits that were merged via a "Merge pull request #<number>" merge commit
+sub _annotate_pull_requests ($self, $dir, $log, $range, %options) {
+    my %pending = map { $_ => 1 } $log =~ /^([0-9a-f]{10}) (?!.*\(#\d+\)$)/mg;
+    return $log unless %pending;
+    my $timeout = OpenQA::App->singleton->config->{global}->{job_investigate_git_timeout}
+      // JOB_INVESTIGATE_GIT_TIMEOUT;
+    my @git = ('timeout', $timeout, 'git', '-C', $dir);
+    my @merges_cmd = (
+        @git, 'log', '--first-parent', '--merges',
+        '--pretty=%H %s',
+        '-' . JOB_INVESTIGATE_PULL_REQUESTS_MAX,
+        ($options{since} ? "--since=$options{since}" : ()), $range
+    );
+    my %pull_request;
+    for my $merge (split /\n/, run_cmd_with_log_return_error(\@merges_cmd, stdout => 'trace')->{stdout}) {
+        next unless $merge =~ m/^([0-9a-f]{40}) Merge pull request #(\d+) /;
+        my ($merge_hash, $number) = ($1, $2);
+        my $commits = run_cmd_with_log_return_error([@git, 'rev-list', '--no-merges', "$merge_hash^1..$merge_hash"]);
+        $pull_request{$_} = $number for grep { delete $pending{$_} } $commits->{stdout} =~ /^([0-9a-f]{10})/mg;
+        last unless %pending;
+    }
+    $log =~ s/^([0-9a-f]{10}) (.*)$/exists $pull_request{$1} ? "$1 $2 (#$pull_request{$1})" : "$1 $2"/mge;
+    return $log;
+}
+
+# lists commits to the files of the $selections (git log options) between the last good and this job, or else
+# within the window before this job started
+sub _failure_log ($self, $dir, $self_hash, $prev_hash, $selections, %options) {
+    return 'Tested git commit is unknown or not available on this host, cannot list changes'
+      unless _git_has_commit($dir, $self_hash);
+    my $timeout = OpenQA::App->singleton->config->{global}->{job_investigate_git_timeout}
+      // JOB_INVESTIGATE_GIT_TIMEOUT;
+    my %git = (limit => $options{limit}, abbrev => 10, timeout => $timeout);
+    my $has_range = _git_has_commit($dir, $prev_hash);
+    my $range = $has_range ? "$prev_hash..$self_hash" : $self_hash;
+    $git{since} = $self->_failure_window_start unless $has_range;
+    my $log = join '', map { $self->git_log_diff($dir, $range, %git, %$_) } @$selections;
+    my %seen;
+    $log = join '', grep { !$seen{/^(\S+)/ ? $1 : ''}++ } split /(?=^[0-9a-f]{10} )/m, $log;
+    return $log ? $self->_annotate_pull_requests($dir, $log, $range, since => $git{since}) : '';
+}
+
+# commits to the files named in the stack traces and to the needles of the failed screen steps
+sub _failure_investigation ($self, $prev_vars, %args) {
+    return () unless $self->has_failed_modules && $self->result_dir;
+    my $self_vars = eval { decode_json(path($self->result_dir, 'vars.json')->slurp) } or return ();
+    my $effective_distri = effective_distri($self_vars);
+    my $casedir = testcasedir($effective_distri, $self->VERSION);
+    my $needles_dir = needledir($effective_distri, $self->VERSION);
+    my ($files, $needle_files, $tags) = $self->_failed_module_inputs($casedir, $needles_dir);
+    my ($prev_test, $prev_needles) = map { $prev_vars->{$_} } qw(TEST_GIT_HASH NEEDLES_GIT_HASH);
+    my %inv;
+    if (@$files) {
+        my @selections = ({paths => [map { ":(literal)$_" } @$files]});
+        $inv{failure_test_log} = $self->_failure_log($casedir, $self_vars->{TEST_GIT_HASH},
+            $prev_test, \@selections, limit => $args{git_limit})
+          || 'No recent changes to the test files involved in the failure';
+    }
+    if (@$needle_files || @$tags) {
+        my @selections;
+        push @selections, {paths => [map { ":(literal)$_" } @$needle_files]} if @$needle_files;
+        my $pattern = join '|', map { s/([.+])/\\$1/gr } @$tags;
+        push @selections, {pickaxe => qq{"($pattern)"}, paths => ['*.json']} if @$tags;
+        $inv{failure_needles_log} = $self->_failure_log($needles_dir, $self_vars->{NEEDLES_GIT_HASH},
+            $prev_needles, \@selections, limit => $args{git_limit})
+          || 'No recent changes to the needles involved in the failure';
+    }
+    return %inv;
+}
+
 =head2 investigate
 
 Find pointers for investigation on failures, e.g. what changed vs. a "last
@@ -1992,8 +2123,12 @@ sub investigate ($self, %args) {
     # this job's own isolated history (e.g. the same PR), not an unrelated one
     my $isolation_keys = exists $args{isolation_keys} ? $args{isolation_keys} : undef;
     my @previous = $self->_previous_scenario_jobs(undef, {}, $isolation_keys);
-    return {error => 'No previous job in this scenario, cannot provide hints'} unless @previous;
+    return {
+        error => 'No previous job in this scenario, cannot provide hints',
+        $self->_failure_investigation({}, %args)}
+      unless @previous;
     my %inv;
+    my $prev_vars = {};
     return {error => 'No result directory available for current job'} unless $self->result_dir();
     my $ignore = OpenQA::App->singleton->config->{global}->{job_investigate_ignore};
     my $self_file = eval { Mojo::File->new($self->result_dir(), 'vars.json')->slurp };
@@ -2007,6 +2142,7 @@ sub investigate ($self, %args) {
         $inv{last_good} = {type => 'link', link => '/tests/' . $prev->id, text => $prev->id};
         last unless $prev->result_dir;
         my $prev_file = eval { Mojo::File->new($prev->result_dir(), 'vars.json')->slurp };
+        $prev_vars = eval { decode_json($prev_file // '{}') } // {};
         $inv{diff_packages_to_last_good} = $self->packages_diff($prev, $ignore, 'worker_packages.txt');
         $inv{diff_sut_packages_to_last_good} = $self->packages_diff($prev, $ignore, 'sut_packages.txt');
         last unless $self_file && $prev_file;
@@ -2014,7 +2150,6 @@ sub investigate ($self, %args) {
         # files missing. This is a best-effort approach.
         my $diff = eval { diff(\$prev_file, \$self_file, {CONTEXT => 0}) };
         $inv{diff_to_last_good} = join "\n", grep { !/(?:^@@|$ignore)/ } split /\n/, $diff;
-        my $prev_vars = decode_json($prev_file // '{}');
         my $effective_distri = effective_distri($self_vars);
         my $casedir = testcasedir($effective_distri, $self->VERSION);
         my $refspec_range = "$prev_vars->{TEST_GIT_HASH}..$self_vars->{TEST_GIT_HASH}";
@@ -2035,6 +2170,7 @@ sub investigate ($self, %args) {
         last;
     }
     $inv{last_good} //= 'not found';
+    %inv = (%inv, $self->_failure_investigation($prev_vars, %args));
     $inv{testgiturl} = git_commit_url($self_vars->{TEST_GIT_URL});
     $inv{needlegiturl} = git_commit_url($self_vars->{NEEDLES_GIT_URL});
     return \%inv;
