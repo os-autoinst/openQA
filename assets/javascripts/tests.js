@@ -320,26 +320,23 @@ function renderTestLists() {
       }
     ]
   });
+  let scheduledTotal = 0;
   $('#scheduled').DataTable({
     order: [], // no initial resorting
     ajax: {
       url: urlWithBase('/tests/list_scheduled_ajax?') + ajaxQueryParams.toString(),
       dataSrc: function (json) {
         // update heading when JSON is available
-        let blockedCount = 0;
+        scheduledTotal = json.total_count;
         const reasons = {};
         json.data.forEach(row => {
-          if (row && row.blocked_by_id) {
-            ++blockedCount;
-          }
           if (row && row.reason) {
             reasons[row.reason] = (reasons[row.reason] || 0) + 1;
           }
         });
-        let text = `${json.total_count ?? json.data.length} scheduled jobs`;
-        const blocked = json.blocked_count ?? blockedCount;
-        if (blocked > 0) {
-          text += ` (${blocked} blocked by other jobs)`;
+        let text = `${scheduledTotal} scheduled jobs`;
+        if (json.blocked_count > 0) {
+          text += ` (${json.blocked_count} blocked by other jobs)`;
         }
         $('#scheduled_jobs_heading').text(text);
         $('#scheduled_jobs_warning').toggleClass('d-none', !json.job_skipped_by_disk_limits);
@@ -387,7 +384,17 @@ function renderTestLists() {
         className: 'time',
         render: renderTimeAgo
       }
-    ]
+    ],
+    layout: {
+      bottomStart: {
+        info: {
+          callback: function (settings, start, end, max, total) {
+            const entries = total < max ? total : scheduledTotal;
+            return `Showing ${start} to ${end} of ${entries} ${entries === 1 ? 'entry' : 'entries'}`;
+          }
+        }
+      }
+    }
   });
   const makeAjaxUrlWithFiltering = () => {
     filters.forEach(filter => {
