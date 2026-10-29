@@ -207,31 +207,53 @@ subtest 'Advanced query parameters' => sub {
 };
 
 subtest 'summary card border' => sub {
+    $schema->txn_begin;
+
     my $softfailed_job = create_job(
-        result => OpenQA::Jobs::Constants::SOFTFAILED,
+        result => SOFTFAILED,
         TEST => 'softfailed_test',
         VERSION => 'SoftFailVersion',
         DISTRI => 'softfail_distri',
     );
-
-    $t->get_ok('/tests/overview' => form => {distri => 'softfail_distri', version => 'SoftFailVersion'})
-      ->status_is(200);
-    $t->element_exists('#summary.border-success', 'softfailed results in border-success');
+    $t->get_ok('/tests/overview' => form => {distri => 'softfail_distri', version => 'SoftFailVersion'});
+    $t->status_is(200);
+    $t->element_exists('#summary.border-warning', 'softfailed results in border-warning');
     $t->element_exists_not('#summary.border-danger', 'softfailed does NOT result in border-danger');
+    $t->element_exists_not('#summary.border-success', 'softfailed does NOT result in border-success');
 
     my $failed_job = create_job(
-        result => OpenQA::Jobs::Constants::FAILED,
+        result => FAILED,
         TEST => 'failed_test',
         VERSION => 'SoftFailVersion',
         DISTRI => 'softfail_distri',
     );
-
-    $t->get_ok('/tests/overview' => form => {distri => 'softfail_distri', version => 'SoftFailVersion'})
-      ->status_is(200);
+    $t->get_ok('/tests/overview' => form => {distri => 'softfail_distri', version => 'SoftFailVersion'});
+    $t->status_is(200);
     $t->element_exists('#summary.border-danger', 'failed + softfailed results in border-danger');
 
-    $softfailed_job->delete();
-    $failed_job->delete();
+    my $scheduled_job = create_job(
+        state => SCHEDULED,
+        TEST => 'scheduled_test',
+        VERSION => 'SoftFailVersion',
+        DISTRI => 'softfail_distri',
+    );
+    $t->get_ok('/tests/overview' => form => {distri => 'softfail_distri', version => 'SoftFailVersion'});
+    $t->status_is(200);
+    $t->element_exists('#summary.border-info', 'scheduled + failed + softfailed results in border-info');
+
+    my $running_job = create_job(
+        state => RUNNING,
+        TEST => 'running_test',
+        VERSION => 'SoftFailVersion',
+        DISTRI => 'softfail_distri',
+    );
+
+    $t->get_ok('/tests/overview' => form => {distri => 'softfail_distri', version => 'SoftFailVersion'});
+    $t->status_is(200);
+    $t->element_exists('#summary.border-primary',
+        'running + scheduled + failed + softfailed results in border-primary');
+
+    $schema->txn_rollback;
 };
 
 subtest 'clickable summary buttons' => sub {
@@ -575,15 +597,69 @@ subtest 'aggregate favicon' => sub {
     $t->element_exists('link#favicon-16[href*="logo-aggregate-running-16.png"]', 'running favicon (16x16) exists');
     $t->element_exists('link#favicon-svg[href*="logo-aggregate-running.svg"]', 'running favicon (svg) exists');
 
-    $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048'})
-      ->status_is(200);
+    $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048'});
+    $t->status_is(200);
     $t->element_exists('link#favicon-16[href*="logo-aggregate-failed-16.png"]', 'failed favicon (16x16) exists');
     $t->element_exists('link#favicon-svg[href*="logo-aggregate-failed.svg"]', 'failed favicon (svg) exists');
 
-    $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1', result => 'passed'})
-      ->status_is(200);
+    $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1', result => 'passed'});
+    $t->status_is(200);
     $t->element_exists('link#favicon-16[href*="logo-aggregate-passed-16.png"]', 'passed favicon (16x16) exists');
     $t->element_exists('link#favicon-svg[href*="logo-aggregate-passed.svg"]', 'passed favicon (svg) exists');
+
+    my $soft_job = create_job(
+        result => SOFTFAILED,
+        TEST => 'soft_test',
+        VERSION => 'FaviconVersion',
+        DISTRI => 'favicon_distri',
+    );
+    $t->get_ok('/tests/overview' => form => {distri => 'favicon_distri', version => 'FaviconVersion'})->status_is(200);
+    $t->element_exists('link#favicon-16[href*="logo-aggregate-softfailed-16.png"]',
+        'softfailed favicon (16x16) exists');
+    $t->element_exists('link#favicon-svg[href*="logo-aggregate-softfailed.svg"]', 'softfailed favicon (svg) exists');
+
+    my $sched_job = create_job(
+        state => SCHEDULED,
+        TEST => 'sched_test',
+        VERSION => 'FaviconVersion',
+        DISTRI => 'favicon_distri',
+    );
+    $t->get_ok('/tests/overview' => form => {distri => 'favicon_distri', version => 'FaviconVersion'})->status_is(200);
+    $t->element_exists(
+        'link#favicon-16[href*="logo-aggregate-scheduled-16.png"]',
+        'scheduled favicon (16x16) exists when softfailed + scheduled'
+    );
+    $t->element_exists(
+        'link#favicon-svg[href*="logo-aggregate-scheduled.svg"]',
+        'scheduled favicon (svg) exists when softfailed + scheduled'
+    );
+
+    my $run_job = create_job(
+        state => RUNNING,
+        TEST => 'run_test',
+        VERSION => 'FaviconVersion',
+        DISTRI => 'favicon_distri'
+    );
+    $t->get_ok('/tests/overview' => form => {distri => 'favicon_distri', version => 'FaviconVersion'})->status_is(200);
+    $t->element_exists(
+        'link#favicon-16[href*="logo-aggregate-running-16.png"]',
+        'running favicon (16x16) exists when softfailed + scheduled + running'
+    );
+    $t->element_exists(
+        'link#favicon-svg[href*="logo-aggregate-running.svg"]',
+        'running favicon (svg) exists when softfailed + scheduled + running'
+    );
+
+    my $canc_job = create_job(
+        state => CANCELLED,
+        TEST => 'canc_test',
+        VERSION => 'FaviconVersion2',
+        DISTRI => 'favicon_distri2',
+    );
+    $t->get_ok('/tests/overview' => form => {distri => 'favicon_distri2', version => 'FaviconVersion2'});
+    $t->status_is(200);
+    $t->element_exists('link#favicon-16[href*="logo-aggregate-aborted-16.png"]',
+        'cancelled maps to aborted aggregate favicon');
 };
 
 subtest 'Job group filtering and truncation' => sub {

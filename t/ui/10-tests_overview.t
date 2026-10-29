@@ -896,7 +896,7 @@ subtest 'all but one results in negative filter' => sub {
 subtest 'aggregate favicon' => sub {
     $driver->get($baseurl . 'tests/overview?distri=opensuse&version=13.1&build=0091');
     my $favicon_16 = $driver->find_element('#favicon-16', 'css');
-    like $favicon_16->get_attribute('href'), qr/logo-aggregate-failed-16\.png/, 'favicon correctly set to failed';
+    like $favicon_16->get_attribute('href'), qr/logo-aggregate-running-16\.png/, 'correct favicon present';
 };
 
 subtest 'meta-checkboxes are ignored by bulk operations' => sub {

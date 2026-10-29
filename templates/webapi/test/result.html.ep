@@ -27,7 +27,7 @@
 
 <div class="row" id="result-row">
     <div class="col-sm-12">
-        <div id="info_box" data-src="<%= url_for('test_infopanel', testid => $testid) %>">
+        <div id="info_box" class="card <%= status_border_class($job->concise_result) %>" data-src="<%= url_for('test_infopanel', testid => $testid) %>">
         %= include 'test/infopanel', worker => $assigned_worker, additional_data => 0
         </div>
         <div role="tabpanel">

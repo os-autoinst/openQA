@@ -695,6 +695,21 @@ subtest ansiToHtml => sub {
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
+subtest 'infopanel class' => sub {
+    $t->get_ok('/tests/99927')->status_is(200)
+      ->element_exists('#info_box.card.border-info', 'scheduled job gets border-info');
+    $t->get_ok('/tests/99963')->status_is(200)
+      ->element_exists('#info_box.card.border-primary', 'running job gets border-primary');
+    $t->get_ok('/tests/99936')->status_is(200)
+      ->element_exists('#info_box.card.border-warning', 'softfailed job gets border-warning');
+    $t->get_ok('/tests/99938')->status_is(200)
+      ->element_exists('#info_box.card.border-danger', 'failed job gets border-danger');
+    $t->get_ok('/tests/99937')->status_is(200)
+      ->element_exists('#info_box.card.border-success', 'passed job gets border-success');
+    $t->get_ok('/tests/99928')->status_is(200)
+      ->element_exists('#info_box.card.border-info', 'blocked job gets border-info');
+};
+
 subtest 'GRU dependency shown in infopanel' => sub {
     my $job = $jobs->find(99927);
     $job->update({state => SCHEDULED, result => NONE});

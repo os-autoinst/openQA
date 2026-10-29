@@ -689,9 +689,15 @@ function deactivateTab(tabName) {
 }
 
 function setInfoPanelClassName(jobState, jobResult) {
-  const panelClassByResult = {passed: 'border-success', softfailed: 'border-warning'};
+  const panelClassByStatus = {
+    running: 'border-primary',
+    scheduled: 'border-info',
+    passed: 'border-success',
+    softfailed: 'border-warning'
+  };
+  const status = jobState !== 'done' ? jobState : jobResult;
   document.getElementById('info_box').className =
-    'card ' + (jobState !== 'done' ? 'border-info' : panelClassByResult[jobResult] || 'border-danger');
+    'card ' + (panelClassByStatus[status] || (jobState !== 'done' ? 'border-info' : 'border-danger'));
 }
 
 function setupResult(jobid, state, result, status_url) {
