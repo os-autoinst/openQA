@@ -33,6 +33,8 @@ has 'service_port_delta';    # delta from web UI port on which to directly conne
 # the websocket connection to receive commands from the web UI and send the status (Mojo::Transaction::WebSockets instance)
 has 'websocket_connection';
 
+my $HEALTH_CHECK_WARNING = 'Health check failed, not accepting new jobs until this problem is resolved';
+
 sub new ($class, $webui_host, $cli_options) {
     my $url = $webui_host !~ '/' ? Mojo::URL->new->scheme('http')->host_port($webui_host) : Mojo::URL->new($webui_host);
     my $ua = OpenQA::Client->new(
@@ -405,6 +407,7 @@ sub send_status_delayed ($self) {
     return undef if $self->{_send_status_timer} || !$self->websocket_connection;
 
     # re-evaluate the error status after just a few seconds if the current error is ephemeral
+    my $worker = $self->worker;
     return $self->{_send_status_timer} = Mojo::IOLoop->timer(
         EPHEMERAL_RECHECK_INTERVAL,
         sub {
@@ -413,13 +416,14 @@ sub send_status_delayed ($self) {
             return $self->send_status(status => $status) unless $worker->current_error;
             delete $self->{_send_status_timer};
             $self->send_status_delayed;
-        }) if $self->worker->current_error_is_ephemeral;
+        }) if $worker->current_error_is_ephemeral;
 
-    my $status_update_interval = $self->calculate_status_update_interval;
-    my $webui_host = $self->webui_host;
-    my $reason = ($self->{_last_worker_status} // {})->{reason};
-    log_warning "$reason - checking again for web UI '$webui_host' in $status_update_interval s" if $reason;
-    $self->{_send_status_timer} = Mojo::IOLoop->timer($status_update_interval, sub { $self->send_status });
+    my $interval = $self->calculate_status_update_interval;
+    if (my $reason = ($self->{_last_worker_status} // {})->{reason}) {
+        my $for = @{$worker->settings->webui_hosts} > 1 ? sprintf(" for web UI '%s'", $self->webui_host) : '';
+        log_warning "$HEALTH_CHECK_WARNING: $reason - checking again$for in $interval s";
+    }
+    $self->{_send_status_timer} = Mojo::IOLoop->timer($interval, sub { $self->send_status });
 }
 
 # send "quit" message when intentionally "going offline" so the worker is immediately considered
