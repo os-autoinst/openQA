@@ -7,6 +7,7 @@ package Test::FakeSettings {
     use Mojo::Base -base;
     has global_settings => sub { {RETRIES => 3, RETRY_DELAY => 10, RETRY_DELAY_IF_WEBUI_BUSY => 90} };
     has webui_host_specific_settings => sub { {} };
+    has webui_hosts => sub { [] };
 }
 
 has pool_directory => undef;
