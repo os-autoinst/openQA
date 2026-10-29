@@ -195,7 +195,10 @@ sub create_from_settings ($self, $settings, $scheduled_product_id = undef) {
 sub _update_priority ($value, $throt_config, $job_args) {
     my $scale = $throt_config->{scale} // 0;
     my $reference = $throt_config->{reference} // 0;
-    my $prio = int(($value - $reference) * $scale);
+    # settings like RETRY=<count>:<reason> carry a numeric prefix, the rest is a description (see handle_retry)
+    my $numeric = $value =~ s/:.*//r;
+    $numeric = 0 unless looks_like_number $numeric;
+    my $prio = int(($numeric - $reference) * $scale);
     $job_args->{priority} += $prio;
     my $sign = $prio >= 0 ? '+' : '';
     return " [$sign$prio: value $value, scale $scale" . ($reference ? ", reference $reference]" : ']');
