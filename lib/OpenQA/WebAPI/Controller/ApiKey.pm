@@ -6,6 +6,7 @@ use Mojo::Base 'Mojolicious::Controller', -signatures;
 use Feature::Compat::Try;
 
 use DateTime::Format::Pg;
+use OpenQA::Constants 'API_KEY_COMMENT_MAX_LENGTH';
 
 sub index ($self) {
     my @keys = $self->current_user->api_keys;
@@ -17,6 +18,7 @@ sub create ($self) {
     my $expiration;
     my $validation = $self->validation;
     $validation->optional('t_expiration', 'seconds_optional')->datetime;
+    $validation->optional('comment')->size(0, API_KEY_COMMENT_MAX_LENGTH);
 
     my $error;
     if ($validation->has_error) {
@@ -28,7 +30,14 @@ sub create ($self) {
         catch ($e) { $error = $e }    # uncoverable statement
     }
     unless ($error) {
-        try { $self->schema->resultset('ApiKeys')->create({user_id => $user->id, t_expiration => $expiration}) }
+        try {
+            $self->schema->resultset('ApiKeys')->create(
+                {
+                    user_id => $user->id,
+                    t_expiration => $expiration,
+                    comment => $validation->param('comment'),
+                });
+        }
         catch ($e) { $error = $e }    # uncoverable statement
     }
     if ($error) {
