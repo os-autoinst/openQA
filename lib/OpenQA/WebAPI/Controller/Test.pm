@@ -18,7 +18,7 @@ use Mojo::File 'path';
 use File::Basename;
 use POSIX 'strftime';
 use Mojo::JSON qw(to_json decode_json);
-use List::Util qw(any min);
+use List::Util qw(any min uniq);
 use HTTP::Status qw(:constants);
 
 use constant DEPENDENCY_DEBUG_INFO => $ENV{OPENQA_DEPENDENCY_DEBUG_INFO};
@@ -755,6 +755,12 @@ sub job_next_previous_ajax ($self) {
     my ($children_by_job, $parents_by_job) = $self->_fetch_dependencies_by_jobs($job_ids);
     my $ancestors_by_job = $jobs_rs->ancestors_count_for_jobs($job_ids);
 
+    # Batch query workers: JobNextPrevious overrides `from` with a custom CTE SQL
+    # for history isolation, where DBIx::Class relationship prefetch is not supported.
+    my @worker_ids = uniq grep { defined } map { $_->assigned_worker_id } @jobs;
+    my %worker_names_by_id
+      = map { $_->id => $_->name } $schema->resultset('Workers')->search({id => {-in => \@worker_ids}})->all;
+
     my $comment_data = $self->schema->resultset('Comments')->comment_data_for_jobs(\@jobs, {bugdetails => 1});
     my (@data, @info);
     my %source_count;    # keep track of how many jobs of which source (latest, next, previous) we got for limiting
@@ -771,6 +777,8 @@ sub job_next_previous_ajax ($self) {
             $rendered_data = $self->_render_comment_data_for_ajax($job_id, $cd);
         }
         my $dependencies = $job->dependencies($children_by_job->{$job_id} || [], $parents_by_job->{$job_id} || []);
+        my $worker_id = $job->assigned_worker_id;
+        my $worker_info = defined $worker_id ? {id => $worker_id, name => $worker_names_by_id{$worker_id}} : undef;
         push @data,
           {
             %{$self->_format_ajax_job($job, $ancestors_by_job->{$job_id} || 0)},
@@ -783,6 +791,7 @@ sub job_next_previous_ajax ($self) {
             duration => $job->t_started
               && $job->t_finished ? $self->format_time_duration($job->t_finished - $job->t_started) : 0,
             comment_data => $rendered_data,
+            worker => $worker_info,
           };
     }
     $data[0]->{islatest} = 1 if @data;
