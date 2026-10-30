@@ -222,7 +222,7 @@ sub _change_prio_returning_sign ($new_job_args, $adjustment) {
 
 sub _apply_prio_throttling ($self, $settings, $new_job_args, $group = undef) {
     my $debug_msg;
-    my $base_prio = $new_job_args->{priority} // 0;
+    my $base_prio = $new_job_args->{priority} //= DEFAULT_JOB_PRIORITY;
     my @throttling_info;
     my $config = OpenQA::App->singleton && OpenQA::App->singleton->config;
     if ($config && (my $throttling = $config->{misc_limits}->{prio_throttling_data})) {
