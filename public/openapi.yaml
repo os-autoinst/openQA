@@ -2876,7 +2876,9 @@ paths:
         - users
     post:
       description: >
-        Create a new API key. Returns the key, secret, and expiration.
+        Create a new API key. Accepts optional `expiration` datetime and
+        optional `comment` as form params. Returns the key, secret, comment,
+        and expiration.
       operationId: createUserApiKey
       responses:
         '200':
