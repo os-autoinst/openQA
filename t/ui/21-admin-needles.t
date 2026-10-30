@@ -66,8 +66,8 @@ sub goto_admin_needle_table () {
     $driver->find_element('#needles') or BAIL_OUT('unable to find needles table');
 }
 
-my $needles_table = goto_admin_needle_table;
-wait_for_data_table($needles_table, 2);
+goto_admin_needle_table;
+wait_for_element_count(q{#needles tbody tr}, 2);
 my @trs = $driver->find_elements('#needles tr', 'css');
 # skip header
 my @tds = $driver->find_child_elements($trs[1], 'td', 'css');
@@ -86,8 +86,8 @@ like
   qr(\Q/tests/99937#step/partitioning_finish/1\E),
   'redirected to right module';
 
-$needles_table = goto_admin_needle_table;
-wait_for_data_table($needles_table, 2);
+goto_admin_needle_table;
+wait_for_element_count(q{#needles tbody tr}, 2);
 my $last_match_text = $driver->find_element('#needles tr:nth-child(1) td:nth-child(4)')->get_text();
 $driver->find_element_by_link_text($last_match_text)->click();
 like
@@ -95,8 +95,8 @@ like
   qr(\Q/tests/99937#step/partitioning/1\E),
   'redirected to right module too';
 
-$needles_table = goto_admin_needle_table;
-wait_for_data_table($needles_table, 2);
+goto_admin_needle_table;
+wait_for_element_count(q{#needles tbody tr}, 2);
 
 subtest 'delete needle' => sub {
     # select first needle and open modal dialog for deletion
@@ -216,8 +216,8 @@ subtest 'custom needles search' => sub {
             });
     }
 
-    $needles_table = goto_admin_needle_table;
-    wait_for_data_table($needles_table, 4);
+    goto_admin_needle_table;
+    wait_for_element_count(q{#needles tbody tr}, 4);
     is $driver->find_element_by_id('custom_last_seen')->is_displayed(), 0, 'do not show last seen custom area';
     is $driver->find_element_by_id('custom_last_match')->is_displayed(), 0, 'do not show last match custom area';
 
@@ -229,7 +229,7 @@ subtest 'custom needles search' => sub {
     $driver->find_element_by_id('btn_custom_last_seen')->click();
     wait_for_ajax(msg => 'custom needle seen "last" range (default 6 months ago)', with_minion => $minion);
 
-    wait_for_data_table($needles_table, 2);
+    wait_for_element_count(q{#needles tbody tr}, 2);
     my @needle_trs = $driver->find_elements('#needles tbody tr');
     my @needle_tds = $driver->find_child_elements($needle_trs[1], 'td', 'css');
     is $needle_tds[1]->get_text(), 'five_month.json', 'search five_month needle correctly';
@@ -239,7 +239,7 @@ subtest 'custom needles search' => sub {
     $last_match_options[7]->click();
     is $driver->find_element_by_id('custom_last_match')->is_displayed(), 1, 'show last match custom area';
     $driver->find_element_by_id('btn_custom_last_match')->click();
-    wait_for_data_table($needles_table, 1);
+    wait_for_element_count(q{#needles tbody tr}, 1);
     @needle_trs = $driver->find_elements('#needles tbody tr');
     is scalar(@needle_trs), 1, 'only show five_month needle';
     @needle_tds = $driver->find_child_elements($needle_trs[0], 'td', 'css');
@@ -249,14 +249,14 @@ subtest 'custom needles search' => sub {
     my @sel_custom_last_match = $driver->find_elements('#sel_custom_last_match option');
     $sel_custom_last_seen[1]->click();
     $driver->find_element_by_id('btn_custom_last_seen')->click();
-    wait_for_data_table($needles_table, 1);
+    wait_for_element_count(q{#needles tbody tr}, 1);
     @needle_trs = $driver->find_elements('#needles tbody tr');
     @needle_tds = $driver->find_child_elements($needle_trs[0], 'td', 'css');
     is $needle_tds[0]->get_text(), 'No matching records found', 'There is no match needle';
 
     $sel_custom_last_match[1]->click();
     $driver->find_element_by_id('btn_custom_last_match')->click();
-    wait_for_data_table($needles_table, 2);
+    wait_for_element_count(q{#needles tbody tr}, 2);
     @needle_trs = $driver->find_elements('#needles tbody tr');
     @needle_tds = $driver->find_child_elements($needle_trs[1], 'td', 'css');
     is $needle_tds[1]->get_text(), 'seven_month.json', 'search seven_month needle correctly';
@@ -264,9 +264,9 @@ subtest 'custom needles search' => sub {
     is $needle_tds[1]->get_text(), 'seven_month-undef.json', 'search seven_month-undef needle correctly';
 
     $last_seen_options[0]->click();
-    wait_for_data_table($needles_table, 3);    # minimize chance for race condition, see poo#167611
+    wait_for_element_count(q{#needles tbody tr}, 3);    # minimize chance for race condition, see poo#167611
     $last_match_options[6]->click();
-    wait_for_data_table($needles_table, 4);
+    wait_for_element_count(q{#needles tbody tr}, 4);
     @needle_trs = $driver->find_elements('#needles tbody tr');
     @needle_tds = $driver->find_child_elements($needle_trs[1], 'td', 'css');
     is $needle_tds[1]->get_text(), 'five_month.json', 'search five_month needle correctly';

@@ -42,18 +42,24 @@ $t->get_ok($uri_path_from_default_data_dir)->status_is(200)
 
 $driver->get("/tests/$job_id#settings");
 note 'Finding link associated with keys_to_render_as_links';
-ok $driver->find_element_by_link($foo_path), 'configured setting key rendered as link';
-ok $driver->find_element_by_link('https://foo'), 'multi URL rendered as link (1)';
-is $driver->find_element_by_link('https://foo')->get_css_attribute('display'), 'block';
-ok $driver->find_element_by_link('http://bar'), 'multi URL rendered as link (2)';
-is $driver->find_element_by_link('http://bar')->get_css_attribute('display'), 'block';
-ok $driver->find_element_by_link('http://baz'), 'multi URL rendered as link (3)';
-is $driver->find_element_by_link('http://baz')->get_css_attribute('display'), 'block';
+my $foo_link = wait_for_element(
+    selector => $foo_path,
+    method => 'link_text',
+    description => 'configured setting key rendered as link'
+);
+for my $link_text ('https://foo', 'http://bar', 'http://baz') {
+    my $link = wait_for_element(
+        selector => $link_text,
+        method => 'link_text',
+        description => "multi URL $link_text rendered as link"
+    );
+    is $link->get_css_attribute('display'), 'block', "multi URL $link_text displayed as block";
+}
 note 'Making sure that no other settings are rendered as links';
 my @number_of_elem = $driver->find_elements('#settings_box a');
 is scalar @number_of_elem, 4, 'only configured setting keys and URLs render as links';
 note 'Checking link navigation to the source';
-$driver->find_element_by_link($foo_path)->click();
+$foo_link->click();
 is $driver->get_current_url(), "$url$uri_path_from_root_dir", 'Link is accessed with correct URI';
 
 subtest 'redirection to Git platform via CASEDIR and TEST_GIT_HASH variables' => sub {

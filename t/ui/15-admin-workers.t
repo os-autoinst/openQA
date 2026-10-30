@@ -13,6 +13,7 @@ use OpenQA::Constants 'DEFAULT_WORKER_TIMEOUT';
 use OpenQA::Test::TimeLimit '40';
 use OpenQA::Test::Case;
 use OpenQA::Test::Utils qw(assume_all_assets_exist embed_server_for_testing wait_for);
+use Time::HiRes qw(clock_gettime CLOCK_MONOTONIC);
 use Date::Format 'time2str';
 use OpenQA::WebSockets::Client;
 use OpenQA::SeleniumTest;
@@ -156,7 +157,29 @@ subtest 'delete offline worker' => sub {
     $driver->find_element(delete_button_selector($offline_worker_id))->click();
     my $e = wait_for_element(selector => 'div#flash-messages .alert span', description => 'delete message displayed');
     is $e->get_text(), 'Delete worker offline_test:1 successfully.', 'delete offline worker successfully';
-    is scalar @{$driver->find_elements('table#workers tbody tr')}, 4, 'worker deleted not shown';
+    wait_for_element_count('table#workers tbody tr', 4, description => 'worker deleted not shown');
+};
+
+subtest 'presence helpers with explicit timeout' => sub {
+    $driver->get('/admin/workers');
+    disable_bootstrap_animations;
+    $driver->find_element_by_xpath(q{//select[@id='workers_online']/option[1]})->click();
+    my $popover_trigger = wait_for_element(selector => 'tr#worker_1 .help_popover');
+    $popover_trigger->click();
+    element_visible(
+        '.popover', qr/Worker status/, undef, 'popover shown after clicking help popover trigger',
+        timeout => 4,
+        check_interval => 0.2
+    );
+    $driver->find_element('.dt-paging-button')->click();
+    wait_until_element_gone('.popover');
+};
+
+subtest 'absence check does not pay a waiting budget' => sub {
+    my $start = clock_gettime(CLOCK_MONOTONIC);
+    element_not_present('tr#worker_999999 .action [post_delete_url]', 'delete button of absent worker not present');
+    cmp_ok clock_gettime(CLOCK_MONOTONIC) - $start, '<', OpenQA::Test::TimeLimit::scale_timeout(0.5),
+      'absence check completes without waiting';
 };
 
 $driver->find_element('tr#worker_1 .worker a')->click();

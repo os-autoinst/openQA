@@ -33,8 +33,7 @@ plan skip_all => 'Install Selenium::Remote::WDKeys to run this test'
 # List with no parameters
 #
 $driver->title_is('openQA', 'on main page');
-my @build_headings = $driver->find_elements('.h4', 'css');
-is scalar @build_headings, 4, '4 builds shown';
+my @build_headings = @{wait_for_element_count('.h4', 4, description => '4 builds shown')};
 
 subtest 'Back to top button' => sub {
     my $check_visibility
@@ -73,7 +72,7 @@ $driver->find_element_by_link_text('opensuse')->click();
 my $build_url = $driver->get_current_url();
 $build_url =~ s/\?.*//;
 log_debug('build_url: ' . $build_url);
-is scalar @{$driver->find_elements('.h4', 'css')}, 5, 'number of builds for opensuse';
+wait_for_element_count('.h4', 5, description => 'number of builds for opensuse');
 is $driver->find_element_by_id('group_description')->get_text(),
   "Test description\nwith bugref  bsc#1234",    # second space comes from using non-breaking space in bugref span
   'description shown';

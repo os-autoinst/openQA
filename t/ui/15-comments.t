@@ -34,7 +34,6 @@ $schema->resultset('Bugs')->create(
     });
 
 driver_missing unless my $driver = call_driver;
-disable_timeout;
 my $url = OpenQA::SeleniumTest::get_mojo_url;
 
 #
