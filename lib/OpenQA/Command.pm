@@ -55,6 +55,14 @@ sub handle_result ($self, $tx, $orig_tx = undef) {
     my $is_connection_error = $err && !$err->{code};
 
     my $options = $self->options;
+    if (  !$options->{quiet}
+        && $is_json
+        && ref $res->json eq 'HASH'
+        && ref $res->json->{warnings} eq 'ARRAY'
+        && @{$res->json->{warnings}})
+    {
+        print STDERR colored(['yellow'], join("\n", map { "Warning: $_" } @{$res->json->{warnings}}), "\n");
+    }
     if ($options->{links}) {
         my $links = $res->headers->links;
         for my $rel (sort keys %$links) {
