@@ -1953,6 +1953,7 @@ sub git_log_diff ($self, $dir, $refspec_range, %options) {
 sub git_diff ($self, $dir, $refspec_range, %options) {
     return "Invalid range $refspec_range" if $refspec_range =~ m/UNKNOWN|unreadable git hash/;
     my $limit = $options{limit} // 0;
+    my $stat = $options{stat} // '300,200';
     my $timeout = OpenQA::App->singleton->config->{global}->{job_investigate_git_timeout}
       // JOB_INVESTIGATE_GIT_TIMEOUT;
     my $cmd = ['git', '-C', $dir, 'rev-list', '--count', $refspec_range];
@@ -1970,7 +1971,7 @@ sub git_diff ($self, $dir, $refspec_range, %options) {
     }
     return "Too many commits ($count) to create a diff between $refspec_range (maximum: $limit)" if $count > $limit;
 
-    $cmd = ['timeout', $timeout, 'git', '-C', $dir, 'diff', '--stat', $refspec_range];
+    $cmd = ['timeout', $timeout, 'git', '-C', $dir, 'diff', "--stat=$stat", $refspec_range];
     $res = run_cmd_with_log_return_error($cmd, stdout => 'trace');
     $out = $res->{stdout} . $res->{stderr};
     if (my $return_code = $res->{return_code}) {
