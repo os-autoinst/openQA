@@ -16,6 +16,9 @@ use OpenQA::Utils (
 use OpenQA::App;
 use OpenQA::Constants qw(DOWNLOAD_PERMISSION);
 use OpenQA::Jobs::Constants;
+use OpenQA::JobInvestigation
+  qw(RETURN_CODE_TIMEOUT_EXCEEDED git_has_commit git_failure_message git_tree tagged_needles),
+  qw(annotate_pull_requests failed_test_files failed_needle_files);
 use OpenQA::JobDependencies::Constants;
 use OpenQA::Markdown 'markdown_to_html';
 use OpenQA::Setup;
@@ -57,8 +60,6 @@ use constant JOB_INVESTIGATE_GIT_TIMEOUT => 20;
 use constant JOB_INVESTIGATE_FAILURE_WINDOW_DAYS => 5;
 use constant JOB_INVESTIGATE_FAILURE_MODULES_MAX => 3;
 use constant JOB_INVESTIGATE_FAILURE_FILES_MAX => 50;
-use constant JOB_INVESTIGATE_PULL_REQUESTS_MAX => 200;
-use constant RETURN_CODE_TIMEOUT_EXCEEDED => 124;    # see `man timeout`
 
 __PACKAGE__->table('jobs');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime FilterColumn Timestamps));
@@ -1991,58 +1992,6 @@ sub git_diff ($self, $dir, $refspec_range, $limit = undef) {
     return $out;
 }
 
-# returns the longest suffix of $path that is a file in the git tree (a hash reference of paths)
-sub _tree_file ($tree, $path) {
-    my @parts = grep { length } split m{/}, $path // '';
-    for (; @parts; shift @parts) {
-        my $rel = join '/', @parts;
-        return $rel if $tree->{$rel};
-    }
-    return undef;
-}
-
-sub _git_has_commit ($deadline, $dir, $hash) {
-    return 0 unless defined $hash && $hash =~ m/^[0-9a-f]{7,40}$/i;
-    return _git_timed($deadline, $dir, ['cat-file', '-e', "$hash^{commit}"])->{status};
-}
-
-# runs git within the time left until $deadline (epoch seconds), which is shared by all commands of a request
-sub _git_timed ($deadline, $dir, $args, %options) {
-    my $left = $deadline - time;
-    return {status => 0, return_code => RETURN_CODE_TIMEOUT_EXCEEDED, stdout => '', stderr => ''} if $left <= 0;
-    return run_cmd_with_log_return_error(['timeout', $left, 'git', '-C', $dir, @$args], stdout => 'trace', %options);
-}
-
-sub _git_failure_message ($return_code) {
-    return $return_code == RETURN_CODE_TIMEOUT_EXCEEDED
-      ? 'Computing changes timed out'
-      : 'Cannot list changes because of a git problem';
-}
-
-# returns the files of the commit $hash in $dir as hash reference or, as second value, why that is not possible
-sub _git_tree ($deadline, $dir, $hash) {
-    my $unknown = 'Tested git commit is unknown or not available on this host, cannot list changes';
-    return (undef, $unknown) unless defined $hash && $hash =~ m/^[0-9a-f]{7,40}$/i;
-    my $res = _git_timed($deadline, $dir, ['ls-tree', '-r', '-z', $hash]);
-    unless ($res->{status}) {
-        return (undef,
-            $res->{return_code} == RETURN_CODE_TIMEOUT_EXCEEDED
-            ? _git_failure_message(RETURN_CODE_TIMEOUT_EXCEEDED)
-            : $unknown);
-    }
-    return (+{map { $_ => 1 } map { /^100\d{3} blob \S+\t(.*)$/s ? $1 : () } split /\0/, $res->{stdout}});
-}
-
-# returns the paths of the needles in the commit $hash that have one of the $tags, or the git error message
-sub _tagged_needles ($deadline, $dir, $tree, $hash, $tags) {
-    my $pattern = join '|', map { s/([.+])/\\$1/gr } @$tags;
-    my @cmd = ('grep', '-l', '-z', '-E', '-e', qq{"($pattern)"}, $hash, '--', '*.json');
-    my $res = _git_timed($deadline, $dir, \@cmd, expected_return_codes => {0 => 1, 1 => 1});
-    my $return_code = $res->{return_code} // 255;
-    return (undef, _git_failure_message($return_code)) if $return_code > 1;
-    return ([grep { $tree->{$_} } map { s/^\Q$hash\E://r } split /\0/, $res->{stdout}]);
-}
-
 # returns the test code paths, needle paths and tags involved in the failed modules, found via their stack
 # traces and failed screen steps, as array references; for the test code as per module [trace paths, script]
 sub _failed_module_inputs ($self) {
@@ -2068,75 +2017,30 @@ sub _failure_window_start ($self) {
     return $epoch - JOB_INVESTIGATE_FAILURE_WINDOW_DAYS * 24 * 60 * 60;
 }
 
-# adds " (#<number>)" to commits that were merged via a "Merge pull request #<number>" merge commit, as far as
-# the time until $options{deadline} allows
-sub _annotate_pull_requests ($self, $dir, $log, $range, %options) {
-    my %pending = map { $_ => 1 } $log =~ /^([0-9a-f]{10}) (?!.*\(#\d+\)$)/mg;
-    return $log unless %pending;
-    my $deadline = $options{deadline};
-    my @since = $options{since} ? "--since=$options{since}" : ();
-    # commits on the first-parent line were not merged via pull request and would make us search all merges
-    my $direct = _git_timed($deadline, $dir, ['rev-list', '--first-parent', '--no-merges', @since, $range]);
-    return $log unless $direct->{status};
-    delete $pending{$_} for $direct->{stdout} =~ /^([0-9a-f]{10})/mg;
-    return $log unless %pending;
-    my @merges = ('log', '--first-parent', '--merges', '--pretty=%H %s', '-' . JOB_INVESTIGATE_PULL_REQUESTS_MAX);
-    my $merges = _git_timed($deadline, $dir, [@merges, @since, $range]);
-    return $log unless $merges->{status};
-    my %pull_request;
-    for my $merge (split /\n/, $merges->{stdout}) {
-        next unless $merge =~ m/^([0-9a-f]{40}) Merge pull request #(\d+) /;
-        my ($merge_hash, $number) = ($1, $2);
-        my $commits = _git_timed($deadline, $dir, ['rev-list', '--no-merges', "$merge_hash^1..$merge_hash"]);
-        last unless $commits->{status};
-        $pull_request{$_} = $number for grep { delete $pending{$_} } $commits->{stdout} =~ /^([0-9a-f]{10})/mg;
-        last unless %pending;
-    }
-    return $log =~ s/^([0-9a-f]{10}) (.*)$/exists $pull_request{$1} ? "$1 $2 (#$pull_request{$1})" : "$1 $2"/mger;
-}
-
 # lists commits to the files of the $selections (git log options) between the last good and this job, or else
 # within the window before this job started; returns a message instead if git failed
 sub _failure_log ($self, $dir, $self_hash, $prev_hash, $selections, %options) {
     my $deadline = $options{deadline};
     my %git = (limit => $options{limit}, abbrev => 10);
-    my $has_range = _git_has_commit($deadline, $dir, $prev_hash);
+    my $has_range = git_has_commit($deadline, $dir, $prev_hash);
     my $range = $has_range ? "$prev_hash..$self_hash" : $self_hash;
     $git{since} = $self->_failure_window_start unless $has_range;
     my $log = '';
     for my $selection (@$selections) {
         my $left = $deadline - time;
-        return _git_failure_message(RETURN_CODE_TIMEOUT_EXCEEDED) if $left <= 0;
+        return git_failure_message(RETURN_CODE_TIMEOUT_EXCEEDED) if $left <= 0;
         my $failed;
         $log .= $self->git_log_diff($dir, $range, %git, timeout => $left, failed => \$failed, %$selection);
-        return _git_failure_message($failed) if $failed;
+        return git_failure_message($failed) if $failed;
     }
     my %seen;
     $log = join '', grep { !$seen{/^(\S+)/ ? $1 : ''}++ } split /(?=^[0-9a-f]{10} )/m, $log;
-    return $log ? $self->_annotate_pull_requests($dir, $log, $range, since => $git{since}, deadline => $deadline) : '';
-}
-
-# the tested files of the failed modules, i.e. those of their stack traces, else the module's own file
-sub _failed_test_files ($tree, $modules) {
-    my @files;
-    for my $module (@$modules) {
-        my ($traced, $script) = @$module;
-        my @found = map { _tree_file($tree, $_) // () } @$traced;
-        push @files, @found ? @found : (_tree_file($tree, $script) // ());
-    }
-    return [uniq @files];
-}
-
-# the needles considered by failed screen checks, their pngs and the needles with the tags of those checks
-sub _failed_needle_files ($tree, $needles, $tagged) {
-    my @files = map { _tree_file($tree, $_) // () } @$needles;
-    @files = uniq @files, @$tagged;
-    return [map { my $png = s/\.json$/.png/r; ($_, $png ne $_ && $tree->{$png} ? $png : ()) } @files];
+    return $log ? annotate_pull_requests($dir, $log, $range, since => $git{since}, deadline => $deadline) : '';
 }
 
 # commits to the files named in the stack traces and to the needles of the failed screen steps
-sub _failure_investigation ($self, $self_vars, $prev_vars, %args) {
-    return () unless $self->has_failed_modules && $self->result_dir && %$self_vars;
+sub _failure_investigation ($self, $inv, $self_vars, $prev_vars, %args) {
+    return unless $self->has_failed_modules && $self->result_dir && %$self_vars;
     my $timeout = OpenQA::App->singleton->config->{global}->{job_investigate_git_timeout}
       // JOB_INVESTIGATE_GIT_TIMEOUT;
     my $deadline = time + $timeout;
@@ -2147,13 +2051,12 @@ sub _failure_investigation ($self, $self_vars, $prev_vars, %args) {
     my ($test_hash, $needles_hash) = map { $self_vars->{$_} } qw(TEST_GIT_HASH NEEDLES_GIT_HASH);
     my ($prev_test, $prev_needles) = map { $prev_vars->{$_} } qw(TEST_GIT_HASH NEEDLES_GIT_HASH);
     my %log = (limit => $args{git_limit}, deadline => $deadline);
-    my %inv;
     if (@$modules) {
-        my ($tree, $error) = _git_tree($deadline, $casedir, $test_hash);
-        my $files = $tree ? _failed_test_files($tree, $modules) : [];
+        my ($tree, $error) = git_tree($deadline, $casedir, $test_hash);
+        my $files = $tree ? failed_test_files($tree, $modules) : [];
         splice @$files, JOB_INVESTIGATE_FAILURE_FILES_MAX;
         my @selections = ({paths => [map { ":(literal)$_" } @$files]});
-        $inv{failure_test_log}
+        $inv->{failure_test_log}
           = $error
           || (@$files ? $self->_failure_log($casedir, $test_hash, $prev_test, \@selections, %log) : '')
           || 'No recent changes to the test files involved in the failure'
@@ -2161,23 +2064,22 @@ sub _failure_investigation ($self, $self_vars, $prev_vars, %args) {
           || @$files;
     }
     if (@$needles || @$tags) {
-        my ($tree, $error) = _git_tree($deadline, $needles_dir, $needles_hash);
+        my ($tree, $error) = git_tree($deadline, $needles_dir, $needles_hash);
         my $tagged = [];
-        ($tagged, $error) = _tagged_needles($deadline, $needles_dir, $tree, $needles_hash, $tags) if $tree && @$tags;
-        my $files = $tree && !$error ? _failed_needle_files($tree, $needles, $tagged) : [];
+        ($tagged, $error) = tagged_needles($deadline, $needles_dir, $tree, $needles_hash, $tags) if $tree && @$tags;
+        my $files = $tree && !$error ? failed_needle_files($tree, $needles, $tagged) : [];
         splice @$files, JOB_INVESTIGATE_FAILURE_FILES_MAX;
         my @selections;
         push @selections, {paths => [map { ":(literal)$_" } @$files]} if @$files;
         my $pattern = join '|', map { s/([.+])/\\$1/gr } @$tags;
         push @selections, {pickaxe => qq{"($pattern)"}, paths => ['*.json']} if @$tags;
-        $inv{failure_needles_log}
+        $inv->{failure_needles_log}
           = $error
           || $self->_failure_log($needles_dir, $needles_hash, $prev_needles, \@selections, %log)
           || 'No recent changes to the needles involved in the failure'
           if $error
           || @selections;
     }
-    return %inv;
 }
 
 =head2 investigate
@@ -2194,13 +2096,12 @@ sub investigate ($self, %args) {
     my @previous = $self->_previous_scenario_jobs(undef, {}, $isolation_keys);
     unless (@previous) {
         my $vars = $self->result_dir ? eval { decode_json(path($self->result_dir, 'vars.json')->slurp) } // {} : {};
-        my %urls = (
+        my %inv = (
+            error => 'No previous job in this scenario, cannot provide hints',
             testgiturl => git_commit_url($vars->{TEST_GIT_URL}),
             needlegiturl => git_commit_url($vars->{NEEDLES_GIT_URL}));
-        return {
-            error => 'No previous job in this scenario, cannot provide hints',
-            $self->_failure_investigation($vars, {}, %args), %urls
-        };
+        $self->_failure_investigation(\%inv, $vars, {}, %args);
+        return \%inv;
     }
     my %inv;
     my $prev_vars = {};
@@ -2245,7 +2146,7 @@ sub investigate ($self, %args) {
         last;
     }
     $inv{last_good} //= 'not found';
-    %inv = (%inv, $self->_failure_investigation($self_vars, $prev_vars, %args));
+    $self->_failure_investigation(\%inv, $self_vars, $prev_vars, %args);
     $inv{testgiturl} = git_commit_url($self_vars->{TEST_GIT_URL});
     $inv{needlegiturl} = git_commit_url($self_vars->{NEEDLES_GIT_URL});
     return \%inv;

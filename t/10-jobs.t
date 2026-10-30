@@ -16,6 +16,7 @@ use Mojo::Base -signatures;
 use autodie ':all';
 use File::Copy;
 use OpenQA::Jobs::Constants;
+use OpenQA::JobInvestigation 'annotate_pull_requests';
 use OpenQA::Test::Case;
 use Test::MockModule 'strict';
 use Test::Mojo;
@@ -674,16 +675,16 @@ subtest 'carry over, including soft-fails' => sub {
         subtest 'pull requests are looked up as far as time allows' => sub {
             chomp(my $short = qx{git -C "$repo" rev-parse --short=10 $head});
             my $log = "$short Later\n";
-            my $run_cmd = \&OpenQA::Schema::Result::Jobs::run_cmd_with_log_return_error;
+            my $run_cmd = \&OpenQA::JobInvestigation::run_cmd_with_log_return_error;
             my @commands;
-            $job_mock->redefine(
+            my $investigation_mock = Test::MockModule->new('OpenQA::JobInvestigation', no_auto => 1);
+            $investigation_mock->redefine(
                 run_cmd_with_log_return_error => sub ($cmd, %args) { push @commands, $cmd; $run_cmd->($cmd, %args) });
-            is $job->_annotate_pull_requests("$repo", $log, $head, deadline => time + 20), $log, 'direct commit as is';
+            is annotate_pull_requests("$repo", $log, $head, deadline => time + 20), $log, 'direct commit as is';
             is scalar @commands, 1, 'merge commits not searched for a commit on the first-parent line';
             @commands = ();
-            is $job->_annotate_pull_requests("$repo", $log, $head, deadline => time - 1), $log, 'log kept if too late';
+            is annotate_pull_requests("$repo", $log, $head, deadline => time - 1), $log, 'log kept if too late';
             is scalar @commands, 0, 'no git command run after the deadline';
-            $job_mock->redefine(run_cmd_with_log_return_error => $run_cmd);
         };
 
         subtest 'no previous job in the scenario' => sub {
@@ -699,6 +700,7 @@ subtest 'carry over, including soft-fails' => sub {
             like $inv->{failure_needles_log}, qr/^[0-9a-f]{10} Move area$/m, 'needle changes of the window listed';
             is $inv->{testgiturl}, 'https://github.com/o/r/commit/', 'repository URL of tests provided for links';
             is $inv->{needlegiturl}, 'https://gitea.example.com/o/n/commit/', 'repository URL of needles provided';
+              'invalid vars.json is not ignored';
             $job_mock->unmock('_previous_scenario_jobs');
         };
         $job_mock->unmock_all;
