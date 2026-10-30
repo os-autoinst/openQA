@@ -1835,6 +1835,10 @@ difference between the parameter and its reference. This number is based
 on experience and custom needs. When it is missing or zero, the
 throttling isn&#39;t applied for the parameter n.</li>
 </ul>
+<p>A parameter value is evaluated by its leading numeric prefix:
+<code>RETRY=3:poo123</code> counts as <code>3</code>, the colon and
+everything after it are ignored. A value without a numeric prefix
+contributes no adjustment.</p>
 <p><code>MAX_JOB_TIME</code>, the max duration of the job in seconds,
 can also have a throttling scale configured to encourage shorter test
 runtimes. When this parameter is missing in the settings, a
