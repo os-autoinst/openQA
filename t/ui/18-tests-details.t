@@ -991,7 +991,7 @@ subtest 'helper functions of investigation tab' => sub {
 
     my $html = sub ($msg, $repo) {
         $driver->execute_script(
-            'const d = document.createElement("div"); d.appendChild(commitMessageToNode(arguments[0], arguments[1]));'
+'const d = document.createElement("div"); d.appendChild(createCommitMessageLink(arguments[0], arguments[1]));'
               . 'return d.innerHTML;',
             $msg, $repo
         );

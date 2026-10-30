@@ -947,7 +947,7 @@ function pullRequestUrl(commitUrl, number) {
   return path && commitUrl.endsWith('/commit/') ? commitUrl.replace(/commit\/$/, path[1]) + number : null;
 }
 
-function commitMessageToNode(msg, repoUrl) {
+function createCommitMessageLink(msg, repoUrl) {
   const fragment = document.createDocumentFragment();
   const match = msg.match(/^(.*) \(#(\d+)\)$/);
   const href = match && pullRequestUrl(repoUrl, match[2]);
@@ -1262,7 +1262,7 @@ function renderInvestigationTab(response) {
             logDetailsDiv.id = 'collapse' + key + i;
             logDetailsDiv.className = 'collapse';
             spanElem.innerHTML = gitstats[i].link + ' ';
-            spanElem.appendChild(commitMessageToNode(gitstats[i].msg, repoUrl));
+            spanElem.appendChild(createCommitMessageLink(gitstats[i].msg, repoUrl));
             logDetailsDiv.innerHTML = gitstats[i].stat.join('\n');
             statItem.append(collapseSign, spanElem, logDetailsDiv);
 
