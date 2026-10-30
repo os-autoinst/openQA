@@ -1960,15 +1960,31 @@ mcp_enabled = read-only
 ```
 
 Once enabled the experimental MCP endpoint becomes available under the path
-`/mcp`. At the moment all implemented MCP tools are read-only,
-that means LLMs can review information provided by openQA, but are unable to
-make changes or trigger actions. Once write operations become available
-with future updates, they will have to be enabled with a different setting
-in `openqa.ini` for security reasons.
+`/mcp`. `mcp_enabled` accepts `no`, `read-only` and `read-write`. In
+`read-only` mode LLMs can review information provided by openQA, but are
+unable to make changes or trigger actions.
+
+In `read-write` mode the write tools are registered as well. They are gated by
+the role of the user the Bearer token belongs to:
+
+| Scope       | Granted to         | Tools                                                                                                                                     |
+| ----------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `mcp:read`  | any logged-in user | read tools, `openqa_post_comment`                                                                                                         |
+| `mcp:write` | operators          | `openqa_trigger_job`, `openqa_restart_job`, `openqa_duplicate_job`, `openqa_cancel_job`, `openqa_set_job_priority`, `openqa_schedule_iso` |
+
+A user without the required scope does not get the tool listed in
+`tools/list`, and a call is refused with `insufficient_scope`. Destructive
+calls (cancel, restart, duplicate, ISO scheduling) answer with an
+`input_required` result asking for confirmation. Clients supporting
+elicitation render it as a prompt; clients without it can pass
+`confirm=true` to skip the round trip. The admin's MCP help page lists the
+tools of the instance and shows a client configuration example.
 
 Most MCP clients today support Bearer token authentication, so that is what
-openQA relies on as well. More authentication mechanisms will be added as
-the technology evolves.
+openQA relies on as well. Send the token over HTTPS. `mcp_origins` restricts
+which `Origin` headers the endpoint accepts, and
+`misc_limits/mcp_max_result_size` caps the size of a tool result. More
+authentication mechanisms will be added as the technology evolves.
 
 This example configuration in the `mcp.json` format, which is commonly used
 by MCP clients, shows how to include an openQA personal access token by

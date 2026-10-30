@@ -278,6 +278,25 @@ subtest 'Validation of file_security_policy' => sub {
     is $config{file_domain}, 'openqa-foo', 'file_domain populated via "domain:"';
 };
 
+subtest 'Validation of mcp_enabled' => sub {
+    my %config;
+    my $app = Mojolicious->new(config => \%config, log => $quiet_log);
+    for my $value (qw(no read-only read-write)) {
+        $config{mcp_enabled} = $value;
+        OpenQA::Setup::_validate_mcp_mode($app, \%config);
+        is $config{mcp_enabled}, $value, "$value is valid";
+    }
+    $config{mcp_enabled} = ' read-write ';
+    OpenQA::Setup::_validate_mcp_mode($app, \%config);
+    is $config{mcp_enabled}, 'read-write', 'whitespace around read-write is trimmed';
+    $config{mcp_enabled} = 'true';
+    combined_like { OpenQA::Setup::_validate_mcp_mode($app, \%config) } qr/Invalid.*mcp_enabled/, 'warning logged';
+    is $config{mcp_enabled}, 'no', 'default to "no" on invalid value';
+    $config{mcp_enabled} = undef;
+    OpenQA::Setup::_validate_mcp_mode($app, \%config);
+    is $config{mcp_enabled}, 'no', 'default to "no" when unset';
+};
+
 subtest 'Multiple config files' => sub {
     my $t_dir = tempdir;
     my $openqa_d = $t_dir->child('openqa.ini.d')->make_path;
