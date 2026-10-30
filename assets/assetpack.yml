@@ -1,2 +1,2 @@
 ---
-pipes: [Sass, Css, JavaScript, FetchForNode, Combine]
+pipes: [Sass, Css, MarkMinified, JavaScript, FetchForNode, Combine]
