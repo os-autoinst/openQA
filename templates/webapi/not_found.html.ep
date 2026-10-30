@@ -12,6 +12,7 @@ table pre {
 <div class="container" id="content">
     <h1>Page not found</h1>
     <p>If you believe this is a bug you can <a href="https://progress.opensuse.org/projects/openqav3/issues/new" target="blank">open an issue</a>.</p>
+    <p>For API requests, checkout <a href="<%= url_for('api_help') %>">API Help</a>
     <p>If the URL is self-crafted, ensure it is correct and properly encoded.</p>
 
     <h2>Available routes</h2>
