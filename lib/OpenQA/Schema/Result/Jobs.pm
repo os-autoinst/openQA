@@ -1950,8 +1950,9 @@ sub git_log_diff ($self, $dir, $refspec_range, %options) {
     return $res->{stdout} . $res->{stderr};
 }
 
-sub git_diff ($self, $dir, $refspec_range, $limit = undef) {
+sub git_diff ($self, $dir, $refspec_range, %options) {
     return "Invalid range $refspec_range" if $refspec_range =~ m/UNKNOWN|unreadable git hash/;
+    my $limit = $options{limit} // 0;
     my $timeout = OpenQA::App->singleton->config->{global}->{job_investigate_git_timeout}
       // JOB_INVESTIGATE_GIT_TIMEOUT;
     my $cmd = ['git', '-C', $dir, 'rev-list', '--count', $refspec_range];
@@ -2021,7 +2022,7 @@ sub investigate ($self, %args) {
         my $diff_limit = $args{git_limit} ? $args{git_limit} / 2 : undef;
         $inv{test_log} = $self->git_log_diff($casedir, $refspec_range, limit => $args{git_limit});
         $inv{test_log} ||= 'No test changes recorded, test regression unlikely';
-        $inv{test_diff_stat} = $self->git_diff($casedir, $refspec_range, $diff_limit) if $inv{test_log};
+        $inv{test_diff_stat} = $self->git_diff($casedir, $refspec_range, limit => $diff_limit) if $inv{test_log};
         # no need for duplicating needles git log if the git repo is the same
         # as for tests
         if ($self_vars->{TEST_GIT_HASH} ne $self_vars->{NEEDLES_GIT_HASH}) {
@@ -2029,7 +2030,7 @@ sub investigate ($self, %args) {
             my $refspec_needles_range = "$prev_vars->{NEEDLES_GIT_HASH}..$self_vars->{NEEDLES_GIT_HASH}";
             $inv{needles_log} = $self->git_log_diff($needles_dir, $refspec_needles_range, limit => $args{git_limit});
             $inv{needles_log} ||= 'No needle changes recorded, test regression due to needles unlikely';
-            $inv{needles_diff_stat} = $self->git_diff($needles_dir, $refspec_needles_range, $diff_limit)
+            $inv{needles_diff_stat} = $self->git_diff($needles_dir, $refspec_needles_range, limit => $diff_limit)
               if $inv{needles_log};
         }
         last;
