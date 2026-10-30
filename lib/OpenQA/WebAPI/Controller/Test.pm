@@ -622,7 +622,6 @@ sub _show ($self, $job = undef) {
             assigned_worker => $job->assigned_worker,
             show_dependencies => $job->has_dependencies,
             show_autoinst_log => $job->should_show_autoinst_log,
-            show_investigation => $job->should_show_investigation,
             show_live_tab => $job->state ne DONE,
         });
     $self->stash(gru_dependencies => $self->_gru_tasks_items($job));

@@ -1119,5 +1119,29 @@ subtest 'render log links from steps when viewing via route to latest' => sub {
     wait_for_ajax(msg => 'test 99946 loaded');
 };
 
+subtest 'investigation tab is available on passed and force_result jobs' => sub {
+    $driver->get('/tests/99937');
+    wait_for_ajax msg => 'details tab for passed job 99937 loaded';
+    my $inv_tab = wait_for_element
+      selector => '#nav-item-for-investigation',
+      desc => 'investigation tab nav present for passed job';
+    ok $inv_tab->is_displayed, 'investigation tab visible for passed job';
+    $driver->find_element_by_link_text('Investigation')->click;
+    wait_for_element selector => '#investigation_status_entry', desc => 'investigation content loaded for passed job';
+
+    $schema->resultset('Comments')
+      ->create({job_id => 99938, user_id => 1, text => 'label:force_result:passed:bsc#1234'});
+    $driver->get('/tests/99938');
+    wait_for_ajax msg => 'details tab for force_result job 99938 loaded';
+    my $force_tab = wait_for_element
+      selector => '#nav-item-for-investigation',
+      desc => 'investigation tab nav present for force_result job';
+    ok $force_tab->is_displayed, 'investigation tab visible for force_result job';
+    $driver->find_element_by_link_text('Investigation')->click;
+    wait_for_element
+      selector => '#investigation_status_entry',
+      desc => 'investigation content loaded for force_result job';
+};
+
 kill_driver();
 done_testing();
