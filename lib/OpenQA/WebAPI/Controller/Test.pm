@@ -375,7 +375,7 @@ sub list_scheduled_ajax ($self) {
     my $limit = min($limits->{generic_max_limit}, $self->param('limit') // $limits->{generic_default_limit});
     $self->validation->optional('job_setting', 'not_empty')->like(qr/.+=.*/);
 
-    my $scheduled = $self->schema->resultset('Jobs')->complex_query(
+    my $jobs_rs = $self->schema->resultset('Jobs')->complex_query(
         state => [OpenQA::Jobs::Constants::PRE_EXECUTION_STATES],
         match => $self->get_match_param,
         comment_text => $self->param('comment'),
@@ -388,11 +388,19 @@ sub list_scheduled_ajax ($self) {
               blocked_by_id priority reason
             )
         ],
-
-        limit => $limit,
     );
 
-    my @jobs = $scheduled->all;
+    my $count_row = $jobs_rs->search(
+        {},
+        {
+            select => [\['count(*)'], \['count(*) filter (where me.blocked_by_id is not null)']],
+            as => [qw(total_count blocked_count)],
+            order_by => undef,
+        },
+    )->next;
+    my $total_count = $count_row->get_column('total_count');
+    my $blocked_count = $count_row->get_column('blocked_count');
+    my @jobs = $limit ? $jobs_rs->search({}, {rows => $limit})->all : $jobs_rs->all;
     my $job_ids = [map { $_->id } @jobs];
     my $ancestors_by_job = $self->schema->resultset('Jobs')->ancestors_count_for_jobs($job_ids);
 
@@ -405,7 +413,7 @@ sub list_scheduled_ajax ($self) {
         $job_data->{reason} = $job->reason;
         push @scheduled, $job_data;
     }
-    my %response = (data => \@scheduled);
+    my %response = (data => \@scheduled, total_count => $total_count, blocked_count => $blocked_count);
     $response{job_skipped_by_disk_limits} = 1
       if any { ($_->{reason} // '') eq 'storage space below threshold' } @scheduled;
     $self->render(json => \%response);

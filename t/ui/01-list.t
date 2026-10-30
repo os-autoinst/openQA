@@ -108,6 +108,15 @@ sub prepare_database () {
             settings =>
               [{key => 'JOB_TEMPLATE_NAME', value => 'kde_variant'}, {key => 'TEST_SUITE_NAME', value => 'kde'}]});
 
+    $jobs->create(
+        {
+            @job_params,
+            id => 99997,
+            state => OpenQA::Jobs::Constants::SCHEDULED,
+            blocked_by_id => 99963,
+            TEST => 'kde_blocked',
+            settings => [{key => 'TEST_SUITE_NAME', value => 'kde'}]});
+
     # ensure chained jobs 99937 is still displayed on page one together with its chained dependency 99938
     $jobs->search({id => 99937})->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 149 * ONE_HOUR, 'UTC')});
 
@@ -195,15 +204,29 @@ subtest 'priority displayed when not logged in' => sub {
 
 my @header = $driver->find_elements('h2');
 my @header_texts = map { OpenQA::Test::Case::trim_whitespace($_->get_text()) } @header;
-my @expected = ('3 jobs are running (dynamic limit: 3 of 10)', '3 scheduled jobs', 'Last 11 finished jobs');
+my @expected = (
+    '3 jobs are running (dynamic limit: 3 of 10)',
+    '4 scheduled jobs (1 blocked by other jobs)',
+    'Last 11 finished jobs'
+);
 is_deeply \@header_texts, \@expected, 'all headings correctly displayed';
 
 $driver->get('/tests?limit=1');
 wait_for_ajax(msg => 'DataTables on "All tests" page with limit');
 @header = $driver->find_elements('h2');
 @header_texts = map { OpenQA::Test::Case::trim_whitespace($_->get_text()) } @header;
-@expected = ('3 jobs are running (dynamic limit: 3 of 10)', '1 scheduled jobs', 'Last 1 finished jobs');
+@expected = (
+    '3 jobs are running (dynamic limit: 3 of 10)',
+    '4 scheduled jobs (1 blocked by other jobs)',
+    'Last 1 finished jobs'
+);
 is_deeply \@header_texts, \@expected, 'limit for finished tests can be adjusted with query parameter';
+like $driver->find_element_by_id('scheduled_info')->get_text(),
+  qr/^Showing 1 to 1 of 4 entries$/, 'info line reports the true total while the scheduled listing is capped';
+$driver->get('/tests?limit=4');
+wait_for_ajax(msg => 'DataTables on "All tests" page with uncapped scheduled listing');
+like $driver->find_element_by_id('scheduled_info')->get_text(),
+  qr/^Showing 1 to 4 of 4 entries$/, 'info line matches the listing size when the listing is not capped';
 
 $t->get_ok('/tests/99963')->status_is(200);
 $t->content_like(qr/State.*running/, 'Running jobs are marked');
@@ -299,18 +322,31 @@ subtest 'scheduled jobs server-side limit has precedence over user-specified lim
 
     $t->get_ok('/tests/list_scheduled_ajax?limit=10', 'query with exceeding user-specified limit for list scheduled')
       ->status_is(200);
-    my $jobs = $t->tx->res->json->{data};
+    my $json = $t->tx->res->json;
+    my $jobs = $json->{data};
     is ref $jobs, 'ARRAY', 'data returned (1)' and is scalar @$jobs, 5, 'maximum limit for list scheduled is effective';
+    is $json->{total_count}, 9, 'total scheduled count exceeds the effective limit';
+    is $json->{blocked_count}, 1, 'blocked scheduled jobs counted over the whole set';
 
     $t->get_ok('/tests/list_scheduled_ajax?limit=3', 'query with exceeding user-specified limit for previous')
       ->status_is(200);
 
-    $jobs = $t->tx->res->json->{data};
+    $json = $t->tx->res->json;
+    $jobs = $json->{data};
     is ref $jobs, 'ARRAY', 'data returned (2)' and is scalar @$jobs, 3, 'user limit for list scheduled is effective';
+    is $json->{total_count}, 9, 'total scheduled count is the same at user limit';
 
     $t->get_ok('/tests/list_scheduled_ajax', 'query with (low) default limit for list scheduled')->status_is(200);
-    $jobs = $t->tx->res->json->{data};
+    $json = $t->tx->res->json;
+    $jobs = $json->{data};
     is ref $jobs, 'ARRAY', 'data returned (3)' and is scalar @$jobs, 2, 'default limit for list scheduled is effective';
+    is $json->{total_count}, 9, 'total scheduled count is the same at default limit';
+
+    $t->get_ok('/tests/list_scheduled_ajax?limit=0', 'query with zero limit for list scheduled')->status_is(200);
+    $json = $t->tx->res->json;
+    $jobs = $json->{data};
+    is ref $jobs, 'ARRAY', 'data returned (4)' and is scalar @$jobs, 9, 'zero limit lists all scheduled jobs';
+    is $json->{total_count}, 9, 'total scheduled count is the same at zero limit';
 
     $schema->txn_rollback;
 };
@@ -498,7 +534,7 @@ subtest 'result filter does not affect scheduled and running jobs' => sub {
     is scalar @running_jobs, 3, 'Running jobs are displayed';
 
     my @scheduled_jobs = $driver->find_elements('#scheduled tbody tr');
-    is scalar @scheduled_jobs, 3, 'Scheduled jobs are displayed';
+    is scalar @scheduled_jobs, 4, 'Scheduled jobs are displayed';
 
     my @finished_jobs = $driver->find_elements('#results tbody tr');
     is scalar @finished_jobs, 3, 'Finished jobs table is correctly filtered';
