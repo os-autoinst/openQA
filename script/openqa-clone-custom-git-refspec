@@ -50,7 +50,7 @@ throw_json_error() {
 }
 
 extract_urls_from_pr() {
-    urls=$(echo "$pr_content" | jq -r '.body | capture("^(?<marker>.*@openqa: Clone )(?<url>http.*[0-9]*)") | .url')
+    urls=$(echo "$pr_content" | jq -r '(.body // "") | capture("^(?<marker>.*@openqa: Clone )(?<url>http.*[0-9]*)") | .url')
     if [[ $urls == *"http"* ]]; then
         echo "$urls"
     fi
