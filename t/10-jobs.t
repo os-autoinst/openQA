@@ -700,6 +700,8 @@ subtest 'carry over, including soft-fails' => sub {
             like $inv->{failure_needles_log}, qr/^[0-9a-f]{10} Move area$/m, 'needle changes of the window listed';
             is $inv->{testgiturl}, 'https://github.com/o/r/commit/', 'repository URL of tests provided for links';
             is $inv->{needlegiturl}, 'https://gitea.example.com/o/n/commit/', 'repository URL of needles provided';
+            path($job->result_dir, 'vars.json')->spew('{');
+            throws_ok { $job->investigate(git_limit => 200) } qr/expected, at character offset/,
               'invalid vars.json is not ignored';
             $job_mock->unmock('_previous_scenario_jobs');
         };

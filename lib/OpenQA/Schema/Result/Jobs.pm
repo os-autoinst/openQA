@@ -2095,7 +2095,8 @@ sub investigate ($self, %args) {
     my $isolation_keys = exists $args{isolation_keys} ? $args{isolation_keys} : undef;
     my @previous = $self->_previous_scenario_jobs(undef, {}, $isolation_keys);
     unless (@previous) {
-        my $vars = $self->result_dir ? eval { decode_json(path($self->result_dir, 'vars.json')->slurp) } // {} : {};
+        my $vars_file = $self->result_dir ? eval { path($self->result_dir, 'vars.json')->slurp } : undef;
+        my $vars = decode_json($vars_file // '{}');
         my %inv = (
             error => 'No previous job in this scenario, cannot provide hints',
             testgiturl => git_commit_url($vars->{TEST_GIT_URL}),
@@ -2118,7 +2119,7 @@ sub investigate ($self, %args) {
         $inv{last_good} = {type => 'link', link => '/tests/' . $prev->id, text => $prev->id};
         last unless $prev->result_dir;
         my $prev_file = eval { Mojo::File->new($prev->result_dir(), 'vars.json')->slurp };
-        $prev_vars = eval { decode_json($prev_file // '{}') } // {};
+        $prev_vars = decode_json($prev_file) if $prev_file;
         $inv{diff_packages_to_last_good} = $self->packages_diff($prev, $ignore, 'worker_packages.txt');
         $inv{diff_sut_packages_to_last_good} = $self->packages_diff($prev, $ignore, 'sut_packages.txt');
         last unless $self_file && $prev_file;
