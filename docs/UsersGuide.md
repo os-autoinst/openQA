@@ -795,6 +795,9 @@ e.g. `vncviewer <host>:<port> -Shared`. The address is derived from the
 from your machine, the administrator of the worker can set `DEVELOPER_CONNECTION_HINT`
 in the [worker configuration](GettingStarted.md#worker-configuration). The configured text
 replaces the default VNC notice and is shown as plain text, e.g. an SSH tunnel command.
+Case-insensitive placeholders `%PORT%` (or `%VNC_PORT%`), `%HOST%` (or
+`%WORKER_HOSTNAME%`), `%INSTANCE%` (worker instance number), and `%VNC_ARG%` are
+expanded dynamically for the worker instance running the test.
 
 #### Workflow for creating or updating needles
 
