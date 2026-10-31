@@ -936,6 +936,38 @@ function githashToLink(value, repo) {
   return commits;
 }
 
+// "(#<number>)" is only known to mean a pull request on GitHub and Gitea/Forgejo hosts
+const PULL_REQUEST_PATHS = [
+  [/^github\.com$/, 'pull/'],
+  [/^(?:src\.opensuse\.org|codeberg\.org)$|gitea|forgejo/, 'pulls/']
+];
+
+function pullRequestUrl(commitUrl, number) {
+  let url;
+  try {
+    url = new URL(commitUrl);
+  } catch {
+    return null;
+  }
+  const path = PULL_REQUEST_PATHS.find(([host]) => host.test(url.hostname));
+  return path && commitUrl.endsWith('/commit/') ? commitUrl.replace(/commit\/$/, path[1]) + number : null;
+}
+
+function createCommitMessageLink(msg, repoUrl) {
+  const fragment = document.createDocumentFragment();
+  const match = msg.match(/^(.*) \(#(\d+)\)$/);
+  const href = match && pullRequestUrl(repoUrl, match[2]);
+  if (!href) {
+    fragment.append(msg);
+    return fragment;
+  }
+  const link = document.createElement('a');
+  link.href = href;
+  link.textContent = '#' + match[2];
+  fragment.append(match[1] + ' (', link, ')');
+  return fragment;
+}
+
 function setupTestDetailsFilter(tabConfig) {
   if (tabConfig._hasFilterHandlers) return;
 
@@ -1159,8 +1191,9 @@ function renderInvestigationTab(response) {
   const needlegiturl = response.needlegiturl;
   delete response.testgiturl;
   delete response.needlegiturl;
-  document.getElementById('investigation').setAttribute('data-testgiturl', testgiturl);
-  document.getElementById('investigation').setAttribute('data-needlegiturl', needlegiturl);
+  const investigation = document.getElementById('investigation');
+  if (testgiturl) investigation.setAttribute('data-testgiturl', testgiturl);
+  if (needlegiturl) investigation.setAttribute('data-needlegiturl', needlegiturl);
 
   const theadElement = document.createElement('thead');
   const headTrElement = document.createElement('tr');
@@ -1234,7 +1267,8 @@ function renderInvestigationTab(response) {
             const logDetailsDiv = document.createElement('div');
             logDetailsDiv.id = 'collapse' + key + i;
             logDetailsDiv.className = 'collapse';
-            spanElem.innerHTML = gitstats[i].link + ' ' + gitstats[i].msg;
+            spanElem.innerHTML = gitstats[i].link + ' ';
+            spanElem.appendChild(createCommitMessageLink(gitstats[i].msg, repoUrl));
             logDetailsDiv.innerHTML = gitstats[i].stat.join('\n');
             statItem.append(collapseSign, spanElem, logDetailsDiv);
 
@@ -1303,7 +1337,12 @@ function toggleSign(elem) {
 }
 
 function getInvestigationDataAttr(key) {
-  const attrs = {test_log: 'data-testgiturl', needles_log: 'data-needlegiturl'};
+  const attrs = {
+    test_log: 'data-testgiturl',
+    needles_log: 'data-needlegiturl',
+    failure_test_log: 'data-testgiturl',
+    failure_needles_log: 'data-needlegiturl'
+  };
   const investigation = document.getElementById('investigation');
   return investigation ? investigation.getAttribute(attrs[key]) : null;
 }

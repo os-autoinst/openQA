@@ -720,6 +720,32 @@ autologin-user=tux
 autologin-timeout=0
 ```
 
+### Investigation of failed jobs
+
+The "Investigation" tab of a failed job, also available as JSON from
+`/tests/<job id>/investigation_ajax`, lists what changed since the last good
+job in the same scenario. For jobs with failed modules the keys
+`failure_test_log` and `failure_needles_log` only list the commits to the files
+that are involved in the failure:
+
+- test code files named in the stack traces of the failed modules, or else the
+  module's own file
+- needles considered by failed screen checks and needles with the tags of those
+  checks
+
+The files are looked up in the commit the job was tested with
+(`TEST_GIT_HASH`, `NEEDLES_GIT_HASH`) within the checkouts on the web UI host,
+so later renames or removals do not change the result. Without a last good job
+the commits of the 5 days before the job started are listed. Each line is
+`<10-char sha> <title> (#<pull request>)`; the pull request is added if the
+commit was merged by a "Merge pull request" commit. The tab links it for
+GitHub and Gitea/Forgejo repositories.
+
+Instead of a log the keys contain a message if the tested commit is not
+available on the web UI host (e.g. for a `CASEDIR` that is a URL or absolute
+path) or if git took longer than `job_investigate_git_timeout` in total or
+failed. Pull request numbers are skipped if time runs out.
+
 <a id="carry-over"></a>
 
 ### Carry over of bug references from previous jobs in same scenario

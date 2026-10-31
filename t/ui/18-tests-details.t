@@ -1003,6 +1003,28 @@ subtest 'helper functions of investigation tab' => sub {
     $value = '9b8aaf060 Containers: Inc…\n stat1\n stat2\na54a4bb34Remove select…\n stat3\n stat4\n';
     $links = $driver->execute_script(qq{return githashToLink("$value", 'test/')});
     is_deeply $links, undef, 'null returned as second line is invalid' or always_explain $links;
+
+    my $html = sub ($msg, $repo) {
+        $driver->execute_script(
+'const d = document.createElement("div"); d.appendChild(createCommitMessageLink(arguments[0], arguments[1]));'
+              . 'return d.innerHTML;',
+            $msg, $repo
+        );
+    };
+    is $html->('Fix <b>foo</b> (#42)', 'https://github.com/o/r/commit/'),
+      'Fix &lt;b&gt;foo&lt;/b&gt; (<a href="https://github.com/o/r/pull/42">#42</a>)',
+      'pull request linked and message escaped for GitHub';
+    like $html->('Fix foo (#42)', 'https://gitea.example.com/o/r/commit/'),
+      qr{href="https://gitea.example.com/o/r/pulls/42"},
+      'pull request linked for Gitea';
+    like $html->('Fix foo (#42)', 'https://src.opensuse.org/o/r/commit/'),
+      qr{href="https://src.opensuse.org/o/r/pulls/42"},
+      'pull request linked for src.opensuse.org';
+    is $html->('Fix foo (#42)', 'https://gitlab.com/o/r/commit/'), 'Fix foo (#42)', 'no link for GitLab';
+    is $html->('Fix foo (#42)', 'https://github.example.com/o/r/commit/'), 'Fix foo (#42)', 'no link for unknown host';
+    is $html->('Fix foo (#42)', 'https://github.com/o/r/'), 'Fix foo (#42)', 'no link for unexpected URL';
+    is $html->('Fix foo (#42)', 'undefined'), 'Fix foo (#42)', 'no link without repository URL';
+    is $html->('Fix foo', 'https://github.com/o/r/commit/'), 'Fix foo', 'message without pull request unchanged';
 };
 
 subtest 'additional investigation notes provided on new failed' => sub {
@@ -1030,6 +1052,8 @@ subtest 'alert box shown if not already on first bad' => sub {
     $driver->find_element('#investigation_status_entry')
       ->text_like(qr/error\nNo previous job in this scenario, cannot provide hints/,
         'linked to investigation tab directly');
+    is $driver->find_element_by_id('investigation')->get_attribute('data-testgiturl'), undef,
+      'no repository URL set if unknown';
     $driver->find_element_by_xpath(q{//div[@class='tab-content']})
       ->text_unlike(qr/Investigate the first bad test/, 'no alert shown for first bad itself');
 };
