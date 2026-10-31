@@ -5,8 +5,8 @@ package OpenQA::Worker::Job;
 use Mojo::Base 'Mojo::EventEmitter', -signatures;
 
 use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME DEFAULT_UPLOAD_CHUNK_SIZE DEFAULT_MAX_SETUP_TIME WORKER_COMMAND_ABORT
-  WORKER_COMMAND_QUIT WORKER_COMMAND_CANCEL WORKER_COMMAND_OBSOLETE WORKER_SR_BROKEN WORKER_SR_SETUP_FAILURE
-  WORKER_SR_API_FAILURE WORKER_SR_TIMEOUT WORKER_SR_DONE WORKER_SR_DIED DOWNLOAD_PERMISSION);
+  DEFAULT_MAX_UPLOAD_TIME DEFAULT_UPLOAD_INACTIVITY_TIMEOUT WORKER_COMMAND_QUIT WORKER_COMMAND_CANCEL WORKER_COMMAND_OBSOLETE
+  WORKER_SR_BROKEN WORKER_SR_SETUP_FAILURE WORKER_SR_API_FAILURE WORKER_SR_TIMEOUT WORKER_SR_DONE WORKER_SR_DIED DOWNLOAD_PERMISSION);
 use OpenQA::Jobs::Constants;
 use OpenQA::Worker::Engines::isotovideo;
 use OpenQA::Worker::Isotovideo::Client;
@@ -97,7 +97,8 @@ sub new ($class, $worker, $client, $job_info) {
 }
 
 sub DESTROY ($self) {
-    $self->_remove_timer unless ${^GLOBAL_PHASE} eq 'DESTRUCT';
+    $self->_remove_timer([qw(_upload_results_timer _timeout_timer _upload_timeout_timer _upload_inactivity_timer)])
+      unless ${^GLOBAL_PHASE} eq 'DESTRUCT';
 }
 
 sub _remove_timer ($self, $timer_names = undef) {
@@ -119,6 +120,7 @@ sub _set_status ($self, $status, $event_data) {
     $event_data->{job} = $self;
     $event_data->{status} = $status;
     $self->{_status} = $status;
+    $self->_remove_timer([qw(_upload_timeout_timer _upload_inactivity_timer)]) if $status eq 'stopped';
     $self->emit(status_changed => $event_data);
 }
 
@@ -177,11 +179,19 @@ sub remaining_accept_attempts ($self) { $self->{_accept_attempts} }
 sub _compute_timeouts ($job_settings) {
     my $max_job_time = $job_settings->{MAX_JOB_TIME};
     my $max_setup_time = $job_settings->{MAX_SETUP_TIME};
+    my $max_upload_time = $job_settings->{MAX_UPLOAD_TIME};
+    my $upload_inactivity_timeout = $job_settings->{UPLOAD_INACTIVITY_TIMEOUT};
     my $timeout_scale = $job_settings->{TIMEOUT_SCALE};
     $max_job_time = DEFAULT_MAX_JOB_TIME unless looks_like_number $max_job_time;
     $max_setup_time = DEFAULT_MAX_SETUP_TIME unless looks_like_number $max_setup_time;
-    $max_job_time *= $timeout_scale if looks_like_number $timeout_scale;
-    return ($max_job_time, $max_setup_time);
+    $max_upload_time = DEFAULT_MAX_UPLOAD_TIME unless looks_like_number $max_upload_time;
+    $upload_inactivity_timeout = DEFAULT_UPLOAD_INACTIVITY_TIMEOUT unless looks_like_number $upload_inactivity_timeout;
+    if (looks_like_number $timeout_scale) {
+        $max_job_time *= $timeout_scale;
+        $max_upload_time *= $timeout_scale;
+        $upload_inactivity_timeout *= $timeout_scale;
+    }
+    return ($max_job_time, $max_setup_time, $max_upload_time, $upload_inactivity_timeout);
 }
 
 sub _handle_timeout ($self, $engine = undef) {
@@ -200,6 +210,53 @@ sub _set_timeout ($self, $timeout, $engine = undef) {
     my $loop = Mojo::IOLoop->singleton;
     if (my $current_timer = $self->{_timeout_timer}) { $loop->remove($current_timer) }
     $self->{_timeout_timer} = $loop->timer($timeout => sub { $self->_handle_timeout($engine) });
+}
+
+sub _set_upload_timeout ($self, $timeout = undef) {
+    $timeout //= $self->{_max_upload_time} // (_compute_timeouts($self->settings // {}))[2];
+    my $loop = Mojo::IOLoop->singleton;
+    if (my $current_timer = $self->{_upload_timeout_timer}) { $loop->remove($current_timer) }
+    $self->{_upload_timeout_timer} = $loop->timer($timeout => sub { $self->_handle_upload_timeout });
+}
+
+sub _set_upload_inactivity_timeout ($self, $timeout = undef) {
+    $timeout //= $self->{_upload_inactivity_timeout} // (_compute_timeouts($self->settings // {}))[3];
+    my $loop = Mojo::IOLoop->singleton;
+    if (my $current_timer = $self->{_upload_inactivity_timer}) { $loop->remove($current_timer) }
+    $self->{_upload_inactivity_timer} = $loop->timer($timeout => sub { $self->_handle_upload_inactivity_timeout });
+}
+
+sub _reset_upload_inactivity_timeout ($self) {
+    return unless $self->status eq 'stopping';
+    $self->_set_upload_inactivity_timeout;
+}
+
+sub _terminate_upload_due_to_timeout ($self, $flag, $message) {
+    my $job_id = $self->id;
+    log_warning("Job $job_id stopped because $message");
+    $self->_remove_timer([qw(_upload_results_timer _timeout_timer _upload_timeout_timer _upload_inactivity_timer)]);
+    $self->{$flag} = 1;
+    if (my $proc = delete $self->{_upload_subprocess}) {
+        if (my $pid = $proc->pid) {
+            kill 'KILL', $pid;
+        }
+    }
+    if (my $proc = delete $self->{_upload_images_subprocess}) {
+        if (my $pid = $proc->pid) {
+            kill 'KILL', $pid;
+        }
+    }
+    $self->conclude_upload_if_ongoing;
+    $self->_stop_step_5_finalize(WORKER_SR_TIMEOUT, {result => TIMEOUT_EXCEEDED});
+}
+
+sub _handle_upload_timeout ($self) {
+    $self->_terminate_upload_due_to_timeout(_upload_timeout => 'upload exceeded MAX_UPLOAD_TIME');
+}
+
+sub _handle_upload_inactivity_timeout ($self) {
+    $self->_terminate_upload_due_to_timeout(
+        _upload_inactivity_timeout_exceeded => 'upload exceeded UPLOAD_INACTIVITY_TIMEOUT');
 }
 
 sub start ($self) {
@@ -246,7 +303,10 @@ sub start ($self) {
     $ENV{OPENQA_SHAREDIR} = $client->working_directory;
 
     # stop setup if timeout has been exceeded
-    my ($max_job_time, $max_setup_time) = _compute_timeouts($job_settings);
+    my ($max_job_time, $max_setup_time, $max_upload_time, $upload_inactivity_timeout)
+      = _compute_timeouts($job_settings);
+    $self->{_max_upload_time} = $max_upload_time;
+    $self->{_upload_inactivity_timeout} = $upload_inactivity_timeout;
     $self->_set_timeout($max_setup_time);
 
     # start isotovideo
@@ -320,6 +380,8 @@ sub stop ($self, $reason = undef) {
 
     $self->_set_status(stopping => {reason => $reason});
     $self->_remove_timer(['_timeout_timer']);
+    $self->_set_upload_timeout;
+    $self->_set_upload_inactivity_timeout;
 
     $self->_stop_step_2_post_status(
         $reason,
@@ -348,7 +410,10 @@ sub _stop_step_2_post_status ($self, $reason, $callback) {
         json => {
             status => {uploading => 1, worker_id => $client->worker_id},
         },
-        callback => $callback,
+        callback => sub (@args) {
+            $self->_reset_upload_inactivity_timeout;
+            $callback->(@args);
+        },
     );
 }
 
@@ -357,7 +422,12 @@ sub _stop_step_3_announce ($self, $reason, $callback) {
     # skip if isotovideo not running anymore (e.g. when isotovideo just exited on its own)
     return Mojo::IOLoop->next_tick($callback) unless $self->is_backend_running;
 
-    $self->isotovideo_client->stop_gracefully($reason, $callback);
+    $self->isotovideo_client->stop_gracefully(
+        $reason,
+        sub (@args) {
+            $self->_reset_upload_inactivity_timeout;
+            $callback->(@args);
+        });
 }
 
 sub _redact_file ($file_path, $file_name) {
@@ -381,8 +451,10 @@ sub _stop_step_4_upload ($self, $reason, $callback) {
     # upload logs and assets
     return Mojo::IOLoop->next_tick(sub { $self->_stop_step_5_1_upload($reason, $callback) })
       if $reason eq WORKER_COMMAND_QUIT || $reason eq WORKER_COMMAND_ABORT || $reason eq WORKER_SR_API_FAILURE;
-    Mojo::IOLoop->subprocess(
-        sub {
+    my $upload_subprocess = $self->{_upload_subprocess} = Mojo::IOLoop->subprocess(
+        sub ($subprocess) {
+            local $self->{_current_subprocess} = $subprocess;
+
             # upload ulogs
             my @uploaded_logfiles = glob "$pooldir/ulogs/*";
             for my $file (@uploaded_logfiles) {
@@ -396,6 +468,7 @@ sub _stop_step_4_upload ($self, $reason, $callback) {
                     $reason = WORKER_SR_API_FAILURE;
                     last;
                 }
+                $subprocess->progress('file');
             }
 
             # upload assets created by successful jobs
@@ -412,6 +485,7 @@ sub _stop_step_4_upload ($self, $reason, $callback) {
                             asset => $dir,
                         );
                         last unless ($upload_result = $self->_upload_log_file_or_asset(\%upload_parameter));
+                        $subprocess->progress('file');
                     }
                     if (!$upload_result) {
                         $reason = WORKER_SR_API_FAILURE;
@@ -444,14 +518,19 @@ sub _stop_step_4_upload ($self, $reason, $callback) {
                     $reason = WORKER_SR_API_FAILURE;
                     last;
                 }
+                $subprocess->progress('file');
             }
             return $reason;
         },
         sub {
             my ($subprocess, $err, $reason) = @_;
+            delete $self->{_upload_subprocess};
+            return if $self->{_upload_timeout} || $self->{_upload_inactivity_timeout_exceeded};
+            $self->_reset_upload_inactivity_timeout;
             log_error("Upload subprocess error: $err") if $err;
             $self->_stop_step_5_1_upload($reason // WORKER_SR_API_FAILURE, $callback);
         });
+    $upload_subprocess->on(progress => sub { $self->_reset_upload_inactivity_timeout });
 }
 
 sub _stop_step_5_1_upload ($self, $reason, $callback) {
@@ -461,11 +540,13 @@ sub _stop_step_5_1_upload ($self, $reason, $callback) {
     $self->emit(uploading_logs_and_assets_concluded => {});
     # ensure no asynchronous "side tasks" are started anymore automatically at this point
     $self->_remove_timer;
+    $self->_reset_upload_inactivity_timeout;
     # postpone any further actions until a possibly ongoing result upload has been concluded
     $self->_invoke_after_result_upload(sub { $self->_stop_step_5_2_upload($reason, $callback); });
 }
 
 sub _stop_step_5_2_upload ($self, $reason, $callback) {
+    $self->_reset_upload_inactivity_timeout;
 
     # do final status upload for selected reasons
     my $job_id = $self->id;
@@ -539,8 +620,12 @@ sub _read_state_file ($self) {
 
 sub _format_reason ($self, $state, $result, $reason) {
     # format stop reasons from the worker itself
-    return 'timeout: ' . ($self->{_engine} ? 'test execution exceeded MAX_JOB_TIME' : 'setup exceeded MAX_SETUP_TIME')
-      if $reason eq WORKER_SR_TIMEOUT;
+    if ($reason eq WORKER_SR_TIMEOUT) {
+        return 'timeout: upload exceeded UPLOAD_INACTIVITY_TIMEOUT' if $self->{_upload_inactivity_timeout_exceeded};
+        return 'timeout: upload exceeded MAX_UPLOAD_TIME' if $self->{_upload_timeout};
+        return 'timeout: '
+          . ($self->{_engine} ? 'test execution exceeded MAX_JOB_TIME' : 'setup exceeded MAX_SETUP_TIME');
+    }
     return "$self->{_setup_error_category}: $self->{_setup_error}" if $reason eq WORKER_SR_SETUP_FAILURE;
     if ($reason eq WORKER_SR_API_FAILURE) {
         my $last_client_error = $self->client->last_error;
@@ -687,6 +772,7 @@ sub _calculate_upload_results_interval ($self) {
 }
 
 sub _conclude_upload ($self, $callback, $result = {}) {
+    $self->_reset_upload_inactivity_timeout if $self->status eq 'stopping';
     $self->{_is_uploading_results} = 0;
     $self->emit(uploading_results_concluded => $result);
     Mojo::IOLoop->next_tick($callback) if $callback;
@@ -808,6 +894,7 @@ sub _upload_results_step_0_prepare ($self, $callback) {
         \%status,
         sub {
             my ($status_post_res) = @_;
+            $self->_reset_upload_inactivity_timeout;
 
             # handle error occurred when posting the status
             if (!$status_post_res) {
@@ -898,8 +985,14 @@ sub _upload_results_step_2_2_upload_images ($self, $callback, $error) {
 }
 
 sub _upload_results_step_2_upload_images ($self, $callback) {
-    Mojo::IOLoop->subprocess(sub { $self->_upload_results_step_2_1_upload_images },
-        sub ($subprocess, $error, @args) { $self->_upload_results_step_2_2_upload_images($callback, $error) });
+    $self->{_upload_images_subprocess} = Mojo::IOLoop->subprocess(
+        sub { $self->_upload_results_step_2_1_upload_images },
+        sub ($subprocess, $error, @args) {
+            delete $self->{_upload_images_subprocess};
+            return if $self->{_upload_timeout} || $self->{_upload_inactivity_timeout_exceeded};
+            $self->_reset_upload_inactivity_timeout;
+            $self->_upload_results_step_2_2_upload_images($callback, $error);
+        });
 }
 
 sub _upload_results_step_3_finalize ($self, $upload_up_to, $callback) {
@@ -982,6 +1075,7 @@ sub _upload_asset ($self, $upload_parameter) {
     my $retries = $global_settings->{UPLOAD_RETRIES} // 10;
     my $local_upload = $global_settings->{LOCAL_UPLOAD} // 1;
     my $ua = $self->client->ua;
+    my $subprocess = $self->{_current_subprocess};
     my @channels_worker_only = ('worker');
     my @channels_both = qw(autoinst worker);
     my $error;
@@ -992,6 +1086,7 @@ sub _upload_asset ($self, $upload_parameter) {
         'upload_local.prepare' => sub ($upload) {
             log_info("$filename: local upload (no chunks needed)", channels => \@channels_worker_only, default => 1);
             chmod DOWNLOAD_PERMISSION, $file;
+            $subprocess->progress('local') if $subprocess;
         });
     $ua->upload->once(
         'upload_chunk.prepare' => sub ($upload, $pieces) {
@@ -1013,6 +1108,7 @@ sub _upload_asset ($self, $upload_parameter) {
                 channels => ($show_in_autoinst_log ? \@channels_both : \@channels_worker_only),
                 default => 1
             );
+            $subprocess->progress('chunk') if $subprocess;
         });
 
     my $response_cb = sub ($upload, $tx, $retries) {
