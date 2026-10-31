@@ -799,55 +799,92 @@ subtest 'handle client status changes' => sub {
         $worker->_handle_client_status_changed($fake_client, {status => 'connected', reason => 'test'});
         is $job->status, 'accepting', 'attempted to accept job';
         is $job->remaining_accept_attempts, 1, 'this cost the job one accept attempt';
-        $worker->current_job(undef);
     }
     qr/Registered and connected.*with.*host some-host and worker ID 42.*Trying to accept.*43/s, 'connected logged';
 
-    # assume one of the clients is disabled; it should be ignored
-    $fake_client->status('disabled');
-
-    my $output = combined_from {
-        $worker->_handle_client_status_changed($fake_client,
-            {status => 'disabled', reason => 'test', error_message => 'Test disabling'});
+    subtest 'reconnect while job is stopping concludes ongoing upload if any' => sub {
+        $job->{_status} = 'stopping';
+        $job->{_is_uploading_results} = 1;
+        combined_like {
+            $worker->_handle_client_status_changed($fake_client, {status => 'connected', reason => 'test'});
+            ok !$job->is_uploading_results, 'ongoing upload concluded on reconnect';
+        }
+        qr/Registered and connected.*with.*host some-host and worker ID 42.*Re-connected while job 43 is stopping/s,
+          'stopping job handled on reconnect';
     };
-    like $output, qr/Test disabling - ignoring server/s, 'client disabled';
-    unlike $output, qr/Stopping.*because registration/s, 'worker not stopped; there are still other clients';
 
-    # see if the expected number of retries is performed
-    $ENV{OPENQA_WORKER_CONNECT_INTERVAL} = 7;
-    combined_like {
-        $worker->_handle_client_status_changed($fake_client,
-            {status => 'failed', reason => 'test', error_message => '500 response: unavailable'})
-    }
-    qr/trying again in 7 seconds/s, 'worker will attempt to retry later';
+    subtest 'reconnect while job is active' => sub {
+        $job->{_status} = 'running';
+        $job->{_upload_results_timer} = 1234;
+        combined_like {
+            $worker->_handle_client_status_changed($fake_client, {status => 'connected', reason => 'test'});
+        }
+        qr/Registered and connected.*with.*host some-host and worker ID 42.*Re-connected while job 43 is active/s,
+          'active job handled on reconnect';
+    };
 
-    # assume all clients are disabled; worker should stop
-    $fake_client_2->status('disabled');
+    subtest 'client from different host does not touch current job' => sub {
+        $fake_client_2->worker_id(43);
+        combined_like {
+            $worker->_handle_client_status_changed($fake_client_2, {status => 'connected', reason => 'test'});
+        }
+        qr/Registered and connected.*with.*host yet-another-host/s,
+          'reconnect of different host logged without touching job';
+        is $job->status, 'running', 'job still in status running';
+    };
 
-    combined_like {
-        $worker->_handle_client_status_changed($fake_client_2,
-            {status => 'disabled', reason => 'test', error_message => 'Test disabling'})
-    }
-    qr/Test disabling - ignoring server.*Stopping because registration/s,
-      'worker stopped instantly when last client disabled and there is no job';
 
-    ok !$worker->is_stopping, 'not planning to stop yet';
-    combined_like {
-        $worker->current_job($job);
-        $worker->_handle_client_status_changed($fake_client_2,
-            {status => 'disabled', reason => 'test', error_message => 'Test disabling'});
-    }
-    qr/Test disabling - ignoring server.*Stopping after the current job because registration/s,
-      'worker stopped after current job when last client disabled';
-    ok $worker->is_stopping, 'worker is stopping';
+    subtest 'assume one of the clients is disabled; it should be ignored' => sub {
+        $job->{_status} = 'accepting';
+        $worker->current_job(undef);
+        $fake_client->status('disabled');
 
-    is $worker->current_job->status, 'accepting', 'current job considered accepting';
-    combined_like {
-        $worker->_handle_client_status_changed($fake_client_2,
-            {status => 'failed', reason => 'test', error_message => 'Test failure'});
-    }
-    qr/Test failure - trying again/s, 'registration tried again on client failure';
-    is $worker->current_job->status, 'stopped', 'current job stopped after registration failure on last accept attempt';
+        my $output = combined_from {
+            $worker->_handle_client_status_changed($fake_client,
+                {status => 'disabled', reason => 'test', error_message => 'Test disabling'});
+        };
+        like $output, qr/Test disabling - ignoring server/s, 'client disabled';
+        unlike $output, qr/Stopping.*because registration/s, 'worker not stopped; there are still other clients';
+    };
+
+    subtest 'the expected number of retries is performed' => sub {
+        $ENV{OPENQA_WORKER_CONNECT_INTERVAL} = 7;
+        combined_like {
+            $worker->_handle_client_status_changed($fake_client,
+                {status => 'failed', reason => 'test', error_message => '500 response: unavailable'})
+        }
+        qr/trying again in 7 seconds/s, 'worker will attempt to retry later';
+    };
+
+    subtest 'assume all clients are disabled; worker should stop' => sub {
+        $fake_client_2->status('disabled');
+
+        combined_like {
+            $worker->_handle_client_status_changed($fake_client_2,
+                {status => 'disabled', reason => 'test', error_message => 'Test disabling'})
+        }
+        qr/Test disabling - ignoring server.*Stopping because registration/s,
+          'worker stopped instantly when last client disabled and there is no job';
+
+        ok !$worker->is_stopping, 'not planning to stop yet';
+        combined_like {
+            $worker->current_job($job);
+            $worker->_handle_client_status_changed($fake_client_2,
+                {status => 'disabled', reason => 'test', error_message => 'Test disabling'});
+        }
+        qr/Test disabling - ignoring server.*Stopping after the current job because registration/s,
+          'worker stopped after current job when last client disabled';
+        ok $worker->is_stopping, 'worker is stopping';
+
+        is $worker->current_job->status, 'accepting', 'current job considered accepting';
+        combined_like {
+            $worker->_handle_client_status_changed($fake_client_2,
+                {status => 'failed', reason => 'test', error_message => 'Test failure'});
+        }
+        qr/Test failure - trying again/s, 'registration tried again on client failure';
+        is $worker->current_job->status, 'stopped',
+          'current job stopped after registration failure on last accept attempt';
+    };
 };
 
 subtest 'handle job status changes' => sub {
