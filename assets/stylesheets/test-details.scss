@@ -387,6 +387,11 @@ span.resborder_na {
     margin-top: 0;
     margin-bottom: 0;
   }
+  #filter-log-file {
+    width: 15rem;
+    max-width: 100%;
+  }
+
 }
 [data-bs-theme='dark'] .logfile-toolbar {
   background-color: $default-bg-color-dark;
@@ -410,6 +415,12 @@ span.resborder_na {
   }
   .line-current {
     background-color: var(--bs-warning-bg-subtle);
+  }
+  .line-search-match {
+    background-color: var(--bs-info-bg-subtle);
+    .line-number {
+      background-color: var(--bs-info-bg-subtle);
+    }
   }
   tr[id^='line-'] {
     scroll-margin-top: var(--logfile-toolbar-height, 0);
