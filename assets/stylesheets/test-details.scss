@@ -411,6 +411,9 @@ span.resborder_na {
   .line-current {
     background-color: var(--bs-warning-bg-subtle);
   }
+  tr[id^='line-'] {
+    scroll-margin-top: var(--logfile-toolbar-height, 0);
+  }
 }
 [data-bs-theme='dark'] .embedded-logfile {
   color: $default-font-color-dark;

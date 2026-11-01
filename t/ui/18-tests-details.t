@@ -668,6 +668,19 @@ subtest 'misc details: title, favicon, go back, go to source view, go to log vie
         'filter box remains visible after scrolling down');
     $driver->execute_script('window.scrollTo(0, 0)');
 
+    $driver->execute_script('window.location.hash = "line-1000"');
+    wait_until(
+        sub {
+            return $driver->execute_script(<<~'EOM');
+                const line = document.getElementById("line-1000").getBoundingClientRect();
+                const toolbar = document.querySelector(".logfile-toolbar").getBoundingClientRect();
+                return line.top >= toolbar.bottom - 1 && line.top < window.innerHeight;
+            EOM
+        },
+        'line selected via hash is not hidden by the sticky toolbar'
+    );
+    $driver->execute_script('window.location.hash = ""; window.scrollTo(0, 0)');
+
     $driver->find_element('#filter-log-file')->send_keys('kate');
     wait_until(sub { $driver->find_element('#filter-info')->get_text =~ qr{Showing 3 / 1296 lines} },
         'Showing filter result info for substring');
