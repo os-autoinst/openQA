@@ -3874,7 +3874,11 @@ test. If this address is not reachable from your machine, the
 administrator of the worker can set
 <code>DEVELOPER_CONNECTION_HINT</code> in the <a href="#worker-configuration">worker configuration</a>. The configured
 text replaces the default VNC notice and is shown as plain text, e.g. an
-SSH tunnel command.</p>
+SSH tunnel command. Case-insensitive placeholders <code>%PORT%</code>
+(or <code>%VNC_PORT%</code>), <code>%HOST%</code> (or
+<code>%WORKER_HOSTNAME%</code>), <code>%INSTANCE%</code> (worker
+instance number), and <code>%VNC_ARG%</code> are expanded dynamically
+for the worker instance running the test.</p>
 <h4 data-number="3.3.22.2" id="workflow-for-creating-or-updating-needles"><span class="header-section-number">3.3.22.2</span> Workflow for creating or
 updating needles</h4>
 <ol type="1">
