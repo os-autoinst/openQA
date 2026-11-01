@@ -659,6 +659,15 @@ subtest 'misc details: title, favicon, go back, go to source view, go to log vie
     like $driver->find_element('.embedded-logfile .ansi-blue-fg')->get_text, qr/send(autotype|key)/, 'log is colorful';
     like $driver->find_element('.embedded-logfile')->get_text, qr{/usr/bin/qemu-kvm}, 'qemu-kvm is shown in log viewer';
 
+    my $filter_box_top = sub {
+        return $driver->execute_script(
+            'return document.getElementById("filter-log-file").getBoundingClientRect().top;');
+    };
+    $driver->execute_script('document.querySelector(".embedded-logfile tr:last-child").scrollIntoView()');
+    wait_until(sub { my $top = $filter_box_top->(); defined $top && $top >= 0 && $top < 100 },
+        'filter box remains visible after scrolling down');
+    $driver->execute_script('window.scrollTo(0, 0)');
+
     $driver->find_element('#filter-log-file')->send_keys('kate');
     wait_until(sub { $driver->find_element('#filter-info')->get_text =~ qr{Showing 3 / 1296 lines} },
         'Showing filter result info for substring');

@@ -376,6 +376,21 @@ span.resborder_na {
   max-height: none;
   box-shadow: inset 0 2px 2px rgba(0, 0, 0, 20 / 100);
 }
+.logfile-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flow-root;
+  padding: 0.5rem 0;
+  background-color: $default-bg-color;
+  .corner-buttons {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+}
+[data-bs-theme='dark'] .logfile-toolbar {
+  background-color: $default-bg-color-dark;
+}
 .embedded-logfile {
   white-space: pre-wrap;
   font-family: var(--bs-font-monospace);
