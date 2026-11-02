@@ -723,19 +723,33 @@ function delay(callback, ms) {
   };
 }
 
-function filterLogLines(input, viaSearchBox = true) {
+function getLogQueryMode() {
+  const selectedMode = document.querySelector('input[name="logfile-query-mode"]:checked');
+  return selectedMode ? selectedMode.value : 'filter';
+}
+
+function setLogQueryMode(mode) {
+  const modeElement = document.getElementById(`logfile-mode-${mode === 'search' ? 'search' : 'filter'}`);
+  if (modeElement) {
+    modeElement.checked = true;
+  }
+}
+
+function applyLogQuery(input, viaSearchBox = true) {
   if (input === undefined) {
     return;
   }
-  const string = input.value;
-  if (string === input.dataset.lastString) {
-    // abort if the value does not change which can happen because there are multiple event handlers calling this function
+  const mode = getLogQueryMode();
+  const query = input.value;
+  const lastQuery = `${mode}:${query}`;
+  if (lastQuery === input.dataset.lastQuery) {
+    // abort if neither the query nor the mode changed
     return;
   }
-  const match = string.match(/^\/(.*)\/([i]*)$/);
+  const match = query.match(/^\/(.*)\/([i]*)$/);
   const regex = match ? new RegExp(match[1], match[2]) : undefined;
-  input.dataset.lastString = string;
-  displaySearchInfo('Searching…');
+  input.dataset.lastQuery = lastQuery;
+  displaySearchInfo(mode === 'search' ? 'Searching…' : 'Filtering…');
   $('.embedded-logfile').each(function (index, logFileElement) {
     const content = logFileElement.content;
     if (content === undefined) {
@@ -752,26 +766,32 @@ function filterLogLines(input, viaSearchBox = true) {
       }
     }
 
+    const matchingLines = new Set();
     let lineNumber = 0;
-    let matchingLines = 0;
-    if (string.length > 0) {
+    if (query.length > 0) {
       for (const line of lines) {
         const lineAsText = ansiToText(line);
-        if (regex ? lineAsText.match(regex) : lineAsText.includes(string)) {
-          ++matchingLines;
-        } else {
+        const matches = regex ? regex.test(lineAsText) : lineAsText.includes(query);
+        if (matches) {
+          matchingLines.add(lineNumber + 1);
+        } else if (mode === 'filter') {
           lines[lineNumber] = undefined;
         }
         ++lineNumber;
       }
-      displaySearchInfo(`Showing ${matchingLines} / ${lineNumber} lines`);
+      const action = mode === 'search' ? 'Highlighting' : 'Showing';
+      displaySearchInfo(`${action} ${matchingLines.size} / ${lineNumber} lines`);
     } else {
       displaySearchInfo('');
     }
-    showLogLines(logFileElement, lines, viaSearchBox);
+    showLogLines(logFileElement, lines, viaSearchBox, {mode, matchingLines});
   });
   const params = parseQueryParams();
-  string.length > 0 ? (params.filter = [string]) : delete params.filter;
+  delete params.filter;
+  delete params.search;
+  if (query.length > 0) {
+    params[mode === 'search' ? 'search' : 'filter'] = [query];
+  }
   updateQueryParams(params);
 }
 
@@ -788,12 +808,16 @@ function filterEmbeddedLogFiles() {
   addEventListener('resize', updateLogfileToolbarHeight);
   const searchBox = document.getElementById('filter-log-file');
   if (searchBox) {
-    const filterParam = parseQueryParams().filter?.[0];
-    if (filterParam !== undefined) {
-      searchBox.value = filterParam;
+    const params = parseQueryParams();
+    const searchParam = params.search?.[0];
+    const filterParam = params.filter?.[0];
+    const query = searchParam ?? filterParam;
+    setLogQueryMode(searchParam !== undefined ? 'search' : 'filter');
+    if (query !== undefined) {
+      searchBox.value = query;
     }
   }
-  loadEmbeddedLogFiles(filterLogLines.bind(null, searchBox, false));
+  loadEmbeddedLogFiles(applyLogQuery.bind(null, searchBox, false));
 }
 
 const stepRe = / \[step:[a-zA-Z0-9_-]+,[a-zA-Z0-9_-]+,[0-9]+\] /;
@@ -814,11 +838,12 @@ function createSourceLinks(logFileElement, lineContentElement) {
   }
 }
 
-function showLogLines(logFileElement, lines, viaSearchBox = false) {
+function showLogLines(logFileElement, lines, viaSearchBox = false, {mode, matchingLines} = {}) {
   const tableElement = document.createElement('table');
   const currentHash = document.location.hash;
   let lineNumber = 0;
   let currentLineElement = undefined;
+  let firstMatchElement = undefined;
   logFileElement.innerHTML = '';
   for (const line of lines) {
     ++lineNumber;
@@ -841,6 +866,12 @@ function showLogLines(logFileElement, lines, viaSearchBox = false) {
     lineNumberLinkElement.append(lineNumber);
     lineNumberElement.className = 'line-number';
     lineContentElement.className = 'line-content';
+    if (mode === 'search' && matchingLines?.has(lineNumber)) {
+      lineElement.classList.add('line-search-match');
+      if (!firstMatchElement) {
+        firstMatchElement = lineElement;
+      }
+    }
     if (hash === currentHash) {
       lineNumberLinkElement.onclick();
     }
@@ -855,8 +886,10 @@ function showLogLines(logFileElement, lines, viaSearchBox = false) {
   }
   logFileElement.appendChild(tableElement);
 
-  // trigger the current hash again or delete it if no longer valid
-  if (currentLineElement && !viaSearchBox) {
+  // scroll to the first search match, trigger the current hash again or delete it if no longer valid
+  if (mode === 'search' && firstMatchElement) {
+    firstMatchElement.scrollIntoView();
+  } else if (currentLineElement && !viaSearchBox) {
     currentLineElement.parentElement.scrollIntoView();
   } else if (currentHash.startsWith('line-') && !currentLineElement) {
     document.location.hash = '';
@@ -911,10 +944,13 @@ window.onload = function () {
   if (!searchBox) {
     return;
   }
-  const filter = filterLogLines.bind(null, searchBox, true);
-  searchBox.addEventListener('keyup', delay(filter), 1000);
-  searchBox.addEventListener('change', filter, false);
-  searchBox.addEventListener('search', filter, false);
+  const applyQuery = applyLogQuery.bind(null, searchBox, true);
+  searchBox.addEventListener('keyup', delay(applyQuery), 1000);
+  searchBox.addEventListener('change', applyQuery, false);
+  searchBox.addEventListener('search', applyQuery, false);
+  document.querySelectorAll('input[name="logfile-query-mode"]').forEach(element => {
+    element.addEventListener('change', applyQuery, false);
+  });
 };
 
 function displaySearchInfo(text) {

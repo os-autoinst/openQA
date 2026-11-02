@@ -563,7 +563,7 @@ subtest 'render log links from steps' => sub {
             my $link = $log_link_elems[0];
             is $link->get_attribute('title'), 'Jump to logfile', 'log link exists';
             like $link->get_attribute('href'),
-              qr{/tests/99946/logfile\?filename=autoinst-log\.txt&filter=.*step.*installation.*bootloader.*$step.*sl=1},
+              qr{/tests/99946/logfile\?filename=autoinst-log\.txt&search=.*step.*installation.*bootloader.*$step.*sl=1},
               'log href correct';
 
             $link->click;
@@ -705,6 +705,68 @@ subtest 'misc details: title, favicon, go back, go to source view, go to log vie
     is $url->query->param('filename'), 'autoinst-log.txt', 'URL still contains filename after clicking on line number';
     is $url->query->param('filter'), '/kate-[12]/', 'URL still contains filter after clicking on line number';
     is $url->fragment, 'line-68', 'URL fragment points to clicked line';
+};
+
+subtest 'logfile search mode' => sub {
+    $driver->get('/tests/99946/logfile?filename=autoinst-log.txt&search=kate');
+    wait_for_ajax(msg => 'logfile with search query loaded');
+    ok $driver->find_element_by_id('logfile-mode-search')->is_selected, 'search mode selected from URL';
+    is $driver->find_element_by_id('filter-log-file')->get_value, 'kate', 'search query restored from URL';
+    wait_until(sub { $driver->find_element('#filter-info')->get_text =~ qr{Highlighting 3 / 1296 lines} },
+        'Highlighting search result info for substring');
+    is scalar @{$driver->find_elements('.line-search-match')}, 3, 'all matching lines highlighted';
+    like $driver->find_element('.embedded-logfile')->get_text, qr{/usr/bin/qemu-kvm},
+      'non-matching lines are still shown in search mode';
+    wait_until(
+        sub {
+            return $driver->execute_script(<<~'EOM');
+                const line = document.querySelector(".line-search-match").getBoundingClientRect();
+                const toolbar = document.querySelector(".logfile-toolbar").getBoundingClientRect();
+                return line.top >= toolbar.bottom - 1 && line.top < window.innerHeight;
+            EOM
+        },
+        'first search match is not hidden by the sticky toolbar'
+    );
+
+    my $url = Mojo::URL->new($driver->execute_script('return document.location.toString()'));
+    is $url->query->param('filename'), 'autoinst-log.txt', 'URL still contains filename after searching';
+    is $url->query->param('search'), 'kate', 'URL contains search query';
+    is $url->query->param('filter'), undef, 'URL does not contain filter in search mode';
+
+    $driver->find_element_by_id('logfile-mode-filter')->click;
+    wait_until(sub { $driver->find_element('#filter-info')->get_text =~ qr{Showing 3 / 1296 lines} },
+        'Showing filter result info after switching to filter mode');
+    is scalar @{$driver->find_elements('.line-search-match')}, 0, 'no lines highlighted in filter mode';
+    unlike $driver->find_element('.embedded-logfile')->get_text, qr{/usr/bin/qemu-kvm},
+      'non-matching lines hidden in filter mode';
+    $url = Mojo::URL->new($driver->execute_script('return document.location.toString()'));
+    is $url->query->param('filter'), 'kate', 'URL contains filter query after switching mode';
+    is $url->query->param('search'), undef, 'URL does not contain search in filter mode';
+
+    $driver->find_element_by_id('logfile-mode-search')->click;
+    wait_until(sub { $driver->find_element('#filter-info')->get_text =~ qr{Highlighting 3 / 1296 lines} },
+        'Highlighting search result info after switching back to search mode');
+    is scalar @{$driver->find_elements('.line-search-match')}, 3, 'matching lines highlighted again';
+    like $driver->find_element('.embedded-logfile')->get_text, qr{/usr/bin/qemu-kvm},
+      'non-matching lines shown again in search mode';
+
+    $driver->find_element('#filter-log-file')->clear;
+    $driver->find_element('#filter-log-file')->send_keys('ALARM');
+    wait_until(sub { $driver->find_element('#filter-info')->get_text =~ qr{Highlighting 1 / 1296 lines} },
+        'Highlighting search result info after typing a new query');
+    is scalar @{$driver->find_elements('.line-search-match')}, 1, 'only the new matching line highlighted';
+    wait_until(
+        sub {
+            return $driver->execute_script(<<~'EOM');
+                const line = document.querySelector(".line-search-match").getBoundingClientRect();
+                const toolbar = document.querySelector(".logfile-toolbar").getBoundingClientRect();
+                return line.top >= toolbar.bottom - 1 && line.top < window.innerHeight;
+            EOM
+        },
+        'new search match is scrolled into view'
+    );
+    $url = Mojo::URL->new($driver->execute_script('return document.location.toString()'));
+    is $url->query->param('search'), 'ALARM', 'URL updated with new search query';
 };
 
 subtest ansiToHtml => sub {
@@ -1130,7 +1192,7 @@ subtest 'render log links from steps when viewing via route to latest' => sub {
     my $link = $log_link_elems[0];
     is $link->get_attribute('title'), 'Jump to logfile', 'log link exists';
     like $link->get_attribute('href'),
-      qr{/tests/99946/logfile\?filename=autoinst-log\.txt&filter=.*step.*installation.*bootloader.*$step.*sl=1},
+      qr{/tests/99946/logfile\?filename=autoinst-log\.txt&search=.*step.*installation.*bootloader.*$step.*sl=1},
       'log href points to 99946 instead of latest';
 
     $link->click;

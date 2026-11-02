@@ -11,6 +11,14 @@
 % my $url = url_for('test_file', testid => $testid, filename => $filename);
 <div class="logfile-toolbar">
     <div class="corner-buttons">
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="logfile-query-mode" id="logfile-mode-filter" value="filter" checked>
+            <label class="form-check-label" for="logfile-mode-filter" title="Show only matching lines">Filter</label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="logfile-query-mode" id="logfile-mode-search" value="search">
+            <label class="form-check-label" for="logfile-mode-search" title="Show all lines and highlight matching ones">Search</label>
+        </div>
         <span id="filter-info"></span>
         <input id="filter-log-file" placeholder="substring or /regex/i" type="search">
         <a class="btn btn-light" href=".#downloads">
