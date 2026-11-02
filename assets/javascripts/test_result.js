@@ -775,7 +775,17 @@ function filterLogLines(input, viaSearchBox = true) {
   updateQueryParams(params);
 }
 
+function updateLogfileToolbarHeight() {
+  const toolbar = document.querySelector('.logfile-toolbar');
+  if (!toolbar) {
+    return;
+  }
+  document.documentElement.style.setProperty('--logfile-toolbar-height', `${toolbar.offsetHeight}px`);
+}
+
 function filterEmbeddedLogFiles() {
+  updateLogfileToolbarHeight();
+  addEventListener('resize', updateLogfileToolbarHeight);
   const searchBox = document.getElementById('filter-log-file');
   if (searchBox) {
     const filterParam = parseQueryParams().filter?.[0];
@@ -847,7 +857,7 @@ function showLogLines(logFileElement, lines, viaSearchBox = false) {
 
   // trigger the current hash again or delete it if no longer valid
   if (currentLineElement && !viaSearchBox) {
-    currentLineElement.scrollIntoView();
+    currentLineElement.parentElement.scrollIntoView();
   } else if (currentHash.startsWith('line-') && !currentLineElement) {
     document.location.hash = '';
   }
@@ -909,6 +919,7 @@ window.onload = function () {
 
 function displaySearchInfo(text) {
   document.getElementById('filter-info').innerHTML = text;
+  updateLogfileToolbarHeight();
 }
 
 function setCurrentPreviewFromStepLinkIfPossible(stepLink) {

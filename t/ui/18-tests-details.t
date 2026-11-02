@@ -659,6 +659,28 @@ subtest 'misc details: title, favicon, go back, go to source view, go to log vie
     like $driver->find_element('.embedded-logfile .ansi-blue-fg')->get_text, qr/send(autotype|key)/, 'log is colorful';
     like $driver->find_element('.embedded-logfile')->get_text, qr{/usr/bin/qemu-kvm}, 'qemu-kvm is shown in log viewer';
 
+    my $filter_box_top = sub {
+        return $driver->execute_script(
+            'return document.getElementById("filter-log-file").getBoundingClientRect().top;');
+    };
+    $driver->execute_script('document.querySelector(".embedded-logfile tr:last-child").scrollIntoView()');
+    wait_until(sub { my $top = $filter_box_top->(); defined $top && $top >= 0 && $top < 100 },
+        'filter box remains visible after scrolling down');
+    $driver->execute_script('window.scrollTo(0, 0)');
+
+    $driver->execute_script('window.location.hash = "line-1000"');
+    wait_until(
+        sub {
+            return $driver->execute_script(<<~'EOM');
+                const line = document.getElementById("line-1000").getBoundingClientRect();
+                const toolbar = document.querySelector(".logfile-toolbar").getBoundingClientRect();
+                return line.top >= toolbar.bottom - 1 && line.top < window.innerHeight;
+            EOM
+        },
+        'line selected via hash is not hidden by the sticky toolbar'
+    );
+    $driver->execute_script('window.location.hash = ""; window.scrollTo(0, 0)');
+
     $driver->find_element('#filter-log-file')->send_keys('kate');
     wait_until(sub { $driver->find_element('#filter-info')->get_text =~ qr{Showing 3 / 1296 lines} },
         'Showing filter result info for substring');

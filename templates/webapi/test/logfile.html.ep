@@ -9,15 +9,17 @@
 % end
 
 % my $url = url_for('test_file', testid => $testid, filename => $filename);
-<div class="corner-buttons" style="margin-top: -5px;">
-<span id="filter-info"></span>
-<input id="filter-log-file" placeholder="substring or /regex/i" type="search">
-    <a class="btn btn-light" href=".#downloads">
-        <i class="fa-solid fa-chevron-left"></i> Back to job <%= $testid %>
-    </a>
-    <a class="btn btn-light" href="<%= $url %>" target="blank">
-        <i class="fa-solid fa-download"></i> Raw
-    </a>
+<div class="logfile-toolbar">
+    <div class="corner-buttons">
+        <span id="filter-info"></span>
+        <input id="filter-log-file" placeholder="substring or /regex/i" type="search">
+        <a class="btn btn-light" href=".#downloads">
+            <i class="fa-solid fa-chevron-left"></i> Back to job <%= $testid %>
+        </a>
+        <a class="btn btn-light" href="<%= $url %>" target="blank">
+            <i class="fa-solid fa-download"></i> Raw
+        </a>
+    </div>
 </div>
 <p><%= $filename %></p>
 <hr>
