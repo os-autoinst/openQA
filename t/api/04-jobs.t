@@ -1161,6 +1161,17 @@ subtest 'priority correctly assigned when posting job' => sub {
         $t->app->config->{misc_limits}->{prio_group_data} = undef;
     };
 
+    subtest 'priority base falls back to global default without job group' => sub {
+        local $jobs_post_params{_GROUP} = 0;
+        local $jobs_post_params{MAX_JOB_TIME} = 7300;
+        $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
+        $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
+        $t->json_is('/job/group_id', undef, 'job created without group');
+        $t->json_is('/job/priority', $default_prio + 51, 'priority scaled from global default');
+        like $t->tx->res->json->{job}->{settings}->{_PRIORITY_EXPLANATION},
+          qr/Adjusting job priority from 50 to 101 /, 'explanation starts from global default';
+    };
+
     subtest 'priority adjustment based on empty job group description' => sub {
         my $group = $schema->resultset('JobGroups')->find({name => 'opensuse'});
         $group->update({description => undef});
