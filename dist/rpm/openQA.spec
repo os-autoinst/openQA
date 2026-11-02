@@ -764,6 +764,8 @@ fi
 %{_datadir}/bash-completion/completions/openqa-cli
 
 %files client-zsh-completion
+%dir %{_datadir}/zsh
+%dir %{_datadir}/zsh/site-functions
 %{_datadir}/zsh/site-functions/_openqa-cli
 
 %files common
