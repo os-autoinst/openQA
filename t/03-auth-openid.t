@@ -34,12 +34,31 @@ is + ($users->call_args(2))[1], 'mordred', 'new user created with details';
 
 my $params = Test::MockObject->new->set_always(pairs => ['openid.op_endpoint', 'https://www.opensuse.org/openid/']);
 my $req = Test::MockObject->new->set_always(params => $params)->set_always(url => $url);
-my $log = Test::MockObject->new->set_true('error');
+my $log = Test::MockObject->new->set_true('error')->set_true('debug');
 my $app = Test::MockObject->new->set_always(config => {})->set_always(log => $log);
 $c->set_always(return_page => undef)->set_always(req => $req)->set_always(app => $app)->set_true('flash');
 Test::MockObject->new->set_always(params => $params)->set_always(url => $url);
 is +OpenQA::WebAPI::Auth::OpenID::auth_response($c), 0, 'can call auth_response';
 $c->app->log->called_ok('error', 'an error was logged for call without proper config');
+
+my $empty_params = Test::MockObject->new->set_always(pairs => []);
+$req->set_always(params => $empty_params);
+$log->set_true('info');
+$log->clear;
+$c->clear;
+is +OpenQA::WebAPI::Auth::OpenID::auth_response($c), 0, 'can call auth_response without OpenID parameters';
+$c->app->log->called_ok('info', 'info logged when response invoked without OpenID parameters');
+ok !$c->app->log->called('error'), 'no error logged for direct visit without OpenID parameters';
+ok !$c->called('flash'), 'no flash message shown for direct visit without OpenID parameters';
+
+my $missing_endpoint_params = Test::MockObject->new->set_always(pairs => ['openid.foo', 'bar']);
+$req->set_always(params => $missing_endpoint_params);
+$log->clear;
+$c->clear;
+is +OpenQA::WebAPI::Auth::OpenID::auth_response($c), 0,
+  'can call auth_response with OpenID parameters lacking endpoint';
+$c->app->log->called_ok('error', 'an error was logged when OpenID response lacks provider endpoint');
+$c->called_ok('flash', 'flash message shown when OpenID response lacks provider endpoint');
 
 my $mock_openid_consumer = Test::MockModule->new('Net::OpenID::Consumer');
 $mock_openid_consumer->redefine(
