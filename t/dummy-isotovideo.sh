@@ -2,6 +2,11 @@
 set -euo pipefail
 
 echo "dummy isotovideo started with arguments: $*"
+if [[ "$*" =~ --version ]]; then
+    echo "dummy isotovideo interface v0"
+    exit 0
+fi
+
 echo "arguments: $*" > autoinst-log.txt
 
 # create fake test results so the web UI thinks we ran at least one test module successfully and considers
