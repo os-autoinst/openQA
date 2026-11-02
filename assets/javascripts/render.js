@@ -53,7 +53,7 @@ function createLogLink(module, step) {
   const E = createElement;
   const params = new URLSearchParams({
     filename: 'autoinst-log.txt',
-    filter: `[step:${module.category},${module.name},${step.num}]`,
+    search: `[step:${module.category},${module.name},${step.num}]`,
     sl: 1
   });
   const jobId = document.querySelector('.copy-jobid').dataset.jobid;

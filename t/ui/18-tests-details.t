@@ -563,7 +563,7 @@ subtest 'render log links from steps' => sub {
             my $link = $log_link_elems[0];
             is $link->get_attribute('title'), 'Jump to logfile', 'log link exists';
             like $link->get_attribute('href'),
-              qr{/tests/99946/logfile\?filename=autoinst-log\.txt&filter=.*step.*installation.*bootloader.*$step.*sl=1},
+              qr{/tests/99946/logfile\?filename=autoinst-log\.txt&search=.*step.*installation.*bootloader.*$step.*sl=1},
               'log href correct';
 
             $link->click;
@@ -1192,7 +1192,7 @@ subtest 'render log links from steps when viewing via route to latest' => sub {
     my $link = $log_link_elems[0];
     is $link->get_attribute('title'), 'Jump to logfile', 'log link exists';
     like $link->get_attribute('href'),
-      qr{/tests/99946/logfile\?filename=autoinst-log\.txt&filter=.*step.*installation.*bootloader.*$step.*sl=1},
+      qr{/tests/99946/logfile\?filename=autoinst-log\.txt&search=.*step.*installation.*bootloader.*$step.*sl=1},
       'log href points to 99946 instead of latest';
 
     $link->click;
