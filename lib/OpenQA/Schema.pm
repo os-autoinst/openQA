@@ -63,6 +63,12 @@ sub connect_db (%args) {
         my $database_config = parse_config_files_as_hash($database_config_paths);
         my $database_config_for_mode = $database_config ? $database_config->{$mode} : {dsn => 'DBI:Pg:dbname=openqa'};
         die "Could not find database section '$mode' in @$database_config_paths\n" unless $database_config_for_mode;
+        my $app = OpenQA::App->singleton;
+        my $app_name = ($app ? $app->defaults('appname') : '') || 'openQA';
+        $app_name = ";application_name='$app_name'";
+        ref $database_config_for_mode eq 'HASH'
+          ? ($database_config_for_mode->{dsn} .= $app_name)
+          : ($database_config_for_mode .= $app_name);
         $SINGLETON = __PACKAGE__->connect($database_config_for_mode);
     }
     if (defined(my $search_path = $ENV{OPENQA_DATABASE_SEARCH_PATH})) {

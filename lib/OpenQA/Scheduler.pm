@@ -25,13 +25,13 @@ our $RUNNING;
 
 sub startup ($self) {
     $self->moniker('openqa_scheduler');
+    $self->defaults(appname => 'openQA Scheduler');
 
     # Provide help to users early to prevent failing later on misconfigurations
     return if $ENV{MOJO_HELP};
 
     OpenQA::Scheduler::Client::mark_current_process_as_scheduler;
     $self->setup if $RUNNING;
-    $self->defaults(appname => 'openQA Scheduler');
 
     # no cookies for worker, no secrets to protect
     $self->secrets(['nosecretshere']);
