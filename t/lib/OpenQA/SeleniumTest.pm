@@ -6,13 +6,12 @@ use Mojo::Base 'Exporter', -signatures;
 require OpenQA::Test::Database;
 
 our @EXPORT =    ## no critic (Modules::ProhibitAutomaticExportation)
-  qw(driver_missing check_driver_modules enable_timeout
-  disable_timeout start_driver
+  qw(driver_missing check_driver_modules start_driver
   call_driver kill_driver wait_for_ajax disable_bootstrap_animations
   wait_for_ajax_and_animations
   open_new_tab mock_js_functions element_visible element_hidden
   element_not_present javascript_console_has_no_warnings_or_errors
-  wait_until wait_until_element_gone wait_for_element wait_for_data_table
+  wait_until wait_until_element_gone wait_for_element wait_for_element_count
   wait_for_url
   element_prop element_prop_by_selector map_elements);
 
@@ -42,14 +41,6 @@ sub _start_app ($args) {
     $STARTINGPID = $$;
     $WEBAPI = OpenQA::Test::Utils::create_webapi($MOJOPORT);
     return $MOJOPORT;
-}
-
-sub enable_timeout () {
-    $_DRIVER->set_implicit_wait_timeout(2000);
-}
-
-sub disable_timeout () {
-    $_DRIVER->set_implicit_wait_timeout(0);
 }
 
 sub start_driver ($mojoport) {
@@ -97,8 +88,8 @@ sub start_driver ($mojoport) {
         my $startup_timeout = OpenQA::Test::TimeLimit::scale_timeout($ENV{OPENQA_SELENIUM_TEST_STARTUP_TIMEOUT} // 10);
         $_DRIVER = Test::Selenium::Chrome->new(%opts, startup_timeout => $startup_timeout);
         $_DRIVER->{is_wd3} = 0;    # ensure the Selenium::Remote::Driver instance uses JSON Wire protocol
-        enable_timeout;
-        # Scripts are considered stuck after this timeout
+
+        # scripts are considered stuck after this timeout
         $_DRIVER->set_timeout(script => $ENV{OPENQA_SELENIUM_SCRIPT_TIMEOUT_MS} // 2000);
         try { $_DRIVER->set_window_size(600, 800) }
         catch ($e) {
@@ -259,13 +250,16 @@ sub mock_js_functions (%functions_to_mock) {
 }
 
 # asserts that an element is visible and optionally whether it does (not) contain the expected phrases
-sub element_visible ($selector, $like = undef, $unlike = undef, $test_description = undef) {
-    my @elements = $_DRIVER->find_elements($selector);
-    is(scalar @elements, 1, $selector . ' present exactly once');
-
-    my $element = $elements[0];
-    ok($element, $selector . ' exists') or return;
-    ok($element->is_displayed(), $test_description // ($selector . ' visible'));
+# recognized options: timeout (defaults to the budget of the former global implicit wait), check_interval
+sub element_visible ($selector, $like = undef, $unlike = undef, $test_description = undef, %opts) {
+    my $element = wait_for_element(
+        selector => $selector,
+        is_displayed => 1,
+        timeout => $opts{timeout} // 2,
+        check_interval => $opts{check_interval},
+        description => $test_description // ($selector . ' visible'));
+    is scalar @{$_DRIVER->find_elements($selector)}, 1, $selector . ' present exactly once';
+    return unless $element;
 
     # assert the element's text
     my $element_text = $element->get_text();
@@ -288,17 +282,41 @@ sub element_visible ($selector, $like = undef, $unlike = undef, $test_descriptio
 }
 
 # asserts that an element is part of the page but hidden
-sub element_hidden ($selector, $test_description = undef) {
-    my @elements = $_DRIVER->find_elements($selector);
-    is scalar @elements, 1, $selector . ' present exactly once';
-    my $hidden = !$elements[0]->is_displayed || $elements[0]->get_css_attribute('display') eq 'none';
-    ok $hidden, $test_description // ($selector . ' hidden');
+# recognized options: timeout (defaults to the budget of the former global implicit wait), check_interval
+sub element_hidden ($selector, $test_description = undef, %opts) {
+    wait_for_element(
+        selector => $selector,
+        is_displayed => 0,
+        timeout => $opts{timeout} // 2,
+        check_interval => $opts{check_interval},
+        description => $test_description // ($selector . ' hidden'));
+    is scalar @{$_DRIVER->find_elements($selector)}, 1, $selector . ' present exactly once';
 }
 
 # asserts that an element is not part of the page
 sub element_not_present ($selector, $test_description = undef) {
     my @elements = $_DRIVER->find_elements($selector);
     is scalar @elements, 0, $test_description // ($selector . ' not present');
+}
+
+# polls until the number of elements matching the selector equals the expected count and asserts it once
+# recognized options: timeout, check_interval, method, description
+sub wait_for_element_count ($selector, $expected_count, %opts) {
+    my @entries;
+    my $description = $opts{description} // "$expected_count elements for $selector";
+    wait_until(
+        sub {
+            # query only once the page is settled, otherwise the returned elements may get stale right away
+            wait_for_ajax(msg => $description);
+            @entries = $_DRIVER->find_elements($selector, $opts{method} // FIND_METHOD);
+            @entries == $expected_count;
+        },
+        $description,
+        $opts{timeout} // 10,
+        $opts{check_interval},
+    );
+    is scalar @entries, $expected_count, "$selector shows expected number of elements";
+    return \@entries;
 }
 
 # returns an element's property
@@ -349,45 +367,27 @@ sub wait_for_element (%args) {
     my $expected_is_displayed = $args{is_displayed};
     my $trigger_function = $args{trigger_function};
     my $method = $args{method} // FIND_METHOD;
+    my $like = $args{like};
 
     my $element;
-    disable_timeout();
-    try {
-        wait_until(
-            sub {
-                $trigger_function->() if $trigger_function;
-                my @elements = $_DRIVER->find_elements($selector, $method);
-                if (scalar @elements >= 1
-                    && (!defined $expected_is_displayed || $elements[0]->is_displayed == $expected_is_displayed))
-                {
-                    $element = $elements[0];
-                }
-                return defined $element;
-            },
-            $args{description} // $args{desc} // ($selector . ' present'),
-            $args{timeout},
-            $args{check_interval},
-        );
-    }
-    catch ($e) {
-        enable_timeout();    # uncoverable statement
-        die $e;    # uncoverable statement
-    }
-    enable_timeout();
-    like $element->get_text, $args{like}, "$selector text" if $element && $args{like};
+    wait_until(
+        sub {
+            $trigger_function->() if $trigger_function;
+            my @elements = $_DRIVER->find_elements($selector, $method);
+            if (   scalar @elements >= 1
+                && (!defined $expected_is_displayed || $elements[0]->is_displayed == $expected_is_displayed)
+                && (!defined $like || eval { $elements[0]->get_text =~ $like }))
+            {
+                $element = $elements[0];
+            }
+            return defined $element;
+        },
+        $args{description} // $args{desc} // ($selector . ' present'),
+        $args{timeout},
+        $args{check_interval},
+    );
+    like $element->get_text, $like, "$selector text" if $element && $like;
     return $element;
-}
-
-sub wait_for_data_table ($table, $expected_row_count) {
-    my @entries;
-    wait_for_ajax msg => 'DataTable query';
-    wait_for {
-        @entries = $_DRIVER->find_child_elements($table, 'tbody/tr', 'xpath');
-        scalar @entries == $expected_row_count;
-    }
-    "$expected_row_count rows present", {timeout => OpenQA::Test::TimeLimit::scale_timeout(10)};
-    is scalar @entries, $expected_row_count, 'DataTable shows expected number of rows';
-    return \@entries;
 }
 
 sub wait_for_url ($regex, $desc = undef) {
