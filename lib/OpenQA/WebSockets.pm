@@ -17,11 +17,11 @@ our $RUNNING;
 
 sub startup ($self) {
     $self->moniker('openqa_websockets');
+    $self->defaults(appname => 'openQA Websocket Server');
     OpenQA::WebSockets::Client::mark_current_process_as_websocket_server;
 
     $self->_setup if $RUNNING;
 
-    $self->defaults(appname => 'openQA Websocket Server');
     if (defined(my $max_workers = $self->config->{misc_limits}->{max_online_workers})) {
         # increase max connections from default of 1000 to cover configured max_online_workers
         my $loop = Mojo::IOLoop->singleton;
