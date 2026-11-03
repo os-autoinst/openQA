@@ -556,6 +556,11 @@ The database connection can be configured in
 value format can be found in the
 [DBD::Pg documentation](https://metacpan.org/pod/DBD::Pg#DBI-Class-Methods).
 
+No specific PostgreSQL configuration is required. The default connection limit
+of 100 is sufficient for most openQA instances. If you connect additional
+tooling like Telegraf, you might need to increase `max_connections` in
+`/var/lib/pgsql/data/postgresql.conf`, though.
+
 #### Example for connecting to local PostgreSQL database
 
 ```ini
