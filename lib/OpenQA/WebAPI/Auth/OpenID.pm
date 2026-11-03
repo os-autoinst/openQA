@@ -111,11 +111,17 @@ sub auth_response ($c) {
     $csr->handle_server_response(
         not_openid => sub () {
             my $op_uri = $params{'openid.op_endpoint'};
-            my $msg
-              = $op_uri
-              ? "OpenID provider '$op_uri' returned invalid data on a login attempt"
-              : 'OpenID response returned no provider endpoint';
-            $err_handler->('Failed to login', $msg);
+            if ($op_uri) {
+                $err_handler->('Failed to login', "OpenID provider '$op_uri' returned invalid data on a login attempt");
+            }
+            elsif (grep { /^openid\./ } keys %params) {
+                $err_handler->('Failed to login', 'OpenID response returned no provider endpoint');
+            }
+            else {
+                # A callback hit without any openid.* parameters is a stray or scanner request, not a failed login
+                $c->app->log->info('OpenID: Response callback invoked without OpenID parameters');
+                return (error => 0);
+            }
         },
         setup_needed => sub ($setup_url) {
             # Redirect the user to $setup_url
