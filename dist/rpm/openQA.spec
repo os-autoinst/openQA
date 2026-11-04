@@ -735,6 +735,9 @@ fi
 %{_datadir}/openqa/script/openqa-webui-daemon
 %{_datadir}/openqa/script/upgradedb
 %{_datadir}/openqa/script/modify_needle
+%if 0%{?suse_version} > 1500
+%{_sysusersdir}/geekotest.conf
+%endif
 # TODO: define final user
 %defattr(-,geekotest,root)
 # attention: never package subdirectories owned by a user other
@@ -752,9 +755,6 @@ fi
 %dir %{_localstatedir}/lib/openqa/share/factory/repo
 %dir %{_localstatedir}/lib/openqa/share/factory/other
 %ghost %{_localstatedir}/log/openqa
-%if 0%{?suse_version} > 1500
-%{_sysusersdir}/geekotest.conf
-%endif
 
 %if %{with devel_package}
 %files devel
@@ -841,17 +841,17 @@ fi
 %{_datadir}/openqa/script/openqa-workercache-daemon
 %{_datadir}/openqa/script/openqa-worker-cacheservice-minion
 %dir %{_localstatedir}/lib/openqa/pool
-%defattr(-,_openqa-worker,root)
-%dir %{_localstatedir}/lib/openqa/cache
-%dir %{_localstatedir}/lib/openqa/cache/podman
-# own one pool - to create the others is task of the admin
-%dir %{_localstatedir}/lib/openqa/pool/1
 %if 0%{?suse_version} > 1500
 %{_sysusersdir}/%{name}-worker.conf
 %endif
 %if 0%{?suse_version} <= 1560
 %{_prefix}/lib/sysctl.d/01-openqa-reload-worker-auto-restart.conf
 %endif
+%defattr(-,_openqa-worker,root)
+%dir %{_localstatedir}/lib/openqa/cache
+%dir %{_localstatedir}/lib/openqa/cache/podman
+# own one pool - to create the others is task of the admin
+%dir %{_localstatedir}/lib/openqa/pool/1
 
 %files client
 %dir %{_datadir}/openqa
