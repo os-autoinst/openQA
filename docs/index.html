@@ -1726,6 +1726,11 @@ script</a>. The database connection can be configured in <a href="#database-conf
 (normally the <code>[production]</code> section is relevant). More info
 about the <code>dsn</code> value format can be found in the <a href="https://metacpan.org/pod/DBD::Pg#DBI-Class-Methods">DBD::Pg
 documentation</a>.</p>
+<p>No specific PostgreSQL configuration is required. The default
+connection limit of 100 is sufficient for most openQA instances. If you
+connect additional tooling like Telegraf, you might need to increase
+<code>max_connections</code> in
+<code>/var/lib/pgsql/data/postgresql.conf</code>, though.</p>
 <h4 data-number="2.6.4.1" id="example-for-connecting-to-local-postgresql-database"><span class="header-section-number">2.6.4.1</span> Example for connecting to
 local PostgreSQL database</h4>
 <div class="sourceCode" id="cb36"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[production]</span></span>
