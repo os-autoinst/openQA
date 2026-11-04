@@ -41,7 +41,7 @@ pull_request_rules:
   - name: automatic merge on merge-skip-oqa-in-oqa-tests
     conditions:
       - and: *core_checks
-      - '#check-success>=39'
+      - '#check-success>=43'
       - label=merge-skip-oqa-in-oqa-tests
       - -label=merge-skip-extended-tests
     actions: *merge
