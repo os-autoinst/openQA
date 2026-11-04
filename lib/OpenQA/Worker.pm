@@ -139,7 +139,7 @@ sub acquire_job_guard ($self) {
 sub update_job_guard_expiration ($self) {
     return 0 unless ref $self->{_guard_or_error};    # skip if we don't hold a lock
     my $settings = $self->settings->global_settings;
-    return undef unless defined(my $lock_name = $settings->{LOCK_NAME});
+    return undef unless my $lock_name = $settings->{LOCK_NAME};
     my $expiration = int($settings->{LOCK_EXPIRATION} // 30);
     my $query = q(update minion_locks set expires = datetime('now', ?) where name = ? order by expires desc limit 1);
     $self->{_minion_sqlite}->db->query($query, "+$expiration seconds", $lock_name);
