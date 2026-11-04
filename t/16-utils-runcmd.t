@@ -114,10 +114,14 @@ subtest 'invoke Git commands for real testing error handling' => sub {
     subtest 'log diff computation helper of job' => sub {
         my $msg = 'commit msg';
         like OpenQA::Schema::Result::Jobs::git_log_diff(undef, $empty_tmp_dir, 'HEAD'), qr/$msg.*testfile/s,
-          'commit and file mentioned';
+          'git_log_diff - commit and file mentioned';
         like OpenQA::Schema::Result::Jobs::git_log_diff(undef, $empty_tmp_dir, 'HEAD', stat => '15,10'),
           qr/$msg.*\.\.\.ile.txt/s,
-          'commit and file mentioned';
+          'git_log_diff - commit and shortened file mentioned';
+        like OpenQA::Schema::Result::Jobs::git_diff(undef, $empty_tmp_dir, 'HEAD', limit => 3), qr/testfile.txt/,
+          'git_diff - full filename';
+        like OpenQA::Schema::Result::Jobs::git_diff(undef, $empty_tmp_dir, 'HEAD', limit => 3, stat => '15,10'),
+          qr/\.\.\.ile.txt/, 'git_diff - filename shortened';
     };
 
     subtest 'cache_ref' => sub {

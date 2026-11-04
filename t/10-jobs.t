@@ -453,8 +453,8 @@ subtest 'carry over, including soft-fails' => sub {
                 return $fake_git_log;
             });
         $job_mock->redefine(
-            git_diff => sub ($self, $dir, $range, $limit = undef) {
-                $got_diff_limit = $limit;
+            git_diff => sub ($self, $dir, $range, %options) {
+                $got_diff_limit = $options{limit};
                 return $fake_git_log;
             });
         path('t/data/last_good.json')->copy_to(path(($job->_previous_scenario_jobs)[1]->result_dir(), 'vars.json'));
@@ -1097,34 +1097,34 @@ subtest 'git log diff' => sub {
     $_settings{TEST} = 'L';
     my $job = _job_create(\%_settings);
 
-    my $too_big = $job->git_diff('/foo', '123..456', 5);
+    my $too_big = $job->git_diff('/foo', '123..456', limit => 5);
     like $too_big, qr{Too many commits}, 'Too many commits';
 
     combined_like {
-        my $non_numeric = $job->git_diff('/foo', 'nonumber..123456', 10);
+        my $non_numeric = $job->git_diff('/foo', 'nonumber..123456', limit => 10);
         like $non_numeric, qr{Cannot display diff because of a git problem}, 'rev-list --count returned no number';
     }
     qr{returned non-numeric string}, 'rev-list --count returned no number - warning is logged';
 
     combined_like {
-        my $fail = $job->git_diff('/foo', 'revlistfail..456', 10);
+        my $fail = $job->git_diff('/foo', 'revlistfail..456', limit => 10);
         like $fail, qr{Cannot display diff because of a git problem}, 'git rev-list exited with non-zero';
     }
     qr{git failed}, 'git rev-list exited with non-zero - warning is logged';
 
     combined_like {
-        my $fail = $job->git_diff('/foo', 'difffail..456', 10);
+        my $fail = $job->git_diff('/foo', 'difffail..456', limit => 10);
         like $fail, qr{Cannot display diff because of a git problem}, 'git diff exited with non-zero';
     }
     qr{git failed}, 'git diff exited with non-zero - warning is logged';
 
-    my $fail = $job->git_diff('/foo', 'longrange', 10);
+    my $fail = $job->git_diff('/foo', 'longrange', limit => 10);
     like $fail, qr{Computing diff timed out}, 'timeout logged specifically';
 
-    my $res = $job->git_diff('/foo', 'invalidrange', 10);
+    my $res = $job->git_diff('/foo', 'invalidrange', limit => 10);
     like $res, qr{Cannot display diff: Invalid revision range}, 'error about invalid range returned';
 
-    my $ok = $job->git_diff('/foo', '123..456', 10);
+    my $ok = $job->git_diff('/foo', '123..456', limit => 10);
     like $ok, qr{2 files changed}, 'expected git_diff output';
 };
 
