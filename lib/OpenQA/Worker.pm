@@ -147,6 +147,13 @@ sub update_job_guard_expiration ($self) {
 
 sub release_job_guard ($self) { undef $self->{_guard_or_error} }
 
+sub _lock_setting_info ($settings) {
+    return 'none' unless my $name = $settings->{LOCK_NAME};
+    my $limit = $settings->{LOCK_LIMIT} // 'default';
+    my $expiration = $settings->{LOCK_EXPIRATION} // 'default';
+    return "$name (limit: $limit, expiration: $expiration)";
+}
+
 # logs the basic configuration of the worker instance
 sub log_setup_info ($self) {
     my $instance = $self->instance_number;
@@ -162,6 +169,7 @@ sub log_setup_info ($self) {
     $msg .= "\n - class:                            " . ($global_settings->{WORKER_CLASS} // '?');
     $msg .= "\n - no cleanup:                       " . ($self->no_cleanup ? 'yes' : 'no');
     $msg .= "\n - pool directory:                   " . $self->pool_directory;
+    $msg .= "\n - lock:                             " . (_lock_setting_info($global_settings));
     log_info($msg);
 
     my $parse_errors = $settings->parse_errors;
