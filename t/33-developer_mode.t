@@ -188,22 +188,33 @@ subtest 'pause at assert_screen timeout' => sub {
 
     # skip timeout
     enter_developer_console_cmd $driver, '{"cmd":"set_assert_screen_timeout","timeout":0}';
-    wait_for_developer_console_like(
+    my $pause_start = wait_for_developer_console_like(
         $driver,
         qr/\"set_assert_screen_timeout\":0/,
         'response to set_assert_screen_timeout'
     );
 
-    # wait until test paused
+    # wait until paused and the upload has finished
+    # note: The "match=on_prompt timed out" message might be sent before or after "outstanding_images" so we specify
+    #       $pause_start as start offset when checking for "outstanding_images" to consider also log output before
+    #       "match=on_prompt timed out" and thus not asserting a specific order of messages.
     wait_for_developer_console_like(
         $driver,
         qr/\"(reason|test_execution_paused)\":\"match=on_prompt timed out/,
         'paused after assert_screen timeout'
     );
-
-    # clear console so subsequent wait_for_developer_console_like calls don't see old output
-    $driver->execute_script(
-        '$("#log").empty(); document.getElementById("log").value = ""; window.lastWaitForDevelConsoleMsgMatch = 0;');
+    my $upload_started_pos = wait_for_developer_console_like(
+        $driver,
+        qr/\"outstanding_images\":[1-9]*/,
+        'progress of image upload received',
+        ONE_MINUTE, $pause_start
+    );
+    my $upload_done_pos
+      = wait_for_developer_console_like($driver, qr/\"outstanding_images\":0/, 'image upload has finished',
+        ONE_MINUTE, $upload_started_pos);
+    my $update_last_match
+      = "window.lastWaitForDevelConsoleMsgMatch = Math.max(window.lastWaitForDevelConsoleMsgMatch || 0, $upload_done_pos);";
+    $driver->execute_script($update_last_match);
 
     # try to resume
     enter_developer_console_cmd $driver, '{"cmd":"resume_test_execution"}';
@@ -226,29 +237,14 @@ subtest 'pause at assert_screen timeout' => sub {
 
     # skip timeout (again)
     enter_developer_console_cmd $driver, '{"cmd":"set_assert_screen_timeout","timeout":0}';
-    my $pause_start = wait_for_developer_console_like(
+    wait_for_developer_console_like(
         $driver,
         qr/\"set_assert_screen_timeout\":0/,
         'response to set_assert_screen_timeout'
     );
 
-    # wait until paused and the upload has finished
-    # note: The "match=on_prompt timed out" message might be sent before or after "outstanding_images" so we specify
-    #       $pause_start as start offset when checking for "outstanding_images" to consider also log output before
-    #       "match=on_prompt timed out" and thus not asserting a specific order of messages.
+    # wait until test paused (again)
     wait_for_developer_console_like($driver, qr/match=on_prompt timed out/, 'paused on assert_screen timeout (again)');
-    my $upload_started_pos = wait_for_developer_console_like(
-        $driver,
-        qr/\"outstanding_images\":[1-9]*/,
-        'progress of image upload received',
-        ONE_MINUTE, $pause_start
-    );
-    my $upload_done_pos
-      = wait_for_developer_console_like($driver, qr/\"outstanding_images\":0/, 'image upload has finished',
-        ONE_MINUTE, $upload_started_pos);
-    $driver->execute_script(
-"window.lastWaitForDevelConsoleMsgMatch = Math.max(window.lastWaitForDevelConsoleMsgMatch || 0, $upload_done_pos);"
-    );
 
     # open needle editor in 2nd tab
     my $needle_editor_url = '/tests/1/edit';
