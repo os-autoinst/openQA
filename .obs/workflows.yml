@@ -31,6 +31,7 @@ pr:
                 target_repository: '16.0'
               - target_project: devel:openQA
                 target_repository: '16.0'
+            architectures: [ x86_64 ]
           - name: '16.1'
             paths:
               - target_project: devel:openQA:Leap:16.1
