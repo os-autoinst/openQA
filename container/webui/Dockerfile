@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 #!BuildTag: openqa_webui:latest opensuse/openqa-webui:latest opensuse/openqa-webui:%PKG_VERSION% opensuse/openqa-webui:%PKG_VERSION%.%RELEASE%
-FROM opensuse/leap:16.0
+FROM opensuse/leap:16.1
 
 # labelprefix=org.opensuse.openqa-webui
 LABEL org.opencontainers.image.title="openQA webui container"
@@ -15,7 +15,7 @@ ENV LC_ALL=C.UTF-8
 
 # hadolint ignore=DL3037
 RUN zypper ar -p 95 -f https://download.opensuse.org/repositories/devel:openQA/16.0 devel_openQA && \
-    zypper ar -p 90 -f https://download.opensuse.org/repositories/devel:openQA:Leap:16.0/16.0 devel_openQA_Leap && \
+    zypper ar -p 90 -f https://download.opensuse.org/repositories/devel:openQA:Leap:16.1/16.1 devel_openQA_Leap && \
     zypper --gpg-auto-import-keys ref && \
     zypper in -y ca-certificates-mozilla curl openQA-local-db apache2 apache2-utils hostname which w3m perl-CSS-Sass && \
     zypper clean && \

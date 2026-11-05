@@ -593,16 +593,16 @@ build your own container with the requirements already installed.
 
 ```sh
 ### host ###
-distrobox create -i registry.opensuse.org/opensuse/leap:16.0 -n box-openqadev-leap
+distrobox create -i registry.opensuse.org/opensuse/leap:16.1 -n box-openqadev-leap
 distrobox enter box-openqadev-leap
 # Tumbleweed:
 #distrobox create -i registry.opensuse.org/opensuse/tumbleweed:latest -n box-openqadev-tw
 
 ### distrobox container ###
 
-# Leap 16.0
-zypper addrepo -G -p 95 https://download.opensuse.org/repositories/devel:/openQA/16.0 devel-openqa \
-    && zypper addrepo -G -p 95 https://download.opensuse.org/repositories/devel:/openQA:/Leap:/16.0/16.0/ devel-openqa-leap
+# Leap 16.1
+zypper addrepo -G -p 95 https://download.opensuse.org/repositories/devel:/openQA/16.1 devel-openqa \
+    && zypper addrepo -G -p 95 https://download.opensuse.org/repositories/devel:/openQA:/Leap:/16.1/16.1/ devel-openqa-leap
 
 # Tumbleweed
 #zypper addrepo -G -p 95 https://download.opensuse.org/repositories/devel:/openQA/openSUSE_Tumbleweed devel-openqa
