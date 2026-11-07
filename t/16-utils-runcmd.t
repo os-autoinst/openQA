@@ -122,6 +122,19 @@ subtest 'invoke Git commands for real testing error handling' => sub {
           'git_diff - full filename';
         like OpenQA::Schema::Result::Jobs::git_diff(undef, $empty_tmp_dir, 'HEAD', limit => 3, stat => '15,10'),
           qr/\.\.\.ile.txt/, 'git_diff - filename shortened';
+        my $failed;
+        like OpenQA::Schema::Result::Jobs::git_log_diff(
+            undef, $empty_tmp_dir, 'HEAD',
+            timeout => 10,
+            failed => \$failed
+          ),
+          qr/$msg/, 'git_log_diff - commit mentioned with timeout';
+        ok !$failed, 'no failure reported on success';
+        combined_like {
+            OpenQA::Schema::Result::Jobs::git_log_diff(undef, $empty_tmp_dir, 'unknown-ref', failed => \$failed)
+        }
+        qr/cmd returned 128/, 'failure logged';
+        is $failed, 128, 'return code of failed git reported';
     };
 
     subtest 'cache_ref' => sub {
