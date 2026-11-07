@@ -162,7 +162,7 @@ div.flags {
 [class*='fa-'].module_skipped {
   color: $color-module-skipped;
 }
-[class*='fa-'].result_failed, [class*='fa-'].result_fail {
+[class*='fa-'].result_failed, [class*='fa-'].result_fail, [class*='fa-'].result_parallel_failed {
   color: $color-failed;
 }
 [class*='fa-'].result_incomplete {
@@ -175,9 +175,6 @@ div.flags {
   color: $color-module-none;
 }
 [class*='fa-'].result_obsoleted {
-  color: $color-module-none;
-}
-[class*='fa-'].result_parallel_failed {
   color: $color-module-none;
 }
 [class*='fa-'].result_parallel_restarted {
