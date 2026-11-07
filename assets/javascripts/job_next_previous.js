@@ -40,7 +40,7 @@ function setupJobNextPrevious() {
     paging: true,
     ordering: false,
     deferRender: true,
-    columns: [{width: '5%'}, {data: 'result'}, {data: 'build'}, {data: 'finished'}],
+    columns: [{width: '5%'}, {data: 'result'}, {data: 'build'}, {data: 'finished'}, {data: 'worker'}],
     rowCallback: function (row, data) {
       // set the colspan attribute and hide additional columns if a note is present
       // note: DataTables does not seem to provide an API for this except for headers.
@@ -49,7 +49,7 @@ function setupJobNextPrevious() {
       }
       const cells = row.children;
       if (cells.length > 2) {
-        cells[1].colSpan = 3;
+        cells[1].colSpan = cells.length - 1;
         cells[1].style.textAlign = 'center';
         while (cells.length > 2) {
           row.removeChild(row.lastElementChild);
@@ -68,7 +68,8 @@ function setupJobNextPrevious() {
         render: renderJobResults
       },
       {targets: 2, render: renderBuild},
-      {targets: 3, render: renderFinishTime}
+      {targets: 3, render: renderFinishTime},
+      {targets: 4, render: renderWorker}
     ],
     initComplete: function (settings, json) {
       setPage(json);
@@ -177,6 +178,14 @@ function renderFinishTime(data, type, row) {
     }
   }
   return html;
+}
+
+function renderWorker(data, type, row) {
+  if (data == null) {
+    return '';
+  }
+  const link = urlWithBase('/admin/workers/' + data.id);
+  return '<a href="' + link + '">' + htmlEscape(data.name) + '</a>';
 }
 
 function triggerJobNextPrevious() {

@@ -44,6 +44,7 @@
                 <th>Result</th>
                 <th>Build</th>
                 <th>Finished</th>
+                <th>Worker</th>
             </tr>
         </thead>
     </table>
