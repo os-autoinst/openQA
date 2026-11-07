@@ -21,4 +21,12 @@ sub auth_login ($self) {
     return (error => 0);
 }
 
+sub unauthenticated_user ($self, $app) {
+    my $users = $app->schema->resultset('Users');
+    my $user = $users->find({username => DEFAULT_ADMIN})
+      || $users->create_user(DEFAULT_ADMIN, fullname => 'Administrator', email => 'admin@example.com');
+    $user->update({is_admin => 1, is_operator => 1}) unless $user->is_admin && $user->is_operator;
+    return $user;
+}
+
 1;
