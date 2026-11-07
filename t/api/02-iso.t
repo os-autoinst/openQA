@@ -1220,4 +1220,64 @@ subtest 'no templates found for product' => sub {
     $schema->txn_rollback;
 };
 
+subtest 'deprecation/lifecycle scheduling enforcement' => sub {
+    $t->app->config->{job_settings_lifecycle} = {
+        rule_error => 'BAD_SETTING:=~foo:error:BAD_SETTING with foo is not allowed',
+        rule_warn => 'BAD_SETTING:=~bar:warning:BAD_SETTING with bar is deprecated',
+    };
+    delete $t->app->config->{misc_limits}->{job_settings_lifecycle_rules};
+
+    $schema->txn_begin;
+
+    add_opensuse_test('lifecycle_test_warn', BAD_SETTING => 'bar_val');
+    add_opensuse_test('lifecycle_test_err', BAD_SETTING => 'foo_val');
+
+    subtest 'Warning level setting schedules job and stores warning' => sub {
+        my $res_warn = schedule_iso(
+            $t,
+            {
+                %iso,
+                _GROUP_ID => '1002',
+                TEST => 'lifecycle_test_warn',
+            },
+            200
+        );
+        is $res_warn->json->{count}, 1, 'one job created';
+        my $warnings = $res_warn->json->{warnings};
+        is ref $warnings, 'ARRAY', 'warnings array returned';
+        is scalar @$warnings, 1, 'one warning returned';
+        like $warnings->[0],
+          qr/Setting 'BAD_SETTING' has deprecated value 'bar_val': BAD_SETTING with bar is deprecated/,
+          'warning message is correct';
+
+        my $sp_warn = $scheduled_products->find($res_warn->json->{scheduled_product_id});
+        is_deeply $sp_warn->results->{warnings}, $warnings, 'warnings are stored in ScheduledProduct results';
+    };
+
+    subtest 'Error level setting prevents scheduling and returns failed info' => sub {
+        my $res_err = schedule_iso(
+            $t,
+            {
+                %iso,
+                _GROUP_ID => '1002',
+                TEST => 'lifecycle_test_err',
+            },
+            200
+        );
+        is $res_err->json->{count}, 0, 'no jobs created';
+        my $failed = $res_err->json->{failed};
+        is ref $failed, 'ARRAY', 'failed array returned';
+        is scalar @$failed, 1, 'one failed job entry';
+        is $failed->[0]->{job_name}, 'lifecycle_test_err', 'failed job name matches';
+        like $failed->[0]->{error_message},
+          qr/Setting 'BAD_SETTING' has deprecated value 'foo_val': BAD_SETTING with foo is not allowed/,
+          'error message matches rule';
+    };
+
+    $schema->txn_rollback;
+
+    delete $t->app->config->{job_settings_lifecycle};
+    delete $t->app->config->{misc_limits}->{job_settings_lifecycle_rules};
+};
+
 done_testing();

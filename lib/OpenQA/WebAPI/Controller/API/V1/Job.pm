@@ -325,6 +325,25 @@ sub _create_job ($self, $global_params, $job_suffix, $job_specific_params, $mini
     else {
         OpenQA::JobSettings::parse_url_settings($job_settings);
     }
+    my @matches = $self->lifecycle_matches($job_settings);
+    if (@matches) {
+        my @errors = grep { $_->{level} eq 'error' } @matches;
+        if (@errors) {
+            my $error_msg = join "\n", map {
+                sprintf "Setting '%s' has deprecated value '%s': %s", $_->{key}, $_->{value} // '', $_->{explanation}
+            } @errors;
+            die "$error_msg\n";
+        }
+        my @warnings = grep { $_->{level} ne 'error' } @matches;
+        if (@warnings) {
+            my %seen = map { $_ => 1 } @{$self->{_json}->{warnings} // []};
+            for my $w (@warnings) {
+                my $msg = sprintf "Setting '%s' has deprecated value '%s': %s", $w->{key}, $w->{value} // '',
+                  $w->{explanation};
+                push @{$self->{_json}->{warnings}}, $msg unless $seen{$msg}++;
+            }
+        }
+    }
     my $downloads = create_downloads_list($job_settings);
     $self->_eval_dependency($job_suffix, $job_settings, _START_AFTER => CHAINED);
     $self->_eval_dependency($job_suffix, $job_settings, _START_DIRECTLY_AFTER => DIRECTLY_CHAINED);

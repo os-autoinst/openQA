@@ -622,4 +622,23 @@ subtest 'badge output' => sub {
       'badge output format';
 };
 
+subtest 'warnings output on clone_job response' => sub {
+    my $clone_mock = Test::MockModule->new('OpenQA::Script::CloneJob');
+    $clone_mock->unmock_all;
+    my $res = Test::MockObject->new->set_always(
+        json => {
+            ids => {42 => 43},
+            warnings => ['Setting \'BAD_SETTING\' has deprecated value \'bar_val\': BAD_SETTING is deprecated']});
+    my $tx = Test::MockObject->new->set_false('error')->set_always(res => $res);
+    my %url_handler = (local_url => Mojo::URL->new('https://base-url/foo/bar'));
+    my $options = {};
+    my $jobs = {42 => {name => 'testjob'}};
+    combined_like {
+        local $SIG{__WARN__} = sub { print STDERR @_ };
+        OpenQA::Script::CloneJob::handle_tx($tx, \%url_handler, $options, $jobs);
+    }
+    qr/Warnings:\s+-\s+Setting 'BAD_SETTING' has deprecated value 'bar_val': BAD_SETTING is deprecated/,
+      'warning is printed to stderr when present in JSON response';
+};
+
 done_testing();
