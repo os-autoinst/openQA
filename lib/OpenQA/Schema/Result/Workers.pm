@@ -200,6 +200,12 @@ sub release ($self, $user) {
     return $self;
 }
 
+sub last_job_finished ($self) {
+    my $last_job = $self->previous_jobs->search({state => DONE, t_finished => {'!=' => undef}},
+        {order_by => {-desc => 't_finished'}, rows => 1})->first;
+    return $last_job ? $last_job->t_finished->datetime . 'Z' : undef;
+}
+
 sub dead ($self) {
     return 1 unless my $t_seen = $self->t_seen;
     my $dt = DateTime->now(time_zone => 'UTC');
