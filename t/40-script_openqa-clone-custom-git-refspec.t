@@ -32,7 +32,9 @@ test_once '', qr/Need.*parameter/, 'hint shown for mandatory parameter missing',
 test_once '--help', qr/Usage:/, 'help text shown', 0, 'help screen is regarded as success';
 test_once '--invalid-arg', qr/Usage:/, 'invalid args also yield help', 1, 'help screen but no success recorded';
 my $args = 'https://github.com/user/repo/pull/9128 https://openqa.opensuse.org/tests/1234';
-isnt run_once($args), 0, 'without network we fail without error';
+my $pr_args = 'https://github.com/user/repo/pull/9128 https://openqa.opensuse.org/tests/1234';
+combined_like { $ret = run_once($args) } qr/Unable to fetch/, 'without network we fail with fetch error';
+isnt $ret, 0, 'without network we exit non-zero';
 # mock any external access with all arguments
 $ENV{curl_github} = qq{echo -e '{"head": {"label": "user:my/branch"}, "body": "Lorem ipsum"}'; true};
 $ENV{curl_openqa}
@@ -120,5 +122,32 @@ $ENV{curl_openqa}
 $dirs = 'CASEDIR=https://github.com/user/repo.git#my/branch PRODUCTDIR=repo/products/opensuse';
 $expected_re = qr/${expected}${dirs}/;
 test_once $args, $expected_re, "PRODUCTDIR is correct when the source job's PRODUCTDIR includes specific word";
+
+subtest 'PR without description uses the job URL argument' => sub {
+    local $ENV{curl_github} = qq{echo -e '{"head": {"label": "user:my_branch"}, "body": null}'; true};
+    $expected = $clone_job . '1234 _GROUP=0 TEST\+=\@user/repo#my_branch BUILD=user/repo#9128 ';
+    test_once $pr_args, qr/${expected}/, 'clone-job command uses the job URL when the PR body is null';
+};
+
+subtest 'errors while processing GitHub or openQA data abort the script' => sub {
+    {
+        local $ENV{curl_github} = qq{echo -e '{"head": {"label": "user:my_branch"}, "body": 42}'; true};
+        combined_like { $ret = run_once($pr_args) } qr/cannot be matched/, 'jq error about PR body is reported';
+        isnt $ret, 0, 'script exits non-zero on jq error instead of falling back';
+    }
+    {
+        local $ENV{curl_github} = 'false';
+        combined_like { $ret = run_once($pr_args) } qr/Unable to fetch https:\/\/api.github.com/,
+          'unreachable GitHub API is reported';
+        isnt $ret, 0, 'script exits non-zero on unreachable GitHub API';
+    }
+    {
+        local $ENV{curl_openqa} = 'false';
+        combined_like { $ret = run_once($pr_args) }
+        qr/Unable to fetch https:\/\/openqa.opensuse.org\/tests\/1234\/file\/vars.json/,
+          'unreachable openQA vars.json is reported';
+        isnt $ret, 0, 'script exits non-zero on unreachable openQA vars.json';
+    }
+};
 
 done_testing;
