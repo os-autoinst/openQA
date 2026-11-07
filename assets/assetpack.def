@@ -166,6 +166,9 @@
 < javascripts/running.js
 < javascripts/disable_status_updates.js [mode==test]
 
+! swagger_init.js
+< javascripts/swagger_init.js
+
 ! archive_wait.js
 < javascripts/archive_wait.js
 
@@ -303,3 +306,10 @@
 
 ! audio.svg
 < images/audio.svg
+
+! swagger-ui.css
+< ../node_modules/swagger-ui-dist/swagger-ui.css
+
+! swagger-ui.js
+< ../node_modules/swagger-ui-dist/swagger-ui-bundle.js
+< ../node_modules/swagger-ui-dist/swagger-ui-standalone-preset.js

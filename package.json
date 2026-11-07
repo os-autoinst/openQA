@@ -34,6 +34,7 @@
     "@fortawesome/fontawesome-free": "^6.5.1",
     "jquery": "^4.0.0",
     "jquery-ujs": "^1.2.3",
+    "swagger-ui-dist": "^5.17.14",
     "timeago.js": "^4.0.2"
   },
   "overrides": {
