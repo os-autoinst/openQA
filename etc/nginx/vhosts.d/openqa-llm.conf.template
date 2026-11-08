@@ -9,7 +9,10 @@
 # 4. Reload nginx: systemctl reload nginx
 
 upstream llm_backend {
-    least_conn;
+    # openqa-llm-investigate names the job in X-Openqa-Job: keep all requests of
+    # a job on one server, so that its chat stays in that server's prompt cache
+    # (round robin for requests without the header)
+    hash $http_x_openqa_job consistent;
     # Replace the following with your actual worker hostnames or IPs
     server openqaworker1:8080 max_fails=3 fail_timeout=30s;
     # server openqaworker2:8080 max_fails=3 fail_timeout=30s;
