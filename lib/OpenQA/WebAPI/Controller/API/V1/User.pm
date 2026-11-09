@@ -3,6 +3,7 @@
 
 package OpenQA::WebAPI::Controller::API::V1::User;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
+use DateTime;
 use DateTime::Format::Pg;
 use Feature::Compat::Try;
 use List::Util qw(min);
@@ -59,6 +60,7 @@ sub list ($self) {
     pop @paged if my $has_more = @paged > $limit;
     $self->pagination_links_header($limit, $offset, $has_more);
 
+    my $now_str = DateTime::Format::Pg->format_datetime(DateTime->now);
     my @users_data = map {
         {
             id => $_->id,
@@ -68,6 +70,8 @@ sub list ($self) {
             email => $_->email,
             is_operator => $_->is_operator ? 1 : 0,
             is_admin => $_->is_admin ? 1 : 0,
+            active_api_keys_count =>
+              $_->api_keys->search({-or => [{t_expiration => undef}, {t_expiration => {'>' => $now_str}}]})->count,
             deleted_at => _format_datetime($_->deleted_at),
             t_created => _format_datetime($_->t_created),
             t_updated => _format_datetime($_->t_updated),
