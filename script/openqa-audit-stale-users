@@ -1,0 +1,385 @@
+#!/usr/bin/env python3
+
+# Copyright SUSE LLC
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+"""Audit and clean up stale openQA user accounts."""
+
+import csv
+import io
+import json
+import os
+import re
+import shutil
+import subprocess  # ruff: ignore[suspicious-subprocess-import]
+import sys
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import Annotated, Any
+
+import requests
+import typer
+
+app = typer.Typer(add_completion=False)
+
+HTTP_OK = 200
+HTTP_NOT_FOUND = 404
+BOTH_BACKENDS_COUNT = 2
+
+
+@dataclass(frozen=True)
+class BackendConfig:
+    """Configuration for external identity providers."""
+
+    backend: str
+    geekos_url: str
+    ldap_host: str
+    ldap_base: str
+
+
+def strip_openid(username: str | None) -> str:
+    """Extract local account username by stripping OpenID URL prefix."""
+    if not username:
+        return ""
+    match = re.search(r"^https?://.+?/([^/]+)/?$", username)
+    return match.group(1) if match else username
+
+
+def extract_nick(user: dict[str, Any]) -> str:
+    """Extract queryable nickname or stripped username from user dictionary."""
+    nickname = user.get("nickname")
+    if nickname:
+        return str(nickname)
+    return strip_openid(str(user.get("username", "")))
+
+
+def check_geekos(session: requests.Session, geekos_url: str, nick: str) -> tuple[str, str]:
+    """Check user status against Geekos API.
+
+    Returns a tuple of (status, reason).
+    """
+    url = f"{geekos_url.rstrip('/')}/api/users/{nick}"
+    try:
+        response = session.get(url, timeout=10)
+    except requests.RequestException as exc:
+        return "error", f"Geekos error: {exc}"
+
+    if response.status_code == HTTP_OK:
+        return "active", "Geekos: active"
+    if response.status_code == HTTP_NOT_FOUND:
+        return "stale", "Geekos: user not found (404)"
+    return "error", f"Geekos error: HTTP {response.status_code}"
+
+
+def check_ldap(ldap_host: str, ldap_base: str, nick: str) -> tuple[str, str]:
+    """Check user status against LDAP directory using ldapsearch CLI.
+
+    Returns a tuple of (status, reason).
+    """
+    ldapsearch_bin = os.environ.get("OPENQA_LDAPSEARCH_BIN") or shutil.which("ldapsearch") or "ldapsearch"
+    cmd = [ldapsearch_bin, "-x", "-H", ldap_host, "-b", ldap_base, f"(uid={nick})", "suseudbenabled"]
+
+    try:
+        proc = subprocess.run(  # ruff: ignore[subprocess-without-shell-equals-true]
+            cmd, capture_output=True, text=True, timeout=10, check=False
+        )
+    except subprocess.SubprocessError as exc:
+        return "error", f"ldapsearch execution error: {exc}"
+
+    stdout, stderr = proc.stdout, proc.stderr
+    if proc.returncode != 0:
+        is_purged = bool(
+            re.search(r"numEntries:\s*0", stdout, re.IGNORECASE) or re.search(r"No such object", stderr, re.IGNORECASE)
+        )
+        return (
+            ("stale", "LDAP: user not found in directory")
+            if is_purged
+            else ("error", f"ldapsearch error (exit {proc.returncode}): {stderr.strip() or stdout.strip()}")
+        )
+
+    if re.search(r"numEntries:\s*0", stdout, re.IGNORECASE) or not re.search(r"dn:", stdout, re.IGNORECASE):
+        return "stale", "LDAP: user not found in directory"
+    if re.search(r"suseudbenabled:\s*1", stdout, re.IGNORECASE):
+        return "active", "LDAP: enabled (suseudbenabled: 1)"
+    if re.search(r"suseudbenabled:\s*0", stdout, re.IGNORECASE):
+        return "stale", "LDAP: disabled (suseudbenabled: 0)"
+
+    return "stale", "LDAP: suseudbenabled not active"
+
+
+def count_active_api_keys(user: dict[str, Any]) -> int:
+    """Count non-expired API keys held by a user."""
+    keys = user.get("api_keys") or []
+    now = datetime.now(UTC)
+    active_count = 0
+
+    for key_info in keys:
+        if not isinstance(key_info, dict):
+            continue
+        exp_str = key_info.get("t_expiration")
+        if not exp_str:
+            active_count += 1
+            continue
+        try:
+            exp_dt = datetime.fromisoformat(str(exp_str))
+            if exp_dt.tzinfo is None:
+                exp_dt = exp_dt.replace(tzinfo=UTC)
+            if exp_dt > now:
+                active_count += 1
+        except ValueError:
+            active_count += 1
+
+    return active_count
+
+
+def render_table(stale_users: list[dict[str, Any]], summary: dict[str, int], *, dry_run: bool) -> None:
+    """Print audit results and summary as a formatted text table."""
+    if stale_users:
+        header = f"{'ID':<8} {'USERNAME':<30} {'NICK':<15} {'ADMIN':<6} {'OPER':<6} {'KEYS':<8} {'STATUS':<12} REASON"
+        typer.echo(header)
+        typer.echo("-" * 100)
+        for u in stale_users:
+            admin_str = "yes" if u["is_admin"] else "no"
+            oper_str = "yes" if u["is_operator"] else "no"
+            line = (
+                f"{u['id']:<8} {u['username'] or '':<30} {u['nickname'] or '':<15} "
+                f"{admin_str:<6} {oper_str:<6} {u['api_keys_count']:<8} {u['status']:<12} {u['reason']}"
+            )
+            typer.echo(line)
+        typer.echo("")
+    else:
+        typer.echo("No stale user accounts found.\n")
+
+    mode = " (dry-run)" if dry_run else " (applied)"
+    typer.echo(f"Summary{mode}:")
+    typer.echo(f"  Total active users: {summary['total_active_users']}")
+    typer.echo(f"  Confirmed stale accounts: {summary['stale_accounts']}")
+    typer.echo(f"  Active API keys held by stale accounts: {summary['active_api_keys']}")
+    typer.echo(f"  Privileged roles held by stale accounts: {summary['privileged_roles']}")
+
+
+def render_json(stale_users: list[dict[str, Any]], summary: dict[str, int], *, dry_run: bool) -> None:
+    """Print audit results and summary in JSON format."""
+    payload = {
+        "dry_run": 1 if dry_run else 0,
+        "summary": summary,
+        "stale_users": stale_users,
+    }
+    typer.echo(json.dumps(payload, indent=2))
+
+
+def render_csv(stale_users: list[dict[str, Any]], summary: dict[str, int]) -> None:
+    """Print audit results and summary as CSV with comment header summary."""
+    output = io.StringIO()
+    writer = csv.writer(output, lineterminator="\n")
+    writer.writerow(["id", "username", "nickname", "email", "is_admin", "is_operator", "api_keys", "status", "reason"])
+
+    for u in stale_users:
+        writer.writerow([
+            u["id"],
+            u["username"] or "",
+            u["nickname"] or "",
+            u["email"] or "",
+            1 if u["is_admin"] else 0,
+            1 if u["is_operator"] else 0,
+            u["api_keys_count"],
+            u["status"],
+            u["reason"],
+        ])
+
+    typer.echo(output.getvalue(), nl=False)
+    typer.echo(f"# Total active users: {summary['total_active_users']}")
+    typer.echo(f"# Confirmed stale accounts: {summary['stale_accounts']}")
+    typer.echo(f"# Active API keys held by stale accounts: {summary['active_api_keys']}")
+    typer.echo(f"# Privileged roles held by stale accounts: {summary['privileged_roles']}")
+
+
+def fetch_users(users_file: Path | None, host: str) -> list[dict[str, Any]]:
+    """Retrieve active openQA users from a JSON file or via openqa-cli."""
+    if users_file:
+        data = json.load(sys.stdin) if str(users_file) == "-" else json.loads(users_file.read_text(encoding="utf-8"))
+        if isinstance(data, dict) and "users" in data:
+            return data["users"]
+        if isinstance(data, list):
+            return data
+        typer.echo("Error: Invalid JSON users structure.", err=True)
+        raise typer.Exit(code=1)
+
+    cmd = ["openqa-cli", "api", "--host", host, "users?deleted=0"]
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, check=True)  # ruff: ignore[subprocess-without-shell-equals-true]
+        data = json.loads(proc.stdout)
+        return data.get("users", [])
+    except (subprocess.SubprocessError, json.JSONDecodeError) as exc:
+        typer.echo(f"Error fetching users via openqa-cli: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+
+def anonymize_user(user_id: int, host: str) -> None:
+    """Deactivate and anonymize a stale user account via openqa-cli."""
+    cmd = ["openqa-cli", "api", "--host", host, "-X", "DELETE", f"user/{user_id}"]
+    try:
+        subprocess.run(cmd, capture_output=True, text=True, check=True)  # ruff: ignore[subprocess-without-shell-equals-true]
+    except subprocess.SubprocessError as exc:
+        typer.echo(f"Error anonymizing user {user_id}: {exc}", err=True)
+
+
+def _check_backend_user(
+    nick: str,
+    session: requests.Session,
+    config: BackendConfig,
+) -> tuple[bool, str]:
+    reasons: list[str] = []
+
+    if config.backend in {"geekos", "both"}:
+        status, reason = check_geekos(session, config.geekos_url, nick)
+        if status == "error":
+            typer.echo(f"Warning: {nick}: {reason}", err=True)
+        elif status == "stale":
+            reasons.append(reason)
+        elif config.backend == "both":
+            return False, ""
+
+    if config.backend in {"ldap", "both"}:
+        status, reason = check_ldap(config.ldap_host, config.ldap_base, nick)
+        if status == "error":
+            typer.echo(f"Warning: {nick}: {reason}", err=True)
+        elif status == "stale":
+            reasons.append(reason)
+        elif config.backend == "both":
+            return False, ""
+
+    expected_matches = BOTH_BACKENDS_COUNT if config.backend == "both" else 1
+    return len(reasons) == expected_matches, ", ".join(reasons)
+
+
+def audit_users(
+    active_users: list[dict[str, Any]],
+    config: BackendConfig,
+    excluded_names: set[str],
+    *,
+    is_dry_run: bool,
+    host: str,
+) -> tuple[list[dict[str, Any]], dict[str, int]]:
+    """Evaluate users against configured backends and compile summary metrics."""
+    session = requests.Session()
+    stale_users: list[dict[str, Any]] = []
+    total_active_keys = 0
+    total_privileged_roles = 0
+
+    for user in active_users:
+        username = str(user.get("username", ""))
+        nickname = str(user.get("nickname") or "")
+        stripped = strip_openid(username)
+
+        if (
+            username.lower() in excluded_names
+            or (nickname and nickname.lower() in excluded_names)
+            or (stripped and stripped.lower() in excluded_names)
+        ):
+            continue
+
+        nick = extract_nick(user)
+        if not nick:
+            continue
+
+        is_stale, reason = _check_backend_user(nick, session, config)
+        if not is_stale:
+            continue
+
+        active_keys = (
+            int(user["active_api_keys_count"]) if "active_api_keys_count" in user else count_active_api_keys(user)
+        )
+        is_admin = int(bool(user.get("is_admin")))
+        is_operator = int(bool(user.get("is_operator")))
+        total_active_keys += active_keys
+        total_privileged_roles += is_admin + is_operator
+
+        if not is_dry_run:
+            anonymize_user(int(user["id"]), host)
+
+        stale_users.append({
+            "id": int(user.get("id", 0)),
+            "username": username,
+            "nickname": nickname or None,
+            "email": user.get("email"),
+            "is_admin": is_admin,
+            "is_operator": is_operator,
+            "api_keys_count": active_keys,
+            "status": "anonymized" if not is_dry_run else "stale",
+            "reason": reason,
+        })
+
+    summary = {
+        "total_active_users": len(active_users),
+        "stale_accounts": len(stale_users),
+        "active_api_keys": total_active_keys,
+        "privileged_roles": total_privileged_roles,
+    }
+    return stale_users, summary
+
+
+@app.command()
+def audit(  # ruff: ignore[too-many-arguments]
+    *,
+    dry_run: Annotated[bool, typer.Option("--dry-run", help="Audit without modifying database (default).")] = False,
+    apply: Annotated[bool, typer.Option("--apply", help="Deactivate and anonymize confirmed stale accounts.")] = False,
+    backend: Annotated[
+        str, typer.Option("--backend", "-b", help="Identity provider to check: geekos, ldap, or both.")
+    ] = "geekos",
+    geekos_url: Annotated[str, typer.Option("--geekos-url", help="Geekos API base URL.")] = "https://geekos.suse.net",
+    ldap_host: Annotated[str, typer.Option("--ldap-host", help="LDAP host URI.")] = "ldaps://ldap.suse.de",
+    ldap_base: Annotated[str, typer.Option("--ldap-base", help="LDAP base DN.")] = "dc=suse,dc=de",
+    exclude: Annotated[
+        str, typer.Option("--exclude", help="Comma-separated usernames to ignore.")
+    ] = "system,geekotest,admin",
+    format_type: Annotated[str, typer.Option("--format", help="Output format: table, json, or csv.")] = "table",
+    host: Annotated[str, typer.Option("--host", "-H", help="openQA host URL.")] = "http://localhost",
+    users_file: Annotated[
+        Path | None, typer.Option("--users-file", "-f", help="Path to JSON file containing openQA users (or '-').")
+    ] = None,
+) -> None:
+    """Audit and identify stale user accounts against Geekos and/or LDAP directories."""
+    if apply and dry_run:
+        typer.echo("Cannot specify both --apply and --dry-run", err=True)
+        raise typer.Exit(code=1)
+
+    normalized_backend = backend.lower()
+    if normalized_backend not in {"geekos", "ldap", "both"}:
+        typer.echo(f"Invalid backend '{backend}'. Must be one of: geekos, ldap, both", err=True)
+        raise typer.Exit(code=1)
+
+    normalized_format = format_type.lower()
+    if normalized_format not in {"table", "json", "csv"}:
+        typer.echo(f"Invalid format '{format_type}'. Must be one of: table, json, csv", err=True)
+        raise typer.Exit(code=1)
+
+    is_dry_run = not apply
+    active_users = fetch_users(users_file, host)
+    excluded_names = {name.strip().lower() for name in exclude.split(",") if name.strip()}
+    config = BackendConfig(
+        backend=normalized_backend,
+        geekos_url=geekos_url,
+        ldap_host=ldap_host,
+        ldap_base=ldap_base,
+    )
+
+    stale_users, summary = audit_users(
+        active_users,
+        config,
+        excluded_names,
+        is_dry_run=is_dry_run,
+        host=host,
+    )
+
+    if normalized_format == "json":
+        render_json(stale_users, summary, dry_run=is_dry_run)
+    elif normalized_format == "csv":
+        render_csv(stale_users, summary)
+    else:
+        render_table(stale_users, summary, dry_run=is_dry_run)
+
+
+if __name__ == "__main__":
+    app()
