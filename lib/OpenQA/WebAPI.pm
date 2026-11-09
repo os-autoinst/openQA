@@ -503,6 +503,7 @@ sub startup ($self) {
     $api_ru->post('/comments')->name('apiv1_post_comments')->to('comment#create_many');
     $api_ra->delete('/comments')->name('apiv1_delete_comments')->to('comment#delete_many');
 
+    $api_ra->get('/users')->name('apiv1_list_users')->to('user#list');
     $api_ra->delete('/user/<id:num>')->name('apiv1_delete_user')->to('user#delete');
 
     $api_ru->get('/users/me/api_keys')->name('apiv1_list_user_api_keys')->to('user#list_api_keys');

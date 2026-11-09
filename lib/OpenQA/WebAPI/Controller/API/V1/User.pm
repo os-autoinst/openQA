@@ -5,6 +5,8 @@ package OpenQA::WebAPI::Controller::API::V1::User;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
 use DateTime::Format::Pg;
 use Feature::Compat::Try;
+use List::Util qw(min);
+use OpenQA::App;
 use OpenQA::Constants 'API_KEY_COMMENT_MAX_LENGTH';
 
 =pod
@@ -22,6 +24,63 @@ OpenQA::WebAPI::Controller::API::V1::User
 Implements User API.
 
 =head1 METHODS
+
+=over 4
+
+=item list()
+
+List users. Accepts optional pagination parameters C<limit> and C<offset>,
+and optional C<deleted> query parameter to filter by active or deleted users.
+
+=back
+
+=cut
+
+sub list ($self) {
+    my $validation = $self->validation;
+    $validation->optional('limit')->num;
+    $validation->optional('offset')->num;
+    $validation->optional('deleted')->num(0, 1);
+    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
+
+    my $limits = OpenQA::App->singleton->config->{misc_limits};
+    my $limit
+      = min($limits->{admin_table_max_limit}, $validation->param('limit') // $limits->{admin_table_default_limit});
+    my $offset = $validation->param('offset') // 0;
+
+    my $deleted = $validation->param('deleted');
+    my $condition
+      = !defined $deleted ? {}
+      : $deleted == 1 ? {deleted_at => {'!=' => undef}}
+      : {deleted_at => undef};
+
+    my $users = $self->schema->resultset('Users');
+    my @paged = $users->search($condition, {rows => $limit + 1, offset => $offset, order_by => 'id'})->all;
+    pop @paged if my $has_more = @paged > $limit;
+    $self->pagination_links_header($limit, $offset, $has_more);
+
+    my @users_data = map {
+        {
+            id => $_->id,
+            username => $_->username,
+            nickname => $_->nickname,
+            fullname => $_->fullname,
+            email => $_->email,
+            is_operator => $_->is_operator ? 1 : 0,
+            is_admin => $_->is_admin ? 1 : 0,
+            deleted_at => _format_datetime($_->deleted_at),
+            t_created => _format_datetime($_->t_created),
+            t_updated => _format_datetime($_->t_updated),
+        }
+    } @paged;
+
+    $self->render(json => {users => \@users_data});
+}
+
+sub _format_datetime ($dt) {
+    return undef unless defined $dt;
+    return DateTime::Format::Pg->format_datetime($dt);
+}
 
 =over 4
 
