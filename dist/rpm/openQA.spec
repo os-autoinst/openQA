@@ -17,7 +17,7 @@
 
 # can't use linebreaks here!
 %define openqa_main_service openqa-webui.service
-%define openqa_extra_services openqa-gru.service openqa-websockets.service openqa-scheduler.service openqa-enqueue-audit-event-cleanup.service openqa-enqueue-audit-event-cleanup.timer openqa-enqueue-asset-cleanup.service openqa-enqueue-git-auto-update.service openqa-enqueue-asset-cleanup.timer openqa-enqueue-result-cleanup.service openqa-enqueue-result-cleanup.timer openqa-enqueue-bug-cleanup.service openqa-enqueue-bug-cleanup.timer openqa-enqueue-git-auto-update.timer openqa-enqueue-needle-ref-cleanup.service openqa-enqueue-needle-ref-cleanup.timer openqa-enqueue-scheduled-product-cleanup.service openqa-enqueue-scheduled-product-cleanup.timer
+%define openqa_extra_services openqa-gru.service openqa-websockets.service openqa-scheduler.service openqa-enqueue-audit-event-cleanup.service openqa-enqueue-audit-event-cleanup.timer openqa-enqueue-asset-cleanup.service openqa-enqueue-git-auto-update.service openqa-enqueue-asset-cleanup.timer openqa-enqueue-result-cleanup.service openqa-enqueue-result-cleanup.timer openqa-enqueue-bug-cleanup.service openqa-enqueue-bug-cleanup.timer openqa-enqueue-git-auto-update.timer openqa-enqueue-needle-ref-cleanup.service openqa-enqueue-needle-ref-cleanup.timer openqa-enqueue-scheduled-product-cleanup.service openqa-enqueue-scheduled-product-cleanup.timer openqa-audit-stale-users.service openqa-audit-stale-users.timer
 %define openqa_services %{openqa_main_service} %{openqa_extra_services}
 %define openqa_worker_services openqa-worker.target openqa-slirpvde.service openqa-vde_switch.service openqa-worker-cacheservice.service openqa-worker-cacheservice-minion.service
 %define openqa_localdb_services openqa-setup-db.service openqa-dump-db.service openqa-dump-db.timer
@@ -57,7 +57,7 @@
 %endif
 # runtime requirements that also the testsuite needs
 %if %{with python_scripts}
-%define python_scripts_requires python3-base python3-requests openQA-client
+%define python_scripts_requires python3-base python3-requests python3-typer openQA-client
 %else
 %define python_scripts_requires %{nil}
 %endif
@@ -378,7 +378,7 @@ Podman Quadlet configuration to automatically manage the server.
 
 %prep
 %setup -q
-sed -e 's,/bin/env python,/bin/python,' -i script/openqa-label-all
+sed -e 's,/bin/env python,/bin/python,' -i script/openqa-label-all script/openqa-audit-stale-users
 # Depending on whether we run in OBS or from a gitea repo, there is a
 # node_modules directory or not
 TARGET="%{_sourcedir}"; [ -d "$TARGET/node_modules" ] && TARGET="$TARGET/node_modules"
@@ -460,6 +460,7 @@ ln -s %{_datadir}/openqa/script/setup-db %{buildroot}%{_bindir}/openqa-setup-db
 ln -s %{_datadir}/openqa/script/dump-db %{buildroot}%{_bindir}/openqa-dump-db
 %if %{with python_scripts}
 ln -s %{_datadir}/openqa/script/openqa-label-all %{buildroot}%{_bindir}/openqa-label-all
+ln -s %{_datadir}/openqa/script/openqa-audit-stale-users %{buildroot}%{_bindir}/openqa-audit-stale-users
 %endif
 
 install -d -m 755 %{buildroot}%{_datadir}/openqa/client
@@ -696,6 +697,8 @@ fi
 %{_unitdir}/openqa-enqueue-needle-ref-cleanup.timer
 %{_unitdir}/openqa-enqueue-scheduled-product-cleanup.service
 %{_unitdir}/openqa-enqueue-scheduled-product-cleanup.timer
+%{_unitdir}/openqa-audit-stale-users.service
+%{_unitdir}/openqa-audit-stale-users.timer
 %{_tmpfilesdir}/openqa-webui.conf
 # web libs
 %dir %{_datadir}/openqa
@@ -885,6 +888,8 @@ fi
 %files python-scripts
 %{_datadir}/openqa/script/openqa-label-all
 %{_bindir}/openqa-label-all
+%{_datadir}/openqa/script/openqa-audit-stale-users
+%{_bindir}/openqa-audit-stale-users
 %endif
 
 %files doc
