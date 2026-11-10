@@ -651,6 +651,31 @@ subtest 'carry over, including soft-fails' => sub {
             $set_vars->($job, $tested);
         };
 
+        subtest 'expected git outcomes are not logged as problems' => sub {
+            my $run_cmd = \&OpenQA::JobInvestigation::run_cmd_with_log_return_error;
+            my %codes;
+            my $investigation_mock = Test::MockModule->new('OpenQA::JobInvestigation', no_auto => 1);
+            $investigation_mock->redefine(
+                run_cmd_with_log_return_error => sub ($cmd, %args) {
+                    my ($subcommand) = grep { /^(?:grep|ls-tree|cat-file)$/ } @$cmd;
+                    $codes{$subcommand} = $args{expected_return_codes};
+                    return {status => 0, return_code => 124, stdout => 'a:b.json', stderr => ''}
+                      if $subcommand eq 'grep';
+                    return $run_cmd->($cmd, %args);
+                });
+            my $deadline = time + 20;
+            my $unknown = 'a' x 40;
+            ok !OpenQA::JobInvestigation::git_has_commit($deadline, "$repo", $unknown), 'unknown commit detected';
+            ok $codes{'cat-file'}->{128}, 'unknown commit is an expected outcome of cat-file';
+            my ($tree, $error) = OpenQA::JobInvestigation::git_tree($deadline, "$repo", $unknown);
+            like $error, qr/unknown or not available/, 'unknown commit reported by ls-tree';
+            ok $codes{'ls-tree'}->{128}, 'unknown commit is an expected outcome of ls-tree';
+            ($tree) = OpenQA::JobInvestigation::git_tree($deadline, "$repo", $tested);
+            my (undef, $message) = OpenQA::JobInvestigation::tagged_needles($deadline, "$repo", $tree, $tested, ['x']);
+            is $message, 'Computing changes timed out', 'timeout of git grep reported';
+            ok $codes{grep}->{124}, 'timeout is an expected outcome of git grep, so its output is not logged';
+        };
+
         subtest 'git problems are not reported as missing changes' => sub {
             my $global = $t->app->config->{global};
             {

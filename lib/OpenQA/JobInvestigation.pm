@@ -17,6 +17,9 @@ our @EXPORT_OK = qw(
 use constant JOB_INVESTIGATE_PULL_REQUESTS_MAX => 200;
 use constant RETURN_CODE_TIMEOUT_EXCEEDED => 124;    # see `man timeout`
 
+# unknown commits (128) and timeouts are handled by the callers, so git's output is not logged as a problem
+my %PROBE_CODES = (0 => 1, 124 => 1, 128 => 1);
+
 # returns the longest suffix of $path that is a file in the git tree (a hash reference of paths)
 sub tree_file ($tree, $path) {
     my @parts = grep { length } split m{/}, $path // '';
@@ -29,7 +32,8 @@ sub tree_file ($tree, $path) {
 
 sub git_has_commit ($deadline, $dir, $hash) {
     return 0 unless defined $hash && $hash =~ m/^[0-9a-f]{7,40}$/i;
-    return git_timed($deadline, $dir, ['cat-file', '-e', "$hash^{commit}"])->{status};
+    return git_timed($deadline, $dir, ['cat-file', '-e', "$hash^{commit}"], expected_return_codes => \%PROBE_CODES)
+      ->{status};
 }
 
 # runs git within the time left until $deadline (epoch seconds), which is shared by all commands of a request
@@ -49,7 +53,7 @@ sub git_failure_message ($return_code) {
 sub git_tree ($deadline, $dir, $hash) {
     my $unknown = 'Tested git commit is unknown or not available on this host, cannot list changes';
     return (undef, $unknown) unless defined $hash && $hash =~ m/^[0-9a-f]{7,40}$/i;
-    my $res = git_timed($deadline, $dir, ['ls-tree', '-r', '-z', $hash]);
+    my $res = git_timed($deadline, $dir, ['ls-tree', '-r', '-z', $hash], expected_return_codes => \%PROBE_CODES);
     unless ($res->{status}) {
         return (undef,
             $res->{return_code} == RETURN_CODE_TIMEOUT_EXCEEDED
@@ -63,7 +67,7 @@ sub git_tree ($deadline, $dir, $hash) {
 sub tagged_needles ($deadline, $dir, $tree, $hash, $tags) {
     my $pattern = join '|', map { s/([.+])/\\$1/gr } @$tags;
     my @cmd = ('grep', '-l', '-z', '-E', '-e', qq{"($pattern)"}, $hash, '--', '*.json');
-    my $res = git_timed($deadline, $dir, \@cmd, expected_return_codes => {0 => 1, 1 => 1});
+    my $res = git_timed($deadline, $dir, \@cmd, expected_return_codes => {0 => 1, 1 => 1, 124 => 1});
     my $return_code = $res->{return_code} // 255;
     return (undef, git_failure_message($return_code)) if $return_code > 1;
     return ([grep { $tree->{$_} } map { s/^\Q$hash\E://r } split /\0/, $res->{stdout}]);
