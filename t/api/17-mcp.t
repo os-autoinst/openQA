@@ -88,7 +88,11 @@ subtest 'openqa_get_job_info tool' => sub {
 
     subtest 'Passed job' => sub {
         subtest 'Add comment to test job' => sub {
-            $t->post_ok('/api/v1/jobs/99764/comments' => form => {text => 'Just a test comment'})->status_is(200);
+            $t->post_ok(
+                '/api/v1/jobs/99764/comments' => form => {text => 'Just a test comment with poo#99999 and *markdown*'})
+              ->status_is(200);
+            $t->app->schema->resultset('Comments')
+              ->create({job_id => 99764, user_id => 99902, text => 'Direct comment with poo#88888'});
         };
 
         my $result = $client->call_tool('openqa_get_job_info', {job_id => 99764});
@@ -106,7 +110,11 @@ subtest 'openqa_get_job_info tool' => sub {
         like $text, qr/No test results available yet/s, 'no test results yet';
         like $text, qr/DISTRI: opensuse/, 'settings are present';
         like $text, qr/VERSION: 13\.1/, 'settings are present';
-        like $text, qr/lance.+Just a test comment/, 'has comments';
+        like $text, qr/lance.+Just a test comment with poo#99999 and \*markdown\*/, 'has comments in plain text';
+        like $text, qr/lance.+Direct comment with poo#88888/, 'has direct comments';
+        unlike $text, qr/<(span|p|em)\b/, 'comments are not rendered as HTML';
+        is $t->app->schema->resultset('Bugs')->find({bugid => 'poo#88888'}), undef,
+          'read-only tool does not insert bugs';
     };
 
     subtest 'Input validation failed' => sub {
