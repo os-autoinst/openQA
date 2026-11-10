@@ -32,4 +32,16 @@ is $t->app->schema->resultset('ApiKeys')->find($commented_key->id)->comment, 'te
 my $padded_key = $t->app->schema->resultset('ApiKeys')->create({user_id => $arthur->id, comment => '  padded  '});
 is $padded_key->comment, 'padded', 'comment is trimmed on creation through the result class';
 
+is $key->is_operator, 1, 'api key defaults to is_operator = 1';
+is $key->is_admin, 1, 'api key defaults to is_admin = 1';
+
+my $restricted_key = $t->app->schema->resultset('ApiKeys')->create(
+    {
+        user_id => $arthur->id,
+        is_operator => 0,
+        is_admin => 0,
+    });
+is $restricted_key->is_operator, 0, 'api key created with is_operator = 0';
+is $restricted_key->is_admin, 0, 'api key created with is_admin = 0';
+
 done_testing();

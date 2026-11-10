@@ -33,6 +33,18 @@ __PACKAGE__->add_columns(
         default_value => '',
         is_nullable => 0,
     },
+    is_operator => {
+        data_type => 'integer',
+        is_boolean => 1,
+        false_id => ['0', '-1'],
+        default_value => '1',
+    },
+    is_admin => {
+        data_type => 'integer',
+        is_boolean => 1,
+        false_id => ['0', '-1'],
+        default_value => '1',
+    },
 );
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
