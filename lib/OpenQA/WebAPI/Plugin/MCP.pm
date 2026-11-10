@@ -111,7 +111,7 @@ sub tool_openqa_get_job_info ($tool, $args) {
     my $schema = _get_schema($tool);
     return $tool->text_result('Job does not exist', 1)
       unless my $job = $schema->resultset('Jobs')->find(int $job_id);
-    my @comments = map { $_->extended_hash } $job->search_related(comments => {})->all;
+    my @comments = map { $_->extended_hash(0) } $job->search_related(comments => {})->all;
 
     my $info = $job->to_hash(assets => 1, check_assets => 1, deps => 1, details => 1, parent_group => 1);
     return _render_from_data_section('openqa_get_job_info.txt.ep', {job => $info, comments => \@comments});
@@ -200,7 +200,7 @@ Available Logs:
 Comments:
 % if (@$comments) {
   % for my $comment (@$comments) {
-  - <%= $comment->{userName} %> (<%= $comment->{created} %>): <%= $comment->{renderedMarkdown} %>
+  - <%= $comment->{userName} %> (<%= $comment->{created} %>): <%= $comment->{text} %>
   % }
 % }
 % else {
