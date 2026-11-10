@@ -21,7 +21,7 @@ sub register ($self, $app, @args) {
     $app->helper(is_operator => \&_is_operator);
     $app->helper(is_admin => \&_is_admin);
     $app->helper(format_api_key_role => \&_format_api_key_role);
-    $app->helper(parse_api_key_roles => \&_parse_api_key_roles);
+    $app->helper(role_to_permissions => \&_role_to_permissions);
     $app->helper(validate_api_key_role_grant => \&_validate_api_key_role_grant);
     $app->helper(is_api_request => \&_is_api_request);
     $app->helper(is_local_request => \&_is_local_request);
@@ -78,35 +78,23 @@ sub _current_user ($c) {
     return $current_user && defined $current_user->{user} ? $current_user->{user} : undef;
 }
 
-# In openQA, administrator status implies operator access across all controllers.
-# When an API key is stashed, operator access requires either valid operator
-# permissions on both user and key, or valid administrator permissions on both.
-# Caller passing an explicit $user argument inspects that specific user account's
-# permissions directly without applying API key scoping.
+# Administrator status implies operator access. Explicit $user inspects target account directly.
 sub _is_operator ($c, $user = undef) {
-    if (!$user) {
-        $user = $c->current_user;
-        if (my $api_key = $c->stash('current_api_key')) {
-            return ($user
-                  && (($user->is_admin && $api_key->is_admin) || ($user->is_operator && $api_key->is_operator)));
-        }
-    }
-    return ($user && $user->is_operator);
+    my $api_key = $user ? undef : $c->stash('current_api_key');
+    $user //= $c->current_user;
+    return 0 unless $user;
+    return ($user->is_admin && $api_key->is_admin) || ($user->is_operator && $api_key->is_operator) if $api_key;
+    return $user->is_admin || $user->is_operator;
 }
 
 sub _is_admin ($c, $user = undef) {
-    if (!$user) {
-        $user = $c->current_user;
-        if (my $api_key = $c->stash('current_api_key')) {
-            return ($user && $user->is_admin && $api_key->is_admin);
-        }
-    }
-    return ($user && $user->is_admin);
+    my $api_key = $user ? undef : $c->stash('current_api_key');
+    $user //= $c->current_user;
+    return 0 unless $user;
+    return $user->is_admin && $api_key->is_admin if $api_key;
+    return $user->is_admin;
 }
 
-# Format effective role string ('Administrator', 'Operator', or 'User')
-# for display based on key flags bounded by user account roles.
-# Arguments: $c (controller), $key (api key object), $user (optional user object, defaults to current_user)
 sub _format_api_key_role ($c, $key, $user = undef) {
     $user //= $c->current_user;
     return 'User' unless $user && $key;
@@ -115,31 +103,10 @@ sub _format_api_key_role ($c, $key, $user = undef) {
     return 'User';
 }
 
-# Parse requested role or is_operator/is_admin parameters when creating an API key.
-# New keys without explicit parameters default to the creator's current roles.
-# Returns ($is_operator, $is_admin, $error_msg).
-sub _parse_api_key_roles ($c, $role, $validation, $user) {
-    if (defined $role && ($validation->is_valid('is_operator') || $validation->is_valid('is_admin'))) {
-        return (undef, undef, 'Cannot specify both role and is_operator/is_admin');
-    }
-    my ($is_operator, $is_admin);
-    if (defined $role) {
-        if ($role eq 'admin') {
-            ($is_operator, $is_admin) = (1, 1);
-        }
-        elsif ($role eq 'operator') {
-            ($is_operator, $is_admin) = (1, 0);
-        }
-        else {
-            ($is_operator, $is_admin) = (0, 0);
-        }
-    }
-    else {
-        $is_operator
-          = $validation->is_valid('is_operator') ? int($validation->param('is_operator')) : $user->is_operator;
-        $is_admin = $validation->is_valid('is_admin') ? int($validation->param('is_admin')) : $user->is_admin;
-    }
-    return ($is_operator, $is_admin, undef);
+sub _role_to_permissions ($c, $role) {
+    return (1, 1) if $role eq 'admin';
+    return (1, 0) if $role eq 'operator';
+    return (0, 0);
 }
 
 # Verify requested roles do not exceed the calling user's account roles.
