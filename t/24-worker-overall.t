@@ -147,7 +147,8 @@ is_deeply \@webui_hosts, [qw(http://localhost:9527 https://remotehost)], 'client
   or always_explain \@webui_hosts;
 
 combined_like { $worker->log_setup_info }
-qr/.*http:\/\/localhost:9527,https:\/\/remotehost.*qemu_i386,qemu_x86_64.*/s, 'setup info';
+qr/.*http:\/\/localhost:9527,https:\/\/remotehost.*qemu_i386,qemu_x86_64.*lock:\s+none/s, 'setup info';
+like OpenQA::Worker::_lock_setting_info({LOCK_NAME => 'foo'}), qr/foo \(limit.*\)/, 'LOCK_... settings info';
 
 push @{$worker->settings->parse_errors}, 'foo', 'bar';
 combined_like { $worker->log_setup_info }
