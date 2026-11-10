@@ -223,6 +223,20 @@ subtest 'personal access token' => sub {
             $t->post_ok('/api/v1/feature' => {Authorization => 'Bearer lance:LANCELOTKEY01:MANYPEOPLEKNOWS'} => form =>
                   {version => 100})->status_is(403)->json_is({error => 'invalid personal access token'});
         };
+        subtest 'Scoped bearer token restricts roles' => sub {
+            my $arthur = $t->app->schema->resultset('Users')->find({username => 'arthur'});
+            my $op_token_key = $arthur->api_keys->create(
+                {
+                    key => 'ARTHUROPTOKEN1',
+                    secret => 'TOKENSECRET1',
+                    is_admin => 0,
+                    is_operator => 1,
+                });
+            $t->put_ok('/api/v1/operator_plugin' => {Authorization => 'Bearer artie:ARTHUROPTOKEN1:TOKENSECRET1'})
+              ->status_is(200, 'operator-scoped bearer token can access operator route');
+            $t->put_ok('/api/v1/admin_plugin' => {Authorization => 'Bearer artie:ARTHUROPTOKEN1:TOKENSECRET1'})
+              ->status_is(403, 'operator-scoped bearer token cannot access admin route');
+        };
     };
 };
 
@@ -326,5 +340,62 @@ subtest 'Auth::check validation including localhost fallback and API key verific
     ok $c->check, 'API key authentication succeeds with valid HMAC and timestamp';
 };
 
+subtest 'API key role scoping limits user roles' => sub {
+    my $arthur = $t->app->schema->resultset('Users')->find({username => 'arthur'});
+    my $admin_key = $arthur->api_keys->create(
+        {
+            key => 'ARTHURADMIN01',
+            secret => 'ADMINSECRET01',
+            is_admin => 1,
+            is_operator => 0,
+        });
+    my $operator_only_key = $arthur->api_keys->create(
+        {
+            key => 'ARTHUROPERATOR01',
+            secret => 'OPERATORSECRET1',
+            is_admin => 0,
+            is_operator => 1,
+        });
+    my $unprivileged_key = $arthur->api_keys->create(
+        {
+            key => 'ARTHURUNPRIV01',
+            secret => 'UNPRIVSECRET01',
+            is_admin => 0,
+            is_operator => 0,
+        });
+
+    client($t);
+    $t->ua->apikey($operator_only_key->key);
+    $t->ua->apisecret($operator_only_key->secret);
+
+    $t->get_ok('/api/v1/jobs')->status_is(200, 'operator-scoped key can access public route');
+    $t->put_ok('/api/v1/operator_plugin')->status_is(200, 'operator-scoped key can access operator route');
+    $t->put_ok('/api/v1/admin_plugin')->status_is(403, 'operator-scoped key cannot access admin route');
+
+    $t->ua->apikey($unprivileged_key->key);
+    $t->ua->apisecret($unprivileged_key->secret);
+
+    $t->get_ok('/api/v1/jobs')->status_is(200, 'unprivileged-scoped key can access public route');
+    $t->put_ok('/api/v1/user_plugin')->status_is(200, 'unprivileged-scoped key can access user route');
+    $t->put_ok('/api/v1/operator_plugin')->status_is(403, 'unprivileged-scoped key cannot access operator route');
+    $t->put_ok('/api/v1/admin_plugin')->status_is(403, 'unprivileged-scoped key cannot access admin route');
+
+    # Admin key (is_admin=1, is_operator=0) implies operator access
+    $t->ua->apikey($admin_key->key);
+    $t->ua->apisecret($admin_key->secret);
+    $t->put_ok('/api/v1/operator_plugin')->status_is(200, 'admin-scoped key has operator access');
+    $t->put_ok('/api/v1/admin_plugin')->status_is(200, 'admin-scoped key has admin access');
+
+    # Direct helper checks with stashed key
+    my $c = OpenQA::Shared::Controller::Auth->new(app => $t->app);
+    $c->stash(current_user => {user => $arthur});
+    $c->stash(current_api_key => $unprivileged_key);
+    ok !$c->is_operator, 'unprivileged key denies operator access via helper';
+    ok !$c->is_admin, 'unprivileged key denies admin access via helper';
+
+    # Explicit user argument takes precedence over stashed API key scoping
+    ok $c->is_operator($arthur), 'explicit user arg bypasses stashed key scoping for operator check';
+    ok $c->is_admin($arthur), 'explicit user arg bypasses stashed key scoping for admin check';
+};
 
 done_testing();

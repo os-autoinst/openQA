@@ -20,6 +20,9 @@ sub register ($self, $app, @args) {
     $app->helper(current_user => \&_current_user);
     $app->helper(is_operator => \&_is_operator);
     $app->helper(is_admin => \&_is_admin);
+    $app->helper(format_api_key_role => \&_format_api_key_role);
+    $app->helper(parse_api_key_roles => \&_parse_api_key_roles);
+    $app->helper(validate_api_key_role_grant => \&_validate_api_key_role_grant);
     $app->helper(is_api_request => \&_is_api_request);
     $app->helper(is_local_request => \&_is_local_request);
     $app->helper(render_specific_not_found => \&_render_specific_not_found);
@@ -75,14 +78,79 @@ sub _current_user ($c) {
     return $current_user && defined $current_user->{user} ? $current_user->{user} : undef;
 }
 
+# In openQA, administrator status implies operator access across all controllers.
+# When an API key is stashed, operator access requires either valid operator
+# permissions on both user and key, or valid administrator permissions on both.
+# Caller passing an explicit $user argument inspects that specific user account's
+# permissions directly without applying API key scoping.
 sub _is_operator ($c, $user = undef) {
-    $user //= $c->current_user;
+    if (!$user) {
+        $user = $c->current_user;
+        if (my $api_key = $c->stash('current_api_key')) {
+            return ($user
+                  && (($user->is_admin && $api_key->is_admin) || ($user->is_operator && $api_key->is_operator)));
+        }
+    }
     return ($user && $user->is_operator);
 }
 
 sub _is_admin ($c, $user = undef) {
-    $user //= $c->current_user;
+    if (!$user) {
+        $user = $c->current_user;
+        if (my $api_key = $c->stash('current_api_key')) {
+            return ($user && $user->is_admin && $api_key->is_admin);
+        }
+    }
     return ($user && $user->is_admin);
+}
+
+# Format effective role string ('Administrator', 'Operator', or 'User')
+# for display based on key flags bounded by user account roles.
+# Arguments: $c (controller), $key (api key object), $user (optional user object, defaults to current_user)
+sub _format_api_key_role ($c, $key, $user = undef) {
+    $user //= $c->current_user;
+    return 'User' unless $user && $key;
+    return 'Administrator' if $key->is_admin && $user->is_admin;
+    return 'Operator' if $key->is_operator && ($user->is_admin || $user->is_operator);
+    return 'User';
+}
+
+# Parse requested role or is_operator/is_admin parameters when creating an API key.
+# New keys without explicit parameters default to the creator's current roles.
+# Returns ($is_operator, $is_admin, $error_msg).
+sub _parse_api_key_roles ($c, $role, $validation, $user) {
+    if (defined $role && ($validation->is_valid('is_operator') || $validation->is_valid('is_admin'))) {
+        return (undef, undef, 'Cannot specify both role and is_operator/is_admin');
+    }
+    my ($is_operator, $is_admin);
+    if (defined $role) {
+        if ($role eq 'admin') {
+            ($is_operator, $is_admin) = (1, 1);
+        }
+        elsif ($role eq 'operator') {
+            ($is_operator, $is_admin) = (1, 0);
+        }
+        else {
+            ($is_operator, $is_admin) = (0, 0);
+        }
+    }
+    else {
+        $is_operator
+          = $validation->is_valid('is_operator') ? int($validation->param('is_operator')) : $user->is_operator;
+        $is_admin = $validation->is_valid('is_admin') ? int($validation->param('is_admin')) : $user->is_admin;
+    }
+    return ($is_operator, $is_admin, undef);
+}
+
+# Verify requested roles do not exceed the calling user's account roles.
+sub _validate_api_key_role_grant ($c, $is_admin, $is_operator, $user) {
+    if ($is_admin && !$user->is_admin) {
+        return 'Cannot grant administrator role exceeding own account';
+    }
+    if ($is_operator && !$user->is_operator && !$user->is_admin) {
+        return 'Cannot grant operator role exceeding own account';
+    }
+    return undef;
 }
 
 sub _is_api_request ($c) {
