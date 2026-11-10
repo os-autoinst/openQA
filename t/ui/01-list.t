@@ -205,7 +205,7 @@ subtest 'priority displayed when not logged in' => sub {
 my @header = $driver->find_elements('h2');
 my @header_texts = map { OpenQA::Test::Case::trim_whitespace($_->get_text()) } @header;
 my @expected = (
-    '3 jobs are running (dynamic limit: 3 of 10)',
+    '3 jobs are running (dynamic scheduling limit: 3 / max 10)',
     '4 scheduled jobs (1 blocked by other jobs)',
     'Last 11 finished jobs'
 );
@@ -216,7 +216,7 @@ wait_for_ajax(msg => 'DataTables on "All tests" page with limit');
 @header = $driver->find_elements('h2');
 @header_texts = map { OpenQA::Test::Case::trim_whitespace($_->get_text()) } @header;
 @expected = (
-    '3 jobs are running (dynamic limit: 3 of 10)',
+    '3 jobs are running (dynamic scheduling limit: 3 / max 10)',
     '4 scheduled jobs (1 blocked by other jobs)',
     'Last 1 finished jobs'
 );
