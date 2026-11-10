@@ -101,13 +101,13 @@ For example the web UI container can be pulled and started using the `podman`
 container engine:
 
 ```sh
-podman run -p 1080:80 -p 1443:443 --rm -it registry.opensuse.org/devel/openqa/containers16.0/openqa_webui:latest
+podman run -p 1080:80 -p 1443:443 --rm -it registry.opensuse.org/devel/openqa/containers16.1/openqa_webui:latest
 ```
 
 The worker container can be pulled and started with:
 
 ```sh
-podman run --rm -it registry.opensuse.org/devel/openqa/containers16.0/openqa_worker:latest
+podman run --rm -it registry.opensuse.org/devel/openqa/containers16.1/openqa_worker:latest
 ```
 
 ### Custom configuration for containers
@@ -125,7 +125,7 @@ podman run -p 1080:80 -p 1443:443 \
   -v ./container/webui/test-key.pem:/etc/apache2/ssl.key/server.key:z \
   -v ./container/webui/test-cert.pem:/etc/apache2/ssl.crt/ca.crt:z \
   -v ./container/webui/conf/openqa.ini:/data/conf/openqa.ini:z \
-  --rm -it registry.opensuse.org/devel/openqa/containers16.0/openqa_webui:latest
+  --rm -it registry.opensuse.org/devel/openqa/containers16.1/openqa_webui:latest
 ```
 
 The same works for the workers container where you most likely want to to
@@ -135,7 +135,7 @@ supply `workers.ini` and `client.conf`:
 podman run \
   -v ./container/worker/conf/workers.ini:/data/conf/workers.ini:z \
   -v ./container/worker/conf/client.conf:/data/conf/client.conf:z \
-  --rm -it registry.opensuse.org/devel/openqa/containers16.0/openqa_worker:latest
+  --rm -it registry.opensuse.org/devel/openqa/containers16.1/openqa_worker:latest
 ```
 
 This examples assume the working directory is an openQA checkout. To avoid doing
@@ -154,7 +154,7 @@ commands mentioned there can also be invoked within a container, e.g.:
 
 ```sh
 podman run \
-   --rm -it registry.opensuse.org/devel/openqa/containers16.0/openqa_webui:latest \
+   --rm -it registry.opensuse.org/devel/openqa/containers16.1/openqa_webui:latest \
    openqa-cli --help
 ```
 
