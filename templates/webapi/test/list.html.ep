@@ -13,7 +13,11 @@
 </div>
 
 <div>
-    <h2 id="running_jobs_heading">Running jobs</h2>
+    <h2 id="running_jobs_heading" style="display: inline-block">Running jobs</h2><%=
+      help_popover 'Concurrent job limits' =>
+        '<p><b>Dynamic limit:</b> To keep the system responsive, the scheduler adjusts the maximum concurrent job limit dynamically based on host load, up to the configured server maximum.</p>'
+      . '<p><b>Running jobs can exceed the limit:</b> When system load increases, the limit scales down. Already running jobs continue to run until finished, but no new jobs will be scheduled until the number of running jobs falls below the current limit.</p>',
+      undef, undef, undef, id => 'running_jobs_help_icon', style => 'vertical-align: text-top'; %>
     <table id="running" class="display table table-striped" style="width: 100%">
         <thead>
             <tr>
