@@ -10,7 +10,7 @@ use List::Util 'uniq';
 use OpenQA::Utils 'run_cmd_with_log_return_error';
 
 our @EXPORT_OK = qw(
-  RETURN_CODE_TIMEOUT_EXCEEDED tree_file git_has_commit git_timed git_failure_message git_tree tagged_needles
+  RETURN_CODE_TIMEOUT_EXCEEDED git_has_commit git_timed git_failure_message git_tree tagged_needles
   annotate_pull_requests failed_test_files failed_needle_files
 );
 
@@ -21,7 +21,7 @@ use constant RETURN_CODE_TIMEOUT_EXCEEDED => 124;    # see `man timeout`
 my %PROBE_CODES = (0 => 1, 124 => 1, 128 => 1);
 
 # returns the longest suffix of $path that is a file in the git tree (a hash reference of paths)
-sub tree_file ($tree, $path) {
+sub _tree_file ($tree, $path) {
     my @parts = grep { length } split m{/}, $path // '';
     for (; @parts; shift @parts) {
         my $rel = join '/', @parts;
@@ -105,15 +105,15 @@ sub failed_test_files ($tree, $modules) {
     my @files;
     for my $module (@$modules) {
         my ($traced, $script) = @$module;
-        my @found = map { tree_file($tree, $_) // () } @$traced;
-        push @files, @found ? @found : (tree_file($tree, $script) // ());
+        my @found = map { _tree_file($tree, $_) // () } @$traced;
+        push @files, @found ? @found : (_tree_file($tree, $script) // ());
     }
     return [uniq @files];
 }
 
 # the needles considered by failed screen checks, their pngs and the needles with the tags of those checks
 sub failed_needle_files ($tree, $needles, $tagged) {
-    my @files = map { tree_file($tree, $_) // () } @$needles;
+    my @files = map { _tree_file($tree, $_) // () } @$needles;
     @files = uniq @files, @$tagged;
     return [map { my $png = s/\.json$/.png/r; ($_, $png ne $_ && $tree->{$png} ? $png : ()) } @files];
 }
