@@ -1,0 +1,3184 @@
+---
+info:
+  description: OpenQA WebAPI REST API
+  license:
+    name: GPL-2.0-or-later
+  title: openQA API
+  version: v1
+openapi: 3.0.0
+paths:
+  /assets:
+    get:
+      description: >
+        Returns a list of all assets present in the system. For each asset
+        relevant information such as its id, name, timestamp of creation and
+        type is included.
+      operationId: listAssets
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+        - in: query
+          name: offset
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      summary: List assets
+      tags:
+        - assets
+    post:
+      description: >
+        Register an asset given its name and type. Returns a code of 200 on
+        success and of 400 on error.
+      operationId: registerAsset
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                name:
+                  type: string
+                type:
+                  type: string
+              required:
+                - type
+                - name
+              type: object
+        required: true
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Register asset
+      tags:
+        - assets
+  /assets/cleanup:
+    post:
+      description: >
+        Returns a list of all assets present in the system. For each asset
+        relevant information such as its id, name, timestamp of creation and
+        type is included.
+      operationId: triggerAssetCleanup
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Trigger asset cleanup
+      tags:
+        - assets
+  /assets/{id}:
+    delete:
+      description: >
+        Removes an asset from the system given its id or its type and name.
+        Returns the number of assets removed.
+      operationId: deleteAssetById
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Delete asset by id
+      tags:
+        - assets
+    get:
+      description: >
+        Returns information for a specific asset given its id or its type and
+        name. Information returned the asset id, name, timestamp of creation
+        and type. Returns a code of 200 on success and of 404 on error.
+      operationId: getAssetById
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      summary: Get asset by id
+      tags:
+        - assets
+  /assets/{type}/{name}:
+    delete:
+      description: >
+        Removes an asset from the system given its id or its type and name.
+        Returns the number of assets removed.
+      operationId: deleteAssetByName
+      parameters:
+        - in: path
+          name: type
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: name
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Delete asset by type and name
+      tags:
+        - assets
+    get:
+      description: >
+        Returns information for a specific asset given its id or its type and
+        name. Information returned the asset id, name, timestamp of creation
+        and type. Returns a code of 200 on success and of 404 on error.
+      operationId: getAssetByName
+      parameters:
+        - in: path
+          name: type
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: name
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+      summary: Get asset by type and name
+      tags:
+        - assets
+  /auth:
+    get:
+      description: Returns the job id of the current job.
+      operationId: authCheck
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Auth check
+      tags:
+        - users
+  /barrier:
+    post:
+      description: >
+        Creates a new barrier resource for a group of tasks referenced by the
+        argument "tasks". Returns 200 on success and 409 on error.
+      operationId: createBarrier
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Create barrier
+      tags:
+        - locks
+  /barrier/{name}:
+    delete:
+      description: Removes a barrier given its name.
+      operationId: destroyBarrier
+      parameters:
+        - in: path
+          name: name
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Destroy barrier
+      tags:
+        - locks
+    post:
+      description: >
+        Blocks execution of the calling job until the method is called by all
+        tasks using the barrier referenced by "name". Returns a 200 code on
+        success, 409 on error and 410 when the referenced barrier does not
+        exist.
+      operationId: waitBarrier
+      parameters:
+        - in: path
+          name: name
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Wait at barrier
+      tags:
+        - locks
+  /bugs:
+    get:
+      description: >
+        Returns a dictionary of bugs reported in the system of the form { id:
+        bug } where the key is the ID in the database and the value is the
+        external bug, eg. bsc#123 or poo#123. The optional parameter
+        "refreshable" limits the results to bugs not updated recently. Bugs
+        that were already checked and don''t actually exist in the bugtracker
+        are not returned as there are no updates on non-existent bugs expected.
+        Additionally "delta" can be set to a timespan, 1 hour by default. The
+        optional parameter "...'
+      operationId: listBugs
+      parameters:
+        - in: query
+          name: refreshable
+          schema:
+            type: integer
+        - in: query
+          name: delta
+          schema:
+            type: integer
+        - in: query
+          name: created_since
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+        - in: query
+          name: offset
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      summary: List bugs
+      tags:
+        - bugs
+    post:
+      description: >
+        Creates a new bug in the system. This method will check for the
+        existence of a bug with the same external bug id, in which case the
+        method fails with an error code of 1. Otherwise, the new bug is created
+        with the bug values passed as arguments.
+      operationId: createBug
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                assigned:
+                  type: integer
+                assignee:
+                  type: string
+                bugid:
+                  type: string
+                existing:
+                  type: integer
+                open:
+                  type: integer
+                priority:
+                  type: string
+                refreshed:
+                  type: integer
+                resolution:
+                  type: string
+                status:
+                  type: string
+                title:
+                  type: string
+              required:
+                - bugid
+              type: object
+        required: true
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Create bug
+      tags:
+        - bugs
+  /bugs/{id}:
+    delete:
+      description: >
+        Removes a bug from the system given its bug id. Return 1 on success or
+        not found on error.
+      operationId: deleteBug
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Delete bug
+      tags:
+        - bugs
+    get:
+      description: >
+        Returns information for a bug given its id in the system. Information
+        includes the internal (openQA-specific) and the external bug id. Also
+        shows the bug's title, priority, whether its assigned or not and its
+        assignee, whether its open or not, status, resolution, whether its an
+        existing bug or not, and the date when the bug was last updated in the
+        system.
+      operationId: getBug
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      summary: Get bug
+      tags:
+        - bugs
+    put:
+      description: >
+        Updates the information of a bug given its id and a set of bug values
+        to update. Returns the id of the bug, or an error if the bug id is not
+        found in the system.
+      operationId: updateBug
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                assigned:
+                  type: integer
+                assignee:
+                  type: string
+                existing:
+                  type: integer
+                open:
+                  type: integer
+                priority:
+                  type: string
+                refreshed:
+                  type: integer
+                resolution:
+                  type: string
+                status:
+                  type: string
+                title:
+                  type: string
+              type: object
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Update bug
+      tags:
+        - bugs
+  /comments:
+    delete:
+      description: >
+        Deletes multiple comments by their IDs which are specified by passing
+        one or more `id` parameters. Returns a JSON object with the number of
+        deleted comments or an error message in case a fatal error occurred.
+        Returns a 200 code when all comments have been deleted and a 400 code
+        if not all comments could be deleted.
+      operationId: deleteComments
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                id:
+                  items:
+                    type: integer
+                  type: array
+              required:
+                - id
+              type: object
+        required: true
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Delete multiple comments
+      tags:
+        - comments
+    post:
+      description: >
+        Adds new comments to the specified jobs. Returns 200 if all comments
+        have been created or 400 if not all comments could be created. Returns
+        a JSON object with the created and failed comment IDs or an error
+        message in case a fatal error occurred. All comments will have the same
+        text which is passed via the mandatory `text` parameter. At this point
+        only job comments are supported. The job IDs are specified by passing
+        one or more `job_id` parameters.
+      operationId: createComments
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                job_id:
+                  items:
+                    type: integer
+                  type: array
+                text:
+                  type: string
+              required:
+                - text
+                - job_id
+              type: object
+        required: true
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Create comments for multiple jobs
+      tags:
+        - comments
+  /experimental/isos/note:
+    put:
+      description: >
+        Adds/updates a note on the latest scheduled product matching the
+        specified DISTRI, VERSION, FLAVOR, ARCH and BUILD parameters. This note
+        is shown on the web UI. The ID of the scheduled product where the note
+        was added/updated is returned, e.g. `{updated_product_id: 42}`.
+      operationId: updateIsoNote
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                arch:
+                  type: string
+                build:
+                  type: string
+                distri:
+                  type: string
+                flavor:
+                  type: string
+                note:
+                  type: string
+                version:
+                  type: string
+              required:
+                - note
+                - distri
+                - version
+                - flavor
+                - arch
+                - build
+              type: object
+        required: true
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Update scheduled product note
+      tags:
+        - isos
+  /experimental/job_templates_scheduling/{id_or_name}:
+    get:
+      description: >
+        Serializes the given job group with relevant test suites by
+        architecture and products (mediums), or all available groups defined in
+        the system if no group id is specified. Common defaults for prio and
+        machine are represented in the defaults key. Returns a YAML template
+        representing the job group(s).
+      operationId: getJobTemplatesSchedulingExp
+      parameters:
+        - in: path
+          name: id_or_name
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+      summary: Get job templates scheduling (experimental)
+      tags:
+        - job_templates
+    post:
+      operationId: updateJobTemplatesSchedulingExp
+      parameters:
+        - in: path
+          name: id_or_name
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Update job templates scheduling (experimental)
+      tags:
+        - job_templates
+  /experimental/search:
+    get:
+      operationId: search
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+      summary: Search
+      tags:
+        - jobs
+  /feature:
+    post:
+      description: >
+        Post integer value to save feature version of current user in the
+        database
+      operationId: informedAboutFeature
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Mark feature as informed
+      tags:
+        - users
+  /groups/{group_id}/comments:
+    get:
+      description: >
+        Returns a list of comments for a job or a job group given its id. For
+        each comment the list includes its bug references, date of creation,
+        comment id, text, date of update and the user name that created the
+        comment. Add the optional "render_markdown=1" parameter to include the
+        rendered markdown text for each comment.
+      operationId: listGroupComments
+      parameters:
+        - in: path
+          name: group_id
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: render_markdown
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: OK
+      summary: List comments for group
+      tags:
+        - comments
+    post:
+      description: >
+        Adds a new comment to the specified job/group. Returns a 200 code with
+        a JSON containing the new comment id or 400 if no text is specified for
+        the comment.
+      operationId: createGroupComment
+      parameters:
+        - in: path
+          name: group_id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                text:
+                  type: string
+              required:
+                - text
+              type: object
+        required: true
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Create comment for group
+      tags:
+        - comments
+  /groups/{group_id}/comments/{comment_id}:
+    delete:
+      description: >
+        Deletes an existing comment specified by job/group id and comment id.
+      operationId: deleteGroupComment
+      parameters:
+        - in: path
+          name: group_id
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: comment_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Delete comment for group
+      tags:
+        - comments
+    get:
+      description: >
+        Renders text and properties for a comment specified by job/group id and
+        comment id including rendered markdown and bug references. Returns a
+        404 code if the specified comment does not exist, or 200 on success.
+      operationId: getGroupComment
+      parameters:
+        - in: path
+          name: group_id
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: comment_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      summary: Get comment for group
+      tags:
+        - comments
+    put:
+      description: >
+        Updates an existing comment specified by job/group id and comment id.
+        An update text argument is required. Returns a 200 code and a JSON on
+        success and 400 if no text was specified, 404 if the comment to update
+        does not exist and 403 if the update is not requested by the original
+        author of the comment.
+      operationId: updateGroupComment
+      parameters:
+        - in: path
+          name: group_id
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: comment_id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                text:
+                  type: string
+              required:
+                - text
+              type: object
+        required: true
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Update comment for group
+      tags:
+        - comments
+  /isos:
+    post:
+      description: >
+        Schedule jobs for assets matching the required settings DISTRI,
+        VERSION, FLAVOR and ARCH passed to the method as arguments. Returns a
+        JSON block containing the number of jobs created, their job ids and the
+        information for jobs that could not be scheduled. Supports an optional
+        `_FAIL_IF_NO_JOBS` parameter. When set to `1`, the request fails with
+        a `400 Bad Request` if no jobs are scheduled (unless `async=1` is
+        used). In either case, the scheduled product status is set to
+        `fatal_error`.
+      operationId: createIso
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                ARCH:
+                  type: string
+                BUILD:
+                  type: string
+                DISTRI:
+                  type: string
+                FLAVOR:
+                  type: string
+                ISO:
+                  type: string
+                MACHINE:
+                  type: string
+                TEST:
+                  type: string
+                VERSION:
+                  type: string
+              required:
+                - DISTRI
+                - VERSION
+                - FLAVOR
+                - ARCH
+              type: object
+        required: true
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Create jobs from ISO
+      tags:
+        - isos
+  /isos/job_stats:
+    get:
+      description: >
+        Returns job statistics about the most recent scheduled products
+        matching the specified DISTRI, VERSION, FLAVOR, ARCH and BUILD
+        parameters. Scheduled products that are cancelling/cancelled are not
+        considered. This allows determining whether all jobs that have been
+        scheduled for a certain purpose are done and whether the jobs have
+        passed. If jobs have been cloned/restarted then only the state/result
+        of the latest job is taken into account. The statistics are returned as
+        nested JSON object with ...
+      operationId: getIsoJobStats
+      parameters:
+        - in: query
+          name: distri
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: version
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: flavor
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: arch
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: build
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: group_glob
+          schema:
+            type: string
+        - in: query
+          name: not_group_glob
+          schema:
+            type: string
+        - in: query
+          name: additional_jobs_by
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Get job statistics for ISOs
+      tags:
+        - isos
+  /isos/{name}/cancel:
+    post:
+      description: >
+        Cancel jobs whose ISO setting match a particular ISO argument passed to
+        the method. Return number of cancelled jobs within a JSON block.
+      operationId: cancelIso
+      parameters:
+        - in: path
+          name: name
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                BUILD:
+                  type: string
+              type: object
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Cancel jobs for ISO
+      tags:
+        - isos
+  /isos/{scheduled_product_id}:
+    delete:
+      operationId: deleteIso
+      parameters:
+        - in: path
+          name: name
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Delete ISO scheduled product
+      tags:
+        - isos
+    get:
+      description: >
+        Returns (status) information and jobs for a previously scheduled
+        product via create().
+      operationId: getScheduledProduct
+      parameters:
+        - in: path
+          name: scheduled_product_id
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: include_job_ids
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Get scheduled product
+      tags:
+        - isos
+  /job_groups:
+    get:
+      description: >
+        Shows a list jobs belonging to a job group given its ID, or a list of
+        all jobs. For each job in the list, all relevant information - with the
+        exception of timestamps - is also returned as a list of indexed lists.
+      operationId: listJobGroups
+      responses:
+        '200':
+          description: OK
+      summary: List job groups
+      tags:
+        - job_groups
+    post:
+      description: The name of the group to be created.
+      operationId: createJobGroup
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                always_show_version:
+                  type: integer
+                build_version_sort:
+                  type: integer
+                carry_over_bugrefs:
+                  type: integer
+                default_priority:
+                  type: integer
+                description:
+                  type: string
+                ignore_on_dashboard:
+                  type: integer
+                keep_important_jobs_in_days:
+                  type: integer
+                keep_important_logs_in_days:
+                  type: integer
+                keep_important_results_in_days:
+                  type: integer
+                keep_jobs_in_days:
+                  type: integer
+                keep_logs_in_days:
+                  type: integer
+                keep_results_in_days:
+                  type: integer
+                name:
+                  type: string
+                parent_id:
+                  type: string
+                size_limit_gb:
+                  type: string
+              required:
+                - name
+              type: object
+        required: true
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Create job group
+      tags:
+        - job_groups
+  /job_groups/{group_id}:
+    delete:
+      description: >
+        Deletes a job group. Verifies that it is empty before attempting to
+        remove. If not empty (there are existing jobs), it will return an
+        error.
+      operationId: deleteJobGroup
+      parameters:
+        - in: path
+          name: group_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Delete job group
+      tags:
+        - job_groups
+    get:
+      description: >
+        Shows a list jobs belonging to a job group given its ID, or a list of
+        all jobs. For each job in the list, all relevant information - with the
+        exception of timestamps - is also returned as a list of indexed lists.
+      operationId: getJobGroup
+      parameters:
+        - in: path
+          name: group_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      summary: Get job group
+      tags:
+        - job_groups
+    put:
+      description: Updates the properties of a job group.
+      operationId: updateJobGroup
+      parameters:
+        - in: path
+          name: group_id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                always_show_version:
+                  type: integer
+                build_version_sort:
+                  type: integer
+                carry_over_bugrefs:
+                  type: integer
+                default_priority:
+                  type: integer
+                description:
+                  type: string
+                drag:
+                  type: integer
+                ignore_on_dashboard:
+                  type: integer
+                name:
+                  type: string
+                parent_id:
+                  type: string
+                size_limit_gb:
+                  type: string
+                sort_order:
+                  type: integer
+              type: object
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Update job group
+      tags:
+        - job_groups
+  /job_groups/{group_id}/build_results:
+    get:
+      description: >
+        Shows build results for a job group, similar to what the group_overview
+        page provides. Currently it does not support parent job groups. Use
+        limit_builds=n to limit the number of returned builds. Default is 10.
+        Use time_limit_days=n to only go back n days. Use only_tagged=1 to only
+        return tagged builds. Use show_tags=1 to show tags for each build.
+        only_tagged implies show_tags.
+      operationId: getJobGroupBuildResults
+      parameters:
+        - in: path
+          name: group_id
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: limit_builds
+          required: false
+          schema:
+            type: integer
+        - in: query
+          name: time_limit_days
+          required: false
+          schema:
+            type: integer
+        - in: query
+          name: only_tagged
+          required: false
+          schema:
+            type: boolean
+        - in: query
+          name: show_tags
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: OK
+      summary: Get build results for job group
+      tags:
+        - job_groups
+  /job_groups/{group_id}/jobs:
+    get:
+      description: List jobs belonging to a job group.
+      operationId: getJobGroupJobs
+      parameters:
+        - in: path
+          name: group_id
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: expired
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: OK
+      summary: Get jobs in job group
+      tags:
+        - job_groups
+  /job_settings/jobs:
+    get:
+      description: On success, returns an array of the matched job IDs.
+      operationId: getJobsForJobSettings
+      responses:
+        '200':
+          description: OK
+      summary: Get jobs for job settings
+      tags:
+        - jobs
+  /job_templates:
+    get:
+      description: >
+        Shows information for the job templates defined in the system. If
+        given a job template id, only the information for that template is
+        shown, otherwise will attempt to fetch job templates based on any of
+        the following parameters: machine name or id, test suite name or id,
+        distri, arch, version, flavor, product id or group id. If none of those
+        arguments are passed to the method, will attempt to list all job
+        templates defined in the system. Returns a list of job templates
+        containing the following...
+      operationId: listJobTemplates
+      responses:
+        '200':
+          description: OK
+      summary: List job templates
+      tags:
+        - job_templates
+    post:
+      description: >
+        Creates a new job template. If the method receives a valid product id
+        as argument, it will also check for the following arguments: machine
+        id, group id, test suite id and priority. If no valid product id is
+        received as argument, the method will instead check for the following
+        arguments: product name, machine name, test suite name, arch, distri,
+        flavor, version and priority. Returns a 400 code on error, or a 303
+        code and the job template id within a JSON block on success.
+      operationId: createJobTemplate
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                group_name:
+                  type: string
+                machine_name:
+                  type: string
+                prio:
+                  type: integer
+                product_name:
+                  type: string
+                test_suite_name:
+                  type: string
+              required:
+                - group_name
+                - prio
+                - test_suite_name
+                - machine_name
+                - product_name
+              type: object
+        required: true
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Create job template
+      tags:
+        - job_templates
+  /job_templates/{job_template_id}:
+    delete:
+      description: >
+        Deletes a job template given its id. Returns a 404 error code if the
+        template is not found, a 400 code on other errors or a 303 code on
+        success.
+      operationId: deleteJobTemplate
+      parameters:
+        - in: path
+          name: job_template_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Delete job template
+      tags:
+        - job_templates
+    get:
+      description: >
+        Shows information for the job templates defined in the system. If
+        given a job template id, only the information for that template is
+        shown, otherwise will attempt to fetch job templates based on any of
+        the following parameters: machine name or id, test suite name or id,
+        distri, arch, version, flavor, product id or group id. If none of those
+        arguments are passed to the method, will attempt to list all job
+        templates defined in the system. Returns a list of job templates
+        containing the following...
+      operationId: getJobTemplate
+      parameters:
+        - in: path
+          name: job_template_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      summary: Get job template
+      tags:
+        - job_templates
+  /job_templates_scheduling/{id_or_name}:
+    get:
+      description: >
+        Serializes the given job group with relevant test suites by
+        architecture and products (mediums), or all available groups defined in
+        the system if no group id is specified. Common defaults for prio and
+        machine are represented in the defaults key. Returns a YAML template
+        representing the job group(s).
+      operationId: getJobTemplatesScheduling
+      parameters:
+        - in: path
+          name: id_or_name
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+      summary: Get job templates scheduling
+      tags:
+        - job_templates
+    post:
+      operationId: updateJobTemplatesScheduling
+      parameters:
+        - in: path
+          name: id_or_name
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+        required: true
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Update job templates scheduling
+      tags:
+        - job_templates
+  /jobs:
+    get:
+      description: limit => 100 Limit the number of jobs.
+      operationId: listJobs
+      parameters:
+        - in: query
+          name: scope
+          schema:
+            enum:
+              - current
+              - relevant
+            type: string
+        - in: query
+          name: latest
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+        - in: query
+          name: offset
+          schema:
+            type: integer
+        - in: query
+          name: groupid
+          schema:
+            type: integer
+        - in: query
+          name: not_groupid
+          schema:
+            type: integer
+        - in: query
+          name: job_setting
+          schema:
+            type: string
+        - in: query
+          name: build
+          schema:
+            type: string
+        - in: query
+          name: iso
+          schema:
+            type: string
+        - in: query
+          name: distri
+          schema:
+            type: string
+        - in: query
+          name: version
+          schema:
+            type: string
+        - in: query
+          name: flavor
+          schema:
+            type: string
+        - in: query
+          name: arch
+          schema:
+            type: string
+        - in: query
+          name: hdd_1
+          schema:
+            type: string
+        - in: query
+          name: test
+          schema:
+            type: string
+        - in: query
+          name: machine
+          schema:
+            type: string
+        - in: query
+          name: worker_class
+          schema:
+            type: string
+        - in: query
+          name: modules
+          schema:
+            type: string
+        - in: query
+          name: modules_result
+          schema:
+            type: string
+        - in: query
+          name: state
+          schema:
+            type: string
+        - in: query
+          name: result
+          schema:
+            type: string
+        - in: query
+          name: ids
+          schema:
+            type: string
+        - in: query
+          name: before
+          schema:
+            type: string
+        - in: query
+          name: after
+          schema:
+            type: string
+        - in: query
+          name: group
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+      summary: List jobs
+      tags:
+        - jobs
+    post:
+      description: >
+        Creates jobs given a list of settings passed as parameters. TEST
+        setting/parameter is mandatory and should be the name of the test.
+      operationId: createJobs
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                ARCH:
+                  type: string
+                BUILD:
+                  type: string
+                DESKTOP:
+                  type: string
+                DISTRI:
+                  type: string
+                FLAVOR:
+                  type: string
+                HDD_1:
+                  type: string
+                ISO:
+                  type: string
+                KVM:
+                  type: string
+                MACHINE:
+                  type: string
+                NICTYPE:
+                  type: string
+                TEST:
+                  type: string
+                UEFI:
+                  type: string
+                VERSION:
+                  type: string
+                WORKER_CLASS:
+                  type: string
+                is_clone_job:
+                  type: integer
+              required:
+                - DISTRI
+                - VERSION
+                - FLAVOR
+                - ARCH
+                - TEST
+              type: object
+        required: true
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Create jobs
+      tags:
+        - jobs
+  /jobs/cancel:
+    post:
+      description: >
+        Cancel job or jobs. Used for both apiv1_cancel and apiv1_cancel_jobs
+      operationId: cancelJobs
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                ARCH:
+                  type: string
+                BUILD:
+                  type: string
+                DISTRI:
+                  type: string
+                FLAVOR:
+                  type: string
+                TEST:
+                  type: string
+                VERSION:
+                  type: string
+                reason:
+                  type: string
+              type: object
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Cancel jobs
+      tags:
+        - jobs
+  /jobs/overview:
+    get:
+      description: >
+        Returns the latest jobs matching the specified arch, build, distri,
+        version, flavor and groupid. So this works in the same way as the test
+        results overview in the GUI.
+      operationId: getJobsOverview
+      parameters:
+        - in: query
+          name: arch
+          schema:
+            type: string
+        - in: query
+          name: build
+          schema:
+            type: string
+        - in: query
+          name: distri
+          schema:
+            type: string
+        - in: query
+          name: version
+          schema:
+            type: string
+        - in: query
+          name: flavor
+          schema:
+            type: string
+        - in: query
+          name: groupid
+          schema:
+            type: integer
+        - in: query
+          name: failed_modules
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+      summary: Get jobs overview
+      tags:
+        - jobs
+  /jobs/restart:
+    post:
+      description: >
+        Restart job(s). Use force=1 to force the restart (e.g. despite missing
+        assets). Use prio=X to set the priority of the new jobs. Use
+        skip_aborting_jobs=1 to prevent aborting the old jobs if they would
+        still be running. Use skip_parents=1 to prevent restarting parent jobs.
+        Use skip_children=1 to prevent restarting child jobs. Use
+        skip_ok_result_children=1 to prevent restarting passed/softfailed child
+        jobs. Used for both apiv1_restart and apiv1_restart_jobs
+      operationId: restartJobs
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                clone:
+                  type: integer
+                comment:
+                  type: string
+                force:
+                  type: integer
+                jobid:
+                  type: integer
+                jobs:
+                  type: string
+                prio:
+                  type: integer
+                set:
+                  type: string
+                skip_aborting_jobs:
+                  type: integer
+                skip_children:
+                  type: integer
+                skip_ok_result_children:
+                  type: integer
+                skip_parents:
+                  type: integer
+              type: object
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Restart jobs
+      tags:
+        - jobs
+  /jobs/{job_id}/comments:
+    get:
+      description: >
+        Returns a list of comments for a job or a job group given its id. For
+        each comment the list includes its bug references, date of creation,
+        comment id, text, date of update and the user name that created the
+        comment. Add the optional "render_markdown=1" parameter to include the
+        rendered markdown text for each comment.
+      operationId: listJobComments
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: render_markdown
+          schema:
+            type: boolean
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      summary: List comments for job
+      tags:
+        - comments
+    post:
+      description: >
+        Adds a new comment to the specified job/group. Returns a 200 code with
+        a JSON containing the new comment id or 400 if no text is specified for
+        the comment.
+      operationId: createJobComment
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                text:
+                  type: string
+              required:
+                - text
+              type: object
+        required: true
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Create comment for job
+      tags:
+        - comments
+  /jobs/{job_id}/comments/{comment_id}:
+    delete:
+      description: >
+        Deletes an existing comment specified by job/group id and comment id.
+      operationId: deleteJobComment
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: comment_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Delete comment for job
+      tags:
+        - comments
+    get:
+      description: >
+        Renders text and properties for a comment specified by job/group id and
+        comment id including rendered markdown and bug references. Returns a
+        404 code if the specified comment does not exist, or 200 on success.
+      operationId: getJobComment
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: comment_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      summary: Get comment text for job
+      tags:
+        - comments
+    put:
+      description: >
+        Updates an existing comment specified by job/group id and comment id.
+        An update text argument is required. Returns a 200 code and a JSON on
+        success and 400 if no text was specified, 404 if the comment to update
+        does not exist and 403 if the update is not requested by the original
+        author of the comment.
+      operationId: updateJobComment
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: comment_id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                text:
+                  type: string
+              required:
+                - text
+              type: object
+        required: true
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Update comment for job
+      tags:
+        - comments
+  /jobs/{jobid}:
+    delete:
+      description: Deletes a job from the system.
+      operationId: deleteJob
+      parameters:
+        - in: path
+          name: jobid
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Delete job
+      tags:
+        - jobs
+    get:
+      description: >
+        Shows details for a specific job, such as the assets associated,
+        assigned worker id, children and parents, job id, group id, name,
+        parent group id and name, priority, result, settings, state and times
+        of startup and finish of the job. Pass follow=1 as query parameter to
+        follow job restarts and report most the recent result for the specified
+        job id. Pass ancestors=1 as query parameter to include how many
+        restarts have happened until the current job. Pass descendants=1 as
+        query parameter to inc...
+      operationId: getJob
+      parameters:
+        - in: path
+          name: jobid
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: follow
+          schema:
+            type: boolean
+        - in: query
+          name: ancestors
+          schema:
+            type: boolean
+        - in: query
+          name: descendants
+          schema:
+            type: boolean
+        - in: query
+          name: details
+          schema:
+            type: boolean
+        - in: query
+          name: check_assets
+          schema:
+            type: boolean
+        - in: query
+          name: unredacted
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: OK
+      summary: Get job details
+      tags:
+        - jobs
+    put:
+      description: >
+        Updates status of a job. Requires a new status, the id of the job and
+        of the worker assigned to the job. In order to update the status, the
+        submitted worker id must match the id of the worker assigned to the job
+        identified by the job id.
+      operationId: updateJob
+      parameters:
+        - in: path
+          name: jobid
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                group_id:
+                  type: integer
+                priority:
+                  type: integer
+                settings:
+                  type: object
+              type: object
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Update job
+      tags:
+        - jobs
+  /jobs/{jobid}/cancel:
+    post:
+      description: >
+        Cancel job or jobs. Used for both apiv1_cancel and apiv1_cancel_jobs
+      operationId: cancelJob
+      parameters:
+        - in: path
+          name: jobid
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                reason:
+                  type: string
+              type: object
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Cancel job
+      tags:
+        - jobs
+  /jobs/{jobid}/duplicate:
+    post:
+      description: >
+        The same as the restart route except that running jobs are not aborted
+        and there's no check for missing assets by default. This route is only
+        supposed to be used by the worker itself when it is already in the
+        process of aborting the job.
+      operationId: duplicateJob
+      parameters:
+        - in: path
+          name: jobid
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Duplicate job
+      tags:
+        - jobs
+  /jobs/{jobid}/history:
+    get:
+      description: >
+        Returns the progression of related jobs for a given job ID. This
+        includes preceding completed jobs, the current job itself, and
+        succeeding scheduled or completed jobs.
+      operationId: getJobHistory
+      parameters:
+        - in: path
+          name: jobid
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: previous_limit
+          description: >
+            Limits the number of previous jobs returned in the history.
+            Defaults to the system configured limit (typically 10).
+          schema:
+            type: integer
+        - in: query
+          name: next_limit
+          description: >
+            Limits the number of next/subsequent jobs returned in the history.
+            Defaults to the system configured limit (typically 10).
+          schema:
+            type: integer
+        - in: query
+          name: strict
+          description: >
+            If set to 1, the history is strictly isolated by all declared
+            history isolation keys for the job (e.g. keeping independent Pull
+            Request histories separate).
+          schema:
+            type: integer
+            enum:
+              - 1
+              - 0
+        - in: query
+          name: isolation_keys
+          description: >
+            An explicit, comma-separated list of job setting keys to isolate
+            the history on.
+          schema:
+            type: string
+            pattern: '^[a-zA-Z0-9_, ]*$'
+      responses:
+        '200':
+          description: OK
+      summary: Get job status
+      tags:
+        - jobs
+  /jobs/{jobid}/prio:
+    post:
+      description: Sets priority for a given job.
+      operationId: setJobPrio
+      parameters:
+        - in: path
+          name: jobid
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                prio:
+                  type: integer
+              required:
+                - prio
+              type: object
+        required: true
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Set job priority
+      tags:
+        - jobs
+  /jobs/{jobid}/restart:
+    post:
+      description: >
+        Restart job(s). Use force=1 to force the restart (e.g. despite missing
+        assets). Use prio=X to set the priority of the new jobs. Use
+        skip_aborting_jobs=1 to prevent aborting the old jobs if they would
+        still be running. Use skip_parents=1 to prevent restarting parent jobs.
+        Use skip_children=1 to prevent restarting child jobs. Use
+        skip_ok_result_children=1 to prevent restarting passed/softfailed child
+        jobs. Used for both apiv1_restart and apiv1_restart_jobs
+      operationId: restartJob
+      parameters:
+        - in: path
+          name: jobid
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                clone:
+                  type: integer
+                force:
+                  type: integer
+                prio:
+                  type: integer
+              type: object
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Restart job
+      tags:
+        - jobs
+  /jobs/{jobid}/set_done:
+    post:
+      description: Updates result of a job in the system.
+      operationId: setJobDone
+      parameters:
+        - in: path
+          name: jobid
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                newbuild:
+                  type: integer
+                reason:
+                  type: string
+                result:
+                  type: string
+                worker_id:
+                  type: integer
+              type: object
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Set job done
+      tags:
+        - jobs
+  /jobs/{jobid}/status:
+    get:
+      description: >
+        Retrieve status of a job. Returns id, state, result, blocked_by_id.
+        Preferable over `/job/<id>` for performance and payload size, if you are
+        only interested in the status. Pass follow=1 as query parameter to
+        follow job restarts and report most the recent result for the specified
+        job id.
+      operationId: getJobStatus
+      parameters:
+        - in: path
+          name: jobid
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: follow
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: OK
+      summary: Get job status
+      tags:
+        - jobs
+    post:
+      description: >
+        Updates status of a job. Requires a new status, the id of the job and
+        of the worker assigned to the job. In order to update the status, the
+        submitted worker id must match the id of the worker assigned to the job
+        identified by the job id.
+      operationId: updateJobStatus
+      parameters:
+        - in: path
+          name: jobid
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+        required: true
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Update job status
+      tags:
+        - jobs
+  /machines:
+    get:
+      description: >
+        List the parameters of tables given its type (machine, test suite or
+        product). If an id is passed as an argument to the method, only
+        information for the passed id is returned, otherwise all structures of
+        the same type defined in the system are returned. For further
+        information on the type of parameters associated to each of the type of
+        tables, check the OpenQA::WebAPI::Controller::API::V1::Table package
+        documentation.
+      operationId: listMachines
+      responses:
+        '200':
+          description: OK
+      summary: List machines
+      tags:
+        - machines
+    post:
+      description: >
+        Creates a new table given its type (machine, test suite or product).
+        Returns the table id in a JSON block on success or a 400 code on error.
+        For information on the type of parameters associated to each of the
+        type of tables, as well as which of those parameters are required and
+        validated when calling this method, check the
+        OpenQA::WebAPI::Controller::API::V1::Table package documentation.
+      operationId: createMachine
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                backend:
+                  type: string
+                description:
+                  type: string
+                name:
+                  type: string
+              required:
+                - name
+                - backend
+              type: object
+        required: true
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Create machine
+      tags:
+        - machines
+  /machines/{id}:
+    delete:
+      description: >
+        Deletes a table given its type (machine, test suite or product) and its
+        id. Returns a 404 error code when the table is not found, 400 on other
+        errors or a JSON block with the number of deleted tables on success.
+      operationId: deleteMachine
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Delete machine
+      tags:
+        - machines
+    get:
+      description: >
+        List the parameters of tables given its type (machine, test suite or
+        product). If an id is passed as an argument to the method, only
+        information for the passed id is returned, otherwise all structures of
+        the same type defined in the system are returned. For further
+        information on the type of parameters associated to each of the type of
+        tables, check the OpenQA::WebAPI::Controller::API::V1::Table package
+        documentation.
+      operationId: getMachine
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      summary: Get machine
+      tags:
+        - machines
+    post:
+      description: >
+        Updates the parameters of a table given its type (machine, test suite
+        or product). This method will check the required parameters for the
+        type of structure before updating. For information on the type of
+        parameters associated to each of the type of tables, as well as which
+        of those parameters are required and validated when calling this
+        method, check the OpenQA::WebAPI::Controller::API::V1::Table package
+        documentation. Returns a 404 error code if the table is not found, 400
+        on other errors or...
+      operationId: updateMachinePost
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Update machine (POST)
+      tags:
+        - machines
+    put:
+      description: >
+        Updates the parameters of a table given its type (machine, test suite
+        or product). This method will check the required parameters for the
+        type of structure before updating. For information on the type of
+        parameters associated to each of the type of tables, as well as which
+        of those parameters are required and validated when calling this
+        method, check the OpenQA::WebAPI::Controller::API::V1::Table package
+        documentation. Returns a 404 error code if the table is not found, 400
+        on other errors or...
+      operationId: updateMachine
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                backend:
+                  type: string
+                description:
+                  type: string
+                name:
+                  type: string
+              type: object
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Update machine
+      tags:
+        - machines
+  /mm/children:
+    get:
+      description: >
+        Given a job id and a status text (running, scheduled or done), this
+        method returns a list of children jobs' job ids that have the same
+        status as the parent job. Return a 200 code and a JSON block with the
+        list.
+      operationId: getChildren
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Get children
+      tags:
+        - mm
+  /mm/children/{state}:
+    get:
+      description: >
+        Given a job id and a status text (running, scheduled or done), this
+        method returns a list of children jobs' job ids that have the same
+        status as the parent job. Return a 200 code and a JSON block with the
+        list.
+      operationId: getChildrenStatus
+      parameters:
+        - in: path
+          name: state
+          required: true
+          schema:
+            enum:
+              - running
+              - scheduled
+              - done
+            type: string
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Get running/finished children status
+      tags:
+        - mm
+  /mm/parents:
+    get:
+      description: >
+        Returns a list of jobs that are configured as parents of a given job
+        identified by job_id. For the parents jobs, their id is returned in a
+        JSON block.
+      operationId: getParents
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Get parents
+      tags:
+        - mm
+  /mutex:
+    post:
+      description: >
+        Creates a named mutex resource associated with the current job. Returns
+        a code of 200 on success and 409 on error.
+      operationId: createMutex
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Create mutex
+      tags:
+        - locks
+  /mutex/{name}:
+    post:
+      description: >
+        Perform the mutex operations of "lock" or "unlock" as requested.
+        Returns a code of 200 on success, 410 on error and 409 on mutex
+        unavailable.
+      operationId: mutexAction
+      parameters:
+        - in: path
+          name: name
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Mutex action
+      tags:
+        - locks
+  /parent_groups:
+    get:
+      description: >
+        Shows a list jobs belonging to a job group given its ID, or a list of
+        all jobs. For each job in the list, all relevant information - with the
+        exception of timestamps - is also returned as a list of indexed lists.
+      operationId: listParentGroups
+      responses:
+        '200':
+          description: OK
+      summary: List parent job groups
+      tags:
+        - parent_groups
+    post:
+      description: The name of the group to be created.
+      operationId: createParentGroup
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                name:
+                  type: string
+              required:
+                - name
+              type: object
+        required: true
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Create parent job group
+      tags:
+        - parent_groups
+  /parent_groups/{group_id}:
+    delete:
+      description: >
+        Deletes a job group. Verifies that it is empty before attempting to
+        remove. If not empty (there are existing jobs), it will return an
+        error.
+      operationId: deleteParentGroup
+      parameters:
+        - in: path
+          name: group_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Delete parent job group
+      tags:
+        - parent_groups
+    get:
+      description: >
+        Shows a list jobs belonging to a job group given its ID, or a list of
+        all jobs. For each job in the list, all relevant information - with the
+        exception of timestamps - is also returned as a list of indexed lists.
+      operationId: getParentGroup
+      parameters:
+        - in: path
+          name: group_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      summary: Get parent job group
+      tags:
+        - parent_groups
+    put:
+      description: Updates the properties of a job group.
+      operationId: updateParentGroup
+      parameters:
+        - in: path
+          name: group_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Update parent job group
+      tags:
+        - parent_groups
+  /parent_groups/{parent_group_id}/comments:
+    get:
+      description: >
+        Returns a list of comments for a job or a job group given its id. For
+        each comment the list includes its bug references, date of creation,
+        comment id, text, date of update and the user name that created the
+        comment. Add the optional "render_markdown=1" parameter to include the
+        rendered markdown text for each comment.
+      operationId: listParentGroupComments
+      parameters:
+        - in: path
+          name: parent_group_id
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: render_markdown
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: OK
+      summary: List comments for parent group
+      tags:
+        - comments
+    post:
+      description: >
+        Adds a new comment to the specified job/group. Returns a 200 code with
+        a JSON containing the new comment id or 400 if no text is specified for
+        the comment.
+      operationId: createParentGroupComment
+      parameters:
+        - in: path
+          name: parent_group_id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                text:
+                  type: string
+              required:
+                - text
+              type: object
+        required: true
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Create comment for parent group
+      tags:
+        - comments
+  /parent_groups/{parent_group_id}/comments/{comment_id}:
+    delete:
+      description: >
+        Deletes an existing comment specified by job/group id and comment id.
+      operationId: deleteParentGroupComment
+      parameters:
+        - in: path
+          name: parent_group_id
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: comment_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Delete comment for parent group
+      tags:
+        - comments
+    get:
+      description: >
+        Renders text and properties for a comment specified by job/group id and
+        comment id including rendered markdown and bug references. Returns a
+        404 code if the specified comment does not exist, or 200 on success.
+      operationId: getParentGroupComment
+      parameters:
+        - in: path
+          name: parent_group_id
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: comment_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      summary: Get comment for parent group
+      tags:
+        - comments
+    put:
+      description: >
+        Updates an existing comment specified by job/group id and comment id.
+        An update text argument is required. Returns a 200 code and a JSON on
+        success and 400 if no text was specified, 404 if the comment to update
+        does not exist and 403 if the update is not requested by the original
+        author of the comment.
+      operationId: updateParentGroupComment
+      parameters:
+        - in: path
+          name: parent_group_id
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: comment_id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                text:
+                  type: string
+              required:
+                - text
+              type: object
+        required: true
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Update comment for parent group
+      tags:
+        - comments
+  /products:
+    get:
+      description: >
+        List the parameters of tables given its type (machine, test suite or
+        product). If an id is passed as an argument to the method, only
+        information for the passed id is returned, otherwise all structures of
+        the same type defined in the system are returned. For further
+        information on the type of parameters associated to each of the type of
+        tables, check the OpenQA::WebAPI::Controller::API::V1::Table package
+        documentation.
+      operationId: listProducts
+      responses:
+        '200':
+          description: OK
+      summary: List products
+      tags:
+        - products
+    post:
+      description: >
+        Creates a new table given its type (machine, test suite or product).
+        Returns the table id in a JSON block on success or a 400 code on error.
+        For information on the type of parameters associated to each of the
+        type of tables, as well as which of those parameters are required and
+        validated when calling this method, check the
+        OpenQA::WebAPI::Controller::API::V1::Table package documentation.
+      operationId: createProduct
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                arch:
+                  type: string
+                description:
+                  type: string
+                distri:
+                  type: string
+                flavor:
+                  type: string
+                version:
+                  type: string
+              required:
+                - distri
+                - version
+                - arch
+                - flavor
+              type: object
+        required: true
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Create product
+      tags:
+        - products
+  /products/{id}:
+    delete:
+      description: >
+        Deletes a table given its type (machine, test suite or product) and its
+        id. Returns a 404 error code when the table is not found, 400 on other
+        errors or a JSON block with the number of deleted tables on success.
+      operationId: deleteProduct
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Delete product
+      tags:
+        - products
+    get:
+      description: >
+        List the parameters of tables given its type (machine, test suite or
+        product). If an id is passed as an argument to the method, only
+        information for the passed id is returned, otherwise all structures of
+        the same type defined in the system are returned. For further
+        information on the type of parameters associated to each of the type of
+        tables, check the OpenQA::WebAPI::Controller::API::V1::Table package
+        documentation.
+      operationId: getProduct
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      summary: Get product
+      tags:
+        - products
+    post:
+      description: >
+        Updates the parameters of a table given its type (machine, test suite
+        or product). This method will check the required parameters for the
+        type of structure before updating. For information on the type of
+        parameters associated to each of the type of tables, as well as which
+        of those parameters are required and validated when calling this
+        method, check the OpenQA::WebAPI::Controller::API::V1::Table package
+        documentation. Returns a 404 error code if the table is not found, 400
+        on other errors or...
+      operationId: updateProductPost
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Update product (POST)
+      tags:
+        - products
+    put:
+      description: >
+        Updates the parameters of a table given its type (machine, test suite
+        or product). This method will check the required parameters for the
+        type of structure before updating. For information on the type of
+        parameters associated to each of the type of tables, as well as which
+        of those parameters are required and validated when calling this
+        method, check the OpenQA::WebAPI::Controller::API::V1::Table package
+        documentation. Returns a 404 error code if the table is not found, 400
+        on other errors or...
+      operationId: updateProduct
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                arch:
+                  type: string
+                description:
+                  type: string
+                distri:
+                  type: string
+                flavor:
+                  type: string
+                version:
+                  type: string
+              type: object
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Update product
+      tags:
+        - products
+  /routes:
+    get:
+      description: Lists all WebAPI routes
+      operationId: listRoutes
+      responses:
+        '200':
+          description: OK
+      summary: List all API routes
+      tags:
+        - routes
+  /test_suites:
+    get:
+      description: >
+        List the parameters of tables given its type (machine, test suite or
+        product). If an id is passed as an argument to the method, only
+        information for the passed id is returned, otherwise all structures of
+        the same type defined in the system are returned. For further
+        information on the type of parameters associated to each of the type of
+        tables, check the OpenQA::WebAPI::Controller::API::V1::Table package
+        documentation.
+      operationId: listTestSuites
+      responses:
+        '200':
+          description: OK
+      summary: List test suites
+      tags:
+        - test_suites
+    post:
+      description: >
+        Creates a new table given its type (machine, test suite or product).
+        Returns the table id in a JSON block on success or a 400 code on error.
+        For information on the type of parameters associated to each of the
+        type of tables, as well as which of those parameters are required and
+        validated when calling this method, check the
+        OpenQA::WebAPI::Controller::API::V1::Table package documentation.
+      operationId: createTestSuite
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                description:
+                  type: string
+                name:
+                  type: string
+              required:
+                - name
+              type: object
+        required: true
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Create test suite
+      tags:
+        - test_suites
+  /test_suites/{id}:
+    delete:
+      description: >
+        Deletes a table given its type (machine, test suite or product) and its
+        id. Returns a 404 error code when the table is not found, 400 on other
+        errors or a JSON block with the number of deleted tables on success.
+      operationId: deleteTestSuite
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Delete test suite
+      tags:
+        - test_suites
+    get:
+      description: >
+        List the parameters of tables given its type (machine, test suite or
+        product). If an id is passed as an argument to the method, only
+        information for the passed id is returned, otherwise all structures of
+        the same type defined in the system are returned. For further
+        information on the type of parameters associated to each of the type of
+        tables, check the OpenQA::WebAPI::Controller::API::V1::Table package
+        documentation.
+      operationId: getTestSuite
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      summary: Get test suite
+      tags:
+        - test_suites
+    post:
+      description: >
+        Updates the parameters of a table given its type (machine, test suite
+        or product). This method will check the required parameters for the
+        type of structure before updating. For information on the type of
+        parameters associated to each of the type of tables, as well as which
+        of those parameters are required and validated when calling this
+        method, check the OpenQA::WebAPI::Controller::API::V1::Table package
+        documentation. Returns a 404 error code if the table is not found, 400
+        on other errors or...
+      operationId: updateTestSuitePost
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Update test suite (POST)
+      tags:
+        - test_suites
+    put:
+      description: >
+        Updates the parameters of a table given its type (machine, test suite
+        or product). This method will check the required parameters for the
+        type of structure before updating. For information on the type of
+        parameters associated to each of the type of tables, as well as which
+        of those parameters are required and validated when calling this
+        method, check the OpenQA::WebAPI::Controller::API::V1::Table package
+        documentation. Returns a 404 error code if the table is not found, 400
+        on other errors or...
+      operationId: updateTestSuite
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                description:
+                  type: string
+                name:
+                  type: string
+              type: object
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Update test suite
+      tags:
+        - test_suites
+  /user/{id}:
+    delete:
+      description: Deletes an existing user.
+      operationId: deleteUser
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Delete user
+      tags:
+        - users
+  /users/me:
+    delete:
+      description: Delete the current user's own account (anonymize all data).
+      operationId: deleteCurrentUser
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Delete current user
+      tags:
+        - users
+  /users/me/api_keys:
+    get:
+      description: List API keys of the current user.
+      operationId: listUserApiKeys
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: List API keys for current user
+      tags:
+        - users
+    post:
+      description: >
+        Create a new API key. Accepts optional `expiration` datetime and
+        optional `comment` as form params. Returns the key, secret, comment,
+        and expiration.
+      operationId: createUserApiKey
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Create API key for current user
+      tags:
+        - users
+  /users/me/api_keys/{key}:
+    delete:
+      description: Delete a specific API key of the current user.
+      operationId: deleteUserApiKey
+      parameters:
+        - in: path
+          name: key
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Delete API key
+      tags:
+        - users
+  /webhooks/product:
+    post:
+      description: >
+        Evaluates payload from a GitHub webhook. This will schedule a new
+        product (like OpenQA::WebAPI::Controller::API::V1::Iso::create does).
+        It handles parameters from GitHub's webhook payload to decid what to do
+        exactly. The scheduled product is always created asynchronously. This
+        function does not handle the "closed" or "cancel" action yet. It would
+        make sense to abort an existing scheduled product in this case. This
+        function does not handle the "push" or "synchronize" actions yet. It
+        would make...
+      operationId: evaluateWebhookProduct
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Evaluate webhook product
+      tags:
+        - isos
+  /whoami:
+    get:
+      description: Returns the job id of the current job.
+      operationId: whoami
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Get current job (job auth)
+      tags:
+        - jobs
+  /worker_hosts/{host}/reservation:
+    delete:
+      description: >
+        Releases reservations across all worker instances on a host.
+      operationId: releaseWorkerHost
+      parameters:
+        - in: path
+          name: host
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Release worker host reservation
+      tags:
+        - workers
+    post:
+      description: >
+        Reserves all worker instances on a host with a comment and a specified
+        duration. Optionally accepts a `worker_class` for verification jobs.
+      operationId: reserveWorkerHost
+      parameters:
+        - in: path
+          name: host
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                comment:
+                  type: string
+                duration:
+                  type: string
+                force:
+                  type: boolean
+                worker_class:
+                  type: string
+              type: object
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Reserve worker host
+      tags:
+        - workers
+  /workers:
+    get:
+      description: >
+        Returns a list of workers with useful information for each including
+        its ID, the host where the worker is located, the worker instance, the
+        worker status and the worker's websocket status.
+      operationId: listWorkers
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+        - in: query
+          name: offset
+          schema:
+            type: integer
+        - in: query
+          name: reserved
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      summary: List workers
+      tags:
+        - workers
+    post:
+      description: Initializes and registers a worker.
+      operationId: createWorker
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                cpu_arch:
+                  type: string
+                cpu_flags:
+                  type: string
+                cpu_modelname:
+                  type: string
+                cpu_opmode:
+                  type: string
+                developer_connection_hint:
+                  type: string
+                host:
+                  type: string
+                instance:
+                  type: string
+                isotovideo_interface_version:
+                  type: string
+                job_id:
+                  type: string
+                mem_max:
+                  type: integer
+                parallel_one_host_only:
+                  type: integer
+                websocket_api_version:
+                  type: integer
+                worker_class:
+                  type: string
+              required:
+                - host
+                - instance
+                - cpu_arch
+                - mem_max
+                - worker_class
+              type: object
+        required: true
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Create/register worker
+      tags:
+        - workers
+  /workers/{workerid}:
+    delete:
+      description: >
+        Deletes a worker which currently has the status "dead" and no job
+        assigned to it. An error is returned if the worker doesn't exist or has
+        a different status.
+      operationId: deleteWorker
+      parameters:
+        - in: path
+          name: workerid
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: force
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Delete worker
+      tags:
+        - workers
+    get:
+      description: >
+        Prints information from a worker given its ID. Each entry contains the
+        "hostname" and the field "status" which can be "dead", "idle",
+        "running" and "broken". A worker can be considered online when the
+        status is not "dead". Broken means that the worker is able to connect
+        but there is some setup problem on the worker host preventing it from
+        taking jobs.
+      operationId: getWorker
+      parameters:
+        - in: path
+          name: workerid
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+      summary: Get worker
+      tags:
+        - workers
+  /workers/{workerid}/reservation:
+    delete:
+      description: Releases an existing worker reservation.
+      operationId: releaseWorker
+      parameters:
+        - in: path
+          name: workerid
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Release worker reservation
+      tags:
+        - workers
+    post:
+      description: >
+        Reserves a worker instance with a comment and a specified duration.
+        Optionally accepts a `worker_class` for verification jobs.
+      operationId: reserveWorker
+      parameters:
+        - in: path
+          name: workerid
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                comment:
+                  type: string
+                duration:
+                  type: string
+                force:
+                  type: boolean
+                worker_class:
+                  type: string
+              type: object
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: Reserve worker
+      tags:
+        - workers
+servers:
+  - url: /api/v1
+tags:
+  - name: jobs
+  - name: job_groups
+  - name: parent_groups
+  - name: workers
+  - name: isos
+  - name: assets
+  - name: bugs
+  - name: comments
+  - name: users
+  - name: test_suites
+  - name: machines
+  - name: products
+  - name: job_templates
+  - name: locks
+  - name: mm
+  - name: routes
