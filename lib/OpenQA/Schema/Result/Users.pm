@@ -103,6 +103,8 @@ sub anonymize ($self) {
                     email => undef,
                     fullname => undef,
                     nickname => undef,
+                    is_operator => 0,
+                    is_admin => 0,
                     deleted_at => DateTime->now,
                 });
         });

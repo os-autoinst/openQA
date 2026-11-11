@@ -20,7 +20,12 @@ my $app = $t->app;
 $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
+my $user_to_delete = $app->schema->resultset('Users')->find(99904);
+$user_to_delete->update({is_operator => 1, is_admin => 1});
 $t->delete_ok('/api/v1/user/99904')->status_is(200, 'admins can delete users');
+$user_to_delete->discard_changes;
+is $user_to_delete->is_operator, 0, 'operator role reverted after user deletion by admin';
+is $user_to_delete->is_admin, 0, 'admin role reverted after user deletion by admin';
 is_deeply
   OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'user_deleted'),
   {username => 'Demo'},
@@ -109,6 +114,7 @@ subtest 'test delete_api_key' => sub {
 subtest 'test delete_self' => sub {
     my $user = $app->schema->resultset('Users')->find(99902);
     ok $user, 'user exists before deletion';
+    $user->update({is_operator => 1, is_admin => 1});
     ok $user->api_keys->create({t_expiration => DateTime->now->add(years => 1)});
     ok $user->comments->create({text => 'test comment'}), 'comment created';
     ok $user->developer_sessions->create({job_id => 80000}), 'developer session created';
@@ -119,6 +125,8 @@ subtest 'test delete_self' => sub {
     is $user->email, undef, 'email cleared';
     is $user->fullname, undef, 'fullname cleared';
     is $user->nickname, undef, 'nickname cleared';
+    is $user->is_operator, 0, 'operator role reverted on self delete';
+    is $user->is_admin, 0, 'admin role reverted on self delete';
     my $keys_after = $app->schema->resultset('ApiKeys')->search({user_id => 99902})->count;
     is $keys_after, 0, 'API keys deleted';
     is $user->comments->count, 1, 'comment preserved';
@@ -130,6 +138,8 @@ subtest 'test delete_self' => sub {
 subtest 'anonymize audit event data' => sub {
     my $user = $app->schema->resultset('Users')->find(99903);
     ok $user, 'user 99903 (percival) exists';
+    is $user->is_operator, 1, 'operator role set before anonymize';
+    is $user->is_admin, 0, 'admin role not set before anonymize';
     my $username = $user->username;
     my $event_data = "User $username performed an action";
     $user->audit_events->create(
@@ -142,6 +152,8 @@ subtest 'anonymize audit event data' => sub {
     $user->anonymize;
     $user->discard_changes;
     $audit_event->discard_changes;
+    is $user->is_operator, 0, 'operator role reverted on direct anonymize';
+    is $user->is_admin, 0, 'admin role remains 0 on direct anonymize';
     is $audit_event->event_data, 'User deleted-user performed an action', 'event_data anonymized';
     is $audit_event->user_id, 99903, 'audit event association preserved';
 };
