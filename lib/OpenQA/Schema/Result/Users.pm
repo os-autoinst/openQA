@@ -60,6 +60,8 @@ __PACKAGE__->add_columns(
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->has_many(api_keys => 'OpenQA::Schema::Result::ApiKeys', 'user_id');
+__PACKAGE__->has_many(ssh_keys => 'OpenQA::Schema::Result::SshKeys', 'user_id');
+__PACKAGE__->has_many(pubic_keys => 'OpenQA::Schema::Result::SshKeys', 'user_id');
 __PACKAGE__->has_many(
     developer_sessions => 'OpenQA::Schema::Result::DeveloperSessions',
     'user_id', {cascade_delete => 1});
