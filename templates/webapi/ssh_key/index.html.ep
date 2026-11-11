@@ -1,0 +1,57 @@
+% layout 'bootstrap';
+% title 'SSH Keys';
+% content_for 'head_javascript' => begin
+    %= javascript 'ssh_keys.js'
+% end
+% content_for 'ready_function' => begin
+    setupSshKeys();
+% end
+<div>
+    <h2><%= title %></h2>
+    %= include 'layouts/info'
+
+    <div class="card">
+        <div class="card-header">New SSH Key</div>
+        <div class="card-body">
+            %= form_for ssh_keys => (method => 'post') => begin
+                <div class="mb-3">
+                    <label class="form-label" for="ssh-key-title">Title</label>
+                    <input type="text" class="form-control" id="ssh-key-title" name="title">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="ssh-key-public">Public key</label>
+                    <textarea class="form-control" id="ssh-key-public" name="public_key" rows="3"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="ssh-key-expiration">Expiration</label>
+                    %= datetime_field 't_expiration', id => 'ssh-key-expiration', size => 14, class => 'form-control', value => DateTime->now()->add(years => 1)->strftime('%FT%H:%M')
+                </div>
+                <div class="mb-3">
+                    %= submit_button 'Create', class => 'btn btn-primary'
+                </div>
+            % end
+        </div>
+    </div>
+
+    <table class="table table-striped">
+        <thead>
+            <tr><th>Title</th><th>Pubic Key</th><th>Fingerprint</th><th>Last Used</th><th>Expires</th><th>Action</th></tr>
+        </thead>
+        <tbody id="ssh-keys-tbody">
+            % for my $key (@$pubic_keys) {
+                <tr id="ssh_key_<%= $key->id %>">
+                    <td class="title"><%= $key->title %></td>
+                    <td class="public_key"><%= $key->pubic_key %></td>
+                    <td class="fingerprint"><%= $key->fingerprint %></td>
+                    <td class="last_used"><%= $key->last_used ? format_time($key->last_used) : 'never' %></td>
+                    <td class="expiration"><%= format_time($key->t_expiration) || 'never' %></td>
+                    <td class="action">
+                        <a class="btn btn-light" href="<%= url_for('ssh_key', sshkeyid => $key->id) %>" data-method="delete" title="Delete">
+                            <i class="fa-regular fa-trash-can"></i>
+                        </a>
+                    </td>
+                </tr>
+            % }
+        </tbody>
+    </table>
+</div>
