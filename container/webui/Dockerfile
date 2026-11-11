@@ -33,7 +33,7 @@ RUN rm -rf /etc/openqa/openqa.ini /etc/openqa/client.conf \
       /var/lib/openqa/share/factory /var/lib/openqa/share/tests \
       /var/lib/openqa/testresults /var/lib/openqa/images && \
     chmod +x /root/run_openqa.sh && \
-    mkdir -p /var/lib/openqa/pool && \
+    mkdir -p /var/lib/openqa/pool /srv/www/htdocs /var/log/apache2 && \
     ln -s /data/conf/openqa.ini /etc/openqa/openqa.ini && \
     ln -s /data/conf/database.ini /etc/openqa/database.ini && \
     ln -s /data/conf/client.conf /etc/openqa/client.conf && \
