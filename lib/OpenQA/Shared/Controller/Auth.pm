@@ -9,6 +9,12 @@ use OpenQA::Log qw(log_trace);
 use OpenQA::Constants 'DEFAULT_ADMIN';
 use Mojo::Util qw(hmac_sha1_sum secure_compare);
 use Mojo::URL;
+use Mojo::File qw(tempfile);
+use MIME::Base64 qw(decode_base64);
+use IPC::Open3 qw(open3);
+use File::Spec;
+use Feature::Compat::Try;
+use DateTime;
 use Time::Seconds;
 
 sub _auth_method_is_none ($self) { ($self->app->config->{auth}->{method} // '') eq 'None' }
@@ -84,17 +90,19 @@ sub _auth ($self) {
 
     # No session (probably not a browser)
     if (!$user) {
-        # Personal access token
-        if (($self->req->headers->authorization // '') =~ /^Bearer\s+(.+)$/) {
-            ($user, $reason) = $self->_token_auth($reason, $1);
-        }
-        elsif (my $userinfo = $self->req->url->to_abs->userinfo) {
-            ($user, $reason) = $self->_token_auth($reason, $userinfo);
+        # Personal access token via Bearer header or URL userinfo
+        my $token
+          = ($self->req->headers->authorization // '') =~ /^Bearer\s+(.+)$/ ? $1 : $self->req->url->to_abs->userinfo;
+        if ($token) {
+            ($user, $reason) = $self->_token_auth($reason, $token);
         }
 
         # API key
         elsif (my $key = $self->req->headers->header('X-API-Key')) {
             ($user, $reason) = $self->_key_auth($reason, $key);
+        }
+        elsif (my $sig = $self->req->headers->header('X-SSH-Signature')) {
+            ($user, $reason) = $self->_ssh_auth($reason, $self->req->headers->header('X-SSH-Key-Fingerprint'), $sig);
         }
         elsif ($self->_auth_method_is_none()) {
             $user = $self->schema->resultset('Users')->find({username => DEFAULT_ADMIN});
@@ -236,6 +244,64 @@ sub _valid_hmac ($self, $hash, $request, $our_timestamp, $remote_timestamp, $api
     my $base_path = $base_url ? Mojo::URL->new($base_url)->path->leading_slash(0) : '';
     my $sum = hmac_sha1_sum($base_path . $request . $remote_timestamp, $api_key->secret);
     return secure_compare($hash, $sum);
+}
+
+# copy of OpenQA::UserAgent::_path_query, kept in sync by hand
+sub _path_query ($self, $url) {
+    my $query = $url->query->to_string;
+    $query =~ s,%20,+,g;
+    my $r = $url->path->to_string . (length $query ? "?$query" : '');
+    return $r;
+}
+
+# helper to check if ssh singature matches
+sub _ssh_auth ($self, $reason, $fingerprint, $signature) {
+    my $log = $self->app->log;
+    $reason = 'invalid ssh key';
+
+    my $ssh_key = $self->schema->resultset('SshKeys')->find({fingerprint => $fingerprint});
+    if ($ssh_key) {
+        my $our_timestamp = time;
+        my $remote_timestamp = $self->req->headers->header('X-API-Microtime');
+        if (($self->_is_timestamp_valid($our_timestamp, $remote_timestamp))[0] && !_is_expired($ssh_key)) {
+            my $data = $self->_path_query($self->req->url) . $remote_timestamp;
+            if ($self->_ssh_signature_valid($ssh_key, $signature, $data)) {
+                $ssh_key->update({last_used => DateTime->now});
+                return ($ssh_key->user, undef);
+            }
+            $log->debug('ssh signature verification failed');
+        }
+        elsif (_is_expired($ssh_key)) { $reason = 'ssh key expired' }
+        else { $reason = ($self->_is_timestamp_valid($our_timestamp, $remote_timestamp))[1] }
+    }
+    elsif ($fingerprint) { $log->debug(qq{ssh key fingerprint "$fingerprint" not found}) }
+
+    return (undef, $reason);
+}
+
+sub _ssh_signature_valid ($self, $ssh_key, $signature, $data) {
+    return 0 unless $ssh_key->is_valid_public_key;
+    my $signers = tempfile;
+    $signers->spew('* ' . $ssh_key->public_key . "\n");
+    my $sigfile = tempfile;
+    $sigfile->spew(decode_base64($signature) || $signature);
+    my $out = '';
+    try {
+        open my $null, '>', File::Spec->devnull;
+        my $pid = open3(
+            my $in, my $out_fh, $null, 'ssh-keygen', '-Y', 'verify', '-f', $signers,
+            '-I', '*', '-n', 'openqa', '-s', $sigfile
+        );
+        print $in $data;
+        close $in;
+        $out = do { local $/; <$out_fh> }
+          // '';
+        waitpid $pid, 0;
+    }
+    catch ($e) {
+        return 0;
+    }
+    return $out =~ /Good/ && $? == 0;
 }
 
 1;
