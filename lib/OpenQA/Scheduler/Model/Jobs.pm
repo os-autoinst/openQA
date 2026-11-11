@@ -25,6 +25,8 @@ use constant MAX_REPORT_MISSING_WORKER_CLASSES => $ENV{OPENQA_SCHEDULER_MAX_REPO
 
 # How much the priority should be increased (the priority value decreased) to protect a parallel cluster from starvation
 use constant STARVATION_PROTECTION_PRIORITY_OFFSET => $ENV{OPENQA_SCHEDULER_STARVATION_PROTECTION_PRIORITY_OFFSET} // 1;
+use constant WAITING_FOR_CLUSTER_SIBLINGS_REASON =>
+  'no matching worker for all other jobs in the parallel cluster is free';
 
 has scheduled_jobs => sub { {} };
 has shuffle_workers => 1;
@@ -133,11 +135,17 @@ sub _allocate_jobs ($self, $online_workers = undef, $free_workers = undef) {
             $j->{current_reason} = 'parallel dependencies not ready';
             next;
         }
-        OpenQA::Scheduler::WorkerSlotPicker->new($tobescheduled)->pick_slots_with_common_worker_host;
+        my $slots = OpenQA::Scheduler::WorkerSlotPicker->new($tobescheduled)->pick_slots_with_common_worker_host;
         my @tobescheduled = grep { $_->{id} } @$tobescheduled;
         my $parallel_count = scalar @tobescheduled;
         log_debug "Need to schedule $parallel_count parallel jobs for job $job_id (with priority $j->{priority})";
         next unless @tobescheduled;
+        if (defined $slots && !@$slots) {
+            $_->{current_reason} = 'no matching worker is free on a single host for parallel cluster'
+              for @tobescheduled;
+            $checked_jobs{$_->{id}} = 1 for @tobescheduled;
+            next;
+        }
         my %taken;
         my %temp_taken_class_counts;
         for my $sub_job (sort { $a->{id} <=> $b->{id} } @tobescheduled) {
@@ -155,12 +163,15 @@ sub _allocate_jobs ($self, $online_workers = undef, $free_workers = undef) {
                     my ($picked_worker, $job_info) = @{$taken{$worker}};
                     $self->_allocate_worker_with_priority($prio, $job_info, $j, $allocated_workers, $picked_worker);
                 }
-                my $limit_val = $class_limits->{$limit_class_name};
-                my $reason
-                  = $matched_but_limit
-                  ? "class limit reached ($limit_class_name limit is $limit_val)"
-                  : 'no matching worker is free';
-                $_->{current_reason} //= $reason for @tobescheduled;
+                _set_allocation_failure_reasons(
+                    {
+                        sub_job => $sub_job,
+                        tobescheduled => \@tobescheduled,
+                        parallel_count => $parallel_count,
+                        matched_but_limit => $matched_but_limit,
+                        limit_class_name => $limit_class_name,
+                        class_limits => $class_limits,
+                    });
                 %taken = ();
                 last;
             }
@@ -201,7 +212,6 @@ sub _allocate_worker_with_priority ($self, $prio, $job_info, $j, $allocated_work
           . ', reducing priority by '
           . STARVATION_PROTECTION_PRIORITY_OFFSET;
         $j->{priority_offset} += STARVATION_PROTECTION_PRIORITY_OFFSET;
-        $j->{current_reason} //= 'no matching worker for all other jobs in the parallel cluster is free';
     }
     else {
         # don't "take" the worker, but make sure it's not
@@ -210,6 +220,32 @@ sub _allocate_worker_with_priority ($self, $prio, $job_info, $j, $allocated_work
         log_debug "Holding worker $worker_id for job $job_id to avoid starvation";
         $allocated_workers->{$worker_id} = $job_id;
     }
+    $j->{current_reason} //= WAITING_FOR_CLUSTER_SIBLINGS_REASON;
+    $job_info->{current_reason} //= WAITING_FOR_CLUSTER_SIBLINGS_REASON;
+}
+
+sub _set_allocation_failure_reasons ($args) {
+    my ($sub_job, $tobescheduled) = @{$args}{qw(sub_job tobescheduled)};
+    my ($parallel_count, $matched_but_limit) = @{$args}{qw(parallel_count matched_but_limit)};
+    my ($limit_class_name, $class_limits) = @{$args}{qw(limit_class_name class_limits)};
+    my @sub_needed = sort @{$sub_job->{worker_classes} // []};
+    my $limit_reason = $matched_but_limit ? _class_limit_reason($limit_class_name, $class_limits) : undef;
+    if ($parallel_count > 1) {
+        $sub_job->{current_reason} //= $limit_reason // (
+            @sub_needed
+            ? "no matching worker for class @sub_needed is free in parallel cluster"
+            : 'no matching worker is free in parallel cluster'
+        );
+        $_->{current_reason} //= WAITING_FOR_CLUSTER_SIBLINGS_REASON for @$tobescheduled;
+    }
+    else {
+        $sub_job->{current_reason} = $limit_reason
+          // (@sub_needed ? "no free workers for class @sub_needed" : 'no matching worker is free');
+    }
+}
+
+sub _class_limit_reason ($class_name, $class_limits) {
+    return "class limit reached ($class_name limit is $class_limits->{$class_name})";
 }
 
 sub _assign_single_job ($self, $schema, $worker, $job) {

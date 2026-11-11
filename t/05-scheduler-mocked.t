@@ -92,8 +92,10 @@ subtest 'starvation of parallel jobs prevented' => sub {
     is $mocked_jobs{1}->{priority_offset}, 10, 'priority of parallel parent increased (once per child)';
     is_deeply $allocated_workers, {}, 'no workers "held" so far while still increased prio'
       or always_explain $allocated_workers;
-    like $mocked_jobs{1}->{current_reason}, qr/no matching worker.*parallel.*free/, 'reason assigned for job 1';
-    like $mocked_jobs{$_}->{current_reason}, qr/no matching worker.*free/, "reason assigned for job $_" for (2, 3);
+    is $mocked_jobs{$_->[0]}->{current_reason}, $_->[1], "reason assigned for job $_->[0]"
+      for [1 => 'no matching worker for all other jobs in the parallel cluster is free'],
+      [2 => 'no matching worker for all other jobs in the parallel cluster is free'],
+      [3 => 'no matching worker for class qemu_x86_64 is free in parallel cluster'];
 
     # run the scheduler again assuming highest prio for parallel parent; worker supposed to be "held"
     $mocked_jobs{1}->{priority} = 0;
@@ -102,6 +104,10 @@ subtest 'starvation of parallel jobs prevented' => sub {
       'holding 2 workers (for 2 of our parallel jobs while 3rd worker is unavailable)';
     is_deeply [sort keys %$allocated_workers], [map { $_->id } @mocked_free_workers], 'both free workers "held"';
     ok $_ >= 1 && $_ <= 3, "worker held for expected job ($_)" for values %$allocated_workers;
+    is $mocked_jobs{$_->[0]}->{current_reason}, $_->[1], "reason assigned for job $_->[0] when worker held"
+      for [1 => 'no matching worker for all other jobs in the parallel cluster is free'],
+      [2 => 'no matching worker for all other jobs in the parallel cluster is free'],
+      [3 => 'no matching worker for class qemu_x86_64 is free in parallel cluster'];
 };
 
 subtest 'partially blocked clusters are not scheduled' => sub {
@@ -263,6 +269,206 @@ subtest 'worker class parallel limits coverage' => sub {
 
     # Check that Job 4 was successfully allocated via sibling allocation
     ok exists $allocated_jobs->{4}, 'Job 4 allocated via sibling of running Job 3';
+};
+
+subtest 'scheduling reason for standalone jobs when workers allocated to higher priority job' => sub {
+    $schema->txn_begin;
+    my $rollback = scope_guard sub { $schema->txn_rollback };
+    _cleanup();
+
+    my $w1 = $workers->create(
+        {
+            host => 'worker1',
+            instance => 1,
+            properties => [
+                {key => 'WEBSOCKET_API_VERSION', value => WEBSOCKET_API_VERSION},
+                {key => 'WORKER_CLASS', value => 'qemu_x86_64'},
+            ],
+        });
+    my $w2 = $workers->create(
+        {
+            host => 'worker2',
+            instance => 1,
+            properties => [
+                {key => 'WEBSOCKET_API_VERSION', value => WEBSOCKET_API_VERSION},
+                {key => 'WORKER_CLASS', value => 'special'},
+                {key => 'RESERVED_BY_ID', value => 1},
+                {key => 'RESERVED_T_EXPIRES', value => time + 3600},
+                {key => 'RESERVED_WORKER_CLASS', value => 'special'},
+            ],
+        });
+
+    my %test_mocked_jobs = (
+        10 => {
+            id => 10,
+            test => 'high-prio-job',
+            priority => 10,
+            state => SCHEDULED,
+            worker_classes => ['qemu_x86_64'],
+            cluster_jobs => {10 => {directly_chained_children => []}},
+        },
+        11 => {
+            id => 11,
+            test => 'low-prio-job',
+            priority => 20,
+            state => SCHEDULED,
+            worker_classes => ['qemu_x86_64'],
+            cluster_jobs => {11 => {directly_chained_children => []}},
+        },
+        12 => {
+            id => 12,
+            test => 'no-class-job',
+            priority => 30,
+            state => SCHEDULED,
+            worker_classes => [],
+            cluster_jobs => {12 => {directly_chained_children => []}},
+        },
+    );
+
+    $jobs->create({id => $_, state => SCHEDULED, TEST => $test_mocked_jobs{$_}->{test}}) for (10, 11, 12);
+
+    my @test_online_workers = ($w1, $w2);
+    $mock->redefine(determine_online_workers => sub { \@test_online_workers });
+    $mock->redefine(determine_scheduled_jobs => sub { shift->scheduled_jobs(\%test_mocked_jobs); \%test_mocked_jobs });
+    OpenQA::Scheduler::Model::Jobs->singleton->scheduled_jobs(\%test_mocked_jobs);
+
+    my ($allocated_workers, $allocated_jobs);
+    combined_like {
+        ($allocated_workers, $allocated_jobs) = OpenQA::Scheduler::Model::Jobs->singleton->_allocate_jobs();
+    }
+qr/Need to schedule 1 parallel jobs for job 10.*Need to schedule 1 parallel jobs for job 11.*Need to schedule 1 parallel jobs for job 12/s,
+      'scheduling standalone jobs';
+    ok exists $allocated_jobs->{10}, 'higher priority job was allocated';
+    is $test_mocked_jobs{11}->{current_reason}, 'no free workers for class qemu_x86_64',
+      'standalone job gets specific worker class reason when matching worker was allocated to higher priority job';
+    is $test_mocked_jobs{12}->{current_reason}, 'no matching worker is free',
+      'job without worker classes falls back to generic reason';
+};
+
+subtest 'scheduling reason for parallel cluster when common host constraint cannot be satisfied' => sub {
+    $schema->txn_begin;
+    my $rollback = scope_guard sub { $schema->txn_rollback };
+    _cleanup();
+
+    my $w1 = $workers->create(
+        {
+            host => 'worker_host_1',
+            instance => 1,
+            properties => [
+                {key => 'WEBSOCKET_API_VERSION', value => WEBSOCKET_API_VERSION},
+                {key => 'WORKER_CLASS', value => 'qemu_x86_64,tap'},
+                {key => 'PARALLEL_ONE_HOST_ONLY', value => '1'},
+            ],
+        });
+    my $w2 = $workers->create(
+        {
+            host => 'worker_host_2',
+            instance => 1,
+            properties => [
+                {key => 'WEBSOCKET_API_VERSION', value => WEBSOCKET_API_VERSION},
+                {key => 'WORKER_CLASS', value => 'qemu_x86_64,tap'},
+                {key => 'PARALLEL_ONE_HOST_ONLY', value => '1'},
+            ],
+        });
+
+    my %cluster_info = (
+        20 => {directly_chained_children => [], parallel_children => [21]},
+        21 => {directly_chained_children => [], parallel_parents => [20]},
+    );
+    my %test_mocked_jobs = (
+        20 => {
+            id => 20,
+            test => 'parallel-parent-tap',
+            priority => 20,
+            state => SCHEDULED,
+            worker_classes => ['qemu_x86_64', 'tap'],
+            cluster_jobs => \%cluster_info,
+        },
+        21 => {
+            id => 21,
+            test => 'parallel-child-tap',
+            priority => 20,
+            state => SCHEDULED,
+            worker_classes => ['qemu_x86_64', 'tap'],
+            cluster_jobs => \%cluster_info,
+        },
+    );
+
+    $jobs->create({id => $_, state => SCHEDULED, TEST => $test_mocked_jobs{$_}->{test}}) for (20, 21);
+
+    my @test_online_workers = ($w1, $w2);
+    $mock->redefine(determine_online_workers => sub { \@test_online_workers });
+    $mock->redefine(determine_scheduled_jobs => sub { shift->scheduled_jobs(\%test_mocked_jobs); \%test_mocked_jobs });
+    OpenQA::Scheduler::Model::Jobs->singleton->scheduled_jobs(\%test_mocked_jobs);
+
+    my ($allocated_workers, $allocated_jobs);
+    combined_like {
+        ($allocated_workers, $allocated_jobs) = OpenQA::Scheduler::Model::Jobs->singleton->_allocate_jobs();
+    }
+    qr/Need to schedule 2 parallel jobs for job 20/s, 'scheduling parallel jobs with host constraint';
+    is_deeply $allocated_jobs, {}, 'no cluster jobs allocated across separate hosts';
+    is $test_mocked_jobs{$_}->{current_reason}, 'no matching worker is free on a single host for parallel cluster',
+      "cluster job $_ receives single host reason"
+      for (20, 21);
+};
+
+subtest 'scheduling reason for parallel cluster when sub-job has no worker classes' => sub {
+    $schema->txn_begin;
+    my $rollback = scope_guard sub { $schema->txn_rollback };
+    _cleanup();
+
+    my $w1 = $workers->create(
+        {
+            host => 'worker_host_1',
+            instance => 1,
+            properties => [
+                {key => 'WEBSOCKET_API_VERSION', value => WEBSOCKET_API_VERSION},
+                {key => 'WORKER_CLASS', value => 'qemu_x86_64'},
+            ],
+        });
+
+    my %cluster_info = (
+        30 => {directly_chained_children => [], parallel_children => [31]},
+        31 => {directly_chained_children => [], parallel_parents => [30]},
+    );
+    my %test_mocked_jobs = (
+        30 => {
+            id => 30,
+            test => 'parallel-parent-noclass',
+            priority => 20,
+            state => SCHEDULED,
+            worker_classes => [],
+            cluster_jobs => \%cluster_info,
+        },
+        31 => {
+            id => 31,
+            test => 'parallel-child-noclass',
+            priority => 20,
+            state => SCHEDULED,
+            worker_classes => [],
+            cluster_jobs => \%cluster_info,
+        },
+    );
+
+    $jobs->create({id => $_, state => SCHEDULED, TEST => $test_mocked_jobs{$_}->{test}}) for (30, 31);
+
+    my @test_online_workers = ($w1);
+    $mock->redefine(determine_online_workers => sub { \@test_online_workers });
+    $mock->redefine(determine_scheduled_jobs => sub { shift->scheduled_jobs(\%test_mocked_jobs); \%test_mocked_jobs });
+    OpenQA::Scheduler::Model::Jobs->singleton->scheduled_jobs(\%test_mocked_jobs);
+
+    my ($allocated_workers, $allocated_jobs);
+    combined_like {
+        ($allocated_workers, $allocated_jobs) = OpenQA::Scheduler::Model::Jobs->singleton->_allocate_jobs();
+    }
+    qr/Need to schedule 2 parallel jobs for job 30.*Discarding job 30/s,
+      'discarding parallel cluster when sub-job has no worker';
+    is $test_mocked_jobs{30}->{current_reason},
+      'no matching worker for all other jobs in the parallel cluster is free',
+      'cluster parent receives reason that sibling is missing worker';
+    is $test_mocked_jobs{31}->{current_reason},
+      'no matching worker is free in parallel cluster',
+      'cluster child without worker classes receives generic parallel cluster reason';
 };
 
 done_testing();
