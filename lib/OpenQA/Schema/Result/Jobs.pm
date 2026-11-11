@@ -42,7 +42,6 @@ use OpenQA::Parser 'parser';
 use OpenQA::WebSockets::Client;
 use List::Util qw(any all uniq);
 use Scalar::Util qw(looks_like_number);
-use Time::Piece ();
 # The state and results constants are duplicated in the Python client:
 # if you change them or add any, please also update const.py.
 
@@ -2014,9 +2013,7 @@ sub _failed_module_inputs ($self) {
 }
 
 sub _failure_window_start ($self) {
-    my $started = $self->get_column('t_started');
-    my $epoch = $started ? Time::Piece->strptime($started =~ s/\..*//r, '%Y-%m-%d %H:%M:%S')->epoch : time;
-    return $epoch - JOB_INVESTIGATE_FAILURE_WINDOW_DAYS * 24 * 60 * 60;
+    return ($self->t_started || DateTime->now)->subtract(days => JOB_INVESTIGATE_FAILURE_WINDOW_DAYS)->epoch;
 }
 
 # lists commits to the files of the $selections (git log options) between the last good and this job, or else
