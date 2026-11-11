@@ -22,14 +22,18 @@ my $JSON = Cpanel::JSON::XS->new->utf8->canonical->allow_nonref->allow_unknown->
 my $PARAM_RE = qr/^([[:alnum:]_\[\]\.\:]+)=(.*)$/s;
 
 has apibase => '/api/v1';
-has [qw(apikey apisecret host)];
+has [qw(apikey apisecret sshkey host)];
 has name => 'openqa-cli';
 has host => 'http://localhost';
 has options => undef;
 
 sub client ($self, $url) {
-    my $client = OpenQA::Client->new(apikey => $self->apikey, apisecret => $self->apisecret, api => $url->host)
-      ->ioloop(Mojo::IOLoop->singleton);
+    my $client = OpenQA::Client->new(
+        apikey => $self->apikey,
+        apisecret => $self->apisecret,
+        sshkey => $self->sshkey,
+        api => $url->host
+    )->ioloop(Mojo::IOLoop->singleton);
     $client->transactor->name($self->name);
     return $client;
 }
@@ -105,7 +109,7 @@ sub parse_params ($self, $args, $param_file) {
 sub run ($self, @args) {
     my %options = (pretty => 0, quiet => 0, links => 0, verbose => 0);
     OpenQA::CLI::get_opt(global => \@args, ['pass_through'], \%options);
-    for (qw(apibase apikey apisecret name)) {
+    for (qw(apibase apikey apisecret sshkey name)) {
         $self->$_($options{$_}) if defined $options{$_};
     }
     my $host = $options{host};

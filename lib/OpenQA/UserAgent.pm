@@ -7,20 +7,26 @@ use Mojo::Base 'Mojo::UserAgent', -signatures;
 use OpenQA::Config;
 use Mojo::Date;
 use Mojo::File 'path';
-use Mojo::Util 'hmac_sha1_sum';
+use Mojo::Util qw(hmac_sha1_sum trim);
+use Digest::SHA qw(sha256);
+use MIME::Base64 qw(decode_base64 encode_base64);
+use IPC::Open3 qw(open3);
+use File::Spec;
+use Feature::Compat::Try;
 use Scalar::Util ();
 use Time::Seconds;
 use HTTP::Status qw(:constants);
 use Carp;
 
-has [qw(apikey apisecret base_url)];
+has [qw(apikey apisecret base_url sshkey)];
 
 sub new ($class, @args) {
     my $self = $class->SUPER::new(@args);
     my %args = @args;
     $args{apikey} //= $ENV{OPENQA_API_KEY};
     $args{apisecret} //= $ENV{OPENQA_API_SECRET};
-    for my $i (qw(apikey apisecret)) {
+    $args{sshkey} //= $ENV{OPENQA_SSH_KEY};
+    for my $i (qw(apikey apisecret sshkey)) {
         $self->$i($args{$i}) if $args{$i};
     }
 
@@ -58,22 +64,80 @@ sub configure_credentials ($self, $host) {
         $val =~ s/\s+$//;    # remove trailing whitespace
         $self->$attr($val);
     }
+    unless ($self->sshkey) {
+        my @values = $cfg->val($host, 'sshkey');
+        if (my $val = $values[-1]) {
+            $self->sshkey($val =~ s/\s+$//r);
+        }
+    }
+    return undef;
 }
 
-sub add_auth_headers ($headers, $url, $apikey, $apisecret) {
+sub add_auth_headers ($headers, $url, $apikey, $apisecret, $sshkey = undef) {
     my $timestamp = time;
     $headers->header('X-API-Microtime', $timestamp);
+    if ($sshkey) {
+        my $data = _path_query($url) . $timestamp;
+        my $signature = _ssh_sign($sshkey, $data);
+        my $fingerprint = _ssh_fingerprint($sshkey);
+        if ($signature && $fingerprint) {
+            $headers->header('X-SSH-Signature', encode_base64($signature, ''));
+            $headers->header('X-SSH-Key-Fingerprint', $fingerprint);
+        }
+    }
     if ($apikey && $apisecret) {
         $headers->header('X-API-Key', $apikey);
         $headers->header('X-API-Hash', hmac_sha1_sum(_path_query($url) . $timestamp, $apisecret));
     }
+    return;
+}
+
+# excute ssh-keygen to sign payload
+sub _ssh_sign ($keyfile, $data) {
+    return '' unless $keyfile && -f $keyfile;
+    my $out = '';
+    try {
+        open my $null, '>', File::Spec->devnull;
+        my $pid = open3(my $in, my $out_fh, $null, 'ssh-keygen', '-Y', 'sign', '-n', 'openqa', '-f', $keyfile);
+        print $in $data;
+        close $in;
+        $out = do { local $/; <$out_fh> }
+          // '';
+        waitpid $pid, 0;
+    }
+    catch ($e) {
+        return '';
+    }
+    return '' if $? != 0;
+    $out =~ s/\s+$//;    # strip trailing newline from the signature header value
+    return $out;
+}
+
+sub _ssh_fingerprint ($keyfile) {
+    return '' unless $keyfile && -f $keyfile;
+    my $pub = '';
+    try {
+        open my $null, '>', File::Spec->devnull;
+        my $pid = open3(my $in, my $out_fh, $null, 'ssh-keygen', '-y', '-f', $keyfile);
+        close $in;
+        $pub = do { local $/; <$out_fh> }
+          // '';
+        waitpid $pid, 0;
+    }
+    catch ($e) {
+        return '';
+    }
+    return '' if $? != 0;
+    my ($type, $blob) = split /\s+/, trim($pub);
+    return '' unless $blob;
+    return 'SHA256:' . encode_base64(sha256(decode_base64($blob)), '');
 }
 
 sub _add_headers ($self, $tx) {
     my $req = $tx->req;
     my $headers = $req->headers;
     $headers->accept('application/json') unless defined $headers->accept;
-    add_auth_headers($headers, $req->url, $self->apikey, $self->apisecret);
+    add_auth_headers($headers, $req->url, $self->apikey, $self->apisecret, $self->sshkey);
 }
 
 sub _path_query ($url) {
@@ -154,6 +218,15 @@ The API public key
   $ua           = $ua->apisecret('bar');
 
 The API secret key
+
+=head2 sshkey
+
+  my $sshkey = $ua->sshkey;
+  $ua        = $ua->sshkey('/home/user/.ssh/id_ed25519');
+
+Path to an SSH private key. Requests are signed with C<ssh-keygen -Y sign -n openqa>
+using this key and sent as the X-SSH-Signature header, together with the key
+fingerprint as X-SSH-Key-Fingerprint.
 
 =head1 METHODS
 

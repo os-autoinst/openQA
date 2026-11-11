@@ -59,6 +59,21 @@ openqa-cli api --help
 See also the [online
 manpage](https://manpages.opensuse.org/Tumbleweed/openQA-client/openqa-cli.1).
 
+## SSH key authentication
+
+Instead of an API key and secret you can autenticate with your own SSH key.
+This can be configured seperately for each host:
+Pass the private key file with `--ssh-key` (or set `sshkey` in `client.conf`):
+
+```sh
+openqa-cli api --host http://openqa.example.com --ssh-key ~/.ssh/id_ed25519 jobs/overview
+```
+
+Each request is signed with `ssh-keygen -Y sign -n openqa` and the signature is
+sent in the `X-SSH-Signature` header together with the key fingerprint in
+`X-SSH-Key-Fingerprint`. The key must be registered on the server first (Manage
+SSH keys in the web UI).
+
 ## Authentication
 
 Not all REST endpoints are public, many will return a `403 Forbidden` error if
