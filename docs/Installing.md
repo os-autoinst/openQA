@@ -876,6 +876,39 @@ cp /etc/nginx/vhosts.d/openqa-llm.conf.template /etc/nginx/vhosts.d/openqa-llm.c
 Edit the `llm_backend` upstream block inside `openqa-llm.conf` to include your
 workers, then reload Nginx.
 
+A decision model answers a question with a probability per given answer;
+`llama.cpp` serves such a model on
+[`/v1/systemone`](https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md#post-v1systemone-typesafe-compatible-system-one-api).
+`openqa-llm-investigate` asks one for the class of a test failure if its
+option `--decision-url` (`LLM_DECISION_URL`) names that endpoint; nothing else
+uses such a server. To host one in a second `llama.cpp` server on a worker,
+install its own sub-package:
+
+```sh
+zypper in openQA-llm-decision-server
+```
+
+The service `openqa-llm-decision-server` starts at the next boot, or at once
+with `systemctl start openqa-llm-decision-server`. Its first start downloads
+the model into `/opt/llm/models`: a file of 5.6 GB from
+[one person's repository](https://huggingface.co/waseigo/elephant-1-decision-GGUF)
+on huggingface.co, with the weights of
+[elephant-1](https://huggingface.co/baselabs/elephant-1) (MIT licence). The
+unit names one revision of the file, the one the questions and the threshold
+of `openqa-llm-investigate` were chosen with; its sha256 is
+`5bc2a8f7c707da1680b49a3984a762478733f894eb38c9b4d07babf2f0004b6a`, to
+compare with `sha256sum /opt/llm/models/elephant-1-Q4_K_M.gguf` after the
+download. The package does not own the file, so it stays when the package is
+removed.
+
+The server listens on port 8081 and is limited to 16 threads, as it shares the
+host with the LLM server: a decision request is all prompt processing, for
+which `--threads-batch 16` holds. It took up to 8.6 GiB of memory when tested.
+The model card asks for `llama.cpp` build b11820 or newer, and the server was
+tested with build b12199. Podman pulls only a missing image, so update an older
+one with `podman pull ghcr.io/ggml-org/llama.cpp:server`; the LLM server runs
+the same image and uses the new one from its next start.
+
 To allow workers to access your instance, you need to log into openQA as
 operator and create a pair of API key and secret. Once you are logged in, in the
 top right corner, is the user menu, follow the link 'Manage API keys'. Click
