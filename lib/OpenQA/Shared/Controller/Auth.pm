@@ -10,6 +10,7 @@ use OpenQA::Constants 'DEFAULT_ADMIN';
 use Mojo::Util qw(hmac_sha1_sum secure_compare);
 use Mojo::URL;
 use Time::Seconds;
+use OpenQA::SSHKey qw(signature_payload verify_signature);
 
 sub _auth_method_is_none ($self) { ($self->app->config->{auth}->{method} // '') eq 'None' }
 
@@ -92,6 +93,11 @@ sub _auth ($self) {
             ($user, $reason) = $self->_token_auth($reason, $userinfo);
         }
 
+        # SSH key signature
+        elsif (my $fingerprint = $self->req->headers->header('X-SSH-Key-Fingerprint')) {
+            ($user, $reason) = $self->_ssh_auth($reason, $fingerprint);
+        }
+
         # API key
         elsif (my $key = $self->req->headers->header('X-API-Key')) {
             ($user, $reason) = $self->_key_auth($reason, $key);
@@ -130,6 +136,35 @@ sub auth_admin ($self) {
 
     $self->render(json => {error => 'Administrator level required'}, status => 403);
     return 0;
+}
+
+sub _ssh_auth ($self, $reason, $fingerprint) {
+    my $log = $self->app->log;
+    my $headers = $self->req->headers;
+
+    return (undef, 'SSH and API key authentication cannot be combined')
+      if defined $headers->header('X-API-Key') || defined $headers->header('X-API-Hash');
+
+    my $ssh_key = $self->schema->resultset('SshKeys')->find({fingerprint => $fingerprint});
+    return (undef, 'unknown SSH key') unless $ssh_key;
+
+    my $user = $ssh_key->user;
+    return (undef, 'unknown SSH key') unless $user;
+
+    my $remote_timestamp = $headers->header('X-SSH-Microtime');
+    return (undef, 'missing X-SSH-Microtime') unless defined $remote_timestamp;
+    my ($timestamp_valid, $timestamp_reason) = $self->_is_timestamp_valid(time, $remote_timestamp);
+    return (undef, $timestamp_reason) unless $timestamp_valid;
+
+    my $url = $self->req->url;
+    my $msg = $url->path eq '/api/v1/auth' ? ($headers->header('X-Original-URI') // $url) : $url;
+    my $payload = signature_payload($self->_base_path . $msg, $remote_timestamp, $self->req->body);
+    return (undef, 'invalid SSH signature')
+      unless verify_signature($ssh_key->public_key, $payload, $headers->header('X-SSH-Signature'));
+
+    $ssh_key->update({last_used => DateTime->now});
+    $log->trace(sprintf 'SSH auth by user: %s', $user->username);
+    return ($user, $reason);
 }
 
 sub _is_timestamp_valid ($self, $our_timestamp, $remote_timestamp) {
