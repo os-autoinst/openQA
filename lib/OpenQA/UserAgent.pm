@@ -88,6 +88,7 @@ sub _add_headers ($self, $tx) {
     my $headers = $req->headers;
     $headers->accept('application/json') unless defined $headers->accept;
     if ($self->ssh_key) {
+        die "SSH key authentication cannot sign multipart requests\n" if $req->content->is_multipart;
         add_ssh_auth_headers($headers, $req->method, $req->url, $self->ssh_key, $req->body);
         return;
     }

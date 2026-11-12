@@ -49,6 +49,23 @@ subtest 'failing ssh-keygen surfaces its reason' => sub {
     qr/Signing with SSH key .* failed: .+/, 'signing failure reports the ssh-keygen reason';
 };
 
+subtest 'multipart request is refused rather than signed with an empty body' => sub {
+    my $ua = OpenQA::UserAgent->new(ssh_key => "$dir/id");
+    my $tx = $ua->build_tx(POST => 'http://localhost/api/v1/jobs' => form => {artefact => {content => 'bytes'}});
+    throws_ok {
+        $ua->start($tx => sub { })
+    }
+    qr/cannot sign multipart requests/, 'multipart upload is refused';
+};
+
+subtest 'ssh key takes precedence over a configured API key' => sub {
+    my $ua = OpenQA::UserAgent->new(apikey => 'CONFIGKEY', apisecret => 'CONFIGSECRET', ssh_key => "$dir/id");
+    my $tx = $ua->build_tx(GET => 'http://localhost/api/v1/jobs');
+    $ua->start($tx => sub { });
+    is $tx->req->headers->header('X-API-Key'), undef, 'configured API key is not sent when an SSH key is set';
+    ok $tx->req->headers->header('X-SSH-Signature'), 'request is signed with the SSH key instead';
+};
+
 subtest 'SSH auth does not send API key headers' => sub {
     my $headers = Mojo::Headers->new;
     OpenQA::UserAgent::add_ssh_auth_headers($headers, 'GET', Mojo::URL->new('/api/v1/jobs'), "$dir/id", '');
