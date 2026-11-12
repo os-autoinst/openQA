@@ -97,9 +97,11 @@ openqa-cli api --host http://openqa.example.com --ssh-key ~/.ssh/id_ed25519 jobs
 ```
 
 Each request is signed with `ssh-keygen -Y sign` in the namespace `openqa`
-over the request path, a timestamp and the SHA256 hash of the request body. The
-server verifies the signature with `ssh-keygen -Y verify` and accepts the request
-within the same 5 minute window as API key requests. A request must not carry
+over the HTTP method, the request path, a timestamp and the SHA256 hash of the
+request body. The server verifies the signature with `ssh-keygen -Y verify` and
+accepts the request within the same 5 minute window as API key requests. A proxy
+that performs forward authentication must pass on the method of the original
+request, otherwise the signature will not match. A request must not carry
 API key and SSH headers at the same time. Deleting the key on the API keys page
 revokes access for it immediately.
 

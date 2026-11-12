@@ -148,16 +148,14 @@ sub _ssh_auth ($self, $reason, $fingerprint) {
     return (undef, 'unknown SSH key') unless $ssh_key;
 
     my $user = $ssh_key->user;
-    return (undef, 'unknown SSH key') unless $user;
 
     my $remote_timestamp = $headers->header('X-SSH-Microtime');
     return (undef, 'missing X-SSH-Microtime') unless defined $remote_timestamp;
     my ($timestamp_valid, $timestamp_reason) = $self->_is_timestamp_valid(time, $remote_timestamp);
     return (undef, $timestamp_reason) unless $timestamp_valid;
 
-    my $url = $self->req->url;
-    my $msg = $self->_signed_request_target;
-    my $payload = signature_payload($self->req->method, $self->_base_path . $msg, $remote_timestamp, $self->req->body);
+    my $payload = signature_payload($self->req->method, $self->_base_path . $self->_signed_request_target,
+        $remote_timestamp, $self->req->body);
     return (undef, 'invalid SSH signature')
       unless verify_signature($ssh_key->public_key, $payload, $headers->header('X-SSH-Signature'));
 
