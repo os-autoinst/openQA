@@ -16,6 +16,8 @@ our @EXPORT_OK = qw(
 
 use constant JOB_INVESTIGATE_PULL_REQUESTS_MAX => 200;
 use constant RETURN_CODE_TIMEOUT_EXCEEDED => 124;    # see `man timeout`
+use constant EMPTY_TREE => '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
+use constant TAGGED_NEEDLES_CHUNK => 500;
 
 # unknown commits (128) and timeouts are handled by the callers, so git's output is not logged as a problem
 my %PROBE_CODES = (0 => 1, 124 => 1, 128 => 1);
@@ -63,14 +65,33 @@ sub git_tree ($deadline, $dir, $hash) {
     return (+{map { $_ => 1 } map { /^100\d{3} blob \S+\t(.*)$/s ? $1 : () } split /\0/, $res->{stdout}});
 }
 
-# returns the paths of the needles in the commit $hash that have one of the $tags, or the git error message
-sub tagged_needles ($deadline, $dir, $tree, $hash, $tags) {
-    my $pattern = join '|', map { s/([.+])/\\$1/gr } @$tags;
-    my @cmd = ('grep', '-l', '-z', '-E', '-e', qq{"($pattern)"}, $hash, '--', '*.json');
-    my $res = git_timed($deadline, $dir, \@cmd, expected_return_codes => {0 => 1, 1 => 1, 124 => 1});
-    my $return_code = $res->{return_code} // 255;
-    return (undef, git_failure_message($return_code)) if $return_code > 1;
-    return ([grep { $tree->{$_} } map { s/^\Q$hash\E://r } split /\0/, $res->{stdout}]);
+# returns the needles that changed between the last good commit $prev_hash, else the last commit before $since
+# (epoch seconds), and $hash and have one of the $tags at either end, or the git error message
+sub tagged_needles ($deadline, $dir, $hash, $prev_hash, $since, $tags) {
+    my $base = git_has_commit($deadline, $dir, $prev_hash) ? $prev_hash : undef;
+    unless ($base) {
+        my @cmd = ('rev-list', '-1', "--before=$since", $hash);
+        my $res = git_timed($deadline, $dir, \@cmd, expected_return_codes => \%PROBE_CODES);
+        return (undef, git_failure_message($res->{return_code} // 255)) unless $res->{status};
+        $base = $res->{stdout} =~ m/^([0-9a-f]{40})$/m ? $1 : EMPTY_TREE;
+    }
+    my @cmd = ('diff', '--name-only', '--relative', '-z', $base, $hash, '--', '*.json');
+    my $changed = git_timed($deadline, $dir, \@cmd, expected_return_codes => \%PROBE_CODES);
+    return (undef, git_failure_message($changed->{return_code} // 255)) unless $changed->{status};
+    my @files = split /\0/, $changed->{stdout};
+    my $pattern = '"(' . join('|', map { s/([.+])/\\$1/gr } @$tags) . ')"';
+    my @revs = $base eq EMPTY_TREE ? ($hash) : ($hash, $base);
+    my @tagged;
+    while (my @chunk = splice @files, 0, TAGGED_NEEDLES_CHUNK) {
+        for my $rev (@revs) {
+            my @grep = ('grep', '-l', '-z', '-E', '-e', $pattern, $rev, '--', map { ":(literal)$_" } @chunk);
+            my $res = git_timed($deadline, $dir, \@grep, expected_return_codes => {0 => 1, 1 => 1, 124 => 1});
+            my $return_code = $res->{return_code} // 255;
+            return (undef, git_failure_message($return_code)) if $return_code > 1;
+            push @tagged, map { s/^\Q$rev\E://r } split /\0/, $res->{stdout};
+        }
+    }
+    return ([uniq @tagged]);
 }
 
 # adds " (#<number>)" to commits that were merged via a "Merge pull request #<number>" merge commit, as far as

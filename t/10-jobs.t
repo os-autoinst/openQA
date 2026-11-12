@@ -569,7 +569,7 @@ subtest 'carry over, including soft-fails' => sub {
         $commit->('needles/bar.json', 'Add bar needle', '{"tags": ["bar"]}');
         $commit->('needles/foo-2.json', 'Retag needle', '{"tags": ["foo-tag", "other"]}');
         $commit->('needles/area.json', 'Add area needle', '{"tags": ["area-tag"], "area": [{"xpos": 1}]}');
-        $commit->('needles/gone.json', 'Add gone needle', '{"tags": ["removed-tag"]}');
+        my $gone = $commit->('needles/gone.json', 'Add gone needle', '{"tags": ["removed-tag"]}');
         $commit->('needles/foo-1.png', 'Update foo png only');
         $commit->('needles/area.json', 'Move area', '{"tags": ["area-tag"], "area": [{"xpos": 2}]}');
         my $tested = $commit->('needles/gone.json', 'Drop tag from gone needle', '{"tags": ["other"]}');
@@ -628,7 +628,6 @@ subtest 'carry over, including soft-fails' => sub {
             like $log, qr/^[0-9a-f]{10} Retag needle$/m, 'commit changing a needle with the failed tag listed';
             like $log, qr/^[0-9a-f]{10} Add bar needle$/m, 'tag from text of failed step considered';
             like $log, qr/^[0-9a-f]{10} Move area$/m, 'commit not touching the tag lines of a needle with it listed';
-            like $log, qr/^[0-9a-f]{10} Drop tag from gone needle$/m, 'commit removing the failed tag listed';
             is scalar(() = $log =~ /Add foo needle$/mg), 1, 'commits found twice only listed once';
         };
 
@@ -637,6 +636,11 @@ subtest 'carry over, including soft-fails' => sub {
             my $inv = $job->investigate(git_limit => 200);
             unlike $inv->{failure_test_log}, qr/Break x/, 'commits before the last good job not listed';
             like $inv->{failure_test_log}, qr/Squash fix \(#43\)/, 'commits after the last good job listed';
+            $set_vars->($last_good, $gone);
+            $inv = $job->investigate(git_limit => 200);
+            like $inv->{failure_needles_log}, qr/^[0-9a-f]{10} Drop tag from gone needle$/m,
+              'removal of the tag listed';
+            unlike $inv->{failure_needles_log}, qr/Add foo needle|Add gone/, 'needles before the last good job skipped';
             $set_vars->($last_good, $tested);
             $inv = $job->investigate(git_limit => 200);
             is $inv->{failure_test_log}, 'No recent changes to the test files involved in the failure', 'no changes';
@@ -658,6 +662,7 @@ subtest 'carry over, including soft-fails' => sub {
             $investigation_mock->redefine(
                 run_cmd_with_log_return_error => sub ($cmd, %args) {
                     my ($subcommand) = grep { /^(?:grep|ls-tree|cat-file)$/ } @$cmd;
+                    return $run_cmd->($cmd, %args) unless $subcommand;
                     $codes{$subcommand} = $args{expected_return_codes};
                     return {status => 0, return_code => 124, stdout => 'a:b.json', stderr => ''}
                       if $subcommand eq 'grep';
@@ -670,8 +675,8 @@ subtest 'carry over, including soft-fails' => sub {
             my ($tree, $error) = OpenQA::JobInvestigation::git_tree($deadline, "$repo", $unknown);
             like $error, qr/unknown or not available/, 'unknown commit reported by ls-tree';
             ok $codes{'ls-tree'}->{128}, 'unknown commit is an expected outcome of ls-tree';
-            ($tree) = OpenQA::JobInvestigation::git_tree($deadline, "$repo", $tested);
-            my (undef, $message) = OpenQA::JobInvestigation::tagged_needles($deadline, "$repo", $tree, $tested, ['x']);
+            my (undef, $message)
+              = OpenQA::JobInvestigation::tagged_needles($deadline, "$repo", $tested, undef, time - 86400, ['x']);
             is $message, 'Computing changes timed out', 'timeout of git grep reported';
             ok $codes{grep}->{124}, 'timeout is an expected outcome of git grep, so its output is not logged';
         };

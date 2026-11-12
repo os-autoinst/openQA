@@ -2065,19 +2065,16 @@ sub _failure_investigation ($self, $inv, $self_vars, $prev_vars, %args) {
     if (@$needles || @$tags) {
         my ($tree, $error) = git_tree($deadline, $needles_dir, $needles_hash);
         my $tagged = [];
-        ($tagged, $error) = tagged_needles($deadline, $needles_dir, $tree, $needles_hash, $tags) if $tree && @$tags;
+        my $since = $self->_failure_window_start;
+        ($tagged, $error) = tagged_needles($deadline, $needles_dir, $needles_hash, $prev_needles, $since, $tags)
+          if $tree && @$tags;
         my $files = $tree && !$error ? failed_needle_files($tree, $needles, $tagged) : [];
         splice @$files, JOB_INVESTIGATE_FAILURE_FILES_MAX;
-        my @selections;
-        push @selections, {paths => [map { ":(literal)$_" } @$files]} if @$files;
-        my $pattern = join '|', map { s/([.+])/\\$1/gr } @$tags;
-        push @selections, {pickaxe => qq{"($pattern)"}, paths => ['*.json']} if @$tags;
+        my @selections = ({paths => [map { ":(literal)$_" } @$files]});
         $inv->{failure_needles_log}
           = $error
-          || $self->_failure_log($needles_dir, $needles_hash, $prev_needles, \@selections, %log)
-          || 'No recent changes to the needles involved in the failure'
-          if $error
-          || @selections;
+          || (@$files ? $self->_failure_log($needles_dir, $needles_hash, $prev_needles, \@selections, %log) : '')
+          || 'No recent changes to the needles involved in the failure';
     }
 }
 
