@@ -80,8 +80,10 @@ sub register ($self, $app, $config) {
     $app->helper(current_job_group => \&_current_job_group);
 
     $app->helper(current_job => sub ($c) { $c->stash('job') });
-    $app->helper(current_theme => sub ($c) { $c->session->{theme} || 'light' });
-    $app->helper(seasonal_decorations => sub ($c) { $c->session->{seasonal_decorations} || 'auto' });
+    # the cookies are not signed, so only accept known values
+    $app->helper(current_theme => sub ($c) { _appearance_cookie($c, theme => [qw(light dark detect)], 'light') });
+    $app->helper(
+        seasonal_decorations => sub ($c) { _appearance_cookie($c, seasonal_decorations => [qw(auto on off)], 'auto') });
     $app->helper(is_seasonal_period => sub ($c = undef) { (localtime)[4] == 9 });
     $app->helper(
         seasonal_decorations_enabled => sub ($c) {
@@ -301,6 +303,11 @@ sub _format_time_duration ($c, $timedate = undef) {
         return sprintf '%02d:%02d hours', $timedate->hours(), $timedate->minutes();
     }
     return sprintf '%02d:%02d minutes', $timedate->minutes(), $timedate->seconds();
+}
+
+sub _appearance_cookie ($c, $name, $allowed, $default) {
+    my $value = $c->cookie($name) // '';
+    return (any { $_ eq $value } @$allowed) ? $value : $default;
 }
 
 sub _current_job_group ($c) {

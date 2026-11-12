@@ -789,7 +789,8 @@ or admin.
 
 ### Dark mode
 
-A dark mode theme can be enabled via "Appearance" settings for all logged in users. It can either be forced with
+A dark mode theme can be enabled via "Appearance" settings for all logged in users. The preferences are stored in
+a browser cookie for one year, so they survive logout and session expiry. It can either be forced with
 the "dark mode" setting, or left to browser detection. Switching automatically between light and dark mode is natively
 supported by most modern browsers and can also be controlled manually via flags:
 
