@@ -87,11 +87,11 @@ sub _auth ($self) {
     # No session (probably not a browser)
     if (!$user) {
         # Personal access token, SSH key signature or API key
-        if (my $token = $self->_personal_access_token) {
-            ($user, $reason) = $self->_token_auth($reason, $token);
-        }
-        elsif (my $fingerprint = $self->req->headers->header('X-SSH-Key-Fingerprint')) {
+        if (my $fingerprint = $self->req->headers->header('X-SSH-Key-Fingerprint')) {
             ($user, $reason) = $self->_ssh_auth($reason, $fingerprint);
+        }
+        elsif (my $token = $self->_personal_access_token) {
+            ($user, $reason) = $self->_token_auth($reason, $token);
         }
         elsif (my $key = $self->req->headers->header('X-API-Key')) {
             ($user, $reason) = $self->_key_auth($reason, $key);
@@ -140,9 +140,11 @@ sub auth_admin ($self) {
 sub _ssh_auth ($self, $reason, $fingerprint) {
     my $log = $self->app->log;
     my $headers = $self->req->headers;
-
     return (undef, 'SSH and API key authentication cannot be combined')
-      if defined $headers->header('X-API-Key') || defined $headers->header('X-API-Hash');
+      if defined $headers->header('X-API-Key')
+      || defined $headers->header('X-API-Hash')
+      || defined $self->_personal_access_token;
+
 
     my $ssh_key = $self->schema->resultset('SshKeys')->find({fingerprint => $fingerprint});
     return (undef, 'unknown SSH key') unless $ssh_key;
@@ -153,6 +155,8 @@ sub _ssh_auth ($self, $reason, $fingerprint) {
     return (undef, 'missing X-SSH-Microtime') unless defined $remote_timestamp;
     my ($timestamp_valid, $timestamp_reason) = $self->_is_timestamp_valid(time, $remote_timestamp);
     return (undef, $timestamp_reason) unless $timestamp_valid;
+
+    return (undef, 'SSH signatures cannot cover multipart bodies') if $self->req->content->is_multipart;
 
     my $payload = signature_payload($self->req->method, $self->_base_path . $self->_signed_request_target,
         $remote_timestamp, $self->req->body);

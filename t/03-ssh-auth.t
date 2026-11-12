@@ -89,6 +89,13 @@ subtest 'signature is bound to the HTTP method' => sub {
       ->json_is('/error', 'invalid SSH signature', 'rejection is the signature check');
 };
 
+subtest 'multipart bodies cannot be authenticated by SSH signature' => sub {
+    my $headers = ssh_headers('arthur', $operator_route, method => 'POST', body => '');
+    $t->post_ok($operator_route, {%$headers}, form => {artefact => {content => 'uploaded bytes'}})
+      ->status_is(403, 'multipart request with an empty-body signature is rejected')
+      ->json_is('/error', 'SSH signatures cannot cover multipart bodies', 'rejection names multipart');
+};
+
 subtest 'invalid SSH authentication is rejected' => sub {
     my %cases = (
         'signature for another path' => ssh_headers('arthur', '/api/v1/jobs/1'),
@@ -110,6 +117,12 @@ subtest 'body must match the signed payload' => sub {
     my $headers = ssh_headers('arthur', $operator_route, method => 'POST', body => '{}');
     $t->post_ok($operator_route, {%$headers, 'Content-Type' => 'application/json'}, '{"tampered":1}')
       ->status_is(403, 'signature over a different body is rejected');
+};
+
+subtest 'mixing SSH headers with a bearer token is rejected' => sub {
+    my $headers = {%{ssh_headers('arthur', $whoami)}, Authorization => 'Bearer arthur:ARTHURKEY01:EXCALIBUR'};
+    $t->get_ok($whoami, $headers)->status_is(403, 'request carrying SSH and bearer auth is rejected')
+      ->json_is('/error', 'SSH and API key authentication cannot be combined', 'rejection names the conflict');
 };
 
 subtest 'mixing SSH and API-key headers is rejected' => sub {
