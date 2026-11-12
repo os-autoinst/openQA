@@ -1385,6 +1385,43 @@ subtest 'Dynamic schedule' => sub {
     $upload_stats = {upload_result => 1, uploaded_files => [], uploaded_assets => []};
 };
 
+subtest 'test schedule is sent in status updates until acknowledged' => sub {
+    my $results_directory = $pool_directory->child('testresults')->make_path;
+    my $status_file = $pool_directory->child(OpenQA::Worker::Job::AUTOINST_STATUSFILE);
+    my $test_order = [{category => 'kernel', flags => {}, name => 'boot', script => 'tests/boot.pm'}];
+    $results_directory->child('test_order.json')->spew(encode_json($test_order));
+    $status_file->spew(encode_json({status => 'running', current_test => 'boot'}));
+
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 12, URL => $engine_url});
+    $client->sent_messages(my $msgs = []);
+
+    subtest 'first prepare sends test_order' => sub {
+        $job->_upload_results_step_0_prepare(sub { });
+        is scalar(@$msgs), 1, 'first status update sent';
+        is_deeply $msgs->[-1]{json}{status}{test_order}, $test_order, 'first status update includes test_order';
+        ok !$job->{_test_order_uploaded}, 'test_order not yet acknowledged';
+    };
+
+    subtest 'second prepare before callback runs also sends test_order' => sub {
+        $job->_upload_results_step_0_prepare(sub { });
+        is scalar(@$msgs), 2, 'second status update sent';
+        is_deeply $msgs->[-1]{json}{status}{test_order}, $test_order,
+          'status update before acknowledgement still includes test_order';
+        # let the callback run to acknowledge the upload
+        Mojo::IOLoop->one_tick;
+        ok $job->{_test_order_uploaded}, 'test_order acknowledged after callback';
+    };
+
+    subtest 'third prepare after acknowledgement omits test_order' => sub {
+        $job->_upload_results_step_0_prepare(sub { });
+        is scalar(@$msgs), 3, 'third status update sent';
+        ok !defined $msgs->[-1]{json}{status}{test_order}, 'test_order omitted once acknowledged';
+    };
+
+    $client->sent_messages([]);
+    $results_directory->remove_tree;
+};
+
 subtest 'image optimization' => sub {
     my $opt = \&OpenQA::Worker::Job::_optimize_image;    ## no critic (Variables::ProtectPrivateVars)
     local $ENV{OPENQA_LOGFILE} = undef;
