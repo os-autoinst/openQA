@@ -51,6 +51,12 @@ sub test_project ($t, $project, $batch, $dt, $build) {
       ->content_like(qr/openSUSE-Leap-15.1-DVD-x86_64-Build470.$build-Media.iso/)
       ->content_like(qr/openSUSE-Leap-15.1-NET-x86_64-Build470.$build-Media.iso/);
 
+    $t->get_ok("/admin/obs_rsync/$alias/runs/.run_$dt/download/nonexistent.lst")
+      ->status_is(404, 'nonexistent file returns 404')->json_is('/error', 'Invalid Filename {nonexistent.lst}');
+
+    $t->get_ok("/admin/obs_rsync/$alias/runs/nonexistent_run/download/files_iso.lst")
+      ->status_is(404, 'nonexistent subfolder returns 404')->json_is('/error', 'Invalid Subfolder {nonexistent_run}');
+
     $t->get_ok("/admin/obs_rsync/$alias/run_last")->status_is(200, 'get project last run')
       ->json_is('/message', $dt, 'run_last is $dt');
 
@@ -59,6 +65,10 @@ sub test_project ($t, $project, $batch, $dt, $build) {
 
     $t->get_ok("/admin/obs_rsync/$alias/run_last")->status_is(200, 'get project last run (after forgetting it)')
       ->json_is('/message', '', 'run_last is now empty');
+
+    $t->get_ok("/admin/obs_rsync/$alias/runs/.run_last/download/files_iso.lst")
+      ->status_is(404, 'download via unlinked .run_last returns 404')
+      ->json_is('/error', 'Invalid Subfolder {.run_last}');
 }
 
 subtest 'Smoke test Proj1' => sub {
