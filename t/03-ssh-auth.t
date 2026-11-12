@@ -15,6 +15,7 @@ use OpenQA::Test::Case;
 use Mojo::Base -signatures;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
+use Test::Output 'combined_like';
 use Time::Seconds;
 
 my $test_case = OpenQA::Test::Case->new;
@@ -96,6 +97,18 @@ subtest 'multipart bodies cannot be authenticated by SSH signature' => sub {
       ->json_is('/error', 'SSH signatures cannot cover multipart bodies', 'rejection names multipart');
 };
 
+subtest 'rejected SSH signature is logged with its cause' => sub {
+    my $headers = {%{ssh_headers('arthur', $whoami)}, 'X-SSH-Signature' => 'garbage'};
+    combined_like { $t->get_ok($whoami, $headers)->status_is(403) }
+    qr/Invalid SSH signature for user "arthur"/, 'debug log names the user whose signature failed';
+};
+
+subtest 'unknown SSH fingerprint is logged' => sub {
+    my $headers = {%{ssh_headers('arthur', $whoami)}, 'X-SSH-Key-Fingerprint' => 'SHA256:nobody'};
+    combined_like { $t->get_ok($whoami, $headers)->status_is(403) }
+    qr/Unknown SSH key fingerprint/, 'debug log names the unknown fingerprint';
+};
+
 subtest 'invalid SSH authentication is rejected' => sub {
     my %cases = (
         'signature for another path' => ssh_headers('arthur', '/api/v1/jobs/1'),
@@ -122,6 +135,17 @@ subtest 'body must match the signed payload' => sub {
 subtest 'mixing SSH headers with a bearer token is rejected' => sub {
     my $headers = {%{ssh_headers('arthur', $whoami)}, Authorization => 'Bearer arthur:ARTHURKEY01:EXCALIBUR'};
     $t->get_ok($whoami, $headers)->status_is(403, 'request carrying SSH and bearer auth is rejected')
+      ->json_is('/error', 'SSH and API key authentication cannot be combined', 'rejection names the conflict');
+};
+
+subtest 'an empty SSH fingerprint header still counts as an SSH request' => sub {
+    my $headers = {
+        %{ssh_headers('arthur', $whoami)},
+        'X-SSH-Key-Fingerprint' => '',
+        'X-API-Key' => 'ARTHURKEY01',
+        'X-API-Hash' => 'x'
+    };
+    $t->get_ok($whoami, $headers)->status_is(403, 'empty fingerprint with an API key is rejected')
       ->json_is('/error', 'SSH and API key authentication cannot be combined', 'rejection names the conflict');
 };
 

@@ -87,7 +87,7 @@ sub _auth ($self) {
     # No session (probably not a browser)
     if (!$user) {
         # Personal access token, SSH key signature or API key
-        if (my $fingerprint = $self->req->headers->header('X-SSH-Key-Fingerprint')) {
+        if (defined(my $fingerprint = $self->req->headers->header('X-SSH-Key-Fingerprint'))) {
             ($user, $reason) = $self->_ssh_auth($reason, $fingerprint);
         }
         elsif (my $token = $self->_personal_access_token) {
@@ -146,7 +146,10 @@ sub _ssh_auth ($self, $reason, $fingerprint) {
       || defined $self->_personal_access_token;
 
     my $ssh_key = $self->schema->resultset('SshKeys')->find({fingerprint => $fingerprint});
-    return (undef, 'unknown SSH key') unless $ssh_key;
+    unless ($ssh_key) {
+        $log->debug('Unknown SSH key fingerprint');
+        return (undef, 'unknown SSH key');
+    }
 
     my $user = $ssh_key->user;
 
@@ -159,8 +162,10 @@ sub _ssh_auth ($self, $reason, $fingerprint) {
 
     my $payload = signature_payload($self->req->method, $self->_base_path . $self->_signed_request_target,
         $remote_timestamp, $self->req->body);
-    return (undef, 'invalid SSH signature')
-      unless verify_signature($ssh_key->public_key, $payload, $headers->header('X-SSH-Signature'));
+    unless (verify_signature($ssh_key->public_key, $payload, $headers->header('X-SSH-Signature'))) {
+        $log->debug(qq{Invalid SSH signature for user "${\$user->username}"});
+        return (undef, 'invalid SSH signature');
+    }
 
     $ssh_key->update({last_used => DateTime->now});
     $log->trace(sprintf 'SSH auth by user: %s', $user->username);
