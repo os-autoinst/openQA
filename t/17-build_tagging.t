@@ -361,9 +361,23 @@ subtest 'content negotiation' => sub {
     $t->get_ok('/group_overview/1001.json')->status_is(200)->content_type_is('application/json;charset=UTF-8');
     $t->get_ok('/group_overview/1001' => {Accept => 'application/json'})->status_is(200)
       ->content_type_is('application/json;charset=UTF-8');
+    $t->get_ok('/group_overview/1001?_format=json')->status_is(200)->content_type_is('application/json;charset=UTF-8');
+    $t->get_ok('/group_overview/1001?format=json')->status_is(200)->content_type_is('application/json;charset=UTF-8');
     $t->get_ok('/group_overview/1001.rss')->status_is(200)->content_type_is('application/rss+xml;charset=UTF-8');
     $t->get_ok('/group_overview/1001' => {Accept => 'application/rss+xml'})->status_is(200)
       ->content_type_is('application/rss+xml;charset=UTF-8');
+    $t->get_ok('/group_overview/1001?_format=rss')->status_is(200)
+      ->content_type_is('application/rss+xml;charset=UTF-8');
+    $t->get_ok('/group_overview/1001?format=rss')->status_is(200)->content_type_is('application/rss+xml;charset=UTF-8');
+    $t->get_ok('/group_overview/1001?format=rss&_format=json')->status_is(200)
+      ->content_type_is('application/json;charset=UTF-8');
+    $t->get_ok('/group_overview/1001?format=html&format=json')->status_is(200)
+      ->content_type_is('application/json;charset=UTF-8');
+    $t->post_ok('/group_overview/1001?_method=GET')->status_is(200);
+    $t->post_ok('/group_overview/1001', form => {_method => 'GET', format => 'json'})->status_is(200)
+      ->content_type_is('application/json;charset=UTF-8');
+    $t->post_ok('/group_overview/1001', form => {_method => 'GET', format => 'rss', _format => 'json'})->status_is(200)
+      ->content_type_is('application/json;charset=UTF-8');
 };
 
 subtest 'tags with datetime' => sub {
