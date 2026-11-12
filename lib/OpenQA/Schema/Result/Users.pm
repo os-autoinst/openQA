@@ -9,6 +9,7 @@ use Mojo::Base 'DBIx::Class::Core', -signatures;
 use URI::Escape 'uri_escape';
 use Digest::MD5 'md5_hex';
 use DateTime;
+use Feature::Compat::Try;
 use OpenQA::SSHKey 'parse_public_key';
 
 __PACKAGE__->table('users');
@@ -92,13 +93,15 @@ sub is_deleted ($self) { defined $self->deleted_at }
 
 sub add_ssh_key ($self, $public_key, $title) {
     my $parsed = parse_public_key($public_key) or return (undef, 'invalid');
-    my $ssh_key = eval {
-        $self->ssh_keys->create(
+    try {
+        my $ssh_key = $self->ssh_keys->create(
             {public_key => $parsed->{public_key}, fingerprint => $parsed->{fingerprint}, title => $title});
-    };
-    return ($ssh_key, undef) if $ssh_key;
-    die $@ unless $@ =~ /ssh_keys_fingerprint/;
-    return (undef, 'duplicate');
+        return ($ssh_key, undef);
+    }
+    catch ($e) {
+        die $e unless $e =~ /ssh_keys_fingerprint/;
+        return (undef, 'duplicate');
+    }
 }
 
 sub anonymize ($self) {
