@@ -99,7 +99,9 @@ openqa-cli api --host http://openqa.example.com --ssh-key ~/.ssh/id_ed25519 jobs
 Each request is signed with `ssh-keygen -Y sign` in the namespace `openqa`
 over the HTTP method, the request path, a timestamp and the SHA256 hash of the
 request body. The server verifies the signature with `ssh-keygen -Y verify` and
-accepts the request within the same 5 minute window as API key requests. A proxy
+accepts the request within the same 5 minute window as API key requests. Within
+that window a captured signed request can be replayed, because signatures carry
+no nonce. This matches the API key scheme. A proxy
 that performs forward authentication has no way yet to pass the original method
 through, so the server verifies the signature against the method of the auth
 subrequest. SSH signatures therefore only work through forward authentication
