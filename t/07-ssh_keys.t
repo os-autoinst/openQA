@@ -11,6 +11,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Utils;
 require OpenQA::Test::Database;
+use OpenQA::Test::Utils 'generate_ssh_key';
 use OpenQA::Test::TimeLimit '10';
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
@@ -42,8 +43,7 @@ subtest 'fingerprint is unique' => sub {
 
 subtest 'add_ssh_key reports a key registered by a concurrent request as a duplicate' => sub {
     my $dir = tempdir(CLEANUP => 1);
-    system('ssh-keygen', '-q', '-t', 'ed25519', '-N', '', '-f', "$dir/id") == 0 or die 'ssh-keygen failed';
-    my $real_key = path("$dir/id.pub")->slurp;
+    my $real_key = generate_ssh_key("$dir/id");
     my $parsed = OpenQA::SSHKey::parse_public_key($real_key);
     my $guard = Test::MockModule->new('OpenQA::Schema::Result::Users');
     $guard->redefine(

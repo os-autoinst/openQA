@@ -11,13 +11,13 @@ use Mojo::File 'path';
 use Mojo::Headers;
 use Mojo::URL;
 use OpenQA::UserAgent;
+use OpenQA::Test::Utils 'generate_ssh_key';
 use OpenQA::SSHKey qw(parse_public_key signature_payload verify_signature);
 use OpenQA::Test::TimeLimit '10';
 use Test::Warnings ':report_warnings';
 
 my $dir = tempdir(CLEANUP => 1);
-system('ssh-keygen', '-q', '-t', 'ed25519', '-N', '', '-f', "$dir/id") == 0 or die 'ssh-keygen failed';
-my $parsed = parse_public_key(path("$dir/id.pub")->slurp);
+my $parsed = parse_public_key(generate_ssh_key("$dir/id"));
 
 subtest 'ssh key signs the request path, timestamp and body' => sub {
     my $headers = Mojo::Headers->new;

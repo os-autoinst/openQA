@@ -8,6 +8,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use File::Temp 'tempdir';
 use Mojo::File 'path';
+use OpenQA::Test::Utils 'generate_ssh_key';
 use OpenQA::SSHKey qw(parse_public_key signature_payload sign_payload);
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::Test::Case;
@@ -26,8 +27,7 @@ my $lancelot = $schema->resultset('Users')->find({username => 'https://openid.ca
 my $dir = tempdir(CLEANUP => 1);
 my %keys = map {
     my $file = "$dir/$_";
-    system('ssh-keygen', '-q', '-t', 'ed25519', '-N', '', '-f', $file) == 0 or die 'ssh-keygen failed';
-    ($_ => {private => $file, parsed => parse_public_key(path("$file.pub")->slurp)});
+    ($_ => {private => $file, parsed => parse_public_key(generate_ssh_key($file))});
 } qw(arthur lancelot);
 
 $arthur->ssh_keys->create(

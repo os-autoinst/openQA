@@ -8,14 +8,14 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use File::Temp 'tempdir';
 use Mojo::File 'path';
+use OpenQA::Test::Utils 'generate_ssh_key';
 use OpenQA::SSHKey qw(parse_public_key signature_payload sign_payload verify_signature);
 use Test::Warnings ':report_warnings';
 
 my $dir = tempdir(CLEANUP => 1);
 my %keys = map {
     my $file = "$dir/id_$_";
-    system('ssh-keygen', '-q', '-t', $_, '-N', '', '-f', $file) == 0 or die "ssh-keygen failed for $_";
-    ($_ => {private => $file, public => path("$file.pub")->slurp});
+    ($_ => {private => $file, public => generate_ssh_key($file, $_)});
 } qw(ed25519 rsa);
 
 subtest 'parse_public_key' => sub {

@@ -10,6 +10,7 @@ use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use File::Temp 'tempdir';
 use Mojo::File 'path';
+use OpenQA::Test::Utils 'generate_ssh_key';
 use OpenQA::SSHKey qw(parse_public_key);
 use OpenQA::Test::TimeLimit '8';
 use OpenQA::Test::Case;
@@ -21,8 +22,7 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 my $schema = $t->app->schema;
 
 my $dir = tempdir(CLEANUP => 1);
-system('ssh-keygen', '-q', '-t', 'ed25519', '-N', '', '-f', "$dir/id") == 0 or die 'ssh-keygen failed';
-my $public_key = path("$dir/id.pub")->slurp;
+my $public_key = generate_ssh_key("$dir/id");
 my $parsed = parse_public_key($public_key);
 
 $t->get_ok('/api_keys')->status_is(302, 'api keys page requires login');

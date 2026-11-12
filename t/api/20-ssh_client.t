@@ -10,6 +10,7 @@ use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common
 use File::Temp 'tempdir';
 use Mojo::File 'path';
 use OpenQA::Client;
+use OpenQA::Test::Utils 'generate_ssh_key';
 use OpenQA::SSHKey qw(parse_public_key);
 use OpenQA::Test::TimeLimit '8';
 use OpenQA::Test::Case;
@@ -20,8 +21,7 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 my $app = $t->app;
 
 my $dir = tempdir(CLEANUP => 1);
-system('ssh-keygen', '-q', '-t', 'ed25519', '-N', '', '-f', "$dir/id") == 0 or die 'ssh-keygen failed';
-my $parsed = parse_public_key(path("$dir/id.pub")->slurp);
+my $parsed = parse_public_key(generate_ssh_key("$dir/id"));
 my $arthur = $app->schema->resultset('Users')->find({username => 'arthur'});
 $arthur->ssh_keys->create(
     {public_key => $parsed->{public_key}, fingerprint => $parsed->{fingerprint}, title => 'client'});

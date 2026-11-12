@@ -9,6 +9,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
 use File::Temp 'tempdir';
 use Mojo::File 'path';
+use OpenQA::Test::Utils 'generate_ssh_key';
 use OpenQA::SSHKey qw(parse_public_key);
 use OpenQA::Test::TimeLimit '8';
 use OpenQA::Client;
@@ -22,8 +23,7 @@ $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->i
 $t->app($app);
 
 my $dir = tempdir(CLEANUP => 1);
-system('ssh-keygen', '-q', '-t', 'ed25519', '-N', '', '-f', "$dir/id") == 0 or die 'ssh-keygen failed';
-my $public_key = path("$dir/id.pub")->slurp;
+my $public_key = generate_ssh_key("$dir/id");
 my $parsed = parse_public_key($public_key);
 
 subtest 'list ssh keys is empty for a user without keys' => sub {
