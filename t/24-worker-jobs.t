@@ -619,6 +619,15 @@ subtest 'Handle reconnect' => sub {
         is $uploaded, 0, 'no upload results triggered when timer exists';
 
         delete $job->{_upload_results_timer};
+        $job->{_is_uploading_results} = 1;
+        my $upload_concluded = 0;
+        $job->once(uploading_results_concluded => sub { ++$upload_concluded });
+        combined_like { $job->handle_reconnect } qr/Re-connected while job 4 is active/,
+          'log message on reconnect when running with ongoing upload';
+        is $upload_concluded, 0, 'ongoing upload not concluded on reconnect for active job';
+        is $uploaded, 0, 'no upload results triggered when upload is ongoing';
+
+        $job->{_is_uploading_results} = 0;
         combined_like { $job->handle_reconnect } qr/Re-connected while job 4 is active/,
           'log message on reconnect when running without timer';
         is $uploaded, 1, 'upload results triggered when running without timer';

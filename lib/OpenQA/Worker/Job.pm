@@ -188,8 +188,8 @@ sub handle_reconnect ($self) {
         return $self->conclude_upload_if_ongoing;
     }
     log_info("Re-connected while job $job_id is active");
-    $self->conclude_upload_if_ongoing;
-    $self->_upload_results(sub { }) if $self->status eq 'running' && !$self->upload_results_timer;
+    $self->_upload_results(sub { })
+      if $self->status eq 'running' && !$self->upload_results_timer && !$self->is_uploading_results;
     return 1;
 }
 
