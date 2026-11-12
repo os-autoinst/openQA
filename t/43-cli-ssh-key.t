@@ -20,7 +20,8 @@ $command_mock->redefine(
 
 subtest 'ssh key is taken from the command line after the subcommand' => sub {
     $seen = undef;
-    eval { OpenQA::CLI->new->run(qw(api --ssh-key /tmp/id jobs)) };
+    my $ran = eval { OpenQA::CLI->new->run(qw(api --ssh-key /tmp/id jobs)); 1 };
+    ok !$ran && $@ =~ /^stop/, 'command runs up to the client creation';
     is $seen->{ssh_key}, '/tmp/id', '--ssh-key is passed to the command client';
     is $seen->{apikey}, undef, 'no API key is set when only an SSH key is given';
 };
