@@ -34,14 +34,21 @@ sub check_page ($theme, $enabled, $overlay) {
     }
 }
 
-subtest 'No login, no themes' => sub {
-    $t->get_ok('/appearance')->status_is(302);
+subtest 'Appearance can be changed without login' => sub {
+    $t->ua->max_redirects(5);
+    check_form('light', 'auto');
+    check_page('light', $season, 0);
+    $t->post_ok('/appearance' => form => {theme => 'dark', seasonal_decorations => 'on'})->status_is(200);
+    check_form('dark', 'on');
+    check_page('dark', 'true', 1);
+    $t->get_ok('/')->element_exists('#user-action a[href$="/login"]')
+      ->element_exists('nav a.nav-link[href$="/appearance"]');
+    $t->reset_session;
 };
 
 subtest 'Login as Percival' => sub {
     $t->get_ok('/tests');
     $test_case->login($t, 'percival');
-    $t->ua->max_redirects(5);
 };
 
 subtest 'Default is light theme with seasonal decorations enabled during October' => sub {
