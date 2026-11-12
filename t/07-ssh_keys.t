@@ -5,7 +5,7 @@
 use Test::Most;
 
 use FindBin;
-use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
+use lib "$FindBin::Bin/lib", "$FindBin::Bin/../lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Utils;
 require OpenQA::Test::Database;
 use OpenQA::Test::TimeLimit '10';
@@ -28,11 +28,11 @@ subtest 'create ssh key with fingerprint and title' => sub {
 };
 
 subtest 'fingerprint is unique' => sub {
-    my $duplicate = eval {
+    throws_ok {
         $ssh_keys->create(
             {user_id => $arthur->id, public_key => $public_key, fingerprint => 'SHA256:abc', title => 'copy'});
-    };
-    ok !$duplicate, 'duplicate fingerprint is rejected by the database';
+    }
+    qr/ssh_keys_fingerprint/, 'duplicate fingerprint violates the unique constraint';
 };
 
 subtest 'anonymizing a user deletes their ssh keys' => sub {
