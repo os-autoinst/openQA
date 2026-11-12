@@ -5,31 +5,18 @@ package OpenQA::WebAPI::Controller::SshKey;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use OpenQA::Constants 'API_KEY_COMMENT_MAX_LENGTH';
-use OpenQA::SSHKey 'parse_public_key';
+
+my %ERROR_MESSAGE = (duplicate => 'This SSH key is already registered', invalid => 'Invalid SSH public key');
 
 sub create ($self) {
     my $validation = $self->validation;
     $validation->required('public_key');
     $validation->required('title')->size(1, API_KEY_COMMENT_MAX_LENGTH);
-    my $error;
-    if ($validation->has_error) {
-        $error = 'A public key and a title are required';
-    }
-    elsif (my $parsed = parse_public_key($validation->param('public_key'))) {
-        if ($self->schema->resultset('SshKeys')->search({fingerprint => $parsed->{fingerprint}})->count) {
-            $error = 'This SSH key is already registered';
-        }
-        else {
-            $self->current_user->ssh_keys->create(
-                {
-                    public_key => $parsed->{public_key},
-                    fingerprint => $parsed->{fingerprint},
-                    title => $validation->param('title'),
-                });
-        }
-    }
-    else {
-        $error = 'Invalid SSH public key';
+    my $error = $validation->has_error ? 'A public key and a title are required' : undef;
+    if (!$error) {
+        my (undef, $reason)
+          = $self->current_user->add_ssh_key($validation->param('public_key'), $validation->param('title'));
+        $error = $ERROR_MESSAGE{$reason} if $reason;
     }
     $self->flash(error => "Error adding the SSH key: $error") if $error;
     $self->redirect_to('api_keys');

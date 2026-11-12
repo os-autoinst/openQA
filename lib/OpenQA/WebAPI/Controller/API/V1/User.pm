@@ -8,7 +8,6 @@ use Feature::Compat::Try;
 use List::Util qw(min);
 use OpenQA::App;
 use OpenQA::Constants 'API_KEY_COMMENT_MAX_LENGTH';
-use OpenQA::SSHKey 'parse_public_key';
 
 =pod
 
@@ -243,20 +242,10 @@ sub create_ssh_key ($self) {
     return $self->render(json => {error => 'public_key and title are required'}, status => 400)
       if $validation->has_error;
 
-    my $parsed = parse_public_key($validation->param('public_key'));
-    return $self->render(json => {error => 'Invalid SSH public key'}, status => 400) unless $parsed;
-
-    my $schema = $self->schema;
-    my $fingerprint = $parsed->{fingerprint};
-    return $self->render(json => {error => 'SSH key already registered'}, status => 409)
-      if $schema->resultset('SshKeys')->search({fingerprint => $fingerprint})->count;
-
-    my $ssh_key = $self->current_user->ssh_keys->create(
-        {
-            public_key => $parsed->{public_key},
-            fingerprint => $fingerprint,
-            title => $validation->param('title'),
-        });
+    my ($ssh_key, $error)
+      = $self->current_user->add_ssh_key($validation->param('public_key'), $validation->param('title'));
+    my %status_for = (duplicate => 409, invalid => 400);
+    return $self->render(json => {error => $error}, status => $status_for{$error}) if $error;
     $self->render(
         json => {
             id => $ssh_key->id,
