@@ -48,9 +48,9 @@
         </tbody>
     </table>
 
-    <h3 class="mt-4">SSH Keys</h3>
+    <h3 class="mt-4">SSH keys</h3>
     <div class="card">
-        <div class="card-header">Add SSH Key</div>
+        <div class="card-header">Add SSH key</div>
         <div class="card-body">
             %= form_for ssh_keys => (id => 'ssh-key-form', method => 'post') => begin
                 <div class="mb-3">
