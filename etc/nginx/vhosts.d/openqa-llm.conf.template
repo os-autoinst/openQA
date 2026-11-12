@@ -22,27 +22,27 @@ server {
     listen 80;
     server_name openqa-llm;
 
+    # LLMs are slow, don't time out early
+    proxy_read_timeout 600s;
+    proxy_connect_timeout 600s;
+    proxy_send_timeout 600s;
+    # a server that is still loading its model answers 503: try the next one
+    # (but not after a timeout, when the request may still be processed)
+    proxy_next_upstream error http_503 non_idempotent;
+
+    # Crucial for "streaming" tokens (Real-time typing)
+    proxy_buffering off;
+    proxy_redirect off;
+
+    # Ensure we pass the real worker IP for logging
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+
+    # Security: Internal network only (Adjust to your subnet)
+    allow 10.0.0.0/8;
+    deny all;
+
     location / {
         proxy_pass http://llm_backend;
-
-        # LLMs are slow, don't time out early
-        proxy_read_timeout 600s;
-        proxy_connect_timeout 600s;
-        proxy_send_timeout 600s;
-        # a server that is still loading its model answers 503: try the next one
-        # (but not after a timeout, when the request may still be processed)
-        proxy_next_upstream error http_503 non_idempotent;
-
-        # Crucial for "streaming" tokens (Real-time typing)
-        proxy_buffering off;
-        proxy_redirect off;
-
-        # Ensure we pass the real worker IP for logging
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-
-        # Security: Internal network only (Adjust to your subnet)
-        allow 10.0.0.0/8;
-        deny all;
     }
 }
