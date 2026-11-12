@@ -1400,9 +1400,9 @@ containers</h3>
 web UI and worker.</p>
 <p>For example the web UI container can be pulled and started using the
 <code>podman</code> container engine:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> run <span class="at">-p</span> 1080:80 <span class="at">-p</span> 1443:443 <span class="at">--rm</span> <span class="at">-it</span> registry.opensuse.org/devel/openqa/containers16.0/openqa_webui:latest</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> run <span class="at">-p</span> 1080:80 <span class="at">-p</span> 1443:443 <span class="at">--rm</span> <span class="at">-it</span> registry.opensuse.org/devel/openqa/containers16.1/openqa_webui:latest</span></code></pre></div>
 <p>The worker container can be pulled and started with:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> run <span class="at">--rm</span> <span class="at">-it</span> registry.opensuse.org/devel/openqa/containers16.0/openqa_worker:latest</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> run <span class="at">--rm</span> <span class="at">-it</span> registry.opensuse.org/devel/openqa/containers16.1/openqa_worker:latest</span></code></pre></div>
 <h3 data-number="2.2.3" id="custom-configuration-for-containers"><span class="header-section-number">2.2.3</span> Custom configuration for
 containers</h3>
 <p>To supply a custom openQA config file, use the <code>-v</code>
@@ -1417,13 +1417,13 @@ openQA with a custom config and certificate:</p>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-v</span> ./container/webui/test-key.pem:/etc/apache2/ssl.key/server.key:z <span class="dt">\</span></span>
 <span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-v</span> ./container/webui/test-cert.pem:/etc/apache2/ssl.crt/ca.crt:z <span class="dt">\</span></span>
 <span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-v</span> ./container/webui/conf/openqa.ini:/data/conf/openqa.ini:z <span class="dt">\</span></span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">--rm</span> <span class="at">-it</span> registry.opensuse.org/devel/openqa/containers16.0/openqa_webui:latest</span></code></pre></div>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">--rm</span> <span class="at">-it</span> registry.opensuse.org/devel/openqa/containers16.1/openqa_webui:latest</span></code></pre></div>
 <p>The same works for the workers container where you most likely want
 to to supply <code>workers.ini</code> and <code>client.conf</code>:</p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> run <span class="dt">\</span></span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-v</span> ./container/worker/conf/workers.ini:/data/conf/workers.ini:z <span class="dt">\</span></span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-v</span> ./container/worker/conf/client.conf:/data/conf/client.conf:z <span class="dt">\</span></span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--rm</span> <span class="at">-it</span> registry.opensuse.org/devel/openqa/containers16.0/openqa_worker:latest</span></code></pre></div>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--rm</span> <span class="at">-it</span> registry.opensuse.org/devel/openqa/containers16.1/openqa_worker:latest</span></code></pre></div>
 <p>This examples assume the working directory is an openQA checkout. To
 avoid doing a checkout, you can also grab the config files from the <a href="https://github.com/os-autoinst/openQA/tree/master/container/webui/conf">webui/conf</a>
 and <a href="https://github.com/os-autoinst/openQA/tree/master/container/worker/conf">worker/conf</a>
@@ -1433,7 +1433,7 @@ directory listings on GitHub.</p>
 commands mentioned there can also be invoked within a container,
 e.g.:</p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> run <span class="dt">\</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>   <span class="at">--rm</span> <span class="at">-it</span> registry.opensuse.org/devel/openqa/containers16.0/openqa_webui:latest <span class="dt">\</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>   <span class="at">--rm</span> <span class="at">-it</span> registry.opensuse.org/devel/openqa/containers16.1/openqa_webui:latest <span class="dt">\</span></span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>   openqa-cli <span class="at">--help</span></span></code></pre></div>
 <p>Check out the <a href="#containerizedsetup">containerized setup
 section</a> for more details.</p>
@@ -8750,16 +8750,16 @@ but it doesn&#39;t matter what you use.</p>
 can also build your own container with the requirements already
 installed.</p>
 <div class="sourceCode" id="cb310"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb310-1"><a href="#cb310-1" aria-hidden="true" tabindex="-1"></a><span class="co">### host </span><span class="al">###</span></span>
-<span id="cb310-2"><a href="#cb310-2" aria-hidden="true" tabindex="-1"></a><span class="ex">distrobox</span> create <span class="at">-i</span> registry.opensuse.org/opensuse/leap:16.0 <span class="at">-n</span> box-openqadev-leap</span>
+<span id="cb310-2"><a href="#cb310-2" aria-hidden="true" tabindex="-1"></a><span class="ex">distrobox</span> create <span class="at">-i</span> registry.opensuse.org/opensuse/leap:16.1 <span class="at">-n</span> box-openqadev-leap</span>
 <span id="cb310-3"><a href="#cb310-3" aria-hidden="true" tabindex="-1"></a><span class="ex">distrobox</span> enter box-openqadev-leap</span>
 <span id="cb310-4"><a href="#cb310-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Tumbleweed:</span></span>
 <span id="cb310-5"><a href="#cb310-5" aria-hidden="true" tabindex="-1"></a><span class="co">#distrobox create -i registry.opensuse.org/opensuse/tumbleweed:latest -n box-openqadev-tw</span></span>
 <span id="cb310-6"><a href="#cb310-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb310-7"><a href="#cb310-7" aria-hidden="true" tabindex="-1"></a><span class="co">### distrobox container </span><span class="al">###</span></span>
 <span id="cb310-8"><a href="#cb310-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb310-9"><a href="#cb310-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Leap 16.0</span></span>
-<span id="cb310-10"><a href="#cb310-10" aria-hidden="true" tabindex="-1"></a><span class="ex">zypper</span> addrepo <span class="at">-G</span> <span class="at">-p</span> 95 https://download.opensuse.org/repositories/devel:/openQA/16.0 devel-openqa <span class="dt">\</span></span>
-<span id="cb310-11"><a href="#cb310-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">&amp;&amp;</span> <span class="ex">zypper</span> addrepo <span class="at">-G</span> <span class="at">-p</span> 95 https://download.opensuse.org/repositories/devel:/openQA:/Leap:/16.0/16.0/ devel-openqa-leap</span>
+<span id="cb310-9"><a href="#cb310-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Leap 16.1</span></span>
+<span id="cb310-10"><a href="#cb310-10" aria-hidden="true" tabindex="-1"></a><span class="ex">zypper</span> addrepo <span class="at">-G</span> <span class="at">-p</span> 95 https://download.opensuse.org/repositories/devel:/openQA/16.1 devel-openqa <span class="dt">\</span></span>
+<span id="cb310-11"><a href="#cb310-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">&amp;&amp;</span> <span class="ex">zypper</span> addrepo <span class="at">-G</span> <span class="at">-p</span> 95 https://download.opensuse.org/repositories/devel:/openQA:/Leap:/16.1/16.1/ devel-openqa-leap</span>
 <span id="cb310-12"><a href="#cb310-12" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb310-13"><a href="#cb310-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Tumbleweed</span></span>
 <span id="cb310-14"><a href="#cb310-14" aria-hidden="true" tabindex="-1"></a><span class="co">#zypper addrepo -G -p 95 https://download.opensuse.org/repositories/devel:/openQA/openSUSE_Tumbleweed devel-openqa</span></span>
