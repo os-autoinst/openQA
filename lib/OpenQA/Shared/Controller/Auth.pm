@@ -85,20 +85,13 @@ sub _auth ($self) {
 
     # No session (probably not a browser)
     if (!$user) {
-        # Personal access token
-        if (($self->req->headers->authorization // '') =~ /^Bearer\s+(.+)$/) {
-            ($user, $reason) = $self->_token_auth($reason, $1);
+        # Personal access token, SSH key signature or API key
+        if (my $token = $self->_personal_access_token) {
+            ($user, $reason) = $self->_token_auth($reason, $token);
         }
-        elsif (my $userinfo = $self->req->url->to_abs->userinfo) {
-            ($user, $reason) = $self->_token_auth($reason, $userinfo);
-        }
-
-        # SSH key signature
         elsif (my $fingerprint = $self->req->headers->header('X-SSH-Key-Fingerprint')) {
             ($user, $reason) = $self->_ssh_auth($reason, $fingerprint);
         }
-
-        # API key
         elsif (my $key = $self->req->headers->header('X-API-Key')) {
             ($user, $reason) = $self->_key_auth($reason, $key);
         }
@@ -120,6 +113,11 @@ sub _auth ($self) {
 
     $self->stash(auth_error => $reason);
     return 0;
+}
+
+sub _personal_access_token ($self) {
+    return $1 if (($self->req->headers->authorization // '') =~ /^Bearer\s+(.+)$/);
+    return $self->req->url->to_abs->userinfo;
 }
 
 sub auth_operator ($self) {
