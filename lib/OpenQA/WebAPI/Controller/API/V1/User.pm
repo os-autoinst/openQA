@@ -237,8 +237,7 @@ whose fingerprint is already registered.
 
 sub create_ssh_key ($self) {
     my $validation = $self->validation;
-    $validation->required('public_key');
-    $validation->required('title')->size(1, API_KEY_COMMENT_MAX_LENGTH);
+    $self->validate_ssh_key_params($validation);
     return $self->render(json => {error => 'public_key and title are required'}, status => 400)
       if $validation->has_error;
 

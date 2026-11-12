@@ -51,6 +51,14 @@ subtest 'invalid input is rejected' => sub {
       ->status_is(409, 'key already registered to a user is rejected');
 };
 
+subtest 'title length limit' => sub {
+    my $ok = 'x' x 255;
+    $t->post_ok('/api/v1/users/me/ssh_keys' => form => {public_key => $public_key, title => $ok})
+      ->status_is(409, 'title at the limit passes validation, key is then reported as already registered');
+    $t->post_ok('/api/v1/users/me/ssh_keys' => form => {public_key => $public_key, title => 'x' x 256})
+      ->status_is(400, 'title over the limit is rejected');
+};
+
 subtest 'delete ssh key' => sub {
     my $id = $t->get_ok('/api/v1/users/me/ssh_keys')->tx->res->json->{keys}[0]{id};
     $t->delete_ok("/api/v1/users/me/ssh_keys/$id")->status_is(200, 'key is deleted');

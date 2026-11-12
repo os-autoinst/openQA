@@ -4,14 +4,12 @@
 package OpenQA::WebAPI::Controller::SshKey;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
 
-use OpenQA::Constants 'API_KEY_COMMENT_MAX_LENGTH';
 
 my %ERROR_MESSAGE = (duplicate => 'This SSH key is already registered', invalid => 'Invalid SSH public key');
 
 sub create ($self) {
     my $validation = $self->validation;
-    $validation->required('public_key');
-    $validation->required('title')->size(1, API_KEY_COMMENT_MAX_LENGTH);
+    $self->validate_ssh_key_params($validation);
     my $error = $validation->has_error ? 'A public key and a title are required' : undef;
     if (!$error) {
         my (undef, $reason)
