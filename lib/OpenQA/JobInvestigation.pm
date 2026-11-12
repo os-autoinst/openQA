@@ -225,25 +225,21 @@ sub failure_window_start ($job) {
     return ($job->t_started || DateTime->now)->subtract(days => JOB_INVESTIGATE_FAILURE_WINDOW_DAYS)->epoch;
 }
 
-# lists commits to the files of the $selections (git log options) between the last good and this job, or else
-# within the window before this job started; returns a message instead if git failed
-sub failure_log ($dir, $self_hash, $prev_hash, $selections, %options) {
+# lists commits to the $files between the last good and this job, or else within the window before this job
+# started; returns $none if there are none or a message if git failed
+sub failure_log ($dir, $self_hash, $prev_hash, $files, $none, %options) {
+    return $none unless @$files;
     my $deadline = $options{deadline};
-    my %git = (limit => $options{limit}, abbrev => 10);
+    my %git = (limit => $options{limit}, abbrev => 10, paths => [map { ":(literal)$_" } @$files]);
     my $has_range = git_has_commit($deadline, $dir, $prev_hash);
     my $range = $has_range ? "$prev_hash..$self_hash" : $self_hash;
     $git{since} = $options{since} unless $has_range;
-    my $log = '';
-    for my $selection (@$selections) {
-        my $left = $deadline - time;
-        return git_failure_message(RETURN_CODE_TIMEOUT_EXCEEDED) if $left <= 0;
-        my $failed;
-        $log .= git_log_diff($dir, $range, %git, timeout => $left, failed => \$failed, %$selection);
-        return git_failure_message($failed) if $failed;
-    }
-    my %seen;
-    $log = join '', grep { !$seen{/^(\S+)/ ? $1 : ''}++ } split /(?=^[0-9a-f]{10} )/m, $log;
-    return $log ? annotate_pull_requests($dir, $log, $range, since => $git{since}, deadline => $deadline) : '';
+    my $left = $deadline - time;
+    return git_failure_message(RETURN_CODE_TIMEOUT_EXCEEDED) if $left <= 0;
+    my $failed;
+    my $log = git_log_diff($dir, $range, %git, timeout => $left, failed => \$failed);
+    return git_failure_message($failed) if $failed;
+    return $log ? annotate_pull_requests($dir, $log, $range, since => $git{since}, deadline => $deadline) : $none;
 }
 
 # commits to the files named in the stack traces and to the needles of the failed screen steps
@@ -262,13 +258,9 @@ sub failure_investigation ($job, $inv, $self_vars, $prev_vars, %args) {
         my ($tree, $error) = git_tree($deadline, $casedir, $test_hash);
         my $files = $tree ? failed_test_files($tree, $modules) : [];
         splice @$files, JOB_INVESTIGATE_FAILURE_FILES_MAX;
-        my @selections = ({paths => [map { ":(literal)$_" } @$files]});
-        $inv->{failure_test_log}
-          = $error
-          || (@$files ? failure_log($casedir, $test_hash, $prev_test, \@selections, %log) : '')
-          || 'No recent changes to the test files involved in the failure'
-          if $error
-          || @$files;
+        my $none = 'No recent changes to the test files involved in the failure';
+        $inv->{failure_test_log} = $error || failure_log($casedir, $test_hash, $prev_test, $files, $none, %log)
+          if $error || @$files;
     }
     if (@$needles || @$tags) {
         my ($tree, $error) = git_tree($deadline, $needles_dir, $needles_hash);
@@ -277,11 +269,9 @@ sub failure_investigation ($job, $inv, $self_vars, $prev_vars, %args) {
           if $tree && @$tags;
         my $files = $tree && !$error ? failed_needle_files($tree, $needles, $tagged) : [];
         splice @$files, JOB_INVESTIGATE_FAILURE_FILES_MAX;
-        my @selections = ({paths => [map { ":(literal)$_" } @$files]});
+        my $none = 'No recent changes to the needles involved in the failure';
         $inv->{failure_needles_log}
-          = $error
-          || (@$files ? failure_log($needles_dir, $needles_hash, $prev_needles, \@selections, %log) : '')
-          || 'No recent changes to the needles involved in the failure';
+          = $error || failure_log($needles_dir, $needles_hash, $prev_needles, $files, $none, %log);
     }
 }
 
