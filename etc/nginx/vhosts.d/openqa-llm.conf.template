@@ -7,6 +7,12 @@
 #    workers that are running the openQA-llm-server.
 # 3. Adjust the 'allow' directive to match your internal network.
 # 4. Reload nginx: systemctl reload nginx
+#
+# For workers that are running the openQA-llm-decision-server, uncomment the
+# 'llm_decision_backend' upstream block and the '/v1/systemone' location, and
+# list these workers in that block. In a copy of an older template, first move
+# the proxy settings and the access rule from 'location /' to the server block
+# as below: the '/v1/systemone' location sets none of its own.
 
 upstream llm_backend {
     # openqa-llm-investigate names the job in X-Openqa-Job: keep all requests of
@@ -17,6 +23,13 @@ upstream llm_backend {
     server openqaworker1:8080 max_fails=3 fail_timeout=30s;
     # server openqaworker2:8080 max_fails=3 fail_timeout=30s;
 }
+
+# upstream llm_decision_backend {
+#     # a job sends one long request and the servers keep no prompt cache
+#     least_conn;
+#     server openqaworker1:8081 max_fails=3 fail_timeout=30s;
+#     # server openqaworker2:8081 max_fails=3 fail_timeout=30s;
+# }
 
 server {
     listen 80;
@@ -45,4 +58,8 @@ server {
     location / {
         proxy_pass http://llm_backend;
     }
+
+    # location = /v1/systemone {
+    #     proxy_pass http://llm_decision_backend;
+    # }
 }

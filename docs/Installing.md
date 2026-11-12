@@ -909,6 +909,16 @@ tested with build b12199. Podman pulls only a missing image, so update an older
 one with `podman pull ghcr.io/ggml-org/llama.cpp:server`; the LLM server runs
 the same image and uses the new one from its next start.
 
+To reach the decision server through the same proxy, uncomment the
+`llm_decision_backend` upstream block and the `/v1/systemone` location inside
+`openqa-llm.conf` and list your workers with that server in the block; the
+endpoint is then `/v1/systemone` under the name of the proxy, e.g.
+`http://openqa-llm/v1/systemone`. A copy made from an older template has
+neither and keeps the timeouts, the headers and the access rule inside
+`location /`: take the two over from the new template and move these settings
+into the `server` block as there, as the `/v1/systemone` location sets none of
+its own.
+
 To allow workers to access your instance, you need to log into openQA as
 operator and create a pair of API key and secret. Once you are logged in, in the
 top right corner, is the user menu, follow the link 'Manage API keys'. Click
