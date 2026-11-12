@@ -10,6 +10,7 @@ use OpenQA::Constants 'DEFAULT_ADMIN';
 use Mojo::Util qw(hmac_sha1_sum secure_compare);
 use Mojo::URL;
 use Time::Seconds;
+use DateTime;
 use OpenQA::SSHKey qw(signature_payload verify_signature);
 
 sub _auth_method_is_none ($self) { ($self->app->config->{auth}->{method} // '') eq 'None' }

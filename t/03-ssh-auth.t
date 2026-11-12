@@ -100,7 +100,8 @@ subtest 'body must match the signed payload' => sub {
 
 subtest 'mixing SSH and API-key headers is rejected' => sub {
     my $headers = {%{ssh_headers('arthur', $whoami)}, 'X-API-Key' => 'ARTHURKEY01', 'X-API-Hash' => 'x'};
-    $t->get_ok($whoami, $headers)->status_is(403, 'request carrying both auth schemes is rejected');
+    $t->get_ok($whoami, $headers)->status_is(403, 'request carrying both auth schemes is rejected')
+      ->json_is('/error', 'SSH and API key authentication cannot be combined', 'rejection names the conflict');
 };
 
 done_testing();
