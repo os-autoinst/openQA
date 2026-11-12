@@ -89,8 +89,25 @@
     margin: 0;
   }
 }
-[data-bs-theme='dark'] .comment-body .comment-anchor {
-  color: rgb(152, 152, 152);
+[data-bs-theme='dark'] .comment-body {
+  .comment-anchor {
+    color: rgb(152, 152, 152);
+  }
+  .openqa-bugref, .openqa-testref {
+    background-color: #1c1c1c;
+    color: #bbb;
+    border-color: #3a3a3a;
+  }
+  .openqa-label {
+    background-color: #3a3912;
+    color: #e8e6a8;
+    border-color: #55531b;
+  }
+  .openqa-flag {
+    background-color: #402c0b;
+    color: #f2d3a0;
+    border-color: #634718;
+  }
 }
 .comment-row {
   align-items: center;
