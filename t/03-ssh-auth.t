@@ -46,7 +46,7 @@ $lancelot->ssh_keys->create(
 sub ssh_headers ($user, $path, %opts) {
     my $timestamp = $opts{timestamp} // time;
     my $body = $opts{body} // '';
-    my $payload = signature_payload($path, $timestamp, $body);
+    my $payload = signature_payload($opts{method} // 'GET', $path, $timestamp, $body);
     my $signature = sign_payload($keys{$user}{private}, $payload);
     return {
         'X-SSH-Key-Fingerprint' => $keys{$user}{parsed}{fingerprint},
@@ -67,7 +67,7 @@ subtest 'valid signature authenticates' => sub {
 subtest 'operator route enforces operator rights for SSH auth' => sub {
     my $body = '{}';
     my $post = sub ($user) {
-        my $headers = ssh_headers($user, $operator_route, body => $body);
+        my $headers = ssh_headers($user, $operator_route, method => 'POST', body => $body);
         $t->post_ok($operator_route, {%$headers, 'Content-Type' => 'application/json'}, $body);
     };
     $post->('arthur')->status_isnt(403, 'operator passes the operator gate via SSH')
@@ -80,6 +80,13 @@ subtest 'forward auth verifies the signature over X-Original-URI' => sub {
     my $headers = ssh_headers('arthur', $original);
     $t->get_ok($whoami, {%$headers, 'X-Original-URI' => $original})
       ->status_is(200, 'signature over the original request target is accepted');
+};
+
+subtest 'signature is bound to the HTTP method' => sub {
+    my $headers = ssh_headers('arthur', $operator_route, method => 'GET');
+    $t->post_ok($operator_route, {%$headers, 'Content-Type' => 'application/json'}, '{}')
+      ->status_is(403, 'GET signature is rejected for a POST to the same path')
+      ->json_is('/error', 'invalid SSH signature', 'rejection is the signature check');
 };
 
 subtest 'invalid SSH authentication is rejected' => sub {
@@ -100,7 +107,7 @@ subtest 'invalid SSH authentication is rejected' => sub {
 };
 
 subtest 'body must match the signed payload' => sub {
-    my $headers = ssh_headers('arthur', $operator_route, body => '{}');
+    my $headers = ssh_headers('arthur', $operator_route, method => 'POST', body => '{}');
     $t->post_ok($operator_route, {%$headers, 'Content-Type' => 'application/json'}, '{"tampered":1}')
       ->status_is(403, 'signature over a different body is rejected');
 };

@@ -157,7 +157,7 @@ sub _ssh_auth ($self, $reason, $fingerprint) {
 
     my $url = $self->req->url;
     my $msg = $self->_signed_request_target;
-    my $payload = signature_payload($self->_base_path . $msg, $remote_timestamp, $self->req->body);
+    my $payload = signature_payload($self->req->method, $self->_base_path . $msg, $remote_timestamp, $self->req->body);
     return (undef, 'invalid SSH signature')
       unless verify_signature($ssh_key->public_key, $payload, $headers->header('X-SSH-Signature'));
 
