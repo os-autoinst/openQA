@@ -92,11 +92,13 @@ sub is_deleted ($self) { defined $self->deleted_at }
 
 sub add_ssh_key ($self, $public_key, $title) {
     my $parsed = parse_public_key($public_key) or return (undef, 'invalid');
-    return (undef, 'duplicate')
-      if $self->result_source->schema->resultset('SshKeys')->search({fingerprint => $parsed->{fingerprint}})->count;
-    my $ssh_key = $self->ssh_keys->create(
-        {public_key => $parsed->{public_key}, fingerprint => $parsed->{fingerprint}, title => $title});
-    return ($ssh_key, undef);
+    my $ssh_key = eval {
+        $self->ssh_keys->create(
+            {public_key => $parsed->{public_key}, fingerprint => $parsed->{fingerprint}, title => $title});
+    };
+    return ($ssh_key, undef) if $ssh_key;
+    die $@ unless $@ =~ /ssh_keys_fingerprint/;
+    return (undef, 'duplicate');
 }
 
 sub anonymize ($self) {
