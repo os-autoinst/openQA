@@ -33,6 +33,79 @@ is_deeply
 
 $t->delete_ok('/api/v1/user/99999')->status_is(404, 'a non-existent user cannot be deleted');
 
+subtest 'list users' => sub {
+    my $res = $t->get_ok('/api/v1/users')->status_is(200, 'admin can list users')->tx->res->json;
+    my $users = $res->{users};
+    ok scalar @$users >= 4, 'all users returned in default query';
+    my ($arthur) = grep { $_->{id} == 99901 } @$users;
+    ok $arthur, 'arthur user found';
+    is $arthur->{username}, 'arthur', 'arthur username matches';
+    is $arthur->{nickname}, 'artie', 'arthur nickname matches';
+    is $arthur->{fullname}, 'King Arthur', 'arthur fullname matches';
+    is $arthur->{email}, 'arthur@example.com', 'arthur email matches';
+    is $arthur->{is_operator}, 1, 'arthur is operator';
+    is $arthur->{is_admin}, 1, 'arthur is admin';
+    is $arthur->{deleted_at}, undef, 'arthur is not deleted';
+    like $arthur->{t_created}, qr/^\d{4}-\d{2}-\d{2}/, 'arthur has formatted t_created';
+    like $arthur->{t_updated}, qr/^\d{4}-\d{2}-\d{2}/, 'arthur has formatted t_updated';
+
+    my ($demo) = grep { $_->{id} == 99904 } @$users;
+    ok $demo, 'demo user found';
+    is $demo->{username}, 'deleted-user-99904', 'demo username is anonymized';
+    is $demo->{nickname}, undef, 'demo nickname is null';
+    is $demo->{fullname}, undef, 'demo fullname is null';
+    is $demo->{email}, undef, 'demo email is null';
+    is $demo->{is_operator}, 0, 'demo is not operator';
+    is $demo->{is_admin}, 0, 'demo is not admin';
+    like $demo->{deleted_at}, qr/^\d{4}-\d{2}-\d{2}/, 'demo has formatted deleted_at';
+
+    my $active_users
+      = $t->get_ok('/api/v1/users?deleted=0')->status_is(200, 'list active users')->tx->res->json->{users};
+    ok !(grep { defined $_->{deleted_at} } @$active_users), 'no deleted users in deleted=0 query';
+    ok scalar(grep { $_->{id} == 99901 } @$active_users), 'active user 99901 present in deleted=0 query';
+    ok !scalar(grep { $_->{id} == 99904 } @$active_users), 'deleted user 99904 absent from deleted=0 query';
+
+    my $deleted_users
+      = $t->get_ok('/api/v1/users?deleted=1')->status_is(200, 'list deleted users')->tx->res->json->{users};
+    ok !(grep { !defined $_->{deleted_at} } @$deleted_users), 'only deleted users in deleted=1 query';
+    ok scalar(grep { $_->{id} == 99904 } @$deleted_users), 'deleted user 99904 present in deleted=1 query';
+    ok !scalar(grep { $_->{id} == 99901 } @$deleted_users), 'active user 99901 absent from deleted=1 query';
+
+    my $paged_users
+      = $t->get_ok('/api/v1/users?limit=2&offset=0')->status_is(200, 'list users with limit 2')->tx->res->json->{users};
+    is scalar @$paged_users, 2, 'limit 2 returns 2 users';
+    is $paged_users->[0]{id}, 1, 'first user in page is 1';
+    is $paged_users->[1]{id}, 99901, 'second user in page is 99901';
+    my $links = $t->tx->res->headers->links;
+    ok $links->{first}, 'has first link in header';
+    ok $links->{next}, 'has next link in header';
+
+    my $offset_users = $t->get_ok('/api/v1/users?limit=2&offset=2')->status_is(200, 'list users with offset 2')
+      ->tx->res->json->{users};
+    is scalar @$offset_users, 2, 'offset 2 returns 2 users';
+    is $offset_users->[0]{id}, 99902, 'first user in offset page is 99902';
+    is $offset_users->[1]{id}, 99903, 'second user in offset page is 99903';
+    $links = $t->tx->res->headers->links;
+    ok $links->{prev}, 'has prev link in header';
+
+    my $empty_page = $t->get_ok('/api/v1/users?limit=10&offset=100')->status_is(200, 'list users beyond range')
+      ->tx->res->json->{users};
+    is scalar @$empty_page, 0, 'offset beyond total returns empty array';
+
+    $t->get_ok('/api/v1/users?limit=foo')->status_is(400, 'invalid limit rejected');
+    $t->get_ok('/api/v1/users?offset=foo')->status_is(400, 'invalid offset rejected');
+    $t->get_ok('/api/v1/users?deleted=2')->status_is(400, 'invalid deleted flag rejected');
+
+    my $non_admin_t = Test::Mojo->new('OpenQA::WebAPI');
+    $non_admin_t->ua(
+        OpenQA::Client->new(apikey => 'LANCELOTKEY01', apisecret => 'MANYPEOPLEKNOW')->ioloop(Mojo::IOLoop->singleton));
+    $non_admin_t->app($app);
+    $non_admin_t->get_ok('/api/v1/users')->status_is(403, 'non-admin forbidden from listing users');
+
+    my $unauth_t = Test::Mojo->new('OpenQA::WebAPI');
+    $unauth_t->get_ok('/api/v1/users')->status_is(403, 'unauthenticated client forbidden from listing users');
+};
+
 $t->ua(OpenQA::Client->new(apikey => 'LANCELOTKEY01', apisecret => 'MANYPEOPLEKNOW')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 $t->delete_ok('/api/v1/user/99904')->status_is(403, 'non-admins cannot delete users');
