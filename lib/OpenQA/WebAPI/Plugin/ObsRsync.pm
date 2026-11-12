@@ -479,6 +479,10 @@ sub _check_error ($home, $alias, $subfolder = undef, $filename = undef) {
     return (HTTP_NOT_FOUND, "Invalid Project {$project}") if $project && !-d Mojo::File->new($home, $project);
     return (HTTP_NOT_FOUND, "Invalid Batch {$project|$batch}")
       if $project && $batch && !-d Mojo::File->new($home, $project, $batch);
+    return (HTTP_NOT_FOUND, "Invalid Subfolder {$subfolder}")
+      if $subfolder && !-d Mojo::File->new($home, $project, $batch, $subfolder);
+    return (HTTP_NOT_FOUND, "Invalid Filename {$filename}")
+      if $filename && !-f Mojo::File->new($home, $project, $batch, $subfolder, $filename);
     return 0;
 }
 
