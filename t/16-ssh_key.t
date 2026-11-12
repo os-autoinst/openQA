@@ -33,15 +33,16 @@ subtest 'parse_public_key' => sub {
 };
 
 subtest 'signature_payload' => sub {
-    is signature_payload('/api/v1/jobs', 1_700_000_000, ''),
-      "/api/v1/jobs\n1700000000\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      'payload is path, timestamp and sha256 of the empty body';
-    isnt signature_payload('/a', 1, 'x'), signature_payload('/a', 1, 'y'), 'payload depends on the body';
+    is signature_payload('POST', '/api/v1/jobs', 1_700_000_000, ''),
+      "POST\n/api/v1/jobs\n1700000000\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      'payload is method, path, timestamp and sha256 of the empty body';
+    isnt signature_payload('POST', '/a', 1, 'x'), signature_payload('POST', '/a', 1, 'y'),
+      'payload depends on the body';
 };
 
 for my $type (sort keys %keys) {
     subtest "sign and verify with $type key" => sub {
-        my $payload = signature_payload('/api/v1/jobs', 1_700_000_000, 'body');
+        my $payload = signature_payload('POST', '/api/v1/jobs', 1_700_000_000, 'body');
         my $encoded = sign_payload($keys{$type}{private}, $payload);
         unlike $encoded, qr/\s/, 'encoded signature is a single header-safe token';
         my $public = parse_public_key($keys{$type}{public})->{public_key};

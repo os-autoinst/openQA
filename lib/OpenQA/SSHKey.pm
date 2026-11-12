@@ -24,13 +24,15 @@ sub parse_public_key ($text) {
     return {public_key => $public_key, fingerprint => $fingerprint};
 }
 
-sub signature_payload ($request_path, $timestamp, $body) {
-    join "\n", $request_path, $timestamp, sha256_hex($body // '');
+sub signature_payload ($method, $request_path, $timestamp, $body) {
+    join "\n", $method, $request_path, $timestamp, sha256_hex($body // '');
 }
 
 sub sign_payload ($private_key_file, $payload) {
     my $out = _run([qw(ssh-keygen -Y sign -n), NAMESPACE, '-f', $private_key_file], $payload);
-    return $out->{ok} ? encode_base64($out->{stdout}, '') : undef;
+    return encode_base64($out->{stdout}, '') if $out->{ok};
+    chomp(my $reason = $out->{stderr} // 'unknown error');
+    die qq{Signing with SSH key "$private_key_file" failed: $reason\n};
 }
 
 sub verify_signature ($public_key, $payload, $encoded_signature) {

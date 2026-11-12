@@ -22,18 +22,36 @@ my $parsed = parse_public_key(path("$dir/id.pub")->slurp);
 subtest 'ssh key signs the request path, timestamp and body' => sub {
     my $headers = Mojo::Headers->new;
     my $url = Mojo::URL->new('/api/v1/jobs?limit=2');
-    OpenQA::UserAgent::add_ssh_auth_headers($headers, $url, "$dir/id", '{"a":1}');
+    OpenQA::UserAgent::add_ssh_auth_headers($headers, 'POST', $url, "$dir/id", '{"a":1}');
     is $headers->header('X-SSH-Key-Fingerprint'), $parsed->{fingerprint}, 'fingerprint of the key is sent';
     my $timestamp = $headers->header('X-SSH-Microtime');
     like $timestamp, qr/^\d+$/, 'timestamp is sent';
-    my $payload = signature_payload('/api/v1/jobs?limit=2', $timestamp, '{"a":1}');
+    my $payload = signature_payload('POST', '/api/v1/jobs?limit=2', $timestamp, '{"a":1}');
     ok verify_signature($parsed->{public_key}, $payload, $headers->header('X-SSH-Signature')),
       'signature verifies over path, timestamp and body';
 };
 
+subtest 'missing SSH key file fails with a clear error' => sub {
+    throws_ok {
+        OpenQA::UserAgent::add_ssh_auth_headers(Mojo::Headers->new, 'GET', Mojo::URL->new('/api/v1/jobs'),
+            "$dir/missing", '')
+    }
+    qr{SSH key "$dir/missing" .*cannot be read}, 'error names the unreadable key file';
+};
+
+subtest 'failing ssh-keygen surfaces its reason' => sub {
+    path("$dir/notakey")->spew("garbage\n");
+    path("$dir/notakey.pub")->spew($parsed->{public_key} . "\n");
+    throws_ok {
+        OpenQA::UserAgent::add_ssh_auth_headers(Mojo::Headers->new, 'GET', Mojo::URL->new('/api/v1/jobs'),
+            "$dir/notakey", '')
+    }
+    qr/Signing with SSH key .* failed: .+/, 'signing failure reports the ssh-keygen reason';
+};
+
 subtest 'SSH auth does not send API key headers' => sub {
     my $headers = Mojo::Headers->new;
-    OpenQA::UserAgent::add_ssh_auth_headers($headers, Mojo::URL->new('/api/v1/jobs'), "$dir/id", '');
+    OpenQA::UserAgent::add_ssh_auth_headers($headers, 'GET', Mojo::URL->new('/api/v1/jobs'), "$dir/id", '');
     is $headers->header('X-API-Key'), undef, 'no API key header';
     is $headers->header('X-API-Hash'), undef, 'no API hash header';
 };
