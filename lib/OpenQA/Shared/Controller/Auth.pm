@@ -226,15 +226,18 @@ sub _key_auth ($self, $reason, $key) {
     return (undef, $reason);
 }
 
+sub _base_path ($self) {
+    my $base_url = $self->app->config->{global}->{base_url};
+    return $base_url ? Mojo::URL->new($base_url)->path->leading_slash(0) : '';
+}
+
 sub _valid_hmac ($self, $hash, $request, $our_timestamp, $remote_timestamp, $api_key) {
     return 0 unless defined $hash;
     return 0 unless ($self->_is_timestamp_valid($our_timestamp, $remote_timestamp))[0];
     return 0 if _is_expired($api_key);
     return 0 unless $api_key->secret;
 
-    my $base_url = $self->app->config->{global}->{base_url};
-    my $base_path = $base_url ? Mojo::URL->new($base_url)->path->leading_slash(0) : '';
-    my $sum = hmac_sha1_sum($base_path . $request . $remote_timestamp, $api_key->secret);
+    my $sum = hmac_sha1_sum($self->_base_path . $request . $remote_timestamp, $api_key->secret);
     return secure_compare($hash, $sum);
 }
 
