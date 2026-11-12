@@ -14,7 +14,7 @@ use OpenQA::Task::SignalGuard;
 use OpenQA::Test::Case;
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::Utils;
-use OpenQA::Schema::Result::Jobs;
+use OpenQA::JobInvestigation;
 use Mojo::File 'tempdir';
 use Test::MockModule;
 use Test::Mojo;
@@ -111,27 +111,23 @@ subtest 'invoke Git commands for real testing error handling' => sub {
           'no error (only info) logged if check returns false (despite Git returning 1)';
     };
 
-    subtest 'log diff computation helper of job' => sub {
+    subtest 'log diff computation helpers' => sub {
         my $msg = 'commit msg';
-        like OpenQA::Schema::Result::Jobs::git_log_diff(undef, $empty_tmp_dir, 'HEAD'), qr/$msg.*testfile/s,
+        like OpenQA::JobInvestigation::git_log_diff($empty_tmp_dir, 'HEAD'), qr/$msg.*testfile/s,
           'git_log_diff - commit and file mentioned';
-        like OpenQA::Schema::Result::Jobs::git_log_diff(undef, $empty_tmp_dir, 'HEAD', stat => '15,10'),
+        like OpenQA::JobInvestigation::git_log_diff($empty_tmp_dir, 'HEAD', stat => '15,10'),
           qr/$msg.*\.\.\.ile.txt/s,
           'git_log_diff - commit and shortened file mentioned';
-        like OpenQA::Schema::Result::Jobs::git_diff(undef, $empty_tmp_dir, 'HEAD', limit => 3), qr/testfile.txt/,
+        like OpenQA::JobInvestigation::git_diff($empty_tmp_dir, 'HEAD', limit => 3), qr/testfile.txt/,
           'git_diff - full filename';
-        like OpenQA::Schema::Result::Jobs::git_diff(undef, $empty_tmp_dir, 'HEAD', limit => 3, stat => '15,10'),
+        like OpenQA::JobInvestigation::git_diff($empty_tmp_dir, 'HEAD', limit => 3, stat => '15,10'),
           qr/\.\.\.ile.txt/, 'git_diff - filename shortened';
         my $failed;
-        like OpenQA::Schema::Result::Jobs::git_log_diff(
-            undef, $empty_tmp_dir, 'HEAD',
-            timeout => 10,
-            failed => \$failed
-          ),
+        like OpenQA::JobInvestigation::git_log_diff($empty_tmp_dir, 'HEAD', timeout => 10, failed => \$failed),
           qr/$msg/, 'git_log_diff - commit mentioned with timeout';
         ok !$failed, 'no failure reported on success';
         combined_like {
-            OpenQA::Schema::Result::Jobs::git_log_diff(undef, $empty_tmp_dir, 'unknown-ref', failed => \$failed)
+            OpenQA::JobInvestigation::git_log_diff($empty_tmp_dir, 'unknown-ref', failed => \$failed)
         }
         qr/cmd returned 128/, 'failure logged';
         is $failed, 128, 'return code of failed git reported';

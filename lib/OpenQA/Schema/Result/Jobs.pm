@@ -5,20 +5,17 @@ package OpenQA::Schema::Result::Jobs;
 
 use Mojo::Base 'DBIx::Class::Core', -signatures;
 use Fcntl;
-use DateTime;
 use OpenQA::Constants qw(WORKER_COMMAND_ABORT WORKER_COMMAND_CANCEL);
 use OpenQA::Log qw(log_trace log_debug log_info log_warning log_error redact_settings);
 use OpenQA::Utils (
     qw(create_git_clone_list parse_assets_from_settings locate_asset),
     qw(resultdir assetdir read_test_modules find_bugref random_string effective_distri),
-    qw(run_cmd_with_log_return_error needledir testcasedir git_commit_url find_video_files)
+    qw(needledir testcasedir git_commit_url find_video_files)
 );
 use OpenQA::App;
 use OpenQA::Constants qw(DOWNLOAD_PERMISSION);
 use OpenQA::Jobs::Constants;
-use OpenQA::JobInvestigation
-  qw(RETURN_CODE_TIMEOUT_EXCEEDED git_has_commit git_failure_message git_tree tagged_needles),
-  qw(annotate_pull_requests failed_test_files failed_needle_files);
+use OpenQA::JobInvestigation qw(git_log_diff git_diff failure_investigation);
 use OpenQA::JobDependencies::Constants;
 use OpenQA::Markdown 'markdown_to_html';
 use OpenQA::Setup;
@@ -55,10 +52,6 @@ use constant SCENARIO_WITH_MACHINE_KEYS => (SCENARIO_KEYS, 'MACHINE');
 use constant MAIN_SETTINGS => qw(DISTRI VERSION FLAVOR ARCH TEST MACHINE BUILD);
 
 use constant MAX_LENGTH_REASON => 300;
-use constant JOB_INVESTIGATE_GIT_TIMEOUT => 20;
-use constant JOB_INVESTIGATE_FAILURE_WINDOW_DAYS => 5;
-use constant JOB_INVESTIGATE_FAILURE_MODULES_MAX => 3;
-use constant JOB_INVESTIGATE_FAILURE_FILES_MAX => 50;
 
 __PACKAGE__->table('jobs');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime FilterColumn Timestamps));
@@ -1939,145 +1932,6 @@ sub has_autoinst_log ($self) {
     return -e "$result_dir/autoinst-log.txt";
 }
 
-sub git_log_diff ($self, $dir, $refspec_range, %options) {
-    return "Invalid range $refspec_range" if $refspec_range =~ m/UNKNOWN|unreadable git hash/;
-    my $limit = $options{limit};
-    my $stat = $options{stat} // '300,200';
-    my @abbrev = $options{abbrev} ? "--abbrev=$options{abbrev}" : ();
-    my @since = $options{since} ? "--since=$options{since}" : ();
-    my @pickaxe = $options{pickaxe} ? "-G$options{pickaxe}" : ();
-    my @paths = $options{paths} ? ('--', @{$options{paths}}) : ();
-    my @timeout = $options{timeout} ? ('timeout', $options{timeout}) : ();
-    my $res = run_cmd_with_log_return_error(
-        [
-            @timeout, 'git', '-C', $dir, 'log', ($limit ? "-$limit" : ()),
-            "--stat=$stat", '--pretty=oneline',
-            '--abbrev-commit', @abbrev, '--no-merges', @since, @pickaxe, $refspec_range, @paths
-        ],
-        stdout => 'trace'
-    );
-    ${$options{failed}} = $res->{return_code} // 255 if $options{failed} && !$res->{status};
-    # regardless of success or not the output contains the information we need
-    return $res->{stdout} . $res->{stderr};
-}
-
-sub git_diff ($self, $dir, $refspec_range, %options) {
-    return "Invalid range $refspec_range" if $refspec_range =~ m/UNKNOWN|unreadable git hash/;
-    my $limit = $options{limit} // 0;
-    my $stat = $options{stat} // '300,200';
-    my $timeout = OpenQA::App->singleton->config->{global}->{job_investigate_git_timeout}
-      // JOB_INVESTIGATE_GIT_TIMEOUT;
-    my $cmd = ['git', '-C', $dir, 'rev-list', '--count', $refspec_range];
-    my $res = run_cmd_with_log_return_error($cmd);
-    my $out = $res->{stdout} . $res->{stderr};
-    if ($res->{return_code}) {
-        return "Cannot display diff: $1" if $res->{stderr} =~ m/(invalid revision range)/i;
-        log_warning "Problem with [@$cmd] rc=$res->{return_code}: $out";
-        return 'Cannot display diff because of a git problem';
-    }
-    chomp(my $count = $res->{stdout});
-    if ($count =~ tr/0-9//c) {
-        log_warning "Problem with [@$cmd]: returned non-numeric string '$count'";
-        return 'Cannot display diff because of a git problem';
-    }
-    return "Too many commits ($count) to create a diff between $refspec_range (maximum: $limit)" if $count > $limit;
-
-    $cmd = ['timeout', $timeout, 'git', '-C', $dir, 'diff', "--stat=$stat", $refspec_range];
-    $res = run_cmd_with_log_return_error($cmd, stdout => 'trace');
-    $out = $res->{stdout} . $res->{stderr};
-    if (my $return_code = $res->{return_code}) {
-        my $is_timeout = $return_code == RETURN_CODE_TIMEOUT_EXCEEDED;
-        log_warning "Problem with [@$cmd] rc=$return_code: $out" unless $is_timeout;
-        return $is_timeout ? 'Computing diff timed out' : 'Cannot display diff because of a git problem';
-    }
-    return $out;
-}
-
-# returns the test code paths, needle paths and tags involved in the failed modules, found via their stack
-# traces and failed screen steps, as array references; for the test code as per module [trace paths, script]
-sub _failed_module_inputs ($self) {
-    my (@modules, @needles, @tags);
-    my %attrs = (order_by => 't_updated', rows => JOB_INVESTIGATE_FAILURE_MODULES_MAX);
-    my $modules = $self->modules->search({result => 'failed'}, \%attrs);
-    while (my $module = $modules->next) {
-        my @steps = grep { ($_->{result} // '') eq 'fail' } @{$module->results->{details} // []};
-        my @traced = map { /(\S+\.(?:pm|py)) line \d+/g } map { $_->{text_data} // () } @steps;
-        push @modules, [\@traced, $module->script];
-        for my $step (@steps) {
-            push @needles, map { $_->{json} // () } @{$step->{needles} // []};
-            my @missing = ($step->{text_data} // '') =~ /no candidate needle with tag\(s\) '([^']+)'/g;
-            push @tags, grep { /^[A-Za-z0-9_.:+-]+$/ } @{$step->{tags} // []}, map { split /[\s,]+/ } @missing;
-        }
-    }
-    return \@modules, [uniq @needles], [uniq @tags];
-}
-
-sub _failure_window_start ($self) {
-    return ($self->t_started || DateTime->now)->subtract(days => JOB_INVESTIGATE_FAILURE_WINDOW_DAYS)->epoch;
-}
-
-# lists commits to the files of the $selections (git log options) between the last good and this job, or else
-# within the window before this job started; returns a message instead if git failed
-sub _failure_log ($self, $dir, $self_hash, $prev_hash, $selections, %options) {
-    my $deadline = $options{deadline};
-    my %git = (limit => $options{limit}, abbrev => 10);
-    my $has_range = git_has_commit($deadline, $dir, $prev_hash);
-    my $range = $has_range ? "$prev_hash..$self_hash" : $self_hash;
-    $git{since} = $self->_failure_window_start unless $has_range;
-    my $log = '';
-    for my $selection (@$selections) {
-        my $left = $deadline - time;
-        return git_failure_message(RETURN_CODE_TIMEOUT_EXCEEDED) if $left <= 0;
-        my $failed;
-        $log .= $self->git_log_diff($dir, $range, %git, timeout => $left, failed => \$failed, %$selection);
-        return git_failure_message($failed) if $failed;
-    }
-    my %seen;
-    $log = join '', grep { !$seen{/^(\S+)/ ? $1 : ''}++ } split /(?=^[0-9a-f]{10} )/m, $log;
-    return $log ? annotate_pull_requests($dir, $log, $range, since => $git{since}, deadline => $deadline) : '';
-}
-
-# commits to the files named in the stack traces and to the needles of the failed screen steps
-sub _failure_investigation ($self, $inv, $self_vars, $prev_vars, %args) {
-    return unless $self->has_failed_modules && $self->result_dir && %$self_vars;
-    my $timeout = OpenQA::App->singleton->config->{global}->{job_investigate_git_timeout}
-      // JOB_INVESTIGATE_GIT_TIMEOUT;
-    my $deadline = time + $timeout;
-    my $effective_distri = effective_distri($self_vars);
-    my $casedir = testcasedir($effective_distri, $self->VERSION);
-    my $needles_dir = needledir($effective_distri, $self->VERSION);
-    my ($modules, $needles, $tags) = $self->_failed_module_inputs;
-    my ($test_hash, $needles_hash) = map { $self_vars->{$_} } qw(TEST_GIT_HASH NEEDLES_GIT_HASH);
-    my ($prev_test, $prev_needles) = map { $prev_vars->{$_} } qw(TEST_GIT_HASH NEEDLES_GIT_HASH);
-    my %log = (limit => $args{git_limit}, deadline => $deadline);
-    if (@$modules) {
-        my ($tree, $error) = git_tree($deadline, $casedir, $test_hash);
-        my $files = $tree ? failed_test_files($tree, $modules) : [];
-        splice @$files, JOB_INVESTIGATE_FAILURE_FILES_MAX;
-        my @selections = ({paths => [map { ":(literal)$_" } @$files]});
-        $inv->{failure_test_log}
-          = $error
-          || (@$files ? $self->_failure_log($casedir, $test_hash, $prev_test, \@selections, %log) : '')
-          || 'No recent changes to the test files involved in the failure'
-          if $error
-          || @$files;
-    }
-    if (@$needles || @$tags) {
-        my ($tree, $error) = git_tree($deadline, $needles_dir, $needles_hash);
-        my $tagged = [];
-        my $since = $self->_failure_window_start;
-        ($tagged, $error) = tagged_needles($deadline, $needles_dir, $needles_hash, $prev_needles, $since, $tags)
-          if $tree && @$tags;
-        my $files = $tree && !$error ? failed_needle_files($tree, $needles, $tagged) : [];
-        splice @$files, JOB_INVESTIGATE_FAILURE_FILES_MAX;
-        my @selections = ({paths => [map { ":(literal)$_" } @$files]});
-        $inv->{failure_needles_log}
-          = $error
-          || (@$files ? $self->_failure_log($needles_dir, $needles_hash, $prev_needles, \@selections, %log) : '')
-          || 'No recent changes to the needles involved in the failure';
-    }
-}
-
 =head2 investigate
 
 Find pointers for investigation on failures, e.g. what changed vs. a "last
@@ -2097,7 +1951,7 @@ sub investigate ($self, %args) {
             error => 'No previous job in this scenario, cannot provide hints',
             testgiturl => git_commit_url($vars->{TEST_GIT_URL}),
             needlegiturl => git_commit_url($vars->{NEEDLES_GIT_URL}));
-        $self->_failure_investigation(\%inv, $vars, {}, %args);
+        failure_investigation($self, \%inv, $vars, {}, %args);
         return \%inv;
     }
     my %inv;
@@ -2128,23 +1982,23 @@ sub investigate ($self, %args) {
         my $casedir = testcasedir($effective_distri, $self->VERSION);
         my $refspec_range = "$prev_vars->{TEST_GIT_HASH}..$self_vars->{TEST_GIT_HASH}";
         my $diff_limit = $args{git_limit} ? $args{git_limit} / 2 : undef;
-        $inv{test_log} = $self->git_log_diff($casedir, $refspec_range, limit => $args{git_limit});
+        $inv{test_log} = git_log_diff($casedir, $refspec_range, limit => $args{git_limit});
         $inv{test_log} ||= 'No test changes recorded, test regression unlikely';
-        $inv{test_diff_stat} = $self->git_diff($casedir, $refspec_range, limit => $diff_limit) if $inv{test_log};
+        $inv{test_diff_stat} = git_diff($casedir, $refspec_range, limit => $diff_limit) if $inv{test_log};
         # no need for duplicating needles git log if the git repo is the same
         # as for tests
         if ($self_vars->{TEST_GIT_HASH} ne $self_vars->{NEEDLES_GIT_HASH}) {
             my $needles_dir = needledir($effective_distri, $self->VERSION);
             my $refspec_needles_range = "$prev_vars->{NEEDLES_GIT_HASH}..$self_vars->{NEEDLES_GIT_HASH}";
-            $inv{needles_log} = $self->git_log_diff($needles_dir, $refspec_needles_range, limit => $args{git_limit});
+            $inv{needles_log} = git_log_diff($needles_dir, $refspec_needles_range, limit => $args{git_limit});
             $inv{needles_log} ||= 'No needle changes recorded, test regression due to needles unlikely';
-            $inv{needles_diff_stat} = $self->git_diff($needles_dir, $refspec_needles_range, limit => $diff_limit)
+            $inv{needles_diff_stat} = git_diff($needles_dir, $refspec_needles_range, limit => $diff_limit)
               if $inv{needles_log};
         }
         last;
     }
     $inv{last_good} //= 'not found';
-    $self->_failure_investigation(\%inv, $self_vars, $prev_vars, %args);
+    failure_investigation($self, \%inv, $self_vars, $prev_vars, %args);
     $inv{testgiturl} = git_commit_url($self_vars->{TEST_GIT_URL});
     $inv{needlegiturl} = git_commit_url($self_vars->{NEEDLES_GIT_URL});
     return \%inv;

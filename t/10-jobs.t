@@ -449,12 +449,12 @@ subtest 'carry over, including soft-fails' => sub {
         my $got_limit = 0;
         my $got_diff_limit = 0;
         $job_mock->redefine(
-            git_log_diff => sub ($self, $dir, $range, %options) {
+            git_log_diff => sub ($dir, $range, %options) {
                 $got_limit = $options{limit};
                 return $fake_git_log;
             });
         $job_mock->redefine(
-            git_diff => sub ($self, $dir, $range, %options) {
+            git_diff => sub ($dir, $range, %options) {
                 $got_diff_limit = $options{limit};
                 return $fake_git_log;
             });
@@ -604,6 +604,9 @@ subtest 'carry over, including soft-fails' => sub {
         my $job_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs', no_auto => 1);
         $job_mock->redefine(testcasedir => sub (@) { "$repo" });
         $job_mock->redefine(needledir => sub (@) { $repo->child('needles')->to_string });
+        my $investigation_mock = Test::MockModule->new('OpenQA::JobInvestigation', no_auto => 1);
+        $investigation_mock->redefine(testcasedir => sub (@) { "$repo" });
+        $investigation_mock->redefine(needledir => sub (@) { $repo->child('needles')->to_string });
         my $set_vars = sub ($j, $hash, %extra) {
             path($j->result_dir, 'vars.json')
               ->spew(encode_json {TEST_GIT_HASH => $hash, NEEDLES_GIT_HASH => $hash, %extra});
@@ -658,7 +661,6 @@ subtest 'carry over, including soft-fails' => sub {
         subtest 'expected git outcomes are not logged as problems' => sub {
             my $run_cmd = \&OpenQA::JobInvestigation::run_cmd_with_log_return_error;
             my %codes;
-            my $investigation_mock = Test::MockModule->new('OpenQA::JobInvestigation', no_auto => 1);
             $investigation_mock->redefine(
                 run_cmd_with_log_return_error => sub ($cmd, %args) {
                     my ($subcommand) = grep { /^(?:grep|ls-tree|cat-file)$/ } @$cmd;
@@ -679,6 +681,7 @@ subtest 'carry over, including soft-fails' => sub {
               = OpenQA::JobInvestigation::tagged_needles($deadline, "$repo", $tested, undef, time - 86400, ['x']);
             is $message, 'Computing changes timed out', 'timeout of git grep reported';
             ok $codes{grep}->{124}, 'timeout is an expected outcome of git grep, so its output is not logged';
+            $investigation_mock->unmock('run_cmd_with_log_return_error');
         };
 
         subtest 'git problems are not reported as missing changes' => sub {
@@ -689,8 +692,8 @@ subtest 'carry over, including soft-fails' => sub {
                 is $inv->{failure_test_log}, 'Computing changes timed out', 'timeout of test log reported';
                 is $inv->{failure_needles_log}, 'Computing changes timed out', 'timeout of needles log reported';
             }
-            my $run_cmd = \&OpenQA::Schema::Result::Jobs::run_cmd_with_log_return_error;
-            $job_mock->redefine(
+            my $run_cmd = \&OpenQA::JobInvestigation::run_cmd_with_log_return_error;
+            $investigation_mock->redefine(
                 run_cmd_with_log_return_error => sub ($cmd, %args) {
                     return {status => 0, return_code => 128, stdout => '', stderr => 'fatal'}
                       if grep { $_ eq 'log' } @$cmd;
@@ -699,7 +702,7 @@ subtest 'carry over, including soft-fails' => sub {
             my $inv = $job->investigate(git_limit => 200);
             is $inv->{failure_test_log}, 'Cannot list changes because of a git problem', 'failure of test log reported';
             is $inv->{failure_needles_log}, 'Cannot list changes because of a git problem', 'needles failure reported';
-            $job_mock->redefine(run_cmd_with_log_return_error => $run_cmd);
+            $investigation_mock->unmock('run_cmd_with_log_return_error');
         };
 
         subtest 'pull requests are looked up as far as time allows' => sub {
@@ -707,7 +710,6 @@ subtest 'carry over, including soft-fails' => sub {
             my $log = "$short Later\n";
             my $run_cmd = \&OpenQA::JobInvestigation::run_cmd_with_log_return_error;
             my @commands;
-            my $investigation_mock = Test::MockModule->new('OpenQA::JobInvestigation', no_auto => 1);
             $investigation_mock->redefine(
                 run_cmd_with_log_return_error => sub ($cmd, %args) { push @commands, $cmd; $run_cmd->($cmd, %args) });
             is annotate_pull_requests("$repo", $log, $head, deadline => time + 20), $log, 'direct commit as is';
@@ -715,6 +717,7 @@ subtest 'carry over, including soft-fails' => sub {
             @commands = ();
             is annotate_pull_requests("$repo", $log, $head, deadline => time - 1), $log, 'log kept if too late';
             is scalar @commands, 0, 'no git command run after the deadline';
+            $investigation_mock->unmock('run_cmd_with_log_return_error');
         };
 
         subtest 'no previous job in the scenario' => sub {
@@ -1275,8 +1278,8 @@ subtest 'special cases when restarting job via Minion task' => sub {
 };
 
 subtest 'git log diff' => sub {
-    my $job_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs', no_auto => 1);
-    $job_mock->redefine(
+    my $investigation_mock = Test::MockModule->new('OpenQA::JobInvestigation', no_auto => 1);
+    $investigation_mock->redefine(
         run_cmd_with_log_return_error => sub ($cmd, %opt) {
             my $rc = 0;
             my ($stdout, $stderr) = ('') x 2;
@@ -1293,38 +1296,34 @@ subtest 'git log diff' => sub {
             }
             return {stdout => $stdout, stderr => $stderr, return_code => $rc};
         });
-    my %_settings = %settings;
-    $_settings{TEST} = 'L';
-    my $job = _job_create(\%_settings);
-
-    my $too_big = $job->git_diff('/foo', '123..456', limit => 5);
+    my $too_big = OpenQA::JobInvestigation::git_diff('/foo', '123..456', limit => 5);
     like $too_big, qr{Too many commits}, 'Too many commits';
 
     combined_like {
-        my $non_numeric = $job->git_diff('/foo', 'nonumber..123456', limit => 10);
+        my $non_numeric = OpenQA::JobInvestigation::git_diff('/foo', 'nonumber..123456', limit => 10);
         like $non_numeric, qr{Cannot display diff because of a git problem}, 'rev-list --count returned no number';
     }
     qr{returned non-numeric string}, 'rev-list --count returned no number - warning is logged';
 
     combined_like {
-        my $fail = $job->git_diff('/foo', 'revlistfail..456', limit => 10);
+        my $fail = OpenQA::JobInvestigation::git_diff('/foo', 'revlistfail..456', limit => 10);
         like $fail, qr{Cannot display diff because of a git problem}, 'git rev-list exited with non-zero';
     }
     qr{git failed}, 'git rev-list exited with non-zero - warning is logged';
 
     combined_like {
-        my $fail = $job->git_diff('/foo', 'difffail..456', limit => 10);
+        my $fail = OpenQA::JobInvestigation::git_diff('/foo', 'difffail..456', limit => 10);
         like $fail, qr{Cannot display diff because of a git problem}, 'git diff exited with non-zero';
     }
     qr{git failed}, 'git diff exited with non-zero - warning is logged';
 
-    my $fail = $job->git_diff('/foo', 'longrange', limit => 10);
+    my $fail = OpenQA::JobInvestigation::git_diff('/foo', 'longrange', limit => 10);
     like $fail, qr{Computing diff timed out}, 'timeout logged specifically';
 
-    my $res = $job->git_diff('/foo', 'invalidrange', limit => 10);
+    my $res = OpenQA::JobInvestigation::git_diff('/foo', 'invalidrange', limit => 10);
     like $res, qr{Cannot display diff: Invalid revision range}, 'error about invalid range returned';
 
-    my $ok = $job->git_diff('/foo', '123..456', limit => 10);
+    my $ok = OpenQA::JobInvestigation::git_diff('/foo', '123..456', limit => 10);
     like $ok, qr{2 files changed}, 'expected git_diff output';
 };
 
