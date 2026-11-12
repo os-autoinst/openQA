@@ -459,9 +459,9 @@ the same reason, without a bugref required.
 Adding `flag:verbatim` to a comment makes openQA ignore all bug references,
 labels, tags and other flags in it: the comment does not mark the job as
 reviewed, it is not carried over, it does not tag a build and `force_result`
-labels in it are not applied. A `force_result` label in it still prevents
-deleting the comment. Bug references are still rendered as links. This is
-meant for comments posted by tools that quote text from logs.
+labels in it are not applied and do not prevent deleting the comment. Bug
+references are still rendered as links. This is meant for comments posted by
+tools that quote text from logs.
 
 ### Distinguish product and test issues bugref [gh#708](https://github.com/os-autoinst/openQA/pull/708)
 
