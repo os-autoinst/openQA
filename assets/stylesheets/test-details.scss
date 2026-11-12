@@ -1,7 +1,9 @@
 // info box in the test results
-#info_box.border-warning .card-header, #info_box .card-border-warning .card-header {
-  background-color: $color-softfailed;
-  color: $color-result;
+html:not([data-bs-theme='dark']) {
+  #info_box.border-warning .card-header, #info_box .card-border-warning .card-header {
+    background-color: $color-softfailed;
+    color: $color-result;
+  }
 }
 .modules-badge-container {
   position: absolute;
@@ -597,6 +599,9 @@ ul.modcategory {
     }
     .btn-warning, .btn-warning:hover {
       color: $default-bg-color-dark;
+    }
+    .modules-badge-container .btn-outline-secondary {
+      --bs-btn-color: #adb5bd;
     }
   }
   #settings td {
