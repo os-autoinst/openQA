@@ -39,6 +39,10 @@ sub _tree_file ($tree, $path) {
     return undef;
 }
 
+sub _git_timeout () {
+    OpenQA::App->singleton->config->{global}->{job_investigate_git_timeout} // JOB_INVESTIGATE_GIT_TIMEOUT;
+}
+
 sub git_has_commit ($deadline, $dir, $hash) {
     return 0 unless defined $hash && $hash =~ m/^[0-9a-f]{7,40}$/i;
     return git_timed($deadline, $dir, ['cat-file', '-e', "$hash^{commit}"], expected_return_codes => \%PROBE_CODES)
@@ -171,8 +175,7 @@ sub git_diff ($dir, $refspec_range, %options) {
     return "Invalid range $refspec_range" if $refspec_range =~ m/UNKNOWN|unreadable git hash/;
     my $limit = $options{limit} // 0;
     my $stat = $options{stat} // '300,200';
-    my $timeout = OpenQA::App->singleton->config->{global}->{job_investigate_git_timeout}
-      // JOB_INVESTIGATE_GIT_TIMEOUT;
+    my $timeout = _git_timeout();
     my $cmd = ['git', '-C', $dir, 'rev-list', '--count', $refspec_range];
     my $res = run_cmd_with_log_return_error($cmd);
     my $out = $res->{stdout} . $res->{stderr};
@@ -246,9 +249,7 @@ sub failure_log ($dir, $self_hash, $prev_hash, $selections, %options) {
 # commits to the files named in the stack traces and to the needles of the failed screen steps
 sub failure_investigation ($job, $inv, $self_vars, $prev_vars, %args) {
     return unless $job->has_failed_modules && $job->result_dir && %$self_vars;
-    my $timeout = OpenQA::App->singleton->config->{global}->{job_investigate_git_timeout}
-      // JOB_INVESTIGATE_GIT_TIMEOUT;
-    my $deadline = time + $timeout;
+    my $deadline = time + _git_timeout();
     my $effective_distri = effective_distri($self_vars);
     my $casedir = testcasedir($effective_distri, $job->VERSION);
     my $needles_dir = needledir($effective_distri, $job->VERSION);
