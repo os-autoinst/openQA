@@ -132,7 +132,7 @@ sub startup ($self) {
     $apik_auth->delete('/:apikeyid')->name('api_key')->to('api_key#destroy');
     my $sshk_auth = $auth->any('/ssh_keys');
     $sshk_auth->post('/')->name('ssh_keys')->to('ssh_key#create');
-    $sshk_auth->delete('/:sshkeyid')->name('ssh_key')->to('ssh_key#destroy');
+    $sshk_auth->delete('/<sshkeyid:num>')->name('ssh_key')->to('ssh_key#destroy');
 
     $logged_in->get('/appearance')->to('appearance#index')->name('appearance');
     $logged_in->post('/appearance')->to('appearance#save');

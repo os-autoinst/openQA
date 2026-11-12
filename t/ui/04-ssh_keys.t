@@ -75,6 +75,11 @@ subtest 'deleting an SSH key removes it' => sub {
     $t->get_ok('/api_keys')->status_is(200)->element_exists_not("#ssh_key_@{[$key->id]}", 'deleted key is gone');
 };
 
+subtest 'deleting with a non-numeric id is not found' => sub {
+    $t->delete_ok('/ssh_keys/not-a-number', {'X-CSRF-Token' => $token})
+      ->status_is(404, 'non-numeric id does not reach the database');
+};
+
 subtest 'users cannot delete SSH keys of other users' => sub {
     my $lancelot = $schema->resultset('Users')->find({username => 'https://openid.camelot.uk/lancelot'});
     my $foreign = $lancelot->ssh_keys->create(
