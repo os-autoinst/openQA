@@ -86,6 +86,23 @@ openqa-cli api --host http://openqa.example.com --apikey 1234567890ABCDEF \
     --apisecret ABCDEF1234567890 -X POST jobs/2/comments text=hello
 ```
 
+### SSH key
+
+Instead of an API key and secret, `openqa-cli` can sign requests with an SSH
+key that is registered for your user on the API keys page of the web UI (or with
+`POST /api/v1/users/me/ssh_keys`). Pass the private key with `--ssh-key`:
+
+```sh
+openqa-cli api --host http://openqa.example.com --ssh-key ~/.ssh/id_ed25519 jobs/4160811
+```
+
+Each request is signed with `ssh-keygen -Y sign` in the namespace `openqa`
+over the request path, a timestamp and the SHA256 hash of the request body. The
+server verifies the signature with `ssh-keygen -Y verify` and accepts the request
+within the same 5 minute window as API key requests. A request must not carry
+API key and SSH headers at the same time. Deleting the key on the API keys page
+revokes access for it immediately.
+
 ### Personal access token
 
 The authentication mechanism used by `openqa-cli` was specifically designed to
