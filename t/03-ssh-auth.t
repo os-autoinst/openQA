@@ -5,7 +5,7 @@
 use Test::Most;
 
 use FindBin;
-use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
+use lib "$FindBin::Bin/lib", "$FindBin::Bin/../lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use File::Temp 'tempdir';
 use Mojo::File 'path';
 use OpenQA::SSHKey qw(parse_public_key signature_payload sign_payload);
@@ -47,7 +47,7 @@ sub ssh_headers ($user, $path, %opts) {
     my $timestamp = $opts{timestamp} // time;
     my $body = $opts{body} // '';
     my $payload = signature_payload($path, $timestamp, $body);
-    my $signature = sign_payload($keys{$user}{private}, $opts{signed_payload} // $payload);
+    my $signature = sign_payload($keys{$user}{private}, $payload);
     return {
         'X-SSH-Key-Fingerprint' => $keys{$user}{parsed}{fingerprint},
         'X-SSH-Microtime' => $timestamp,
@@ -73,6 +73,13 @@ subtest 'operator route enforces operator rights for SSH auth' => sub {
     $post->('arthur')->status_isnt(403, 'operator passes the operator gate via SSH')
       ->json_has('/error', 'controller handles the request after auth');
     $post->('lancelot')->status_is(403, 'non-operator with a valid SSH key is denied on operator route');
+};
+
+subtest 'forward auth verifies the signature over X-Original-URI' => sub {
+    my $original = '/api/v1/jobs?limit=2';
+    my $headers = ssh_headers('arthur', $original);
+    $t->get_ok($whoami, {%$headers, 'X-Original-URI' => $original})
+      ->status_is(200, 'signature over the original request target is accepted');
 };
 
 subtest 'invalid SSH authentication is rejected' => sub {

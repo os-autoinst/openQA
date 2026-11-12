@@ -156,7 +156,7 @@ sub _ssh_auth ($self, $reason, $fingerprint) {
     return (undef, $timestamp_reason) unless $timestamp_valid;
 
     my $url = $self->req->url;
-    my $msg = $url->path eq '/api/v1/auth' ? ($headers->header('X-Original-URI') // $url) : $url;
+    my $msg = $self->_signed_request_target;
     my $payload = signature_payload($self->_base_path . $msg, $remote_timestamp, $self->req->body);
     return (undef, 'invalid SSH signature')
       unless verify_signature($ssh_key->public_key, $payload, $headers->header('X-SSH-Signature'));
@@ -231,7 +231,7 @@ sub _key_auth ($self, $reason, $key) {
 
         my $headers = $self->req->headers;
         my $url = $self->req->url;
-        my $msg = $url->path eq '/api/v1/auth' ? ($headers->header('X-Original-URI') // $url) : $url;
+        my $msg = $self->_signed_request_target;
         my $hash = $headers->header('X-API-Hash');
         my $remote_timestamp = $headers->header('X-API-Microtime');
         my $our_timestamp = time;
@@ -258,6 +258,11 @@ sub _key_auth ($self, $reason, $key) {
     elsif ($key) { $log->debug(qq{API key "$key" not found}) }
 
     return (undef, $reason);
+}
+
+sub _signed_request_target ($self) {
+    my $url = $self->req->url;
+    return $url->path eq '/api/v1/auth' ? ($self->req->headers->header('X-Original-URI') // $url) : $url;
 }
 
 sub _base_path ($self) {
