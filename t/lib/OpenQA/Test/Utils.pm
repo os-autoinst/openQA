@@ -636,7 +636,6 @@ sub simulate_load ($load, $from) {
     return $load_avg_file;
 }
 
-
 sub generate_ssh_key ($file, $type = 'ed25519') {
     system('ssh-keygen', '-q', '-t', $type, '-N', '', '-f', $file) == 0 or die "ssh-keygen failed for $type";
     return Mojo::File->new("$file.pub")->slurp;
