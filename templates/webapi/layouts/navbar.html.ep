@@ -108,6 +108,9 @@
 
             </li>
         % } else {
+            <li class='nav-item'>
+                %= link_to('Appearance' => url_for('appearance') => class => 'nav-link')
+            </li>
             <li class='nav-item' id="user-action">
                 %= link_to('Login' => url_for('login') => class => 'nav-link')
             </li>
