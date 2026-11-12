@@ -56,6 +56,12 @@ td div.progress {
     background-color: lighten($color-state-cancelled, 12.5%);
   }
 }
+[data-bs-theme='dark'] .build-dashboard .progress-bar-failed {
+  background-color: darken($color-failed, 25%);
+  a {
+    color: #fff;
+  }
+}
 
 // expandable items on dashboard (mainly the BuildXXXX headings)
 .build-row .h4 {
