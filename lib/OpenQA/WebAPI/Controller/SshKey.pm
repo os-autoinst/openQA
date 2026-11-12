@@ -4,7 +4,6 @@
 package OpenQA::WebAPI::Controller::SshKey;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
 
-
 my %ERROR_MESSAGE = (duplicate => 'This SSH key is already registered', invalid => 'Invalid SSH public key');
 
 sub create ($self) {

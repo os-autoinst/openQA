@@ -102,7 +102,9 @@ request body. The server verifies the signature with `ssh-keygen -Y verify` and
 accepts the request within the same 5 minute window as API key requests. A proxy
 that performs forward authentication must pass on the method of the original
 request, otherwise the signature will not match. A request must not carry
-API key and SSH headers at the same time. Deleting the key on the API keys page
+API key and SSH headers at the same time. When `--ssh-key` is given, it takes
+precedence over any API key or secret configured in the environment or config
+files, which are then not sent. Deleting the key on the API keys page
 revokes access for it immediately.
 
 ### Personal access token
