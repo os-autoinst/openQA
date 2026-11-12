@@ -145,7 +145,6 @@ sub _ssh_auth ($self, $reason, $fingerprint) {
       || defined $headers->header('X-API-Hash')
       || defined $self->_personal_access_token;
 
-
     my $ssh_key = $self->schema->resultset('SshKeys')->find({fingerprint => $fingerprint});
     return (undef, 'unknown SSH key') unless $ssh_key;
 
