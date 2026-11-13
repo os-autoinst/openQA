@@ -1,5 +1,3 @@
-# wait_serial expected: 'dBeHb-\\d+-'
-
+# Command: ip a del 10.0.2.2/15 dev br1
 # Result:
-dBeHb-0-
-
+# Exit code: 0

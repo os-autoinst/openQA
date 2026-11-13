@@ -216,6 +216,43 @@ subtest 'displaying image result with present candidate' => sub {
     $driver->get('/tests/99937');
 };
 
+sub serial_step_thumbnail ($step) {
+    $driver->get('/tests/99937');
+    return $driver->find_element(qq{[href="#step/sshfs/$step"]})->child('.resborder')->get_text;
+}
+
+subtest 'serial step thumbnail shows executed command' => sub {
+    my $thumbnail = serial_step_thumbnail(2);
+    is $thumbnail, 'ip a del 10.0.2.2/15 dev br1',
+      'thumbnail box shows the command which was executed on the serial terminal';
+    unlike $thumbnail, qr/Exit code/, 'thumbnail box does not show the exit code of the command';
+    my $step_link = $driver->find_element('[href="#step/sshfs/2"]');
+    $step_link->click;
+    my $expanded = wait_for_element(selector => '#preview_container_in pre', is_displayed => 1);
+    is scalar(grep { /ip a del/ } split /\n/, $expanded->get_text), 1, 'expanded detail lists the command once';
+    $step_link->click;
+};
+
+subtest 'serial step thumbnail drops internal serial marker' => sub {
+    is serial_step_thumbnail(7), 'sudo systemctl is-active guestregister',
+      'thumbnail box shows the command without the internal SCRIPT_FINISHED marker';
+};
+
+subtest 'serial step thumbnail skips openQA script runner wrapper' => sub {
+    my $thumbnail = serial_step_thumbnail(8);
+    is $thumbnail, 'guestregister is active',
+      'thumbnail box shows the serial output of a step whose command is openQA script boilerplate';
+    unlike $thumbnail, qr{SCRIPT_FINISHED|/tmp/script}, 'thumbnail box neither shows the marker nor the wrapper';
+};
+
+subtest 'serial step thumbnail falls back to serial output' => sub {
+    my $thumbnail = serial_step_thumbnail(6);
+    my $expected = 'warning: virtio-net throughput degraded, the serial console buffered '
+      . 'the transcript and the openQA marker was emitted la…';
+    is $thumbnail, $expected,
+      'thumbnail shows the serial output of a plain wait_serial step truncated to the preview limit';
+};
+
 subtest 'filtering' => sub {
     # load Selenium::Remote::WDKeys module or skip this test if not available
     return plan skip_all => 'Install Selenium::Remote::WDKeys to run this test'
