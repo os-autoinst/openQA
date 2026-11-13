@@ -56,6 +56,26 @@ td div.progress {
     background-color: lighten($color-state-cancelled, 12.5%);
   }
 }
+[data-bs-theme='dark'] .build-dashboard {
+  .progress-bar a {
+    color: $color-text-bar-dark;
+  }
+  .progress-bar-passed {
+    background-color: $color-module-passed-dark;
+  }
+  .progress-bar-softfailed {
+    background-color: $color-softfailed-dark;
+  }
+  .progress-bar-unfinished {
+    background-color: $color-state-running-dark;
+  }
+  .progress-bar-failed {
+    background-color: $color-failed-dark;
+  }
+  .progress-bar-skipped {
+    background-color: $color-state-cancelled-dark;
+  }
+}
 
 // expandable items on dashboard (mainly the BuildXXXX headings)
 .build-row .h4 {

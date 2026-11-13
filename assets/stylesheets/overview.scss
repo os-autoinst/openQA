@@ -20,7 +20,7 @@
   border-radius: 5rem;
   margin-left: 0.5rem;
 }
-#summary .badge-btn.btn-outline-light {
+html:not([data-bs-theme='dark']) #summary .badge-btn.btn-outline-light {
   color: black;
 }
 #summary .badge {

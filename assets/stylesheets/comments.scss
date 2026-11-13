@@ -89,8 +89,25 @@
     margin: 0;
   }
 }
-[data-bs-theme='dark'] .comment-body .comment-anchor {
-  color: rgb(152, 152, 152);
+[data-bs-theme='dark'] .comment-body {
+  .comment-anchor {
+    color: rgb(152, 152, 152);
+  }
+  .openqa-bugref, .openqa-testref {
+    background-color: $color-bugref-bg-dark;
+    color: $color-bugref-text-dark;
+    border-color: $color-bugref-border-dark;
+  }
+  .openqa-label {
+    background-color: $color-label-bg-dark;
+    color: $color-label-text-dark;
+    border-color: $color-label-border-dark;
+  }
+  .openqa-flag {
+    background-color: $color-flag-bg-dark;
+    color: $color-flag-text-dark;
+    border-color: $color-flag-border-dark;
+  }
 }
 .comment-row {
   align-items: center;
