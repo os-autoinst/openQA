@@ -199,4 +199,75 @@ sub delete_api_key ($self) {
     $self->render(json => {result => 1});
 }
 
+=over 4
+
+=item list_ssh_keys()
+
+List the SSH public keys of the current user.
+
+=back
+
+=cut
+
+sub list_ssh_keys ($self) {
+    my @keys = map {
+        {
+            id => $_->id,
+            title => $_->title,
+            fingerprint => $_->fingerprint,
+            public_key => $_->public_key,
+            last_used => $_->last_used,
+            t_created => $_->t_created,
+        }
+    } $self->current_user->ssh_keys->all;
+    $self->render(json => {keys => \@keys});
+}
+
+=over 4
+
+=item create_ssh_key()
+
+Add an SSH public key for the current user. Requires the C<public_key> and
+C<title> form params. Rejects input that is not exactly one public key, and keys
+whose fingerprint is already registered.
+
+=back
+
+=cut
+
+sub create_ssh_key ($self) {
+    my $validation = $self->validation;
+    $self->validate_ssh_key_params($validation);
+    return $self->render(json => {error => 'public_key and title are required'}, status => 400)
+      if $validation->has_error;
+
+    my ($ssh_key, $error)
+      = $self->current_user->add_ssh_key($validation->param('public_key'), $validation->param('title'));
+    my %status_for = (duplicate => 409, invalid => 400);
+    return $self->render(json => {error => $error}, status => $status_for{$error}) if $error;
+    $self->render(
+        json => {
+            id => $ssh_key->id,
+            title => $ssh_key->title,
+            fingerprint => $ssh_key->fingerprint,
+        });
+}
+
+=over 4
+
+=item delete_ssh_key()
+
+Delete an SSH public key of the current user.
+
+=back
+
+=cut
+
+sub delete_ssh_key ($self) {
+    my $key = $self->current_user->ssh_keys->find({id => $self->param('id')});
+    return $self->render(json => {error => 'Not found'}, status => 404) unless $key;
+    $key->delete;
+    $self->render(json => {result => 1});
+}
+
 1;

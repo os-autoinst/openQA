@@ -2906,6 +2906,56 @@ paths:
       summary: Delete API key
       tags:
         - users
+  /users/me/ssh_keys:
+    get:
+      description: List SSH public keys of the current user.
+      operationId: listUserSshKeys
+      responses:
+        '200':
+          description: OK
+      security:
+        - api_key: []
+      summary: List SSH keys for current user
+      tags:
+        - users
+    post:
+      description: >
+        Register an SSH public key for the current user. Requires `public_key`
+        and `title` as form params. Rejects input that is not exactly one public
+        key with 400, and a key whose fingerprint is already registered with 409.
+      operationId: createUserSshKey
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Invalid public key or missing parameters
+        '409':
+          description: The key is already registered
+      security:
+        - api_key: []
+      summary: Register SSH key for current user
+      tags:
+        - users
+  /users/me/ssh_keys/{id}:
+    delete:
+      description: Delete a specific SSH key of the current user.
+      operationId: deleteUserSshKey
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: SSH key not found
+      security:
+        - api_key: []
+      summary: Delete SSH key
+      tags:
+        - users
   /webhooks/product:
     post:
       description: >

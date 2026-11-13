@@ -9,6 +9,8 @@ use Mojo::Base 'DBIx::Class::Core', -signatures;
 use URI::Escape 'uri_escape';
 use Digest::MD5 'md5_hex';
 use DateTime;
+use Feature::Compat::Try;
+use OpenQA::SSHKey 'parse_public_key';
 
 __PACKAGE__->table('users');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
@@ -88,6 +90,19 @@ sub gravatar ($self, $size = 40) {
 }
 
 sub is_deleted ($self) { defined $self->deleted_at }
+
+sub add_ssh_key ($self, $public_key, $title) {
+    my $parsed = parse_public_key($public_key) or return (undef, 'invalid');
+    try {
+        my $ssh_key = $self->ssh_keys->create(
+            {public_key => $parsed->{public_key}, fingerprint => $parsed->{fingerprint}, title => $title});
+        return ($ssh_key, undef);
+    }
+    catch ($e) {
+        die $e unless $e =~ /ssh_keys_fingerprint/;
+        return (undef, 'duplicate');
+    }
+}
 
 sub anonymize ($self) {
     return if $self->is_deleted;
