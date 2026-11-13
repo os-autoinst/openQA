@@ -72,6 +72,18 @@ pull_request_rules:
     actions:
       merge:
         method: squash
+  # gh-pages docs PRs run only the checklist/OBS checks, so the base=master
+  # anchors above can never match them (e.g. PR #8106)
+  - name: automatic merge for documentation bot updates
+    conditions:
+      - base=gh-pages
+      - author~=^os-autoinst-bot$
+      - title~=^Update documentation to commit
+      - '#check-failure=0'
+      - '#check-pending=0'
+      - '#check-success>=4'
+      - linear-history
+    actions: *merge
 queue_rules: []
 merge_queue:
   status_comments: none
