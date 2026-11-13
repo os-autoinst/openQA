@@ -116,8 +116,7 @@ subtest 'worker overview' => sub {
         foo => $broken_worker_id,
         online_test => $online_worker_id
     );
-    is scalar @{$driver->find_elements(delete_button_selector($not_deletable{$_}), 'css')}, 0,
-      "$_ does not show delete button"
+    wait_until_element_gone(delete_button_selector($not_deletable{$_}), "$_ does not show delete button")
       for sort keys %not_deletable;
     is $driver->find_element(delete_button_selector($offline_worker_id))->is_displayed(),
       1, 'offline worker show delete button';
