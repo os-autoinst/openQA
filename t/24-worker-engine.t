@@ -579,9 +579,44 @@ subtest 'link asset' => sub {
 
 subtest 'using cgroupv2' => sub {
     my $file_mock = Test::MockModule->new('Mojo::File');
-    $file_mock->noop('make_path');
+    my @created;
+    $file_mock->redefine(make_path => sub ($self, @) { push @created, "$self" });
     combined_like { OpenQA::Worker::Engines::isotovideo::_configure_cgroupv2({id => 42}) }
     qr|Using cgroup /sys/fs/cgroup/.*/42|, 'use of cgroup logged';
+    is_deeply [grep { !m{/42$} } @created], [], 'only the cgroup of the job is created';
+};
+
+subtest 'cgroup of a finished job may already be gone' => sub {
+    my $dir = tempdir;
+    my $cgroup = OpenQA::Worker::CGroup->new(_vfs => "$dir", name => 'slice.service', parent => path('42'))->create;
+    ok -d "$dir/slice.service/42", 'cgroup created';
+    path($dir, 'slice.service/42/cgroup.procs')->spew("1\n2\n");
+    is_deeply $cgroup->processes->to_array, [1, 2], 'processes listed';
+    path($dir, 'slice.service/42')->remove_tree;
+    is_deeply $cgroup->processes->to_array, [], 'no processes and no error for a removed cgroup';
+};
+
+subtest 'unreadable cgroup.procs of a job' => sub {
+    my $dir = tempdir;
+    my $cgroup = OpenQA::Worker::CGroup->new(_vfs => "$dir", name => 'slice.service', parent => path('42'))->create;
+    my $file_mock = Test::MockModule->new('Mojo::File');
+    $file_mock->redefine(slurp => sub ($self, @) { die qq{Can't open file "$self": Permission denied\n} });
+    path($dir, 'slice.service/42/cgroup.procs')->touch;
+    my $procs;
+    combined_like { $procs = $cgroup->processes->to_array }
+    qr/Unable to list processes of cgroup .*slice\.service\/42: Can't open file .*cgroup\.procs.*Permission denied/,
+      'warning logged for unreadable cgroup.procs';
+    is_deeply $procs, [], 'no processes and no error for an unreadable cgroup';
+};
+
+subtest 'cgroup creation failure disables cgroup usage' => sub {
+    my $file_mock = Test::MockModule->new('Mojo::File');
+    $file_mock->redefine(make_path => sub ($self, @) { die "mkdir $self: Permission denied\n" });
+    my $cgroup;
+    combined_like { $cgroup = OpenQA::Worker::Engines::isotovideo::_configure_cgroupv2({id => 42}) }
+    qr/Disabling cgroup usage because cgroup creation failed: mkdir .*42: Permission denied.*OPENQA_CGROUP_SLICE/s,
+      'cgroup usage disabled with warning and hint';
+    is_deeply $cgroup->to_array, [], 'empty collection returned';
 };
 
 subtest 'cgroup slice detection on pure cgroup v2 hosts (poo#205902)' => sub {
@@ -596,8 +631,9 @@ subtest 'cgroup slice detection on pure cgroup v2 hosts (poo#205902)' => sub {
     # used by CI) breaks Test::MockModule's DESTROY-based auto-restore, leaving make_path/slurp
     # mocked for the rest of the test file (it silently passed locally without coverage).
     subtest 'pure cgroup v2 unified hierarchy' => sub {
+        my @created;
         my $file_mock = Test::MockModule->new('Mojo::File');
-        $file_mock->noop('make_path');
+        $file_mock->redefine(make_path => sub ($self, @) { push @created, "$self" });
         my $orig_slurp = $file_mock->original('slurp');
         $file_mock->redefine(
             slurp => sub ($self, @args) {
@@ -608,11 +644,14 @@ subtest 'cgroup slice detection on pure cgroup v2 hosts (poo#205902)' => sub {
         combined_like { OpenQA::Worker::Engines::isotovideo::_configure_cgroupv2({id => 42}) }
         qr|Using cgroup /sys/fs/cgroup/system\.slice/openqa-worker-auto-restart\@16\.service/42|,
           'slice parsed from the "0::" unified hierarchy line and used for the cgroup path';
+        is_deeply \@created, ['/sys/fs/cgroup/system.slice/openqa-worker-auto-restart@16.service/42'],
+          'no cgroup created outside of the slice';
     };
 
     subtest 'named "systemd" hierarchy line format (systemd not on the unified hierarchy)' => sub {
+        my @created;
         my $file_mock = Test::MockModule->new('Mojo::File');
-        $file_mock->noop('make_path');
+        $file_mock->redefine(make_path => sub ($self, @) { push @created, "$self" });
         my $orig_slurp = $file_mock->original('slurp');
         $file_mock->redefine(
             slurp => sub ($self, @args) {
@@ -623,6 +662,8 @@ subtest 'cgroup slice detection on pure cgroup v2 hosts (poo#205902)' => sub {
         combined_like { OpenQA::Worker::Engines::isotovideo::_configure_cgroupv2({id => 42}) }
         qr|Using cgroup /sys/fs/cgroup/systemd/user\.slice/user-1000\.slice/session-1\.scope/42|,
           'slice parsed from the legacy "name=systemd:" line and used for the cgroup path';
+        is_deeply \@created, ['/sys/fs/cgroup/systemd/user.slice/user-1000.slice/session-1.scope/42'],
+          'only the cgroup of the job is created';
     };
 };
 
