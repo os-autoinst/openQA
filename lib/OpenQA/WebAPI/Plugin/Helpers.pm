@@ -20,6 +20,9 @@ use Text::Glob qw(glob_to_regex_string);
 use List::Util qw(any min);
 use Feature::Compat::Try;
 
+my %THEME_SETTINGS = (light => 1, dark => 1, detect => 1);
+my %SEASONAL_DECORATION_SETTINGS = (auto => 1, on => 1, off => 1);
+
 sub register ($self, $app, $config) {
     $app->helper(label_from_const => sub ($c, $val) { ucfirst $val =~ tr/_/ /r });
     $app->helper(
@@ -81,9 +84,11 @@ sub register ($self, $app, $config) {
 
     $app->helper(current_job => sub ($c) { $c->stash('job') });
     # the cookies are not signed, so only accept known values
-    $app->helper(current_theme => sub ($c) { _appearance_cookie($c, theme => [qw(light dark detect)], 'light') });
+    $app->helper(current_theme => sub ($c) { _appearance_cookie($c, theme => \%THEME_SETTINGS, 'light') });
     $app->helper(
-        seasonal_decorations => sub ($c) { _appearance_cookie($c, seasonal_decorations => [qw(auto on off)], 'auto') });
+        seasonal_decorations => sub ($c) {
+            _appearance_cookie($c, seasonal_decorations => \%SEASONAL_DECORATION_SETTINGS, 'auto');
+        });
     $app->helper(is_seasonal_period => sub ($c = undef) { (localtime)[4] == 9 });
     $app->helper(
         seasonal_decorations_enabled => sub ($c) {
@@ -307,7 +312,7 @@ sub _format_time_duration ($c, $timedate = undef) {
 
 sub _appearance_cookie ($c, $name, $allowed, $default) {
     my $value = $c->cookie($name) // '';
-    return (any { $_ eq $value } @$allowed) ? $value : $default;
+    return $allowed->{$value} ? $value : $default;
 }
 
 sub _current_job_group ($c) {
