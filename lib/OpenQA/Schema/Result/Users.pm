@@ -60,6 +60,7 @@ __PACKAGE__->add_columns(
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->has_many(api_keys => 'OpenQA::Schema::Result::ApiKeys', 'user_id');
+__PACKAGE__->has_many(ssh_keys => 'OpenQA::Schema::Result::SshKeys', 'user_id');
 __PACKAGE__->has_many(
     developer_sessions => 'OpenQA::Schema::Result::DeveloperSessions',
     'user_id', {cascade_delete => 1});
@@ -95,6 +96,7 @@ sub anonymize ($self) {
     $schema->txn_do(
         sub {
             $self->api_keys->delete;
+            $self->ssh_keys->delete;
             $_->update({event_data => _anonymize_event_data($_->event_data, $self->username)})
               for $self->audit_events->all;
             $self->update(
