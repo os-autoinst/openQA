@@ -83,9 +83,7 @@ pull_request_rules:
       - '#check-pending=0'
       - '#check-success>=4'
       - linear-history
-    actions:
-      comment:
-        message: auto-merge conditions met for documentation bot PR (observation stage)
+    actions: *merge
 queue_rules: []
 merge_queue:
   status_comments: none
