@@ -444,6 +444,16 @@ operator permissions.
 > [carried over](UsersGuide.md#carry-over). However, the carry over will
 > only happen when the comment **also** contains a bug reference or `flag:carryover`.
 
+##### Softfail job if investigation retry passed
+
+Setting `_SOFTFAIL_ON_RETRY=1` on a job makes openQA set its result to
+`softfailed` if the job failed and its retry created by
+[`openqa-investigate`](WritingTests.md#general-remarks-on-reproducibility)
+(`<TEST>:investigate:retry`) passed or softfailed. A comment by the `system`
+user is added to the failed job. The retry job inherits the setting from the
+failed job and is linked to it via `OPENQA_INVESTIGATE_ORIGIN`. Both are
+checked together with the test name, but not the job group or user.
+
 #### Flags
 
 The following flags are supported for job comments.
