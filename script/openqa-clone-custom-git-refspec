@@ -37,6 +37,7 @@ EOF
 }
 
 set -o pipefail
+shopt -s inherit_errexit
 
 fail() {
     echo "$*" >&2
@@ -118,7 +119,7 @@ if [[ -z "$repo_name" ]] || [[ -z "$pr" ]]; then
 fi
 if [[ -z "$branch" ]] || [[ -z "$repo_name" ]]; then
     pr_url=${target_repo_part/github.com/api.github.com/repos}/pulls/$pr
-    pr_content=$(eval "${curl_github} -s $pr_url")
+    pr_content=$(eval "${curl_github} -s $pr_url") || fail "Unable to fetch $pr_url"
     label=$(echo "$pr_content" | jq -r '.head.label') || throw_json_error "$pr_url" "$pr_content"
     if [[ "${label}" == "null" ]]; then
         echo "Github API rate limit might have been exceeded. If this is the case, generate one at
@@ -144,11 +145,14 @@ clone_job() {
     if [[ -z "$testsuite" ]] || [[ -z "$productdir" ]]; then
         local json_url=${host}/tests/${job}/file/vars.json
         local json_data
-        json_data=$(eval "${curl_openqa} -s ${json_url}")
+        json_data=$(eval "${curl_openqa} -s ${json_url}") || fail "Unable to fetch $json_url"
         echo "$json_data" | jq . &> /dev/null \
             || fail "Unreadable openQA job or no valid JSON data encountered. \
 Please try 'curl $json_url' or select another job, e.g. in the same scenario: $host/t$job#next_previous"
-        local testsuite="${testsuite:-"$(echo "$json_data" | jq -r '.TEST')"}" || throw_json_error "$json_url" "$json_data"
+        local testsuite="${testsuite:-}"
+        if [[ -z "$testsuite" ]]; then
+            testsuite=$(echo "$json_data" | jq -r '.TEST') || throw_json_error "$json_url" "$json_data"
+        fi
         local old_productdir
         old_productdir=$(echo "$json_data" | jq -r '.PRODUCTDIR') || throw_json_error "$json_url" "$json_data"
         local old_casedir
