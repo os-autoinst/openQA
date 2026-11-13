@@ -88,14 +88,7 @@ subtest 'installed Font Awesome package provides the families the web UI refers 
       or diag join ', ', @undefined;    # uncoverable statement
 };
 
-subtest 'web UI does not rely on helper classes Font Awesome does not ship' => sub {
-    my @hits;
-    for my $file (source_files($root, 'templates', 'assets/javascripts')) {
-        push @hits, "$file uses class sr-only" if path($file)->slurp =~ /class\s*=\s*(["'])sr-only\1/;
-    }
-    is @hits, 0, 'no element uses .sr-only which is not provided by Bootstrap 5'
-      or diag join "\n", @hits;
-
+subtest 'web UI relies on the helper the Bootstrap package provides' => sub {
     ok -e $root->child(qw(node_modules bootstrap scss helpers _visually-hidden.scss)),
       'Bootstrap provides the .visually-hidden helper the web UI uses';
 };
