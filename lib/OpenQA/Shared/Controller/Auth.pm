@@ -10,6 +10,8 @@ use OpenQA::Constants 'DEFAULT_ADMIN';
 use Mojo::Util qw(hmac_sha1_sum secure_compare);
 use Mojo::URL;
 use Time::Seconds;
+use DateTime;
+use OpenQA::SSHKey qw(signature_payload verify_signature);
 
 sub _auth_method_is_none ($self) { ($self->app->config->{auth}->{method} // '') eq 'None' }
 
@@ -84,15 +86,13 @@ sub _auth ($self) {
 
     # No session (probably not a browser)
     if (!$user) {
-        # Personal access token
-        if (($self->req->headers->authorization // '') =~ /^Bearer\s+(.+)$/) {
-            ($user, $reason) = $self->_token_auth($reason, $1);
+        # Personal access token, SSH key signature or API key
+        if (defined(my $fingerprint = $self->req->headers->header('X-SSH-Key-Fingerprint'))) {
+            ($user, $reason) = $self->_ssh_auth($reason, $fingerprint);
         }
-        elsif (my $userinfo = $self->req->url->to_abs->userinfo) {
-            ($user, $reason) = $self->_token_auth($reason, $userinfo);
+        elsif (my $token = $self->_personal_access_token) {
+            ($user, $reason) = $self->_token_auth($reason, $token);
         }
-
-        # API key
         elsif (my $key = $self->req->headers->header('X-API-Key')) {
             ($user, $reason) = $self->_key_auth($reason, $key);
         }
@@ -116,6 +116,11 @@ sub _auth ($self) {
     return 0;
 }
 
+sub _personal_access_token ($self) {
+    return $1 if (($self->req->headers->authorization // '') =~ /^Bearer\s+(.+)$/);
+    return $self->req->url->to_abs->userinfo;
+}
+
 sub auth_operator ($self) {
     return 0 if !$self->auth;
     return 1 if $self->is_operator || $self->is_admin;
@@ -130,6 +135,41 @@ sub auth_admin ($self) {
 
     $self->render(json => {error => 'Administrator level required'}, status => 403);
     return 0;
+}
+
+sub _ssh_auth ($self, $reason, $fingerprint) {
+    my $log = $self->app->log;
+    my $headers = $self->req->headers;
+    return (undef, 'SSH and API key authentication cannot be combined')
+      if defined $headers->header('X-API-Key')
+      || defined $headers->header('X-API-Hash')
+      || defined $self->_personal_access_token;
+
+    my $ssh_key = $self->schema->resultset('SshKeys')->find({fingerprint => $fingerprint});
+    unless ($ssh_key) {
+        $log->debug('Unknown SSH key fingerprint');
+        return (undef, 'unknown SSH key');
+    }
+
+    my $user = $ssh_key->user;
+
+    my $remote_timestamp = $headers->header('X-SSH-Microtime');
+    return (undef, 'missing X-SSH-Microtime') unless defined $remote_timestamp;
+    my ($timestamp_valid, $timestamp_reason) = $self->_is_timestamp_valid(time, $remote_timestamp);
+    return (undef, $timestamp_reason) unless $timestamp_valid;
+
+    return (undef, 'SSH signatures cannot cover multipart bodies') if $self->req->content->is_multipart;
+
+    my $payload = signature_payload($self->req->method, $self->_base_path . $self->_signed_request_target,
+        $remote_timestamp, $self->req->body);
+    unless (verify_signature($ssh_key->public_key, $payload, $headers->header('X-SSH-Signature'))) {
+        $log->debug(qq{Invalid SSH signature for user "${\$user->username}"});
+        return (undef, 'invalid SSH signature');
+    }
+
+    $ssh_key->update({last_used => DateTime->now});
+    $log->trace(sprintf 'SSH auth by user: %s', $user->username);
+    return ($user, $reason);
 }
 
 sub _is_timestamp_valid ($self, $our_timestamp, $remote_timestamp) {
@@ -197,7 +237,7 @@ sub _key_auth ($self, $reason, $key) {
 
         my $headers = $self->req->headers;
         my $url = $self->req->url;
-        my $msg = $url->path eq '/api/v1/auth' ? ($headers->header('X-Original-URI') // $url) : $url;
+        my $msg = $self->_signed_request_target;
         my $hash = $headers->header('X-API-Hash');
         my $remote_timestamp = $headers->header('X-API-Microtime');
         my $our_timestamp = time;
@@ -226,15 +266,23 @@ sub _key_auth ($self, $reason, $key) {
     return (undef, $reason);
 }
 
+sub _signed_request_target ($self) {
+    my $url = $self->req->url;
+    return $url->path eq '/api/v1/auth' ? ($self->req->headers->header('X-Original-URI') // $url) : $url;
+}
+
+sub _base_path ($self) {
+    my $base_url = $self->app->config->{global}->{base_url};
+    return $base_url ? Mojo::URL->new($base_url)->path->leading_slash(0) : '';
+}
+
 sub _valid_hmac ($self, $hash, $request, $our_timestamp, $remote_timestamp, $api_key) {
     return 0 unless defined $hash;
     return 0 unless ($self->_is_timestamp_valid($our_timestamp, $remote_timestamp))[0];
     return 0 if _is_expired($api_key);
     return 0 unless $api_key->secret;
 
-    my $base_url = $self->app->config->{global}->{base_url};
-    my $base_path = $base_url ? Mojo::URL->new($base_url)->path->leading_slash(0) : '';
-    my $sum = hmac_sha1_sum($base_path . $request . $remote_timestamp, $api_key->secret);
+    my $sum = hmac_sha1_sum($self->_base_path . $request . $remote_timestamp, $api_key->secret);
     return secure_compare($hash, $sum);
 }
 
