@@ -248,6 +248,29 @@ html:not([data-bs-theme='dark']) {
 }
 #investigation_status_entry pre {
   margin: 2px 0;
+  .diff-line {
+    display: block;
+  }
+  .diff-add {
+    background: var(--bs-success-bg-subtle);
+    color: var(--bs-success-text-emphasis);
+    .diff-changed {
+      background: var(--bs-success-border-subtle);
+      text-decoration: underline;
+    }
+  }
+  .diff-del {
+    background: var(--bs-danger-bg-subtle);
+    color: var(--bs-danger-text-emphasis);
+    .diff-changed {
+      background: var(--bs-danger-border-subtle);
+      text-decoration: underline;
+    }
+  }
+  .diff-missing {
+    opacity: 0.65;
+    text-decoration: underline dotted;
+  }
 }
 
 // misc
