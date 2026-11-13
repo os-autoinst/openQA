@@ -160,6 +160,35 @@ subtest 'create_api_key comment handling' => sub {
       ->status_is(400, 'comment longer than 255 characters rejected');
 };
 
+subtest 'create_api_key role scoping' => sub {
+    my $user_res = $t->post_ok('/api/v1/users/me/api_keys' => form => {is_operator => 0, is_admin => 0})
+      ->status_is(200, 'non-admin/non-operator user can create unprivileged key')->tx->res->json;
+    is $user_res->{is_operator}, 0, 'created key is_operator is 0';
+    is $user_res->{is_admin}, 0, 'created key is_admin is 0';
+
+    $t->post_ok('/api/v1/users/me/api_keys' => form => {is_operator => 1})
+      ->status_is(400, 'non-operator user cannot create operator key');
+    $t->post_ok('/api/v1/users/me/api_keys' => form => {is_admin => 1})
+      ->status_is(400, 'non-admin user cannot create admin key');
+    $t->post_ok('/api/v1/users/me/api_keys' => form => {role => 'user', is_admin => 0})
+      ->status_is(400, 'cannot specify both role and is_admin');
+    $t->post_ok('/api/v1/users/me/api_keys' => form => {role => 'invalid'})
+      ->status_is(400, 'invalid role value is rejected');
+
+    # Operator user testing boundary roles
+    my $t_op = Test::Mojo->new('OpenQA::WebAPI');
+    $t_op->ua(
+        OpenQA::Client->new(apikey => 'PERCIVALKEY01', apisecret => 'PERCIVALSECRET01')->ioloop(Mojo::IOLoop->singleton)
+    );
+    $t_op->app($app);
+    $t_op->post_ok('/api/v1/users/me/api_keys' => form => {role => 'admin'})
+      ->status_is(400, 'operator user cannot create admin key');
+    my $op_key_res = $t_op->post_ok('/api/v1/users/me/api_keys' => form => {role => 'operator'})
+      ->status_is(200, 'operator user can create operator key')->tx->res->json;
+    is $op_key_res->{is_operator}, 1, 'operator key has is_operator=1';
+    is $op_key_res->{is_admin}, 0, 'operator key has is_admin=0';
+};
+
 subtest 'test list_api_keys' => sub {
     my $key2 = $res->{key};
     $res = $t->get_ok('/api/v1/users/me/api_keys')->status_is(200, 'list api keys')->tx->res->json;
@@ -168,6 +197,8 @@ subtest 'test list_api_keys' => sub {
     my ($found_key1) = grep { $_->{key} eq $key1 } @$api_keys;
     ok $found_key1, "key $key1 found in list";
     is $found_key1->{comment}, '', 'comment is empty string in list when not provided';
+    is $found_key1->{is_operator}, 0, 'is_operator is present in listed key';
+    is $found_key1->{is_admin}, 0, 'is_admin is present in listed key';
     my ($found_key2) = grep { $_->{key} eq $key2 } @$api_keys;
     ok $found_key2, "key $key2 found in list";
     is $found_key2->{comment}, '<escaped&untrusted>', 'comment is present in listed key';

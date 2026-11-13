@@ -5,7 +5,7 @@ package OpenQA::Shared::Controller::Auth;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use OpenQA::Schema;
-use OpenQA::Log qw(log_trace);
+use OpenQA::Log qw(log_debug log_trace);
 use OpenQA::Constants 'DEFAULT_ADMIN';
 use Mojo::Util qw(hmac_sha1_sum secure_compare);
 use Mojo::URL;
@@ -28,24 +28,34 @@ sub check ($self) {
 
     my $schema = OpenQA::Schema->singleton;
     my $api_key = $schema->resultset('ApiKeys')->find({key => $key});
-    if ($api_key) {
-        if (($self->_is_timestamp_valid(time, $remote_timestamp))[0]) {
-            my $exp = $api_key->t_expiration;
-            # It has no expiration date or it's in the future
-            if (!$exp || $exp->epoch > time) {
-                if (my $secret = $api_key->secret) {
-                    my $sum = hmac_sha1_sum($self->req->url->to_string . $remote_timestamp, $secret);
-                    $user = $api_key->user if secure_compare($hash, $sum);
-                    log_trace(sprintf 'API auth by user: %s, operator: %d', $user->username, $user->is_operator)
-                      if $user;
-                }
+    if ($api_key && ($self->_is_timestamp_valid(time, $remote_timestamp))[0]) {
+        my $exp = $api_key->t_expiration;
+        # It has no expiration date or it's in the future
+        if ((!$exp || $exp->epoch > time) && (my $secret = $api_key->secret)) {
+            my $sum = hmac_sha1_sum($self->req->url->to_string . $remote_timestamp, $secret);
+            if (secure_compare($hash, $sum)) {
+                $user = $api_key->user;
+                $self->stash(current_api_key => $api_key);
             }
+            log_trace(sprintf 'API auth by user: %s, operator: %d', $user->username, $user->is_operator)
+              if $user;
         }
     }
     elsif ($self->_auth_method_is_none()) {
         $user = $schema->resultset('Users')->find({username => DEFAULT_ADMIN});
     }
-    return 1 if ($user && $user->is_operator);
+    if (
+        $user
+        && (
+            $api_key
+            ?        (($user->is_admin && $api_key->is_admin)
+                  || ($user->is_operator && $api_key->is_operator))
+            : ($user->is_admin || $user->is_operator)))
+    {
+        return 1;
+    }
+
+    log_debug "API check failed: user @{[$user->username]} does not have required operator/admin level" if $user;
 
     $self->render(json => {error => 'Not authorized'}, status => 403);
     return undef;
@@ -170,11 +180,14 @@ sub _token_auth ($self, $reason, $userinfo) {
                 my $user = $api_key->user;
                 my $name = $user->name;
                 $self->stash(webhook_validation_secret => join ':', $name, $key, $secret);
-                if ($user && secure_compare($username, $name)) {
-                    return ($user, undef) if secure_compare($secret, $api_key->secret);
-                    $log->debug("$reject_msg, wrong secret");
+                if (!$user || !secure_compare($username, $name)) {
+                    $log->debug(qq{$reject_msg, wrong username, expected "$name"});
                 }
-                else { $log->debug(qq{$reject_msg, wrong username, expected "$name"}) }
+                elsif (secure_compare($secret, $api_key->secret)) {
+                    $self->stash(current_api_key => $api_key);
+                    return ($user, undef);
+                }
+                else { $log->debug("$reject_msg, wrong secret") }
             }
             else { $log->debug("$reject_msg, wrong key") }
         }
@@ -203,8 +216,10 @@ sub _key_auth ($self, $reason, $key) {
         my $our_timestamp = time;
         my $username = $api_key->user->username;
 
-        return ($api_key->user, $reason)
-          if $self->_valid_hmac($hash, $msg, $our_timestamp, $remote_timestamp, $api_key);
+        if ($self->_valid_hmac($hash, $msg, $our_timestamp, $remote_timestamp, $api_key)) {
+            $self->stash(current_api_key => $api_key);
+            return ($api_key->user, $reason);
+        }
 
         my $reject_msg
           = sprintf 'Rejecting authentication for user "%s" with ip "%s", valid key "%s", secret "%s"',

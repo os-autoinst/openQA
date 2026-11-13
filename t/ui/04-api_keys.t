@@ -85,4 +85,15 @@ $t->get_ok('/api_keys')->status_is(200, 'api keys listing page displays')->text_
     'comment with HTML special characters is safely rendered as text'
 )->element_exists_not('#api_key_11 .comment script', 'HTML tags in comment are not rendered as DOM elements');
 
+$t->post_ok('/api_keys', {'X-CSRF-Token' => $token} => form => {role => 'user'})
+  ->status_is(302, 'create unprivileged api key redirects');
+$t->get_ok('/api_keys')->status_is(200, 'api keys listing page displays')
+  ->text_is('#api_key_12 .role' => 'User', 'unprivileged key shows User role')
+  ->text_is('#api_key_3 .role' => 'Operator', 'operator key shows Operator role');
+
+$t->post_ok('/api_keys', {'X-CSRF-Token' => $token} => form => {role => 'admin'})
+  ->status_is(302, 'non-admin cannot create admin key in web UI');
+$t->get_ok('/api_keys')->status_is(200, 'api keys listing page displays')
+  ->content_like(qr/Cannot grant administrator role exceeding own account/, 'error flash is shown');
+
 done_testing();

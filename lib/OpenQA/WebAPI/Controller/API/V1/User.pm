@@ -125,8 +125,10 @@ sub delete_self ($self) {
 
 =item create_api_key()
 
-Create a new API key. Accepts optional C<expiration> datetime and optional
-C<comment> as form params. Returns the key, secret, comment, and expiration.
+Create a new API key. Accepts optional C<expiration> datetime, optional
+C<comment>, C<is_operator>, C<is_admin>, and C<role> (C<admin>|C<operator>|C<user>)
+as form params. Returns the key, secret, comment, is_operator, is_admin, and
+expiration.
 
 =back
 
@@ -138,21 +140,49 @@ sub create_api_key ($self) {
     my $validation = $self->validation;
     $validation->optional('expiration', 'seconds_optional')->datetime;
     $validation->optional('comment')->size(0, API_KEY_COMMENT_MAX_LENGTH);
+    $validation->optional('is_operator')->in('0', '1');
+    $validation->optional('is_admin')->in('0', '1');
+    $validation->optional('role')->in('admin', 'operator', 'user');
     return $self->render(
         json => {error => 'Date must be in format ' . DateTime::Format::Pg->format_datetime(DateTime->now())},
         status => 400
     ) if $validation->has_error;
+
+    my $role = $validation->is_valid('role') ? $validation->param('role') : undef;
+    my ($is_operator, $is_admin, $role_error) = $self->parse_api_key_roles($role, $validation, $user);
+    if ($role_error) {
+        return $self->render(
+            json => {error => $role_error},
+            status => 400
+        );
+    }
+
+    if (my $perm_error = $self->validate_api_key_role_grant($is_admin, $is_operator, $user)) {
+        return $self->render(
+            json => {error => $perm_error},
+            status => 400
+        );
+    }
+
     $expiration
       = $validation->is_valid('expiration')
       ? DateTime::Format::Pg->parse_datetime($validation->param('expiration'))
       : DateTime->now->add(years => 1);
-    my $apikey = $user->api_keys->create({t_expiration => $expiration, comment => $validation->param('comment')});
+    my $apikey = $user->api_keys->create(
+        {
+            t_expiration => $expiration,
+            comment => $validation->param('comment'),
+            is_operator => $is_operator,
+            is_admin => $is_admin,
+        });
     $self->render(
         json => {
             id => $apikey->id,
             key => $apikey->key,
             secret => $apikey->secret,
             comment => $apikey->comment,
+            is_operator => $apikey->is_operator,
+            is_admin => $apikey->is_admin,
             t_expiration => $apikey->t_expiration
         });
 }
@@ -161,7 +191,7 @@ sub create_api_key ($self) {
 
 =item list_api_keys()
 
-List API keys of the current user. Includes C<comment> for each key; the secret is omitted.
+List API keys of the current user. Includes C<comment>, C<is_operator>, and C<is_admin> for each key; the secret is omitted.
 
 =back
 
@@ -173,6 +203,8 @@ sub list_api_keys ($self) {
         {
             key => $_->key,
             comment => $_->comment,
+            is_operator => $_->is_operator,
+            is_admin => $_->is_admin,
             t_expiration => $_->t_expiration,
             t_created => $_->t_created,
             t_updated => $_->t_updated,
