@@ -20,22 +20,29 @@ sub status ($self) {
     my $status = {status => 'downloading'};
     my $notes = $info->{notes};
     if ($info->{state} eq 'finished' && !$self->progress->is_downloading($notes->{lock})) {
+        # Output from the job that actually did the download
+        if (my $id = $notes->{downloading_job}) {
+            if (my $job = $self->minion->job($id)) {
+                if (my $dl_info = $job->info) {
+                    return $self->render(json => {error => "Minion job #$id failed: $dl_info->{result}"}, status => 500)
+                      if $dl_info->{state} eq 'failed';
+                    return $self->render(json => {status => 'downloading'})
+                      if $dl_info->{state} ne 'finished';
+                    $status = {
+                        status => 'processed',
+                        result => $info->{result},
+                        output => $dl_info->{notes}{output},
+                        has_download_error => $dl_info->{notes}{has_download_error}};
+                    return $self->render(json => $status);
+                }
+            }
+        }
+
         $status = {
             status => 'processed',
             result => $info->{result},
             output => $notes->{output},
             has_download_error => $notes->{has_download_error}};
-
-        # Output from the job that actually did the download
-        if (my $id = $info->{notes}{downloading_job}) {
-            if (my $job = $self->minion->job($id)) {
-                if (my $info = $job->info) {
-                    return $self->render(json => {error => "Minion job #$id failed: $info->{result}"}, status => 500)
-                      if $info->{state} eq 'failed';
-                    $status->{output} = $info->{notes}{output} if $info->{state} eq 'finished';
-                }
-            }
-        }
     }
 
     $self->render(json => $status);
@@ -60,7 +67,9 @@ sub enqueue ($self) {
     $self->app->log->debug("Requested [$task] Args: @{$args} Lock: $lock");
 
     my $prio = $data->{priority} // ($DEFAULT_PRIO_BY_TASK{$task} // 0);
-    my $id = $self->minion->enqueue($task => $args => {notes => {lock => $lock}, priority => $prio});
+    my $attempts = $data->{attempts} // 3;
+    my $id
+      = $self->minion->enqueue($task => $args => {notes => {lock => $lock}, priority => $prio, attempts => $attempts});
     $self->render(json => {status => 'downloading', id => $id});
 }
 
