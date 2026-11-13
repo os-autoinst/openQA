@@ -17,6 +17,8 @@ has retry => 1;
 #       action twice.
 has abort => 0;
 
+has retry_delay => 30;
+
 my $SIGNALED = 0;
 
 # retries the specified Minion job when receiving SIGTERM/SIGINT as long as the returned object exists
@@ -50,7 +52,12 @@ sub _handle_signal ($self_weak, $signal) {
 
     # schedule a retry before stopping the job's execution prematurely
     $job->note(signal_handler => "Received signal $signal, scheduling retry and releasing locks");
-    $job->retry;
+    my %retry_args;
+    $retry_args{delay} = $self_weak->retry_delay if $self_weak->retry_delay;
+    if ($job->can('info') && ref(my $info = $job->info) eq 'HASH') {
+        $retry_args{attempts} = ($info->{attempts} // 1) + 1;
+    }
+    $job->retry(%retry_args ? (\%retry_args) : ());
     exit;
 }
 
