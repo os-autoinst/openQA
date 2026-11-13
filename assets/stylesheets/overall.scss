@@ -145,10 +145,10 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 }
 [data-bs-theme='dark'] {
   .card.border-danger .card-header {
-    color: #ffd9d7;
+    color: $color-card-danger-text-dark;
     background-color: #450202;
     .btn-outline-secondary {
-      --bs-btn-color: #adb5bd;
+      --bs-btn-color: #{$btn-outline-secondary-color-dark};
     }
   }
 }

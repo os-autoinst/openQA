@@ -601,7 +601,7 @@ ul.modcategory {
       color: $default-bg-color-dark;
     }
     .modules-badge-container .btn-outline-secondary {
-      --bs-btn-color: #adb5bd;
+      --bs-btn-color: #{$btn-outline-secondary-color-dark};
     }
   }
   #settings td {
