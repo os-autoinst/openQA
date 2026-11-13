@@ -63,11 +63,12 @@ def _get_source_files() -> list[Path]:
         and "local" not in f.parts
         and "cover_db" not in f.parts
         and "external" not in f.parts
+        and "cache" not in f.parts
     ]
 
 
 def _get_source_file_contents() -> list[str]:
-    return [f.read_text(encoding="utf-8") for f in _get_source_files() if f.exists()]
+    return [f.read_text(encoding="utf-8") for f in _get_source_files() if f.is_file()]
 
 
 def _get_referenced_keys_from_source(defined_anchors: dict[str, tuple[str, str]], file_contents: list[str]) -> set[str]:
