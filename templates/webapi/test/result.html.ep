@@ -47,7 +47,12 @@
                     <a href="#downloads" aria-controls="downloads" role="tab" data-bs-toggle="tab" class="nav-link">Logs &amp; Assets</a>
                 </li>
                 <li role="presentation" class="nav-item" id="nav-item-for-settings">
-                    <a href="#settings" aria-controls="settings" role="tab" data-bs-toggle="tab" class="nav-link">Settings</a>
+                    <a href="#settings" aria-controls="settings" role="tab" data-bs-toggle="tab" class="nav-link">
+                        Settings
+                        % if ($has_deprecated_settings) {
+                            <span class="badge <%= ($deprecated_level // '') eq 'error' ? 'bg-danger' : 'bg-warning text-dark' %>" data-bs-toggle="tooltip" title="Deprecated settings detected">!</span>
+                        % }
+                    </a>
                 </li>
                 % if ($show_dependencies) {
                     <li role="presentation" class="nav-item" id="nav-item-for-dependencies">
