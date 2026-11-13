@@ -182,8 +182,31 @@ subtest 'Update configuration from Plugin requirements' => sub {
 subtest 'listing assets (for installation/Makefile)' => sub {
     my $app = Mojolicious->new(home => Mojo::Home->new("$FindBin::Bin/.."));
     my $output = combined_from { OpenQA::Assets::list($app) };
-    my @expected_extensions = qw(scss css js png svg ttf);
+    my @expected_extensions = qw(scss css js png svg woff2);
     like $output, qr{^(assets|node_modules)/.*\.$_$}m, "$_ file listed" for @expected_extensions;
+
+    my $root = "$FindBin::Bin/..";
+    my $resolve = sub ($base, $rel) {
+        my @out = ('', grep { length } split m{/}, $base);
+        for my $part (split m{/}, $rel) {
+            if ($part eq '..') { pop @out; die "path escapes base: $base $rel" unless @out }
+            elsif ($part eq '.' || $part eq '') { next }
+            else { push @out, $part }
+        }
+        return join '/', @out[1 .. $#out];
+    };
+    my @missing;
+    for my $css_path (path("$root/assets/assetpack.def")->slurp =~ /^< (\.\.\/node_modules\S*\.css)$/gm) {
+        my $css_dir = $resolve->('assets', $css_path) =~ s{/[^/]+$}{}r;
+        for my $declaration (path("$root/assets/$css_path")->slurp =~ /url\([^)]*\)/g) {
+            my $reference = $declaration =~ s/^url\(\s*['"]?|['"]?\s*\)$//gr;
+            next if $reference =~ m{^(?:data:|\#)};
+            my $target = $resolve->($css_dir, $reference);
+            push @missing, "$css_path refers to $target which is not listed"
+              unless $output =~ /^\Q$target\E$/m;
+        }
+    }
+    is @missing, 0, 'every asset referenced by the node_modules CSS is listed' or diag join "\n", @missing;
 };
 
 done_testing();
