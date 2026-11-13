@@ -8,6 +8,7 @@ use OpenQA::Assets;
 use OpenQA::Schema;
 use OpenQA::Scheduler::DynamicLimit;
 use OpenQA::WebAPI::Plugin::Helpers;
+use OpenQA::WebAPI::Plugin::MCP;
 use OpenQA::Log qw(setup_log log_debug log_error);
 use OpenQA::Utils qw(detect_current_version service_port);
 use OpenQA::Setup;
@@ -225,7 +226,11 @@ sub startup ($self) {
     $r->get('/dashboard_build_results' => [format => ['json', 'html']])->name('dashboard_build_results')
       ->to('main#dashboard_build_results', format => undef);
     $r->get('/api_help' => sub ($c) { $c->render('admin/api_help') })->name('api_help');
-    $r->get('/mcp_help' => sub ($c) { $c->render('admin/mcp_help') })->name('mcp_help');
+    $r->get(
+        '/mcp_help' => sub ($c) {
+            my $mode = $c->app->config->{global}{mcp_enabled};
+            $c->render('admin/mcp_help', mcp_mode => $mode, mcp_tools => OpenQA::WebAPI::Plugin::MCP::tool_info($mode));
+        })->name('mcp_help');
 
     # Default route
     $r->get('/' => sub ($c) { $c->render('main/index') })->name('index');
