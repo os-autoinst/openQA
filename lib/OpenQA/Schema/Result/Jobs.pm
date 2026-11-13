@@ -2100,6 +2100,31 @@ sub handle_retry ($self) {
     return 1;
 }
 
+=head2 softfail_origin_on_retry
+
+Sets the origin job of an C<openqa-investigate> retry job (C<:investigate:retry>)
+to softfailed if this job is ok and C<_SOFTFAIL_ON_RETRY> is set. The origin is
+only changed if it failed and its name matches.
+
+=cut
+
+sub softfail_origin_on_retry ($self) {
+    my $settings = $self->settings_hash;
+    return undef unless $settings->{_SOFTFAIL_ON_RETRY} && grep { $self->result eq $_ } OK_RESULTS;
+    return undef unless ($settings->{OPENQA_INVESTIGATE_ORIGIN} // '') =~ m{/t(\d+)$};
+    my $origin_id = $1;
+    return undef unless (my $origin_name = $self->TEST) =~ s/:investigate:retry$//;
+    return undef unless my $origin = $self->result_source->resultset->find($origin_id);
+    return undef unless $origin->TEST eq $origin_name && $origin->result eq FAILED;
+    $origin->update_result(SOFTFAILED);
+    if (my $system_user = $self->result_source->schema->resultset('Users')->system({select => ['id']})) {
+        my $msg = sprintf 'Softfailing because retry job t#%d is %s and _SOFTFAIL_ON_RETRY is set', $self->id,
+          $self->result;
+        $origin->comments->create({text => $msg, user_id => $system_user->id});
+    }
+    return $origin;
+}
+
 sub enqueue_restart ($self, $options = {}) {
     my $openqa_job_id = $self->id;
     my $minion_job_id = OpenQA::App->singleton->gru->enqueue(restart_job => [$openqa_job_id], $options)->{minion_id};
@@ -2206,6 +2231,7 @@ sub done ($self, %args) {
     $finalize_opts{parents} = [$self->enqueue_restart] if $restart || ($self->is_ok_to_retry && $self->handle_retry);
     # bugrefs are there to mark reasons of failure - the function checks itself though
     my $carried_over = $self->carry_over_bugrefs;
+    $self->softfail_origin_on_retry;
 
     # cancel other jobs in the cluster if a result has been set and it is not ok
     $self->cancel_other_jobs_in_cluster if defined $new_val{result} && !grep { $result eq $_ } OK_RESULTS;

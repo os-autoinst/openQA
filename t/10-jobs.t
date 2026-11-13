@@ -1138,6 +1138,64 @@ subtest 'job setting based retriggering' => sub {
     is $lastest_job->latest_job->id, $lastest_job->id, 'found the latest job from latest job itself';
 };
 
+subtest 'softfailing failed job if investigation retry job is ok' => sub {
+    my $test = 'softfail_on_retry';
+    my $create_origin = sub ($result = FAILED) {
+        my $origin = _job_create({%settings, TEST => $test});
+        $origin->done(result => $result);
+        return $origin->discard_changes;
+    };
+    my $retry = sub ($origin, $result, %overrides) {
+        my %retry_settings = (
+            %settings,
+            TEST => "$test:investigate:retry",
+            OPENQA_INVESTIGATE_ORIGIN => 'https://openqa.example.com/t' . $origin->id,
+            _SOFTFAIL_ON_RETRY => 1,
+            %overrides
+        );
+        my $job = _job_create(\%retry_settings);
+        $job->done(result => $result);
+        return $job->discard_changes;
+    };
+
+    my $origin = $create_origin->();
+    my $retry_job = $retry->($origin, PASSED);
+    is $origin->discard_changes->result, SOFTFAILED, 'failed job softfailed after passed retry';
+    like $origin->comments->first->text, qr/Softfailing because retry job t#@{[$retry_job->id]} is passed/,
+      'comment about softfailing added';
+
+    $origin = $create_origin->();
+    $retry->($origin, SOFTFAILED);
+    is $origin->discard_changes->result, SOFTFAILED, 'failed job softfailed after softfailed retry';
+
+    $origin = $create_origin->();
+    $retry->($origin, FAILED);
+    is $origin->discard_changes->result, FAILED, 'not softfailed if retry failed';
+
+    $origin = $create_origin->();
+    $retry->($origin, PASSED, _SOFTFAIL_ON_RETRY => 0);
+    is $origin->discard_changes->result, FAILED, 'not softfailed if setting not enabled';
+
+    $origin = $create_origin->();
+    $retry->($origin, PASSED, OPENQA_INVESTIGATE_ORIGIN => 'https://openqa.example.com/tests/foo');
+    is $origin->discard_changes->result, FAILED, 'not softfailed if origin URL invalid';
+
+    $origin = $create_origin->();
+    $retry->($origin, PASSED, TEST => "$test:investigate:last_good_build:foo");
+    is $origin->discard_changes->result, FAILED, 'not softfailed if not a retry job';
+
+    $origin = $create_origin->();
+    $retry->($origin, PASSED, TEST => 'other:investigate:retry');
+    is $origin->discard_changes->result, FAILED, 'not softfailed if name differs from origin';
+
+    $origin = $create_origin->(PASSED);
+    $retry->($origin, PASSED);
+    is $origin->discard_changes->result, PASSED, 'passed job not changed';
+
+    $retry->($origin, PASSED, OPENQA_INVESTIGATE_ORIGIN => 'https://openqa.example.com/t999999');
+    is $origin->discard_changes->result, PASSED, 'nothing happens if origin does not exist';
+};
+
 subtest 'AMQP event emission for job restarts within Minion tasks' => sub {
     my $plugin_mock = Test::MockModule->new('OpenQA::WebAPI::Plugin::AMQP');
     my $conf = "[global]\nplugins=AMQP\n[amqp]\npublish_attempts = 2\npublish_retry_delay = 0\n";
