@@ -619,6 +619,15 @@ subtest 'Handle reconnect' => sub {
         is $uploaded, 0, 'no upload results triggered when timer exists';
 
         delete $job->{_upload_results_timer};
+        $job->{_is_uploading_results} = 1;
+        my $upload_concluded = 0;
+        $job->once(uploading_results_concluded => sub { ++$upload_concluded });
+        combined_like { $job->handle_reconnect } qr/Re-connected while job 4 is active/,
+          'log message on reconnect when running with ongoing upload';
+        is $upload_concluded, 0, 'ongoing upload not concluded on reconnect for active job';
+        is $uploaded, 0, 'no upload results triggered when upload is ongoing';
+
+        $job->{_is_uploading_results} = 0;
         combined_like { $job->handle_reconnect } qr/Re-connected while job 4 is active/,
           'log message on reconnect when running without timer';
         is $uploaded, 1, 'upload results triggered when running without timer';
@@ -1374,6 +1383,43 @@ subtest 'Dynamic schedule' => sub {
     $client->websocket_connection->sent_messages([]);
     $results_directory->remove_tree;
     $upload_stats = {upload_result => 1, uploaded_files => [], uploaded_assets => []};
+};
+
+subtest 'test schedule is sent in status updates until acknowledged' => sub {
+    my $results_directory = $pool_directory->child('testresults')->make_path;
+    my $status_file = $pool_directory->child(OpenQA::Worker::Job::AUTOINST_STATUSFILE);
+    my $test_order = [{category => 'kernel', flags => {}, name => 'boot', script => 'tests/boot.pm'}];
+    $results_directory->child('test_order.json')->spew(encode_json($test_order));
+    $status_file->spew(encode_json({status => 'running', current_test => 'boot'}));
+
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 12, URL => $engine_url});
+    $client->sent_messages(my $msgs = []);
+
+    subtest 'first prepare sends test_order' => sub {
+        $job->_upload_results_step_0_prepare(sub { });
+        is scalar(@$msgs), 1, 'first status update sent';
+        is_deeply $msgs->[-1]{json}{status}{test_order}, $test_order, 'first status update includes test_order';
+        ok !$job->{_test_order_uploaded}, 'test_order not yet acknowledged';
+    };
+
+    subtest 'second prepare before callback runs also sends test_order' => sub {
+        $job->_upload_results_step_0_prepare(sub { });
+        is scalar(@$msgs), 2, 'second status update sent';
+        is_deeply $msgs->[-1]{json}{status}{test_order}, $test_order,
+          'status update before acknowledgement still includes test_order';
+        # let the callback run to acknowledge the upload
+        Mojo::IOLoop->one_tick;
+        ok $job->{_test_order_uploaded}, 'test_order acknowledged after callback';
+    };
+
+    subtest 'third prepare after acknowledgement omits test_order' => sub {
+        $job->_upload_results_step_0_prepare(sub { });
+        is scalar(@$msgs), 3, 'third status update sent';
+        ok !defined $msgs->[-1]{json}{status}{test_order}, 'test_order omitted once acknowledged';
+    };
+
+    $client->sent_messages([]);
+    $results_directory->remove_tree;
 };
 
 subtest 'image optimization' => sub {
