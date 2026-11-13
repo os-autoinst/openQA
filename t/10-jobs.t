@@ -479,6 +479,14 @@ subtest 'carry over, including soft-fails' => sub {
         unlike $inv->{diff_to_last_good}, qr/JOBTOKEN/, 'special variables are not included';
         like $inv->{diff_packages_to_last_good}, qr/^\+python/m, 'diff packages for job is shown';
         is $inv->{test_log}, $fake_git_log, 'test git log is evaluated';
+        like $inv->{diff_to_last_good}, qr/^-.*"BUILD".*667.*\n\+.*"BUILD".*669/m, 'changed setting is a -/+ pair';
+        is OpenQA::Schema::Result::Jobs::sorted_diff_lines(
+"@@ -1 +1 @@\n-b-1-1.x\n-grub2-2.12-150700.19.40.1.aarch64\n+a-1-1.x\n+grub2-2.12-150700.19.37.1.aarch64\n-grub2-2.12-1.1.aarch64\n-NAME-1-1.x\nodd\n",
+            '^.NAME'
+          ),
+"+a-1-1.x\n-b-1-1.x\n-grub2-2.12-1.1.aarch64\n-grub2-2.12-150700.19.40.1.aarch64\n+grub2-2.12-150700.19.37.1.aarch64\nodd",
+          'diff lines sorted by package name with removals before additions';
+        is OpenQA::Schema::Result::Jobs::sorted_diff_lines(undef, 'x'), '', 'no diff gives empty string';
         is $inv->{needles_log}, $fake_git_log, 'needles git log is evaluated';
         $fake_git_log = '';
         ok $inv = $job->investigate, 'job investigation ok for no test changes';
