@@ -850,15 +850,32 @@ available.</em></p>
 <pre><code>select_console(&quot;root-console&quot;);</code></pre>
 <p>Select the named console for further <code>testapi</code> interaction
 (send_text, send_key, wait_screen_change, ...)</p>
-<p>If this the first time, a test selects this console, the distribution
-will get a call into activate_console(&#39;root-console&#39;, $console_obj,
-@args) to make sure to actually log in root. For the backend it&#39;s just a
-<code>tty</code> object (in this example) - so it will ensure the
-console is active, but to setup the root shell on this console, the
-distribution needs to run test code.</p>
-<p>After the console selection the distribution callback
+<p>If this is the first time a test selects this console, the
+distribution will get a call into
+<code>activate_console(&#39;root-console&#39;, $console_obj, @args)</code> to
+make sure to actually log in root. For the backend it is just a
+<code>tty</code> object (in this example) - so it will trigger the
+console selection (e.g. by sending <code>ctrl-alt-f&lt;n</code>&gt; key
+events to the system under test), but to set up the root shell on this
+console, the distribution needs to run test code.</p>
+<p>Note that <code>select_console</code> does <strong>not</strong>
+synchronize with the guest operating system out of the box. For consoles
+like <code>tty-console</code>, the guest OS / display server switches
+virtual terminals asynchronously, and <code>select_console</code>
+returns immediately after dispatching the switching key events. If
+actions such as <code>enter_cmd</code> or <code>type_string</code> are
+run immediately without synchronization, keystrokes might be lost or
+sent to the previous console while the switch is still in progress.</p>
+<p>After console selection, the distribution callback
 <code>$distri-</code>console_selected&gt; is called with
-<code>@args</code>.</p>
+<code>@args</code>. By default, this callback does nothing.
+Synchronization can be achieved either by explicitly verifying readiness
+in the test (e.g. with <code>assert_screen</code>), or by overriding
+<code>console_selected</code> in the distribution. For example, in
+<code>os-autoinst-distri-opensuse</code>,
+<code>susedistribution::console_selected</code> automatically calls
+<code>assert_screen</code> with the console&#39;s tag to ensure that the
+console is visible and ready before test execution continues.</p>
 <h2 id="console">console</h2>
 <pre><code>console(&quot;testapi_console&quot;)-&gt;$console_command(@console_command_args)</code></pre>
 <p>Some consoles have special commands beyond <code>type_string</code>,
