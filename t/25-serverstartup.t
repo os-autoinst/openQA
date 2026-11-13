@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -base, -signatures;
 use Test::Warnings ':report_warnings';
 
 BEGIN {
@@ -190,7 +191,7 @@ done_testing();
 package OpenQA::FakePlugin::Fuzzer;
 use Mojo::Base -base;
 
-sub configuration_fields () {
+sub configuration_fields ($self) {
     {
         bazzer => {
             realfoo => 1
