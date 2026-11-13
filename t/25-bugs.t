@@ -11,6 +11,7 @@ require OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(run_gru_job);
 use OpenQA::Test::TimeLimit '10';
 use Test::Mojo;
+use Test::MockModule;
 use Test::Warnings ':report_warnings';
 
 my $schema = OpenQA::Test::Database->new->create;
@@ -48,6 +49,27 @@ subtest 'Unreferenced bugs cleanup job works' => sub {
     run_gru_job($app, 'limit_bugs');
     is $bugs->count, 1, 'Bugs cleaned up';
     ok $bugs->find({bugid => 'poo#202'}), 'Bug poo#202 not cleaned up due to reference from comment';
+};
+
+subtest 'implicit insert conflicts with a bug inserted meanwhile' => sub {
+    my $mock = Test::MockModule->new('OpenQA::Schema::ResultSet::Bugs');
+    my $orig_find = $mock->original('find');
+    my $first_find = 1;
+    $mock->redefine(
+        find => sub {
+            my ($self, @args) = @_;
+            if ($first_find && ref $args[0] eq 'HASH' && ($args[0]->{bugid} // '') eq 'poo#300') {
+                $first_find = 0;
+                $self->create({bugid => 'poo#300', refreshed => 1, existing => 1, title => 'concurrent bug'});
+                return undef;
+            }
+            return $orig_find->($self, @args);
+        });
+
+    my $res = $bugs->get_bug('poo#300');
+    ok $res, 'bug returned despite concurrent insert race';
+    is $res->bugid, 'poo#300', 'correct bugid';
+    is $res->title, 'concurrent bug', 'correct title from concurrent insert';
 };
 
 done_testing();
