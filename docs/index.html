@@ -983,7 +983,12 @@ for &quot;64bit&quot;, &quot;uefi&quot;, etc.</p>
 <p><strong>scenario</strong> : A composition of
 <code>&lt;distri&gt;-&lt;version&gt;-&lt;flavor&gt;-&lt;arch&gt;-&lt;test_suite&gt;@&lt;machine&gt;</code>,
 e.g. <code>openSUSE-Tumbleweed-DVD-x86_64-gnome@64bit</code>, nicknamed
-<em>koala</em></p>
+<em>koala</em>. This composition establishes the base identity of a test
+used for grouping jobs into a common history. Jobs sharing the same
+scenario can be further partitioned into independent histories (e.g. to
+separate pull requests or incident tests) using history isolation
+settings like <code>SUBMISSION_ID</code> so that unrelated test runs do
+not pollute each other&#39;s history.</p>
 <p><strong>build</strong> : Different versions of a product as tested,
 can be considered a &quot;sub-version&quot; of <em>version</em>, e.g. &quot;Build1234&quot;;
 <strong>CAUTION:</strong> ambiguity: either with the prefix &quot;Build&quot;
