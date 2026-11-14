@@ -269,7 +269,7 @@ sub delete ($self) {
     return $self->render(
         json => {error => "Comment $comment_id has 'force_result' label, deleting not allowed"},
         status => 403
-    ) if grep { /^force_result:/ } @{find_labels($comment->text)};
+    ) if defined(($comment->force_result)[0]);
     return $self->render(json => {error => 'Forbidden (must be author or admin)'}, status => 403)
       unless ($self->current_user->is_admin || $comment->user_id == $self->current_user->id);
     $self->emit_event('openqa_comment_delete', {id => $comment_id});
@@ -297,7 +297,13 @@ sub delete_many ($self) {
 
     my $ids = $validation->every_param('id');
     my $comments = $self->schema->resultset('Comments');
-    my $deleted_rows = $comments->search({id => {-in => $ids}, text => {-not_like => '%label:force_result:%'}})->delete;
+    my $txn_guard = $self->schema->txn_scope_guard;
+    # lock the rows so an edit cannot add a force_result label between the check and the delete
+    my @rows
+      = $comments->search({id => {-in => $ids}}, {columns => [qw(id text)], order_by => 'id', for => 'update'})->all;
+    my @deletable = map { $_->id } grep { !defined(($_->force_result)[0]) } @rows;
+    my $deleted_rows = @deletable ? $comments->search({id => {-in => \@deletable}})->delete : 0;
+    $txn_guard->commit;
     my $ok = $deleted_rows && $deleted_rows == scalar @$ids;
 
     my %res = (ids => $ids, deleted => int $deleted_rows);
