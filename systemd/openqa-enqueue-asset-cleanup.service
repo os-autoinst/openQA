@@ -7,3 +7,4 @@ Wants=openqa-setup-db.service
 Type=oneshot
 User=geekotest
 ExecStart=/usr/share/openqa/script/openqa-enqueue-asset-cleanup
+SuccessExitStatus=SIGTERM
