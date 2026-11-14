@@ -45,9 +45,14 @@ subtest 'list users' => sub {
     is $arthur->{email}, 'arthur@example.com', 'arthur email matches';
     is $arthur->{is_operator}, 1, 'arthur is operator';
     is $arthur->{is_admin}, 1, 'arthur is admin';
+    is $arthur->{active_api_keys_count}, 1, 'arthur has 1 active api key';
     is $arthur->{deleted_at}, undef, 'arthur is not deleted';
     like $arthur->{t_created}, qr/^\d{4}-\d{2}-\d{2}/, 'arthur has formatted t_created';
     like $arthur->{t_updated}, qr/^\d{4}-\d{2}-\d{2}/, 'arthur has formatted t_updated';
+
+    my ($percival) = grep { $_->{id} == 99903 } @$users;
+    ok $percival, 'percival user found';
+    is $percival->{active_api_keys_count}, 2, 'percival has 2 active api keys';
 
     my ($demo) = grep { $_->{id} == 99904 } @$users;
     ok $demo, 'demo user found';
@@ -57,6 +62,7 @@ subtest 'list users' => sub {
     is $demo->{email}, undef, 'demo email is null';
     is $demo->{is_operator}, 0, 'demo is not operator';
     is $demo->{is_admin}, 0, 'demo is not admin';
+    is $demo->{active_api_keys_count}, 0, 'demo has 0 active api keys';
     like $demo->{deleted_at}, qr/^\d{4}-\d{2}-\d{2}/, 'demo has formatted deleted_at';
 
     my $active_users
