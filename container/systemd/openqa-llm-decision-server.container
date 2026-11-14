@@ -1,0 +1,21 @@
+[Unit]
+Description=Llama Cpp Decision Model Server for openQA
+After=network-online.target
+
+[Container]
+Image=ghcr.io/ggml-org/llama.cpp:server
+ContainerName=openqa-llm-decision-server
+Volume=/opt/llm/models:/models
+PublishPort=8081:8080
+# one fixed model file, as the failure classes were measured with it;
+# few threads, as the host is shared with openqa-llm-server
+Exec=--model /models/elephant-1-Q4_K_M.gguf --model-url https://huggingface.co/waseigo/elephant-1-decision-GGUF/resolve/6494b79c57cdac75edccf3661889975618175b3b/elephant-1-Q4_K_M.gguf --ctx-size 49152 --batch-size 16384 --ubatch-size 16384 --flash-attn on --cache-ram 0 --threads 8 --threads-batch 16
+Environment=HF_HOME=/models
+Environment=LLAMA_CACHE=/models
+
+[Service]
+Restart=always
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target
