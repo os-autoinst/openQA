@@ -3,6 +3,18 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+// Font Awesome 7 gives every icon a fixed 1.25em box which shifts adjacent text; keep the
+// natural glyph width. .fa-fw sets --fa-width itself, so fixed-width icons keep working.
+:root {
+  --fa-width: auto;
+}
+
+// FA 7 appends a trailing space to every icon via `content: var(--fa)/""`. The `html` prefix
+// raises specificity above FA's own rule so adjacent text keeps its position.
+html :is(.fa, .fa-solid, .fa-regular, .fa-brands, .fas, .far, .fab, .fa-classic)::before {
+  content: var(--fa);
+}
+
 // overall appearance (background color, font color, paragraphs, footer, etc.)
 html {
   position: relative;
