@@ -9,7 +9,7 @@ use OpenQA::Log qw(log_debug log_info log_warning);
 use OpenQA::ScreenshotDeletion;
 use OpenQA::Utils qw(:DEFAULT prjdir resultdir archivedir check_df);
 use OpenQA::Task::Utils
-  qw(acquire_limit_lock_or_retry finish_job_if_disk_usage_below_percentage is_disk_usage_below_percentage);
+  qw(acquire_limit_lock_or_retry finish_job_if_storage_usage_below_percentage is_storage_usage_below_percentage);
 use OpenQA::Task::SignalGuard;
 use Scalar::Util 'looks_like_number';
 use List::Util 'min';
@@ -34,6 +34,18 @@ sub _limit ($job, $args = undef) {
 
     # prevent multiple limit_results_and_logs tasks and limit_screenshots_task/archive_job_results to run in parallel
     my $app = $job->app;
+    my $archiving_cfg = $app->config->{archiving};
+    my $min_free = $archiving_cfg->{archive_important_jobs_min_free_percentage};
+    my $keep_free = $archiving_cfg->{archive_keep_free_percentage};
+    my $max_dur = $archiving_cfg->{archive_max_duration};
+
+    return $job->fail(_format_percentage_error(archive_important_jobs_min_free_percentage => $min_free))
+      unless _is_valid_percentage($min_free);
+    return $job->fail(_format_percentage_error(archive_keep_free_percentage => $keep_free))
+      unless _is_valid_percentage($keep_free);
+    return $job->fail("Configured archive_max_duration ($max_dur) is not a non-negative number")
+      if !looks_like_number($max_dur) || $max_dur < 0;
+
     return $job->retry({delay => ONE_MINUTE})
       unless my $process_job_results_guard = $app->minion->guard('process_job_results_task', ONE_DAY);
     return $job->finish('Previous limit_results_and_logs job is still active')
@@ -44,15 +56,17 @@ sub _limit ($job, $args = undef) {
     return undef unless my $limit_guard = acquire_limit_lock_or_retry($job);
 
     return undef
-      if finish_job_if_disk_usage_below_percentage(
+      if finish_job_if_storage_usage_below_percentage(
         job => $job,
         setting => 'result_cleanup_max_free_percentage',
         dir => resultdir,
       );
 
+    my $schema = $app->schema;
+    _archive_important_jobs_upfront($job, $archiving_cfg, $min_free, $keep_free, $max_dur);
+
     # create temporary job group outside of DB to collect
     # jobs without job_group_id
-    my $schema = $app->schema;
     $schema->resultset('JobGroups')->new({})->limit_results_and_logs;
 
     my $cache_file_path = prjdir() . '/webui/cache/cleanup-status.json';
@@ -86,7 +100,7 @@ sub _limit ($job, $args = undef) {
     my $last_processed_id;
     for my $group (@all_groups) {
         if (
-            my $msg = is_disk_usage_below_percentage(
+            my $msg = is_storage_usage_below_percentage(
                 job => $job,
                 setting => 'result_cleanup_max_free_percentage',
                 dir => resultdir
@@ -150,7 +164,7 @@ sub _limit ($job, $args = undef) {
     }
     $job->note(screenshot_cleanup => \@screenshot_cleanup_info);
     $gru->enqueue(ensure_results_below_threshold => {}, {parents => \@parent_minion_job_ids})
-      if $config->{results_min_free_disk_space_percentage} or $config->{archive_min_free_disk_space_percentage};
+      if $config->{result_cleanup_min_free_percentage} or $config->{archive_cleanup_min_free_percentage};
 }
 
 sub _limit_screenshots ($job, $args) {
@@ -192,7 +206,7 @@ sub _limit_screenshots ($job, $args) {
     }
 }
 
-sub _check_remaining_disk_usage ($job, $resultdir, $min_free_percentage) {
+sub _check_remaining_storage_usage ($job, $resultdir, $min_free_percentage) {
     return 0 unless defined $min_free_percentage;
     my ($available_bytes, $total_bytes) = check_df($resultdir);
     my $free_percentage = $available_bytes / $total_bytes * 100;
@@ -259,6 +273,95 @@ sub _delete_results ($dry, $jobs, $max_job_id, $not_important_cond, $important_c
     return (0, "Unable to cleanup enough results from $from");
 }
 
+sub _build_important_conditions ($schema, $job = undef) {
+    my @groups = $schema->resultset('JobGroups')->all;
+    my %important_builds_with_version = map { $_ => 1 } map { @{$_->important_builds->[0]} } @groups;
+    my %important_builds_without_version = map { $_ => 1 } map { @{$_->important_builds->[1]} } @groups;
+
+    my @important_builds_with_version = keys %important_builds_with_version;
+    my @important_builds_without_version = keys %important_builds_without_version;
+    my @important_cond = (
+        -or => [
+            TAG_ID_COLUMN, => {-in => \@important_builds_with_version},
+            BUILD => {-in => \@important_builds_without_version}]);
+    my @not_important_cond = (
+        TAG_ID_COLUMN, => {-not_in => \@important_builds_with_version},
+        BUILD => {-not_in => \@important_builds_without_version});
+    if ($job) {
+        $job->note(important_builds_with_version => \@important_builds_with_version);
+        $job->note(important_builds_without_version => \@important_builds_without_version);
+    }
+    return (\@not_important_cond, \@important_cond);
+}
+
+sub _archive_important_jobs_upfront ($job, $archiving_cfg, $min_free, $keep_free, $max_dur) {
+    return if !$archiving_cfg->{archive_preserved_important_jobs} || $min_free <= 0;
+    my $app = $job->app;
+    my $res_dev = (stat resultdir())[0];
+    my $ar_dev = (stat archivedir())[0];
+    if (!$ENV{HARNESS_ACTIVE} && $app->mode !~ /^test/ && defined $res_dev && defined $ar_dev && $res_dev == $ar_dev) {
+        $job->note(archived_jobs => 0);
+        $job->note(archiving_stopped => 'resultdir and archivedir are on the same device');
+        return;
+    }
+
+    my $start_time = time;
+    my $schema = $app->schema;
+    my $jobs_rs = $schema->resultset('Jobs');
+    my ($not_important_cond, $important_cond) = _build_important_conditions($schema);
+    my $archive_jobs_count = 0;
+    my $archiving_stopped_reason = '';
+    my @skipped_ids;
+
+    while (1) {
+        if ($max_dur > 0 && (time - $start_time) >= $max_dur) {
+            $archiving_stopped_reason = 'time budget exceeded';
+            last;
+        }
+        my ($available_res, $total_res) = check_df(resultdir());
+        my $free_res_percentage = $available_res / $total_res * 100;
+        if ($free_res_percentage >= $min_free) {
+            $archiving_stopped_reason = 'results threshold reached';
+            last;
+        }
+        my ($available_ar, $total_ar) = check_df(archivedir());
+        my $free_ar_percentage = $available_ar / $total_ar * 100;
+        if ($free_ar_percentage <= $keep_free) {
+            $archiving_stopped_reason = 'archive floor reached';
+            last;
+        }
+        my $candidate = $jobs_rs->search(
+            {
+                @$important_cond,
+                archived => 0,
+                state => {-in => [FINAL_STATES]},
+                (@skipped_ids ? (id => {-not_in => \@skipped_ids}) : ()),
+            },
+            {order_by => {-asc => 'id'}, rows => 1})->first;
+        if (!$candidate) {
+            $archiving_stopped_reason = 'no candidates left';
+            last;
+        }
+        my $job_id = $candidate->id;
+        my $guard = $app->minion->guard("process_job_results_for_$job_id", ONE_DAY);
+        if (!$guard) {
+            push @skipped_ids, $job_id;
+            next;
+        }
+        log_info "Archiving important job $job_id";
+        try {
+            $candidate->archive();
+            $archive_jobs_count++;
+        }
+        catch ($e) {
+            log_warning "Failed to archive job $job_id: $e";
+            push @skipped_ids, $job_id;
+        }
+    }
+    $job->note(archived_jobs => $archive_jobs_count);
+    $job->note(archiving_stopped => $archiving_stopped_reason);
+}
+
 sub _ensure_results_below_threshold ($job, @) {
     my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($job);
     # prevent multiple limit_* tasks to run in parallel
@@ -268,13 +371,13 @@ sub _ensure_results_below_threshold ($job, @) {
 
     # load configured free percentage
     my $limits = $job->app->config->{misc_limits};
-    my $min_free_percentage = $limits->{results_min_free_disk_space_percentage} // 'none';
-    my $min_free_percentage_ar = $limits->{archive_min_free_disk_space_percentage};
-    my $dry = $limits->{dry_min_free_disk_space_cleanup};
-    return $job->finish('No minimum free disk space percentage configured') if $min_free_percentage eq 'none';
-    return $job->fail(_format_percentage_error(results_min_free_disk_space_percentage => $min_free_percentage))
+    my $min_free_percentage = $limits->{result_cleanup_min_free_percentage} // 'none';
+    my $min_free_percentage_ar = $limits->{archive_cleanup_min_free_percentage};
+    my $dry = $limits->{cleanup_min_free_dry_run};
+    return $job->finish('No minimum free storage space percentage configured') if $min_free_percentage eq 'none';
+    return $job->fail(_format_percentage_error(result_cleanup_min_free_percentage => $min_free_percentage))
       unless _is_valid_percentage($min_free_percentage);
-    return $job->fail(_format_percentage_error(archive_min_free_disk_space_percentage => $min_free_percentage_ar))
+    return $job->fail(_format_percentage_error(archive_cleanup_min_free_percentage => $min_free_percentage_ar))
       if defined $min_free_percentage_ar && !_is_valid_percentage($min_free_percentage_ar);
 
     # check free percentage
@@ -283,8 +386,8 @@ sub _ensure_results_below_threshold ($job, @) {
     #         instead.
     my $resultdir = resultdir;
     my $archivedir = archivedir;
-    my $margin_bytes = _check_remaining_disk_usage($job, $resultdir, $min_free_percentage);
-    my $margin_bytes_ar = _check_remaining_disk_usage($job, $archivedir, $min_free_percentage_ar);
+    my $margin_bytes = _check_remaining_storage_usage($job, $resultdir, $min_free_percentage);
+    my $margin_bytes_ar = _check_remaining_storage_usage($job, $archivedir, $min_free_percentage_ar);
     $job->note(resultdir => $resultdir);
     $job->note(archivedir => $archivedir);
     return $job->finish('Done, nothing to do') if $margin_bytes >= 0 && $margin_bytes_ar >= 0;
@@ -302,36 +405,18 @@ sub _ensure_results_below_threshold ($job, @) {
     return $job->finish('Done, no jobs present') unless $max_job_id;
 
     # determine important builds (for each group)
-    my $job_groups = $schema->resultset('JobGroups');
-    my %important_builds_with_version;
-    my %important_builds_without_version;
-    for my $job_group ($job_groups->all) {
-        my ($important_builds_with_version, $important_builds_without_version) = @{$job_group->important_builds};
-        $important_builds_with_version{$_} = 1 for @$important_builds_with_version;
-        $important_builds_without_version{$_} = 1 for @$important_builds_without_version;
-    }
-    my @important_builds_with_version = keys %important_builds_with_version;
-    my @important_builds_without_version = keys %important_builds_without_version;
-    my @important_cond = (
-        -or => [
-            TAG_ID_COLUMN, => {-in => \@important_builds_with_version},
-            BUILD => {-in => \@important_builds_without_version}]);
-    my @not_important_cond = (
-        TAG_ID_COLUMN, => {-not_in => \@important_builds_with_version},
-        BUILD => {-not_in => \@important_builds_without_version});
-    $job->note(important_builds_with_version => \@important_builds_with_version);
-    $job->note(important_builds_without_version => \@important_builds_without_version);
+    my ($not_important_cond, $important_cond) = _build_important_conditions($schema, $job);
 
     # delete results as far as necessary on the results dir and the archive dir
     my $jobs = $schema->resultset('Jobs');
     my ($ok_ar, @message_ar)
       = defined $min_free_percentage_ar
-      ? _delete_results($dry, $jobs, $max_job_id, \@not_important_cond, \@important_cond, \$margin_bytes_ar,
+      ? _delete_results($dry, $jobs, $max_job_id, $not_important_cond, $important_cond, \$margin_bytes_ar,
         \$margin_bytes, 1)
       : (1);
     my ($ok, @message)
-      = _delete_results($dry, $jobs, $max_job_id, \@not_important_cond, \@important_cond, \$margin_bytes,
-        \$margin_bytes, 0);
+      = _delete_results($dry, $jobs, $max_job_id, $not_important_cond, $important_cond, \$margin_bytes, \$margin_bytes,
+        0);
     my $method = $ok && $ok_ar ? 'finish' : 'fail';
     $job->$method(join "\n", @message, @message_ar);
 }

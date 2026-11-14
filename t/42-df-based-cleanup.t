@@ -11,7 +11,7 @@ use OpenQA::Log qw(log_error);
 use OpenQA::Test::TimeLimit '10';
 require OpenQA::Test::Database;
 use OpenQA::Task::Job::Limit;
-use OpenQA::Task::Utils qw(finish_job_if_disk_usage_below_percentage);
+use OpenQA::Task::Utils qw(finish_job_if_storage_usage_below_percentage);
 use OpenQA::Test::Utils qw(perform_minion_jobs run_gru_job);
 use OpenQA::Utils qw(prjdir assetdir resultdir archivedir);
 use Mojo::JSON qw(decode_json encode_json);
@@ -37,17 +37,17 @@ sub job_log_like ($regex, $test_name) {
     return $job;
 }
 
-subtest 'no minimum free disk space percentage for results configured' => sub {
+subtest 'no minimum free storage space percentage for results configured' => sub {
     my $job = run_gru_job($app, ensure_results_below_threshold => []);
     is $job->{state}, 'finished', 'job considered successful';
-    is $job->{result}, 'No minimum free disk space percentage configured', 'noop if no minimum configured';
+    is $job->{result}, 'No minimum free storage space percentage configured', 'noop if no minimum configured';
 };
 
 subtest 'abort early in case of misconfiguration' => sub {
-    $app->config->{misc_limits}->{results_min_free_disk_space_percentage} = 'foo';
-    my $job = job_log_like qr|results_.*_percentage.*foo.*not.*number|, 'error logged';
+    $app->config->{misc_limits}->{result_cleanup_min_free_percentage} = 'foo';
+    my $job = job_log_like qr|result_cleanup_.*_percentage.*foo.*not.*number|, 'error logged';
     is $job->{state}, 'failed', 'result cleanup still considered successful';
-    like $job->{result}, qr|.*results_min_free_disk_space_percentage.*foo.*not.*|, 'result cleanup skipped early';
+    like $job->{result}, qr|.*result_cleanup_min_free_percentage.*foo.*not.*|, 'result cleanup skipped early';
 };
 
 # provide fake data for df
@@ -65,7 +65,7 @@ subtest 'abort early if there is enough free disk space' => sub {
     $app->config->{misc_limits}->{result_cleanup_max_free_percentage} = 10;
     my $job;
     combined_like { $job = run_gru_job($app, limit_results_and_logs => []) }
-    qr/Skipping, free disk space on '.*' exceeds configured percentage 10 % \(free percentage: 11 %\)/,
+    qr/Skipping, free storage space on '.*' exceeds configured percentage 10 % \(free percentage: 11 %\)/,
       'result cleanup early abort logged';
     is $job->{state}, 'finished', 'result cleanup still considered successful';
     like $job->{result},
@@ -74,7 +74,7 @@ subtest 'abort early if there is enough free disk space' => sub {
 
     $app->config->{misc_limits}->{asset_cleanup_max_free_percentage} = 9;
     combined_like { $job = run_gru_job($app, limit_assets => []) }
-    qr/Skipping, free disk space on '.*' exceeds configured percentage 9 % \(free percentage: 11 %\)/,
+    qr/Skipping, free storage space on '.*' exceeds configured percentage 9 % \(free percentage: 11 %\)/,
       'asset cleanup early abort logged';
     is $job->{state}, 'finished', 'asset cleanup still considered successful';
     like $job->{result},
@@ -83,16 +83,17 @@ subtest 'abort early if there is enough free disk space' => sub {
 
     my @check_args = (job => $app->minion->job($job->{id}), setting => 'result_cleanup_max_free_percentage', dir => '');
     $job->{state} = undef;
-    combined_like { ok !finish_job_if_disk_usage_below_percentage(@check_args, setting => 'foo'),
+    combined_like { ok !finish_job_if_storage_usage_below_percentage(@check_args, setting => 'foo'),
         'invalid setting ignored' } qr/Specified value.*will be ignored/, 'warning about invalid setting logged';
 
     $df_mock->redefine(df => sub { die 'df failed' });
-    combined_like { ok !finish_job_if_disk_usage_below_percentage(@check_args), 'invalid df ignored' }
+    combined_like { ok !finish_job_if_storage_usage_below_percentage(@check_args), 'invalid df ignored' }
       qr/df failed.*Proceeding with cleanup/s, 'warning about invalid df logged';
 
     %df_main_storage = (bavail => 10, blocks => 100);
     $mock_df->();
-    ok !finish_job_if_disk_usage_below_percentage(@check_args), 'cleanup done if not enough free disk space available';
+    ok !finish_job_if_storage_usage_below_percentage(@check_args),
+      'cleanup done if not enough free disk space available';
     is $job->{state}, undef, 'job not finished when proceeding with cleanup';
 };
 
@@ -106,7 +107,7 @@ subtest 'abort early during the loop' => sub {
     my $group_bar = $app->schema->resultset('JobGroups')->create({name => 'bar'});
     my $loop_job;
     combined_like { $loop_job = run_gru_job($app, limit_results_and_logs => []) }
-qr/Early abort during job groups loop \(halted before processing group 'bar'\): Skipping, free disk space on '.*' exceeds configured percentage 10 % \(free percentage: 20 %\)/,
+qr/Early abort during job groups loop \(halted before processing group 'bar'\): Skipping, free storage space on '.*' exceeds configured percentage 10 % \(free percentage: 20 %\)/,
       'early abort during loop logged';
     is $loop_job->{state}, 'finished', 'result cleanup still considered successful';
     like $loop_job->{notes}->{early_abort_results},
@@ -119,7 +120,7 @@ qr/Early abort during job groups loop \(halted before processing group 'bar'\): 
 
 $app->config->{misc_limits}->{result_cleanup_max_free_percentage} = 100;
 $app->config->{misc_limits}->{asset_cleanup_max_free_percentage} = 100;
-$app->config->{misc_limits}->{dry_min_free_disk_space_cleanup} = 1;
+$app->config->{misc_limits}->{cleanup_min_free_dry_run} = 1;
 
 # mock the actual deletion of videos and results; it it tested elsewhere
 my $job_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
@@ -150,7 +151,7 @@ $job_mock->redefine(
 # note: Not adjusting $available_bytes_mock in these functions because the code does not rely on df except for the initial check.
 
 # turn on the cleanup
-$app->config->{misc_limits}->{results_min_free_disk_space_percentage} = 20;
+$app->config->{misc_limits}->{result_cleanup_min_free_percentage} = 20;
 
 subtest 'df returns bad data' => sub {
     %df_main_storage = (bavail => 10, blocks => 5);
@@ -314,9 +315,9 @@ subtest 'jobs in archive not considered by default' => sub {
       'not finished as job that could gain disk space is in the archive';
 };
 
-subtest 'jobs in archive considered via archive_min_free_disk_space_percentage' => sub {
+subtest 'jobs in archive considered via archive_cleanup_min_free_percentage' => sub {
     # setup: as in the previous subtest but this time the job is supposed to be deleted from the archive
-    $app->config->{misc_limits}->{archive_min_free_disk_space_percentage} = 31;
+    $app->config->{misc_limits}->{archive_cleanup_min_free_percentage} = 31;
 
     my @expected_messages = (
         'Unable to cleanup enough results from results dir',
@@ -337,7 +338,7 @@ subtest 'jobs in archive considered via archive_min_free_disk_space_percentage' 
 
 subtest 'archive cleanup skipped if archive not full; result dir cleanup still attempted' => sub {
     # setup: as in the previous subtest but this time the archive is not full
-    $app->config->{misc_limits}->{archive_min_free_disk_space_percentage} = 30;
+    $app->config->{misc_limits}->{archive_cleanup_min_free_percentage} = 30;
 
     my @expected_messages = ('Unable to cleanup enough results from results dir', 'Nothing to do for archive');
     my $job = job_log_like qr/
@@ -352,8 +353,8 @@ subtest 'archive cleanup skipped if archive not full; result dir cleanup still a
 
 subtest 'deleted screenshots always accounted to main storage' => sub {
     # setup: assume that only the deletion of screenshots has freed the disk space when deleting archived job
-    $app->config->{misc_limits}->{dry_min_free_disk_space_cleanup} = 0;
-    $app->config->{misc_limits}->{archive_min_free_disk_space_percentage} = 31;
+    $app->config->{misc_limits}->{cleanup_min_free_dry_run} = 0;
+    $app->config->{misc_limits}->{archive_cleanup_min_free_percentage} = 31;
     %gained_disk_space_by_deleting_results_of_job = ();
     %gained_disk_space_by_deleting_screenshots_of_job = ($important_job_id => 1);
     $dry_run_expected = 0;
@@ -436,6 +437,161 @@ qr/Resuming job group cleanup after group ID @{[$g1->id]}.*Saved cleanup status:
     };
 
     unlink $cache_file_path;
+    $schema->txn_rollback;
+};
+
+subtest 'upfront archiving in limit_results_and_logs' => sub {
+    $schema->txn_begin;
+
+    $schema->resultset('Jobs')->delete;    # start with a clean jobs list for these subtests
+
+    my $g_foo = $job_groups->create({name => 'foo'});
+    my $job_unimportant = $jobs->create(
+        {TEST => 'unimportant-job', BUILD => 'unimp', group_id => $g_foo->id, state => 'done', result => 'passed'});
+    my $job_important = $jobs->create(
+        {TEST => 'important-job', BUILD => 'imp', group_id => $g_foo->id, state => 'done', result => 'passed'});
+    my $job_important_2 = $jobs->create(
+        {TEST => 'important-job-2', BUILD => 'imp', group_id => $g_foo->id, state => 'done', result => 'passed'});
+
+    my $g_foo_mock = Test::MockModule->new('OpenQA::Schema::Result::JobGroups');
+    $g_foo_mock->redefine(important_builds => sub { [['none_tag'], ['imp']] });
+
+    my $jobs_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
+    my @archived_ids;
+    $jobs_mock->redefine(
+        archive => sub ($self, @) {
+            push @archived_ids, $self->id;
+            $self->update({archived => 1});
+            return '/path/to/archive/' . $self->id;
+        });
+
+    # Save original configurations
+    my $orig_archive_important = $app->config->{archiving}->{archive_preserved_important_jobs};
+    my $orig_min_free = $app->config->{archiving}->{archive_important_jobs_min_free_percentage};
+    my $orig_keep_free = $app->config->{archiving}->{archive_keep_free_percentage};
+    my $orig_max_dur = $app->config->{archiving}->{archive_max_duration};
+
+    $app->config->{archiving}->{archive_preserved_important_jobs} = 1;
+    $app->config->{archiving}->{archive_important_jobs_min_free_percentage} = 20;
+    $app->config->{archiving}->{archive_keep_free_percentage} = 5;
+    $app->config->{archiving}->{archive_max_duration} = 300;
+
+    subtest 'normal flow: archives important jobs and stops when resultdir threshold is reached' => sub {
+        @archived_ids = ();
+        $jobs->search({id => [$job_important->id, $job_important_2->id]})->update({archived => 0});
+        my $df_call_count = 0;
+        my $df_mock = Test::MockModule->new('Filesys::Df', no_auto => 1);
+        $df_mock->redefine(
+            df => sub ($dir, @) {
+                if ($dir =~ /archive/) {
+                    return {bavail => 10, blocks => 100};    # archive has 10% free (above 5% floor)
+                }
+                else {
+                    # 15% first check (below 20% limit), then 25% free (above limit)
+                    return {bavail => ($df_call_count++ == 0 ? 15 : 25), blocks => 100};
+                }
+            });
+
+        my $minion_job;
+        combined_like { $minion_job = run_gru_job($app, limit_results_and_logs => []) }
+        qr/Archiving important job @{[$job_important->id]}/, 'logs archiving of first job';
+
+        is_deeply \@archived_ids, [$job_important->id],
+          'only the first important job was archived before threshold was reached';
+        is $minion_job->{notes}->{archived_jobs}, 1, 'notes exact count of archived jobs';
+        is $minion_job->{notes}->{archiving_stopped}, 'results threshold reached', 'notes correct stopping reason';
+    };
+
+    subtest 'stops when archive floor is reached' => sub {
+        @archived_ids = ();
+        $jobs->search({id => [$job_important->id, $job_important_2->id]})->update({archived => 0});
+        my $df_mock = Test::MockModule->new('Filesys::Df', no_auto => 1);
+        $df_mock->redefine(
+            df => sub ($dir, @) {
+                if ($dir =~ /archive/) {
+                    return {bavail => 4, blocks => 100};    # archive space drops to 4% (below 5% floor)
+                }
+                else {
+                    return {bavail => 15, blocks => 100};    # results space remains low
+                }
+            });
+
+        my $minion_job;
+        combined_like { $minion_job = run_gru_job($app, limit_results_and_logs => []) }
+        qr/Resuming|Starting/s, 'runs cleanup job';
+        is_deeply \@archived_ids, [], 'no jobs archived as archive space is too low';
+        is $minion_job->{notes}->{archived_jobs}, 0, 'notes 0 archived jobs';
+        is $minion_job->{notes}->{archiving_stopped}, 'archive floor reached', 'stops due to archive floor';
+    };
+
+    subtest 'stops when time budget is exceeded' => sub {
+        @archived_ids = ();
+        $jobs->search({id => [$job_important->id, $job_important_2->id]})->update({archived => 0});
+        $app->config->{archiving}->{archive_max_duration} = 1;    # 1 second budget
+
+        my $df_mock = Test::MockModule->new('Filesys::Df', no_auto => 1);
+        $df_mock->redefine(
+            df => sub ($dir, @) {
+                return {bavail => 15, blocks => 100};
+            });
+
+        my $job_mock_local = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
+        $job_mock_local->redefine(
+            archive => sub ($self, @) {
+                sleep 2;    # sleep 2 seconds to exceed budget
+                push @archived_ids, $self->id;
+                $self->update({archived => 1});
+                return '/path/to/archive/' . $self->id;
+            });
+
+        my $minion_job;
+        combined_like { $minion_job = run_gru_job($app, limit_results_and_logs => []) }
+        qr/Archiving/s, 'runs cleanup job';
+        is_deeply \@archived_ids, [$job_important->id], 'only one job archived as second check exceeded budget';
+        is $minion_job->{notes}->{archived_jobs}, 1, 'notes 1 archived job';
+        is $minion_job->{notes}->{archiving_stopped}, 'time budget exceeded', 'stops due to time budget';
+    };
+
+    subtest 'continues and skips on archive exception' => sub {
+        @archived_ids = ();
+        $jobs->search({id => [$job_important->id, $job_important_2->id]})->update({archived => 0});
+        $app->config->{archiving}->{archive_max_duration} = 300;
+
+        my $df_mock = Test::MockModule->new('Filesys::Df', no_auto => 1);
+        $df_mock->redefine(
+            df => sub ($dir, @) {
+                return {bavail => 15, blocks => 100};
+            });
+
+        my $throw_once = 1;
+        my $job_mock_local = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
+        $job_mock_local->redefine(
+            archive => sub ($self, @) {
+                if ($throw_once && $self->id == $job_important->id) {
+                    $throw_once = 0;
+                    die 'mocked archive failure';
+                }
+                push @archived_ids, $self->id;
+                $self->update({archived => 1});
+                return '/path/to/archive/' . $self->id;
+            });
+
+        my $minion_job;
+        combined_like { $minion_job = run_gru_job($app, limit_results_and_logs => []) }
+        qr/Failed to archive job @{[$job_important->id]}/, 'logs copy exception and continues';
+
+        is_deeply \@archived_ids, [$job_important_2->id],
+          'first job failed and skipped, second job archived successfully';
+        is $minion_job->{notes}->{archived_jobs}, 1, 'notes 1 archived job';
+        is $minion_job->{notes}->{archiving_stopped}, 'no candidates left', 'notes finished candidates';
+    };
+
+    # Restore original config
+    $app->config->{archiving}->{archive_preserved_important_jobs} = $orig_archive_important;
+    $app->config->{archiving}->{archive_important_jobs_min_free_percentage} = $orig_min_free;
+    $app->config->{archiving}->{archive_keep_free_percentage} = $orig_keep_free;
+    $app->config->{archiving}->{archive_max_duration} = $orig_max_dur;
+
     $schema->txn_rollback;
 };
 
