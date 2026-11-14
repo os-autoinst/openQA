@@ -9,6 +9,8 @@ use Mojo::Base 'DBIx::Class::Core', -signatures;
 use URI::Escape 'uri_escape';
 use Digest::MD5 'md5_hex';
 use DateTime;
+use Feature::Compat::Try;
+use OpenQA::SSHKey 'parse_public_key';
 
 __PACKAGE__->table('users');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
@@ -60,6 +62,7 @@ __PACKAGE__->add_columns(
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->has_many(api_keys => 'OpenQA::Schema::Result::ApiKeys', 'user_id');
+__PACKAGE__->has_many(ssh_keys => 'OpenQA::Schema::Result::SshKeys', 'user_id');
 __PACKAGE__->has_many(
     developer_sessions => 'OpenQA::Schema::Result::DeveloperSessions',
     'user_id', {cascade_delete => 1});
@@ -88,6 +91,19 @@ sub gravatar ($self, $size = 40) {
 
 sub is_deleted ($self) { defined $self->deleted_at }
 
+sub add_ssh_key ($self, $public_key, $title) {
+    my $parsed = parse_public_key($public_key) or return (undef, 'invalid');
+    try {
+        my $ssh_key = $self->ssh_keys->create(
+            {public_key => $parsed->{public_key}, fingerprint => $parsed->{fingerprint}, title => $title});
+        return ($ssh_key, undef);
+    }
+    catch ($e) {
+        die $e unless $e =~ /ssh_keys_fingerprint/;
+        return (undef, 'duplicate');
+    }
+}
+
 sub anonymize ($self) {
     return if $self->is_deleted;
     my $user_id = $self->id;
@@ -95,6 +111,7 @@ sub anonymize ($self) {
     $schema->txn_do(
         sub {
             $self->api_keys->delete;
+            $self->ssh_keys->delete;
             $_->update({event_data => _anonymize_event_data($_->event_data, $self->username)})
               for $self->audit_events->all;
             $self->update(

@@ -130,6 +130,9 @@ sub startup ($self) {
     $apik_auth->get('/')->name('api_keys')->to('api_key#index');
     $apik_auth->post('/')->to('api_key#create');
     $apik_auth->delete('/:apikeyid')->name('api_key')->to('api_key#destroy');
+    my $ssh_auth = $auth->any('/ssh_keys');
+    $ssh_auth->post('/')->name('ssh_keys')->to('ssh_key#create');
+    $ssh_auth->delete('/<sshkeyid:num>')->name('ssh_key')->to('ssh_key#destroy');
 
     $logged_in->get('/appearance')->to('appearance#index')->name('appearance');
     $logged_in->post('/appearance')->to('appearance#save');
@@ -509,6 +512,9 @@ sub startup ($self) {
     $api_ru->get('/users/me/api_keys')->name('apiv1_list_user_api_keys')->to('user#list_api_keys');
     $api_ru->post('/users/me/api_keys')->name('apiv1_create_user_api_key')->to('user#create_api_key');
     $api_ru->delete('/users/me/api_keys/<key>')->name('apiv1_delete_user_api_key')->to('user#delete_api_key');
+    $api_ru->get('/users/me/ssh_keys')->name('apiv1_list_user_ssh_keys')->to('user#list_ssh_keys');
+    $api_ru->post('/users/me/ssh_keys')->name('apiv1_create_user_ssh_key')->to('user#create_ssh_key');
+    $api_ru->delete('/users/me/ssh_keys/<id:num>')->name('apiv1_delete_user_ssh_key')->to('user#delete_ssh_key');
     $api_ru->delete('/users/me')->name('apiv1_delete_current_user')->to('user#delete_self');
 
     # api/v1/search

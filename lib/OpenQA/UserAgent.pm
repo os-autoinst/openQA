@@ -12,8 +12,9 @@ use Scalar::Util ();
 use Time::Seconds;
 use HTTP::Status qw(:constants);
 use Carp;
+use OpenQA::SSHKey qw(parse_public_key signature_payload sign_payload);
 
-has [qw(apikey apisecret base_url)];
+has [qw(apikey apisecret base_url ssh_key)];
 
 sub new ($class, @args) {
     my $self = $class->SUPER::new(@args);
@@ -69,10 +70,28 @@ sub add_auth_headers ($headers, $url, $apikey, $apisecret) {
     }
 }
 
+sub add_ssh_auth_headers ($headers, $method, $url, $private_key_file, $body) {
+    my $public_file = "$private_key_file.pub";
+    my $public = -r $public_file ? parse_public_key(path($public_file)->slurp) : undef;
+    die qq{SSH key "$private_key_file" cannot be read or its public key "$public_file" is missing\n} unless $public;
+
+    my $timestamp = time;
+    my $payload = signature_payload($method, _path_query($url), $timestamp, $body);
+    my $signature = sign_payload($private_key_file, $payload);
+    $headers->header('X-SSH-Key-Fingerprint', $public->{fingerprint});
+    $headers->header('X-SSH-Microtime', $timestamp);
+    $headers->header('X-SSH-Signature', $signature);
+}
+
 sub _add_headers ($self, $tx) {
     my $req = $tx->req;
     my $headers = $req->headers;
     $headers->accept('application/json') unless defined $headers->accept;
+    if ($self->ssh_key) {
+        die "SSH key authentication cannot sign multipart requests\n" if $req->content->is_multipart;
+        add_ssh_auth_headers($headers, $req->method, $req->url, $self->ssh_key, $req->body);
+        return;
+    }
     add_auth_headers($headers, $req->url, $self->apikey, $self->apisecret);
 }
 

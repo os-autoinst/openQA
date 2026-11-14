@@ -10,7 +10,7 @@ use OpenQA::Constants 'API_KEY_COMMENT_MAX_LENGTH';
 
 sub index ($self) {
     my @keys = $self->current_user->api_keys;
-    $self->stash('keys', \@keys);
+    $self->stash(keys => \@keys, ssh_keys => [$self->current_user->ssh_keys]);
 }
 
 sub create ($self) {

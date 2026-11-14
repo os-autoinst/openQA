@@ -189,6 +189,9 @@ subtest 'test delete_self' => sub {
     ok $user, 'user exists before deletion';
     $user->update({is_operator => 1, is_admin => 1});
     ok $user->api_keys->create({t_expiration => DateTime->now->add(years => 1)});
+    ok $user->ssh_keys->create(
+        {public_key => 'ssh-ed25519 AAAA', fingerprint => 'SHA256:deleteself', title => 'laptop'}),
+      'ssh key created';
     ok $user->comments->create({text => 'test comment'}), 'comment created';
     ok $user->developer_sessions->create({job_id => 80000}), 'developer session created';
     $t->delete_ok('/api/v1/users/me')->status_is(200, 'user can delete own account');
@@ -202,6 +205,7 @@ subtest 'test delete_self' => sub {
     is $user->is_admin, 0, 'admin role reverted on self delete';
     my $keys_after = $app->schema->resultset('ApiKeys')->search({user_id => 99902})->count;
     is $keys_after, 0, 'API keys deleted';
+    is $app->schema->resultset('SshKeys')->search({user_id => 99902})->count, 0, 'SSH keys deleted';
     is $user->comments->count, 1, 'comment preserved';
     is $user->developer_sessions->count, 1, 'developer session preserved';
     my $event = OpenQA::Test::Case::find_most_recent_event($app->schema, 'user_deleted');

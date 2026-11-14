@@ -22,14 +22,18 @@ my $JSON = Cpanel::JSON::XS->new->utf8->canonical->allow_nonref->allow_unknown->
 my $PARAM_RE = qr/^([[:alnum:]_\[\]\.\:]+)=(.*)$/s;
 
 has apibase => '/api/v1';
-has [qw(apikey apisecret host)];
+has [qw(apikey apisecret host ssh_key)];
 has name => 'openqa-cli';
 has host => 'http://localhost';
 has options => undef;
 
 sub client ($self, $url) {
-    my $client = OpenQA::Client->new(apikey => $self->apikey, apisecret => $self->apisecret, api => $url->host)
-      ->ioloop(Mojo::IOLoop->singleton);
+    my $client = OpenQA::Client->new(
+        apikey => $self->apikey,
+        apisecret => $self->apisecret,
+        ssh_key => $self->ssh_key,
+        api => $url->host,
+    )->ioloop(Mojo::IOLoop->singleton);
     $client->transactor->name($self->name);
     return $client;
 }
@@ -108,6 +112,7 @@ sub run ($self, @args) {
     for (qw(apibase apikey apisecret name)) {
         $self->$_($options{$_}) if defined $options{$_};
     }
+    $self->ssh_key($options{'ssh-key'}) if defined $options{'ssh-key'};
     my $host = $options{host};
     $self->host($host =~ m!^/|://! ? $host : "https://$host") if $host;
     $self->host('https://openqa.opensuse.org') if $options{o3};
