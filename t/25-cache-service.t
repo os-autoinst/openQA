@@ -694,6 +694,116 @@ subtest 'CacheService::run exit code handling' => sub {
     }
 };
 
+sub test_service_restart_handling () {
+    subtest 'API::enqueue sets attempts' => sub {
+        my $app = $t->app;
+        $t->post_ok('/enqueue' => json =>
+              {task => 'cache_asset', args => [123, 'hdd', 'a.qcow2', 'host'], lock => 'attempts_lock'})
+          ->status_is(200);
+        my $id = $t->tx->res->json->{id};
+        my $job = $app->minion->job($id);
+        is $job->info->{attempts}, 3, 'job enqueued with 3 attempts by default';
+        $job->remove;
+
+        # Custom attempts
+        $t->post_ok('/enqueue' => json =>
+              {task => 'cache_asset', args => [123, 'hdd', 'a.qcow2', 'host'], lock => 'attempts_lock', attempts => 5})
+          ->status_is(200);
+        $id = $t->tx->res->json->{id};
+        $job = $app->minion->job($id);
+        is $job->info->{attempts}, 5, 'job enqueued with custom attempts';
+        $job->remove;
+    };
+
+    subtest 'API::status handling of retried or failed downloading_job' => sub {
+        my $app = $t->app;
+        my $dl_id = $app->minion->enqueue(
+            cache_asset => [123, 'hdd', 'test.qcow2', 'host'] => {notes => {lock => 'test_lock_status'}});
+        my $dep_id = $app->minion->enqueue(cache_asset => [124, 'hdd', 'test.qcow2', 'host'] =>
+              {notes => {lock => 'test_lock_status', downloading_job => $dl_id}});
+        my $worker = $app->minion->worker->register;
+        my $dep_job = $worker->dequeue(0, {id => $dep_id});
+        $dep_job->finish;
+
+        # While downloading_job is inactive / active, dependent job must report status 'downloading'
+        $t->get_ok("/status/$dep_id")->status_is(200)->json_is('/status' => 'downloading');
+
+        my $dl_job = $worker->dequeue(0, {id => $dl_id});
+        $t->get_ok("/status/$dep_id")->status_is(200)->json_is('/status' => 'downloading');
+
+        # If downloading_job failed, dependent job returns error
+        $dl_job->fail('Something broke');
+        $t->get_ok("/status/$dep_id")->status_is(500)
+          ->json_like('/error' => qr/Minion job #$dl_id failed: Something broke/);
+
+        # If downloading_job is retried, dependent job reports downloading again
+        $dl_job->retry;
+        $t->get_ok("/status/$dep_id")->status_is(200)->json_is('/status' => 'downloading');
+
+        # Once downloading_job finishes, dependent job is processed
+        $dl_job = $worker->dequeue(0, {id => $dl_id});
+        $dl_job->note(output => 'Downloaded ok', has_download_error => Mojo::JSON->false);
+        $dl_job->finish;
+        $t->get_ok("/status/$dep_id")->status_is(200)->json_is('/status' => 'processed')
+          ->json_is('/output' => 'Downloaded ok')->json_is('/has_download_error' => Mojo::JSON->false);
+        $t->get_ok("/status/$dl_id")->status_is(200)->json_is('/status' => 'processed')
+          ->json_is('/output' => 'Downloaded ok')->json_is('/has_download_error' => Mojo::JSON->false);
+
+        $worker->unregister;
+        $dep_job->remove;
+        $dl_job->remove;
+    };
+
+    subtest 'OpenQA::CacheService::Command::run with --reset-locks' => sub {
+        require OpenQA::CacheService::Command::run;
+        my $app = $t->app;
+        my $minion = $app->minion;
+        $minion->add_task(test_task => sub { }) unless $minion->tasks->{test_task};
+
+        # Setup leftover state before restart:
+        # 1. An active job held by a worker
+        my $fake_worker = $minion->worker->register;
+        my $active_job_id = $minion->enqueue(test_task => [] => {notes => {lock => 'leftover_lock'}});
+        my $active_job = $fake_worker->dequeue(0, {id => $active_job_id});
+        is $active_job->info->{state}, 'active', 'job is active';
+
+        # 2. An inactive delayed job
+        my $delayed_job_id = $minion->enqueue(test_task => [] => {delay => 300});
+        my $delayed_job = $minion->job($delayed_job_id);
+        ok $delayed_job->info->{delayed} > $delayed_job->info->{time}, 'job is delayed';
+
+        # 3. A leftover lock
+        $minion->lock('some_leftover_lock', 3600);
+        ok !$minion->lock('some_leftover_lock', 0), 'lock is held';
+
+        # Run command with --reset-locks (mocking SUPER::run to avoid blocking worker loop)
+        my $mock = Test::MockModule->new('Minion::Command::minion::worker');
+        my $super_called = 0;
+        $mock->redefine(run => sub { $super_called = 1 });
+
+        my $cmd = OpenQA::CacheService::Command::run->new(app => $app);
+        $cmd->run('--reset-locks');
+
+        ok $super_called, 'SUPER::run was called';
+        is $minion->job($active_job_id)->info->{state}, 'inactive', 'leftover active job retried to inactive';
+        is $minion->job($active_job_id)->info->{delayed}, $minion->job($active_job_id)->info->{time},
+          'active job delay reset to 0';
+        is $minion->job($delayed_job_id)->info->{delayed}, $minion->job($delayed_job_id)->info->{time},
+          'delayed job delay reset to 0';
+        ok $minion->lock('some_leftover_lock', 0), 'leftover lock was cleared';
+        is $minion->workers->total, 0, 'leftover workers unregistered';
+
+        # Also test run without --reset-locks
+        $super_called = 0;
+        $cmd->run();
+        ok $super_called, 'SUPER::run called without --reset-locks';
+
+        $minion->job($active_job_id)->remove;
+        $minion->job($delayed_job_id)->remove;
+    };
+}
+test_service_restart_handling;
+
 done_testing;
 
 END {
