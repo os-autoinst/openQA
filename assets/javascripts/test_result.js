@@ -1272,6 +1272,7 @@ function renderInvestigationTab(response) {
     const valueElement = document.createElement('td');
 
     let textLinesRest;
+    const isDiff = typeof value === 'string' && key.startsWith('diff_');
 
     if (type === 'link') {
       const html = document.createElement('a');
@@ -1334,7 +1335,7 @@ function renderInvestigationTab(response) {
           textLinesRest = textLines.slice(DISPLAY_LINE_LIMIT, textLines.length);
           textLines = textLines.slice(0, DISPLAY_LINE_LIMIT);
         }
-        preElement.appendChild(document.createTextNode(textLines.join('\n')));
+        preElement.appendChild(renderTextLines(textLines, isDiff));
       }
 
       valueElement.appendChild(preElement);
@@ -1342,7 +1343,7 @@ function renderInvestigationTab(response) {
       if (textLinesRest) {
         enable_more = true;
         preElementMore = document.createElement('pre');
-        preElementMore.appendChild(document.createTextNode(textLinesRest.join('\n')));
+        preElementMore.appendChild(renderTextLines(textLinesRest, isDiff));
       }
       if (enable_more) {
         preElementMore.style = 'display: none';
@@ -1377,6 +1378,104 @@ function renderInvestigationTab(response) {
   }
   tabPanelElement.appendChild(tableElement);
   tabPanelElement.dataset.initialized = true;
+}
+
+function renderTextLines(lines, isDiff) {
+  return isDiff ? renderDiffLines(lines) : document.createTextNode(lines.join('\n'));
+}
+
+function tokenizeDiffLine(text) {
+  return text.match(/[A-Za-z]+|\d+|[^A-Za-z\d]/g) || [];
+}
+
+// Token level diff of two lines; tokens replaced by others are "changed", tokens without counterpart "missing"
+function diffLineTokens(oldText, newText) {
+  const x = tokenizeDiffLine(oldText);
+  const y = tokenizeDiffLine(newText);
+  const lcs = Array.from({length: x.length + 1}, () => new Array(y.length + 1).fill(0));
+  for (let i = x.length - 1; i >= 0; i--) {
+    for (let j = y.length - 1; j >= 0; j--) {
+      lcs[i][j] = x[i] === y[j] ? lcs[i + 1][j + 1] + 1 : Math.max(lcs[i + 1][j], lcs[i][j + 1]);
+    }
+  }
+  const oldParts = [];
+  const newParts = [];
+  let gapOld = [];
+  let gapNew = [];
+  let common = 0;
+  const flush = () => {
+    const kind = gapOld.length && gapNew.length ? 'diff-changed' : 'diff-missing';
+    gapOld.forEach(text => oldParts.push({text, kind}));
+    gapNew.forEach(text => newParts.push({text, kind}));
+    gapOld = [];
+    gapNew = [];
+  };
+  let i = 0;
+  let j = 0;
+  while (i < x.length || j < y.length) {
+    if (i < x.length && j < y.length && x[i] === y[j]) {
+      flush();
+      oldParts.push({text: x[i], kind: ''});
+      newParts.push({text: y[j], kind: ''});
+      common += x[i].length;
+      i++;
+      j++;
+    } else if (j >= y.length || (i < x.length && lcs[i + 1][j] >= lcs[i][j + 1])) gapOld.push(x[i++]);
+    else gapNew.push(y[j++]);
+  }
+  flush();
+  return {oldParts, newParts, common};
+}
+
+function createDiffLine(prefix, className, parts) {
+  const line = document.createElement('span');
+  line.className = 'diff-line ' + className;
+  const groups = [{kind: '', text: prefix}];
+  parts.forEach(({text, kind}) => {
+    const last = groups[groups.length - 1];
+    if (last.kind === kind) last.text += text;
+    else groups.push({kind, text});
+  });
+  groups.forEach(({kind, text}) => {
+    if (!kind) return line.appendChild(document.createTextNode(text));
+    const element = document.createElement(kind === 'diff-changed' ? 'b' : 'i');
+    element.className = kind;
+    element.textContent = text;
+    line.appendChild(element);
+  });
+  return line;
+}
+
+function renderDiffLines(lines) {
+  const fragment = document.createDocumentFragment();
+  const plain = line =>
+    createDiffLine(line.charAt(0), line[0] === '+' ? 'diff-add' : 'diff-del', [{text: line.slice(1), kind: ''}]);
+  let i = 0;
+  while (i < lines.length) {
+    if (lines[i][0] !== '-' && lines[i][0] !== '+') {
+      const other = document.createElement('span');
+      other.className = 'diff-line';
+      other.textContent = lines[i++];
+      fragment.appendChild(other);
+      continue;
+    }
+    const removed = [];
+    const added = [];
+    while (i < lines.length && lines[i][0] === '-') removed.push(lines[i++]);
+    while (i < lines.length && lines[i][0] === '+') added.push(lines[i++]);
+    const paired = removed.map((oldLine, k) => {
+      if (k >= added.length) return null;
+      const diff = diffLineTokens(oldLine.slice(1), added[k].slice(1));
+      return diff.common * 2 > Math.max(oldLine.length, added[k].length) - 1 ? diff : null;
+    });
+    removed.forEach((line, k) =>
+      fragment.appendChild(paired[k] ? createDiffLine('-', 'diff-del', paired[k].oldParts) : plain(line))
+    );
+    added.forEach((line, k) =>
+      fragment.appendChild(paired[k] ? createDiffLine('+', 'diff-add', paired[k].newParts) : plain(line))
+    );
+  }
+  return fragment;
 }
 
 function toggleSign(elem) {

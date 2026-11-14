@@ -1109,6 +1109,35 @@ subtest 'helper functions of investigation tab' => sub {
     is $html->('Fix foo (#42)', 'https://github.com/o/r/'), 'Fix foo (#42)', 'no link for unexpected URL';
     is $html->('Fix foo (#42)', 'undefined'), 'Fix foo (#42)', 'no link without repository URL';
     is $html->('Fix foo', 'https://github.com/o/r/commit/'), 'Fix foo', 'message without pull request unchanged';
+
+    my $diff = sub (@lines) {
+        $driver->execute_script(
+'const d = document.createElement("div"); d.appendChild(renderDiffLines(arguments[0])); return d.innerHTML;',
+            \@lines
+        );
+    };
+    is $diff->('-grub2-2.12-19.40.1.x', '+grub2-2.12-19.37.1.x'),
+      '<span class="diff-line diff-del">-grub2-2.12-19.<b class="diff-changed">40</b>.1.x</span>'
+      . '<span class="diff-line diff-add">+grub2-2.12-19.<b class="diff-changed">37</b>.1.x</span>',
+      'changed token of similar -/+ pair is marked';
+    is $diff->('-foo-1.x.z', '+foo-1.x'),
+      '<span class="diff-line diff-del">-foo-1.x<i class="diff-missing">.z</i></span>'
+      . '<span class="diff-line diff-add">+foo-1.x</span>',
+      'token only on one side is marked as missing';
+    is $diff->('-aaa', '+zzzzzz', '-gone', 'plain <b>&'),
+      '<span class="diff-line diff-del">-aaa</span><span class="diff-line diff-add">+zzzzzz</span>'
+      . '<span class="diff-line diff-del">-gone</span><span class="diff-line">plain &lt;b&gt;&amp;</span>',
+      'dissimilar and unpaired lines are not highlighted inside, other text is escaped';
+
+    my $counts
+      = $driver->execute_script('const el = document.createElement("div"); const lines = [];'
+          . 'for (let i = 0; i < 12; i++) lines.push("-pkg" + i + "-1-1.x", "+pkg" + i + "-2-1.x");'
+          . 'renderInvestigationTab.call({panelElement: el}, {diff_pkgs: lines.join("\\n"), other: "-x\\n+y"});'
+          . 'const pres = el.querySelectorAll("pre");'
+          . 'return [pres[0].querySelectorAll(".diff-add").length, pres[1].querySelectorAll(".diff-add").length,'
+          . ' pres[2].querySelectorAll(".diff-line").length, el.querySelectorAll("a").length];');
+    is_deeply $counts, [5, 7, 0, 1], 'diff values rendered as lines, rest behind "Show more", other values as text'
+      or always_explain $counts;
 };
 
 subtest 'additional investigation notes provided on new failed' => sub {

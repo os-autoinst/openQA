@@ -1977,7 +1977,7 @@ sub investigate ($self, %args) {
         # just ignore any problems on generating the diff with eval, e.g.
         # files missing. This is a best-effort approach.
         my $diff = eval { diff(\$prev_file, \$self_file, {CONTEXT => 0}) };
-        $inv{diff_to_last_good} = join "\n", grep { !/(?:^@@|$ignore)/ } split /\n/, $diff;
+        $inv{diff_to_last_good} = sorted_diff_lines($diff, $ignore);
         my $effective_distri = effective_distri($self_vars);
         my $casedir = testcasedir($effective_distri, $self->VERSION);
         my $refspec_range = "$prev_vars->{TEST_GIT_HASH}..$self_vars->{TEST_GIT_HASH}";
@@ -2011,7 +2011,14 @@ sub packages_diff ($self, $prev, $ignore, $filename, $fallback = 'Diff of packag
     return $fallback unless -e $prev_file;
     my @files_packages = map { $_->slurp } ($prev_file, $current_file);
     my $diff_packages = eval { diff(\$files_packages[0], \$files_packages[1], {CONTEXT => 0}) };
-    return join "\n", grep { !/(?:^@@|$ignore)/ } split /\n/, $diff_packages;
+    return sorted_diff_lines($diff_packages, $ignore);
+}
+
+# sorts by package name or settings key so changed entries end up as adjacent "-" and "+" lines
+sub sorted_diff_lines ($diff, $ignore) {
+    my @lines = grep { !/(?:^@@|$ignore)/ } split /\n/, $diff // '';
+    my @keyed = map { [/^[-+]\s*"([^"]+)"/ ? $1 : /^[-+](.+)-[^-]+-[^-]+$/ ? $1 : $_, substr($_, 0, 1), $_] } @lines;
+    return join "\n", map { $_->[2] } sort { $a->[0] cmp $b->[0] or $b->[1] cmp $a->[1] or $a->[2] cmp $b->[2] } @keyed;
 }
 
 sub ancestors ($self, $limit = -1) {
