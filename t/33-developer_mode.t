@@ -38,7 +38,7 @@ use Module::Load::Conditional 'can_load';
 use OpenQA::Utils qw(service_port);
 use OpenQA::Test::Utils qw(
   create_websocket_server create_scheduler create_live_view_handler setup_share_dir setup_fullstack_temp_dir
-  start_worker stop_service
+  start_worker stop_service wait_for
 );
 use OpenQA::Test::FullstackUtils
   qw(get_connect_args find_status_text wait_for_result_panel wait_for_job_running wait_for_developer_console_like wait_for_developer_console_available enter_developer_console_cmd schedule_one_job_over_api_and_verify);
@@ -141,19 +141,14 @@ $worker = start_worker(get_connect_args());
 ok wait_for_job_running($driver), 'test 1 is running';
 
 sub wait_for_session_info ($info_regex, $diag_info) {
-
-    # give the session info 10 seconds to appear
-    my $developer_session_info = $driver->find_element('#developer-session-info')->get_text();
-    my $waited_s = 0;
-    while (!$developer_session_info || !($developer_session_info =~ $info_regex)) {
-        # handle case when there's no $developer_session_info at all
-        die 'no session info after 10 seconds, expected ' . $diag_info if $waited_s > 10 && !$developer_session_info;
-        sleep 1;
-        $developer_session_info = $driver->find_element('#developer-session-info')->get_text();
-        $waited_s += 1;
-    }
-
-    like $developer_session_info, $info_regex, $diag_info;
+    # give the session info 10 seconds to appear and then to fill its content
+    wait_for_element(
+        selector => '#developer-session-info',
+        timeout => 10,
+        description => 'session info element shown',
+    ) or die "no session info after 10 seconds, expected $diag_info";
+    wait_for { $driver->find_element('#developer-session-info')->get_text =~ $info_regex } $diag_info, {timeout => 10};
+    like $driver->find_element('#developer-session-info')->get_text, $info_regex, $diag_info;
 }
 
 my $developer_console_url = '/tests/1/developer/ws-console?proxy=1';

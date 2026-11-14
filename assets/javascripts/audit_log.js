@@ -326,7 +326,10 @@ function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions) {
     lengthMenu: [10, 25, 50],
     processing: true,
     serverSide: true,
-    order: [[1, 'desc']],
+    order: [
+      [1, 'desc'],
+      [0, 'desc']
+    ],
     search: {search: q || ''},
     ajax: {
       url: dataTableUrl,

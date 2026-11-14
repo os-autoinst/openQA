@@ -748,7 +748,7 @@ subtest 'Manage API keys' => sub {
             selector => '#api-keys-tbody tr:nth-child(2)',
             description => 'key row present (without expiration)'
         ) or return;
-        like $row->get_text, qr/never/, 'new key has expiration date';
+        like $row->get_text, qr/never/, 'new key has no expiration date';
     };
 };
 
