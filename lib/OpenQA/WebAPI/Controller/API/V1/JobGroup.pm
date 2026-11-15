@@ -391,12 +391,13 @@ Use show_tags=1 to show tags for each build. only_tagged implies show_tags.
 =cut
 
 sub build_results ($self) {
-    my $group = $self->find_group() or return;
+    my $group = $self->find_group() or return undef;
     my $validation = $self->validation;
     $validation->optional('limit_builds')->num;
-    $validation->optional('time_limit_days')->like(qr/^[0-9.]+$/);
+    $validation->optional('time_limit_days')->days;
     $validation->optional('only_tagged');
     $validation->optional('show_tags');
+    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
     my $limit_builds = $validation->param('limit_builds') // 10;
     my $time_limit_days = $validation->param('time_limit_days') // 0;
     my $only_tagged = $validation->param('only_tagged') // 0;

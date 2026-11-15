@@ -530,7 +530,7 @@ sub startup ($self) {
         set_api_desc(\%api_description, $api_rt);
     }
 
-    OpenQA::Setup::setup_validator_check_for_datetime($self);
+    OpenQA::Setup::setup_validator_checks($self);
 
     $self->plugin('OpenQA::WebAPI::Plugin::MemoryLimit');
 

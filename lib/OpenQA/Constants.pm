@@ -24,6 +24,8 @@ use constant DEFAULT_UPLOAD_CHUNK_SIZE => 10_000_000;
 
 use constant API_KEY_COMMENT_MAX_LENGTH => 255;
 
+use constant TIME_LIMIT_DAYS_MAX => 99999;
+
 use constant DOWNLOAD_PERMISSION => $ENV{OPENQA_DOWNLOAD_PERMISSION} // 0644;
 
 # Define worker commands; used to validate and differentiate commands
@@ -150,6 +152,7 @@ our @EXPORT_OK = qw(
   BUILD_SORT_BY_NAME BUILD_SORT_BY_NEWEST_JOB BUILD_SORT_BY_OLDEST_JOB
   VNCPORT_OFFSET VNC_PORT
   DOWNLOAD_PERMISSION
+  TIME_LIMIT_DAYS_MAX
 );
 
 1;

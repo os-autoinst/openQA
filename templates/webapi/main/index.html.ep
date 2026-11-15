@@ -60,7 +60,7 @@
                 </p>
                 <p class="d-flex flex-row align-items-center p-1">
                     <label class="form-label">Maximum age in days</label>
-                    <input type="number" class="form-control" name="time_limit_days" value="<%= app->config->{global}->{frontpage_time_limit_days} %>" id="filter-time-limit-days">
+                    <input type="number" class="form-control" name="time_limit_days" min="0" max="99999" step="any" value="<%= app->config->{global}->{frontpage_time_limit_days} %>" id="filter-time-limit-days">
                 </p>
             </div>
             <div class="mb-3">

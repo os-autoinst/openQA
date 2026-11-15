@@ -922,6 +922,9 @@ subtest 'OpenQA::BuildResults::compute_build_results coverage' => sub {
     $jobs->create({%$common, TEST => 'time1', DISTRI => 'd1', t_created => $t_str, state => DONE, result => PASSED});
     $jobs->create({%$common, TEST => 'time2', DISTRI => 'd2', t_created => $t_str, state => DONE, result => PASSED});
     ok OpenQA::BuildResults::compute_build_results($parent, 10, undef, undef, [], undef), 'same timestamp';
+    ok OpenQA::BuildResults::compute_build_results($group, 10, 14, undef, [], undef), 'with moderate time limit';
+    ok OpenQA::BuildResults::compute_build_results($group, 10, 804_327_260, undef, [], undef),
+      'out-of-range days clamped without database exception';
 };
 
 subtest 'always_show_version toggle overview display' => sub {
@@ -943,6 +946,27 @@ subtest 'always_show_version toggle overview display' => sub {
       ->content_like(qr{13\.1-BuildCOVERAGE_BUILD});
 
     $group->update({always_show_version => undef});
+};
+
+subtest 'time_limit_days validation' => sub {
+    $t->get_ok('/group_overview/1001?time_limit_days=804327260')
+      ->status_is(400, 'excessive time_limit_days rejected on group overview');
+    $t->get_ok('/group_overview/1001?time_limit_days=-1')
+      ->status_is(400, 'negative time_limit_days rejected on group overview');
+    $t->get_ok('/group_overview/1001?time_limit_days=invalid')
+      ->status_is(400, 'non-numeric time_limit_days rejected on group overview');
+    $t->get_ok('/group_overview/1001?time_limit_days=1.2.3.4')
+      ->status_is(400, 'multi-dot time_limit_days rejected on group overview');
+    $t->get_ok('/group_overview/1001?time_limit_days=.')
+      ->status_is(400, 'lone dot time_limit_days rejected on group overview');
+    $t->get_ok('/dashboard_build_results?time_limit_days=804327260')
+      ->status_is(400, 'excessive time_limit_days rejected on dashboard');
+    $t->get_ok('/dashboard_build_results?time_limit_days=-1')
+      ->status_is(400, 'negative time_limit_days rejected on dashboard');
+    $t->get_ok('/dashboard_build_results?time_limit_days=invalid')
+      ->status_is(400, 'non-numeric time_limit_days rejected on dashboard');
+    $t->get_ok('/dashboard_build_results?time_limit_days=0.02')
+      ->status_is(200, 'fractional time_limit_days accepted on dashboard');
 };
 
 done_testing;
