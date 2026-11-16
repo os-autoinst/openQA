@@ -56,7 +56,7 @@ jobs:
         uses: helm/chart-testing-action@720270857a28afd41e2426521a7801db09e9b510  # v2.9.0
 
       - name: Create kind cluster
-        uses: helm/kind-action@1544676c07bb3570fcb70166beaa07c4528fd4aa  # v1.15.1
+        uses: helm/kind-action@ea822c7bf1874f08e5a491df991c228edffc3376  # v1.15.2
 
       - name: Download images
         run: |
