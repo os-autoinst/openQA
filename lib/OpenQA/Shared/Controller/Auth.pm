@@ -167,7 +167,10 @@ sub _ssh_auth ($self, $reason, $fingerprint) {
         return (undef, 'invalid SSH signature');
     }
 
-    $ssh_key->update({last_used => DateTime->now});
+    my $now = DateTime->now;
+    my $window = $self->config->{api_hmac_time_tolerance} // ONE_MINUTE * 5;
+    my $last_used = $ssh_key->last_used;
+    $ssh_key->update({last_used => $now}) if !$last_used || $last_used->epoch <= $now->epoch - $window;
     $log->trace(sprintf 'SSH auth by user: %s', $user->username);
     return ($user, $reason);
 }

@@ -17,6 +17,7 @@ use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use Test::Output 'combined_like';
 use Time::Seconds;
+use DateTime;
 
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data(fixtures_glob => '03-users.pl');
@@ -63,6 +64,22 @@ subtest 'valid signature authenticates' => sub {
     $t->get_ok($whoami, ssh_headers('arthur', $whoami))->status_is(200, 'user authenticated via SSH signature');
     my $key = $arthur->ssh_keys->first;
     ok $key->discard_changes->last_used, 'last_used is recorded on successful SSH authentication';
+};
+
+subtest 'last_used is not rewritten for requests within the same window' => sub {
+    my $key = $arthur->ssh_keys->first;
+    my $recent = DateTime->now->subtract(seconds => 10);
+    $key->update({last_used => $recent});
+    $t->get_ok($whoami, ssh_headers('arthur', $whoami))->status_is(200);
+    is $key->discard_changes->last_used->epoch, $recent->epoch, 'a recent last_used is left untouched';
+};
+
+subtest 'last_used is updated once the previous use is outside the window' => sub {
+    my $key = $arthur->ssh_keys->first;
+    $key->update({last_used => DateTime->now->subtract(hours => 1)});
+    $t->get_ok($whoami, ssh_headers('arthur', $whoami))->status_is(200);
+    my $refreshed = $key->discard_changes->last_used;
+    ok $refreshed > DateTime->now->subtract(minutes => 5), 'last_used is refreshed';
 };
 
 subtest 'operator route enforces operator rights for SSH auth' => sub {
