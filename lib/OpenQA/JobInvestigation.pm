@@ -6,8 +6,9 @@ package OpenQA::JobInvestigation;
 use Mojo::Base -strict, -signatures;
 
 use DateTime;
+use Algorithm::Diff 'sdiff';
 use Exporter 'import';
-use List::Util 'uniq';
+use List::Util qw(max uniq);
 use OpenQA::App;
 use OpenQA::Log 'log_warning';
 use OpenQA::Utils qw(run_cmd_with_log_return_error effective_distri needledir testcasedir);
@@ -15,6 +16,7 @@ use OpenQA::Utils qw(run_cmd_with_log_return_error effective_distri needledir te
 our @EXPORT_OK = qw(
   RETURN_CODE_TIMEOUT_EXCEEDED git_has_commit git_timed git_failure_message git_tree tagged_needles
   annotate_pull_requests failed_test_files failed_needle_files git_log_diff git_diff failure_investigation
+  diff_lines diff_line_groups
 );
 
 use constant JOB_INVESTIGATE_PULL_REQUESTS_MAX => 200;
@@ -25,6 +27,67 @@ use constant JOB_INVESTIGATE_FAILURE_FILES_MAX => 50;
 use constant RETURN_CODE_TIMEOUT_EXCEEDED => 124;    # see `man timeout`
 use constant EMPTY_TREE => '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
 use constant TAGGED_NEEDLES_CHUNK => 500;
+
+# returns the package name or settings key of a diff line, which is the whole line for anything else
+sub _diff_key ($line) { $line =~ /^[-+]\s*"([^"]+)"/ ? $1 : $line =~ /^[-+](.+)-[^-]+-[^-]+$/ ? $1 : $line }
+
+# returns the lines of a diff sorted by package name or settings key, with "-" before "+" for the same key
+sub diff_lines ($diff, $ignore = undef) {
+    $ignore = '(?!)' unless length($ignore // '');
+    my @lines = grep { !/(?:^@@|$ignore)/ } split /\n/, $diff // '';
+    return map { $_->[2] } sort { $a->[0] cmp $b->[0] or $b->[1] cmp $a->[1] or $a->[2] cmp $b->[2] }
+      map { [_diff_key($_), substr($_, 0, 1), $_] } @lines;
+}
+
+sub _merge_parts (@parts) {
+    my @merged;
+    for my $part (@parts) {
+        @merged && $merged[-1][0] eq $part->[0] ? ($merged[-1][1] .= $part->[1]) : push @merged, [@$part];
+    }
+    return \@merged;
+}
+
+# tokens of "-" and "+" line texts, "changed" if replaced and "missing" if without counterpart; undef if not similar
+sub _pair_parts ($old, $new) {
+    my $tokens = qr/[A-Za-z]+|\d+|[^A-Za-z\d]/;
+    my (@old, @new, $common);
+    $common = 0;
+    for my $token (sdiff([$old =~ /$tokens/g], [$new =~ /$tokens/g])) {
+        my ($flag, $old_token, $new_token) = @$token;
+        if ($flag eq 'u') { $common += length $old_token; push @old, ['', $old_token]; push @new, ['', $new_token] }
+        elsif ($flag eq 'c') { push @old, [changed => $old_token]; push @new, [changed => $new_token] }
+        elsif ($flag eq '-') { push @old, [missing => $old_token] }
+        else { push @new, [missing => $new_token] }
+    }
+    return $common * 2 > max(length $old, length $new) ? (_merge_parts(@old), _merge_parts(@new)) : ();
+}
+
+# groups sorted diff lines for rendering: "-" and "+" lines with the same key and similar text form a group of
+# two, any other line is a group of one. A line is {sign => '-', parts => [[kind => text], ...]}.
+sub diff_line_groups (@lines) {
+    my (@keys, %by_key, @groups);
+    for my $line (@lines) {
+        my $key = _diff_key($line);
+        push @keys, $key unless $by_key{$key};
+        push @{$by_key{$key}{$line =~ /^([-+])/ ? $1 : ''}}, $line;
+    }
+    my $line = sub ($sign, $text) { {sign => $sign, parts => ref $text ? $text : [['', $text]]} };
+    for my $key (@keys) {
+        my ($removed, $added, $other) = map { [@{$by_key{$key}{$_} // []}] } '-', '+', '';
+        push @groups, [$line->('', $_)] for @$other;
+        while (@$removed && @$added) {
+            my ($old, $new) = (shift @$removed, shift @$added);
+            my ($old_parts, $new_parts) = _pair_parts(substr($old, 1), substr($new, 1));
+            push @groups,
+              $old_parts
+              ? [$line->('-', $old_parts), $line->('+', $new_parts)]
+              : ([$line->('-', substr $old, 1)], [$line->('+', substr $new, 1)]);
+        }
+        push @groups, [$line->('-', substr $_, 1)] for @$removed;
+        push @groups, [$line->('+', substr $_, 1)] for @$added;
+    }
+    return \@groups;
+}
 
 # unknown commits (128) and timeouts are handled by the callers, so git's output is not logged as a problem
 my %PROBE_CODES = (0 => 1, 124 => 1, 128 => 1);

@@ -16,7 +16,7 @@ use Mojo::Base -signatures;
 use autodie ':all';
 use File::Copy;
 use OpenQA::Jobs::Constants;
-use OpenQA::JobInvestigation 'annotate_pull_requests';
+use OpenQA::JobInvestigation qw(annotate_pull_requests diff_lines diff_line_groups);
 use OpenQA::Test::Case;
 use Test::MockModule 'strict';
 use Test::Mojo;
@@ -479,6 +479,8 @@ subtest 'carry over, including soft-fails' => sub {
         unlike $inv->{diff_to_last_good}, qr/JOBTOKEN/, 'special variables are not included';
         like $inv->{diff_packages_to_last_good}, qr/^\+python/m, 'diff packages for job is shown';
         is $inv->{test_log}, $fake_git_log, 'test git log is evaluated';
+        like $inv->{diff_to_last_good}, qr/^-.*"BUILD".*667.*\n\+.*"BUILD".*669/m, 'changed setting is a -/+ pair';
+        is $inv->{diff_to_last_good_lines}->[0][1]{sign}, '+', 'groups for rendering are provided too';
         is $inv->{needles_log}, $fake_git_log, 'needles git log is evaluated';
         $fake_git_log = '';
         ok $inv = $job->investigate, 'job investigation ok for no test changes';
@@ -1572,6 +1574,40 @@ subtest 'history isolation keys separate the scenario history' => sub {
         is $inv->{first_bad}{link}, '/tests/' . $bad->id, 'scheduled job is not the first bad job';
         is $inv->{last_good}, 'not found', 'scheduled job is not the last good job';
     };
+};
+
+subtest 'diff lines for the investigation' => sub {
+    my $diff = "@@ -1 +1 @@\n-b-1-1.x\n-grub2-2.12-2.1.x\n+a-1-1.x\n+grub2-2.12-1.1.x\n-NAME-1-1.x\nodd\n";
+    is_deeply [diff_lines($diff, '^.NAME')], ['+a-1-1.x', '-b-1-1.x', '-grub2-2.12-2.1.x', '+grub2-2.12-1.1.x', 'odd'],
+      'sorted by package name, "-" before "+", hunk headers and ignored lines removed';
+    is scalar(() = diff_lines($diff, '')), 6, 'an empty ignore pattern does not remove all lines';
+    is_deeply [diff_lines(undef)], [], 'no diff, no lines';
+    is_deeply [diff_lines(qq{-   "B" : 1,\n+   "B" : 2,\n-   "A" : 1,})],
+      ['-   "A" : 1,', '-   "B" : 1,', '+   "B" : 2,'],
+      'settings sorted by key';
+
+    my $line = sub ($sign, @parts) {
+        {sign => $sign, parts => [map { ref $_ ? $_ : ['', $_] } @parts]}
+    };
+    is_deeply diff_line_groups(diff_lines("-C-1-1.x\n-D-1-1.x\n+D-2-1.x")),
+      [
+        [$line->('-', 'C-1-1.x')],
+        [$line->('-', 'D-', [changed => 1], '-1.x'), $line->('+', 'D-', [changed => 2], '-1.x')]
+      ],
+      'lines are paired by key, an unmatched line before the pair does not shift it';
+    is_deeply diff_line_groups('-a-1-1.x.z', '+a-1-1.x'),
+      [[$line->('-', 'a-1-1.x', [missing => '.z']), $line->('+', 'a-1-1.x')]], 'token without counterpart is missing';
+    is_deeply diff_line_groups('-a-1-1.x', '+a-1-1.x.y.z'),
+      [[$line->('-', 'a-1-1.x'), $line->('+', 'a-1-1.x', [missing => '.y.z'])]], 'missing tokens in new line';
+    is_deeply diff_line_groups('-a-1-1', '+a-2-1'),
+      [[$line->('-', 'a-', [changed => 1], '-1'), $line->('+', 'a-', [changed => 2], '-1')]],
+      'similar line just above the threshold is paired';
+    is_deeply diff_line_groups('-a-12-1', '+a-34-5'), [[$line->('-', 'a-12-1')], [$line->('+', 'a-34-5')]],
+      'dissimilar line just below the threshold is not paired';
+    is_deeply diff_line_groups('-k-1-1', '-k-2-1', '+k-3-1'),
+      [[$line->('-', 'k-', [changed => 1], '-1'), $line->('+', 'k-', [changed => 3], '-1')], [$line->('-', 'k-2-1')]],
+      'unequal runs of the same key leave the rest unpaired';
+    is_deeply diff_line_groups('plain'), [[$line->('', 'plain')]], 'other lines are a group of one';
 };
 
 done_testing();
