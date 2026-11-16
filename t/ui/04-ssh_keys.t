@@ -59,7 +59,8 @@ subtest 'SSH key without title is rejected' => sub {
     $t->post_ok('/ssh_keys', {'X-CSRF-Token' => $token} => form => {public_key => $public_key})
       ->status_is(302, 'missing title redirects back');
     $t->get_ok('/api_keys')->status_is(200)
-      ->content_like(qr/A public key and a title are required/, 'missing title error is displayed');
+      ->content_like(qr/A public key and a title of at most 255 characters are required/,
+        'missing title error is displayed');
 };
 
 subtest 'SSH key already registered is rejected' => sub {

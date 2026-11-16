@@ -56,7 +56,8 @@ subtest 'title length limit' => sub {
     $t->post_ok('/api/v1/users/me/ssh_keys' => form => {public_key => $public_key, title => $ok})
       ->status_is(409, 'title at the limit passes validation, key is then reported as already registered');
     $t->post_ok('/api/v1/users/me/ssh_keys' => form => {public_key => $public_key, title => 'x' x 256})
-      ->status_is(400, 'title over the limit is rejected');
+      ->status_is(400, 'title over the limit is rejected')
+      ->json_is('/error', 'public_key and title (max 255 characters) are required', 'error names the length limit');
 };
 
 subtest 'delete ssh key' => sub {

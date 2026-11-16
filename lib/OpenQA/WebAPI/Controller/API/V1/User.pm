@@ -7,7 +7,7 @@ use DateTime::Format::Pg;
 use Feature::Compat::Try;
 use List::Util qw(min);
 use OpenQA::App;
-use OpenQA::Constants 'API_KEY_COMMENT_MAX_LENGTH';
+use OpenQA::Constants qw(API_KEY_COMMENT_MAX_LENGTH SSH_KEY_TITLE_MAX_LENGTH);
 
 =pod
 
@@ -238,8 +238,10 @@ whose fingerprint is already registered.
 sub create_ssh_key ($self) {
     my $validation = $self->validation;
     $self->validate_ssh_key_params($validation);
-    return $self->render(json => {error => 'public_key and title are required'}, status => 400)
-      if $validation->has_error;
+    return $self->render(
+        json => {error => "public_key and title (max @{[SSH_KEY_TITLE_MAX_LENGTH]} characters) are required"},
+        status => 400
+    ) if $validation->has_error;
 
     my ($ssh_key, $error)
       = $self->current_user->add_ssh_key($validation->param('public_key'), $validation->param('title'));
