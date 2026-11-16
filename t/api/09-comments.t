@@ -225,7 +225,11 @@ subtest 'delete many comments' => sub {
     $comments->create({id => 5, user_id => 1, text => 'foo label:force_result:softfailed'});
     $t->delete_ok('/api/v1/comments?id=5')->status_is(400, '400 returned if some comments preserved');
     $t->json_is('/deleted' => 0, 'no comments deleted');
+    my $verbatim_id = $comments->create({user_id => 1, text => 'flag:verbatim label:force_result:softfailed'})->id;
+    $t->delete_ok("/api/v1/comments?id=5&id=$verbatim_id")->status_is(400, '400 returned if some comments preserved');
+    $t->json_is('/deleted' => 1, 'one comment deleted');
     ok $comments->find(5), 'comment with "force_result"-label not deleted';
+    ok !$comments->find($verbatim_id), 'verbatim comment quoting a "force_result"-label deleted';
     $t->delete_ok('/api/v1/comments?id=98765&id=1&id=2')->status_is(400, '400 returned if some comments did not exist');
     $t->json_is('/deleted' => 2, 'two out of three comments deleted');
 };
@@ -311,7 +315,9 @@ subtest 'bugrefs, labels and flags in comments with flag:verbatim are ignored' =
     ok !$comments->referenced_bugs->{'bsc#1234567'}, 'bugref is not referenced';
     my $data = $comments->comment_data_for_jobs([$jobs->find($job_id)])->{$job_id};
     is_deeply $data, {comments => 1}, 'job is not reviewed';
-    $t->delete_ok("/api/v1/jobs/$job_id/comments/$id")->status_is(403, 'force_result label still prevents deletion');
+    my $quoting_id = test_create_comment('jobs', $job_id, $text);
+    $t->delete_ok("/api/v1/jobs/$job_id/comments/$quoting_id")
+      ->status_is(200, 'quoted force_result label does not prevent deletion');
     $comment->update({text => 'bsc#1234567 label:foo'});
     is $comment->bugref, 'bsc#1234567', 'bugref is found once the flag is edited away';
     $data = $comments->comment_data_for_jobs([$jobs->find($job_id)])->{$job_id};
