@@ -581,6 +581,50 @@ subtest 'archiving and labeling jobs to be considered important' => sub {
             ok $job->archived, 'job archived';
         };
     };
+
+    subtest 'jobs reviewed with bugrefs considered important' => sub {
+        my $job_bugref = $jobs->find(99940);
+        $job_bugref->update(
+            {
+                t_created => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 12, 'UTC'),
+                logs_present => 1,
+                result_dir => '00099/00099940-opensuse-Factory-DVD-x86_64-Build0048-kde',
+            });
+        my $log_bugref = create_temp_job_log_file($job_bugref->result_dir);
+        $job_bugref->comments->create({text => 'investigation showed bug bsc#123456', user_id => $user->id});
+
+        my $job_carryover = $jobs->find(99939);
+        $job_carryover->update(
+            {
+                t_created => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 12, 'UTC'),
+                logs_present => 1,
+                result_dir => '00099/00099939-opensuse-Factory-DVD-x86_64-Build0048-kde',
+            });
+        my $log_carryover = create_temp_job_log_file($job_carryover->result_dir);
+        $job_carryover->comments->create(
+            {text => "bsc#123456\n\n(Automatic carryover from t#99940)", user_id => $user->id});
+
+        my $job_verbatim = $jobs->find(99944);
+        $job_verbatim->update(
+            {
+                t_created => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 12, 'UTC'),
+                logs_present => 1,
+                result_dir => '00099/00099944-opensuse-13.1-DVD-i586-Build0091-textmode',
+            });
+        my $log_verbatim = create_temp_job_log_file($job_verbatim->result_dir);
+        $job_verbatim->comments->create({text => 'flag:verbatim see bsc#123456', user_id => $user->id});
+
+        run_gru_job($app, 'limit_results_and_logs');
+        ok -e $log_bugref, 'results of job with bugref preserved if only exceeding normal retention period';
+        ok !-e $log_carryover, 'results of job with automatic carryover cleaned up after normal retention period';
+        ok !-e $log_verbatim, 'results of job with verbatim bugref comment cleaned up after normal retention period';
+
+        # assume job with bugref was finished 22 days ago to test cleanup when exceeding important retention
+        $job_bugref->update(
+            {t_created => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 22, 'UTC'), logs_present => 1});
+        run_gru_job($app, 'limit_results_and_logs');
+        ok !-e $log_bugref, 'results of job with bugref cleaned up if exceeding retention period for important jobs';
+    };
 };
 
 subtest 'Non-Gru task' => sub {

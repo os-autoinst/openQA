@@ -228,7 +228,7 @@ sub _find_expired_jobs ($self, $keep_in_days, $keep_important_in_days, $preserve
     my $now = time;
     my $timecond = {'<' => time2str('%Y-%m-%d %H:%M:%S', $now - ONE_DAY * $keep_in_days, 'UTC')};
 
-    # filter out linked jobs
+    # filter out linked jobs and jobs reviewed with a bugref
     # note: As we use this function also for the homeless group (with id=null), we can't use $self->jobs, but
     #       need to add it directly.
     my $jobs = $self->result_source->schema->resultset('Jobs');
@@ -239,10 +239,21 @@ sub _find_expired_jobs ($self, $keep_in_days, $keep_important_in_days, $preserve
         BUILD => {-not_in => $important_builds_without_version});
     my @linked_jobs_cond = (text => {like => 'label:linked%'}, 'me.t_created' => $timecond, @group_cond);
     my @linked_jobs_search = ({@not_important_cond, @linked_jobs_cond}, {order_by => 'me.id', join => 'comments'});
-    my @linked_job_ids = map { $_->id } $jobs->search(@linked_jobs_search)->all;
+    my %important_job_ids = map { $_->id => 1 } $jobs->search(@linked_jobs_search)->all;
+
+    my @candidate_bugref_cond = (text => {like => '%#%'}, 'me.t_created' => $timecond, @group_cond);
+    my @candidate_bugref_search
+      = ({@not_important_cond, @candidate_bugref_cond}, {order_by => 'me.id', prefetch => 'comments'});
+    for my $job ($jobs->search(@candidate_bugref_search)->all) {
+        for my $comment ($job->comments->all) {
+            next if $comment->text =~ qr/Automatic (takeover|carryover)/;
+            $important_job_ids{$job->id} = 1 if $comment->bugref;
+        }
+    }
+    my @important_job_ids = sort keys %important_job_ids;
 
     # define condition for expired jobs in unimportant builds
-    my @ors = ({@not_important_cond, 'me.t_created' => $timecond, id => {-not_in => \@linked_job_ids}});
+    my @ors = ({@not_important_cond, 'me.t_created' => $timecond, id => {-not_in => \@important_job_ids}});
 
     # define condition for expired jobs in important builds
     my ($important_timestamp, @important_cond);
@@ -252,7 +263,7 @@ sub _find_expired_jobs ($self, $keep_in_days, $keep_important_in_days, $preserve
             -or => [
                 TAG_ID_COLUMN, => {-in => $important_builds_with_version},
                 BUILD => {-in => $important_builds_without_version},
-                id => {-in => \@linked_job_ids}]);
+                id => {-in => \@important_job_ids}]);
         push @ors, {@important_cond, 'me.t_created' => {'<' => $important_timestamp}};
     }
 
