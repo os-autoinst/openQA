@@ -12,7 +12,7 @@ use Scalar::Util ();
 use Time::Seconds;
 use HTTP::Status qw(:constants);
 use Carp;
-use OpenQA::SSHKey qw(parse_public_key signature_payload sign_payload);
+use OpenQA::SSHKey qw(parse_public_key public_key_from_private signature_payload sign_payload);
 
 has [qw(apikey apisecret base_url ssh_key)];
 
@@ -74,8 +74,9 @@ sub add_auth_headers ($headers, $url, $apikey, $apisecret) {
 
 sub add_ssh_auth_headers ($headers, $method, $url, $private_key_file, $body) {
     my $public_file = "$private_key_file.pub";
-    my $public = -r $public_file ? parse_public_key(path($public_file)->slurp) : undef;
-    die qq{SSH key "$private_key_file" cannot be read or its public key "$public_file" is missing\n} unless $public;
+    my $public
+      = -r $public_file ? parse_public_key(path($public_file)->slurp) : public_key_from_private($private_key_file);
+    die qq{SSH key "$private_key_file" cannot be read\n} unless $public;
 
     my $timestamp = time;
     my $payload = signature_payload($method, _path_query($url), $timestamp, $body);

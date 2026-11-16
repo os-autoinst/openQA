@@ -12,7 +12,7 @@ use IPC::Run ();
 use Mojo::File 'path';
 use MIME::Base64 qw(decode_base64 encode_base64);
 
-our @EXPORT_OK = qw(parse_public_key signature_payload sign_payload verify_signature);
+our @EXPORT_OK = qw(parse_public_key public_key_from_private signature_payload sign_payload verify_signature);
 
 use constant NAMESPACE => 'openqa';
 
@@ -109,6 +109,11 @@ sub _u32 ($data, $offset) { unpack 'N', _take($data, $offset, 4) }
 sub _ed25519_spki_pem ($raw_key) {
     my $der = pack('H*', '302a300506032b6570032100') . $raw_key;
     return "-----BEGIN PUBLIC KEY-----\n" . encode_base64($der) . "-----END PUBLIC KEY-----\n";
+}
+
+sub public_key_from_private ($private_key_file) {
+    my $out = _run([qw(ssh-keygen -y -f), $private_key_file], '');
+    return $out->{ok} ? parse_public_key($out->{stdout}) : undef;
 }
 
 sub _fingerprint ($public_key) {

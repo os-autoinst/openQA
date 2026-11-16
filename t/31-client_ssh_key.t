@@ -31,6 +31,16 @@ subtest 'ssh key signs the request path, timestamp and body' => sub {
       'signature verifies over path, timestamp and body';
 };
 
+subtest 'private key without a .pub file is signed with its derived public key' => sub {
+    my $lone = "$dir/lone";
+    my $lone_parsed = parse_public_key(generate_ssh_key($lone));
+    unlink "$lone.pub";
+    my $headers = Mojo::Headers->new;
+    OpenQA::UserAgent::add_ssh_auth_headers($headers, 'GET', Mojo::URL->new('/api/v1/jobs'), $lone, '');
+    is $headers->header('X-SSH-Key-Fingerprint'), $lone_parsed->{fingerprint},
+      'fingerprint is derived from the private key';
+};
+
 subtest 'missing SSH key file fails with a clear error' => sub {
     throws_ok {
         OpenQA::UserAgent::add_ssh_auth_headers(Mojo::Headers->new, 'GET', Mojo::URL->new('/api/v1/jobs'),
