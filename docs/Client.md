@@ -76,6 +76,10 @@ key = 1234567890ABCDEF
 secret = ABCDEF1234567890
 ```
 
+Instead of `key` and `secret`, a host section can set `ssh_key` to the path of an
+SSH private key (see [SSH key](#ssh-key)). It is only used when no API key or
+secret is given, so an explicit `--apikey` is never overridden by it.
+
 Alternatively specify key and secret in environment variables `OPENQA_API_KEY`
 and `OPENQA_API_SECRET`. For ad-hoc use all `openqa-cli` subcommands use the `--apikey` and
 `--apisecret` options which will override whatever the environment or config

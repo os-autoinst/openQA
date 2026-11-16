@@ -50,9 +50,11 @@ sub open_config_file ($host) {
 
 sub configure_credentials ($self, $host) {
     return undef unless my $cfg = open_config_file($host);
-    for my $i (qw(key secret)) {
-        my $attr = "api$i";
-        next if $self->$attr;
+    my $has_api_credentials = $self->apikey || $self->apisecret;
+    for my $i (qw(key secret ssh_key)) {
+        my $attr = $i eq 'key' || $i eq 'secret' ? "api$i" : $i;
+        # An API key given explicitly must not be overridden by an SSH key from the config
+        next if $self->$attr || ($i eq 'ssh_key' && $has_api_credentials);
         # Fetch all the values in the file and keep the last one
         my @values = $cfg->val($host, $i);
         next unless my $val = $values[-1];

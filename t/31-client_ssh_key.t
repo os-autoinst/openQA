@@ -66,6 +66,33 @@ subtest 'ssh key takes precedence over a configured API key' => sub {
     ok $tx->req->headers->header('X-SSH-Signature'), 'request is signed with the SSH key instead';
 };
 
+subtest 'ssh key from client.conf is used when no API key is given' => sub {
+    local $ENV{HOME} = $dir;
+    local $ENV{OPENQA_API_KEY};
+    local $ENV{OPENQA_API_SECRET};
+    path("$dir/.config/openqa")->make_path;
+    path("$dir/.config/openqa/client.conf")->spew("[localhost]\nssh_key = $dir/id\n");
+    my $ua = OpenQA::UserAgent->new(api => 'localhost');
+    is $ua->ssh_key, "$dir/id", 'ssh key is read from the host section';
+    is $ua->apikey, undef, 'no API key is configured';
+};
+
+subtest 'explicit API key wins over ssh key from client.conf' => sub {
+    local $ENV{HOME} = $dir;
+    local $ENV{OPENQA_API_KEY};
+    local $ENV{OPENQA_API_SECRET};
+    path("$dir/.config/openqa/client.conf")->spew("[localhost]\nssh_key = $dir/id\n");
+    my $ua = OpenQA::UserAgent->new(api => 'localhost', apikey => 'K', apisecret => 'S');
+    is $ua->ssh_key, undef, 'config ssh key is not used when an API key is given';
+};
+
+subtest 'explicit ssh key wins over ssh key from client.conf' => sub {
+    local $ENV{HOME} = $dir;
+    path("$dir/.config/openqa/client.conf")->spew("[localhost]\nssh_key = $dir/other\n");
+    my $ua = OpenQA::UserAgent->new(api => 'localhost', ssh_key => "$dir/id");
+    is $ua->ssh_key, "$dir/id", 'argument is kept over the config value';
+};
+
 subtest 'SSH auth does not send API key headers' => sub {
     my $headers = Mojo::Headers->new;
     OpenQA::UserAgent::add_ssh_auth_headers($headers, 'GET', Mojo::URL->new('/api/v1/jobs'), "$dir/id", '');
