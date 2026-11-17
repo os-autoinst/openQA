@@ -1775,9 +1775,10 @@ Further remarks:
 - Check out the [Build tagging](UsersGuide.md#build-tagging) section for
   how to mark a job as important on job group level. Jobs can also be marked as
   important by adding a "link label" (e.g.
-  `label:linked Job mentioned on https://…`) in a job comment. - New groups use the limits configured in the `[default_group_limits]`
-  section of [the web UI configuration](GettingStarted.md#webui-configuration).
-  Jobs outside of any group use the limits configured in the `[no_group_limits]`
+  `label:linked Job mentioned on https://…`) in a job comment.
+- New groups use the limits configured in the `[default_group_limits]` section
+  of [the web UI configuration](GettingStarted.md#webui-configuration). Jobs
+  outside of any group use the limits configured in the `[no_group_limits]`
   section of the web UI configuration.
 - The [Auditing](Installing.md#auditing) section explains the cleanup of
   the audit log.
