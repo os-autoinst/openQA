@@ -243,8 +243,10 @@ sub _set_upload_inactivity_timeout ($self, $timeout = undef) {
     $self->{_upload_inactivity_timer} = $loop->timer($timeout => sub { $self->_handle_upload_inactivity_timeout });
 }
 
+sub _is_upload_timeout ($self) { $self->{_upload_timeout} || $self->{_upload_inactivity_timeout_exceeded} }
+
 sub _reset_upload_inactivity_timeout ($self) {
-    return unless $self->status eq 'stopping';
+    return if $self->status ne 'stopping' || $self->_is_upload_timeout;
     $self->_set_upload_inactivity_timeout;
 }
 
@@ -263,6 +265,7 @@ sub _terminate_upload_due_to_timeout ($self, $flag, $message) {
             kill 'KILL', $pid;
         }
     }
+    delete $self->{_upload_results_callback};
     $self->conclude_upload_if_ongoing;
     $self->_stop_step_5_finalize(WORKER_SR_TIMEOUT, {result => TIMEOUT_EXCEEDED});
 }
@@ -403,9 +406,11 @@ sub stop ($self, $reason = undef) {
     $self->_stop_step_2_post_status(
         $reason,
         sub {
+            return undef if $self->_is_upload_timeout;    # _terminate_upload_due_to_timeout will finalize
             $self->_stop_step_3_announce(
                 $reason,
                 sub {
+                    return undef if $self->_is_upload_timeout;    # _terminate_upload_due_to_timeout will finalize
                     $self->kill;
                     $self->_stop_step_4_upload(
                         $reason,
@@ -457,6 +462,7 @@ sub _redact_file ($file_path, $file_name) {
 }
 
 sub _stop_step_4_upload ($self, $reason, $callback) {
+    return undef if $self->_is_upload_timeout;    # _terminate_upload_due_to_timeout will finalize
     my $job_id = $self->id;
     my $pooldir = $self->worker->pool_directory;
 
@@ -542,7 +548,7 @@ sub _stop_step_4_upload ($self, $reason, $callback) {
         sub {
             my ($subprocess, $err, $reason) = @_;
             delete $self->{_upload_subprocess};
-            return if $self->{_upload_timeout} || $self->{_upload_inactivity_timeout_exceeded};
+            return undef if $self->_is_upload_timeout;    # _terminate_upload_due_to_timeout will finalize
             $self->_reset_upload_inactivity_timeout;
             log_error("Upload subprocess error: $err") if $err;
             $self->_stop_step_5_1_upload($reason // WORKER_SR_API_FAILURE, $callback);
@@ -551,6 +557,7 @@ sub _stop_step_4_upload ($self, $reason, $callback) {
 }
 
 sub _stop_step_5_1_upload ($self, $reason, $callback) {
+    return undef if $self->_is_upload_timeout;    # _terminate_upload_due_to_timeout will finalize
 
     # signal a possibly ongoing result upload that logs and assets have been uploaded
     $self->{_has_uploaded_logs_and_assets} = 1;
@@ -563,6 +570,7 @@ sub _stop_step_5_1_upload ($self, $reason, $callback) {
 }
 
 sub _stop_step_5_2_upload ($self, $reason, $callback) {
+    return undef if $self->_is_upload_timeout;    # _terminate_upload_due_to_timeout will finalize
     $self->_reset_upload_inactivity_timeout;
 
     # do final status upload for selected reasons
@@ -789,11 +797,12 @@ sub _calculate_upload_results_interval ($self) {
 }
 
 sub _conclude_upload ($self, $callback = undef, $result = {}) {
-    $self->_reset_upload_inactivity_timeout if $self->status eq 'stopping';
     my $existing_callback = delete $self->{_upload_results_callback};
     $callback //= $existing_callback;
     $self->{_is_uploading_results} = 0;
     $self->emit(uploading_results_concluded => $result);
+    return undef if $self->_is_upload_timeout;    # _terminate_upload_due_to_timeout will finalize
+    $self->_reset_upload_inactivity_timeout if $self->status eq 'stopping';
     Mojo::IOLoop->next_tick($callback) if $callback;
 }
 
@@ -1024,7 +1033,7 @@ sub _upload_results_step_2_upload_images ($self, $callback) {
         sub { $self->_upload_results_step_2_1_upload_images },
         sub ($subprocess, $error, @args) {
             delete $self->{_upload_images_subprocess};
-            return if $self->{_upload_timeout} || $self->{_upload_inactivity_timeout_exceeded};
+            return undef if $self->_is_upload_timeout;    # _terminate_upload_due_to_timeout will finalize
             $self->_reset_upload_inactivity_timeout;
             $self->_upload_results_step_2_2_upload_images($callback, $error);
         });
