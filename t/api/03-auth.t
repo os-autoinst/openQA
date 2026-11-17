@@ -426,10 +426,6 @@ subtest 'API key role scoping limits user roles' => sub {
     $c->stash(current_api_key => $unprivileged_key);
     ok !$c->is_operator, 'unprivileged key denies operator access via helper';
     ok !$c->is_admin, 'unprivileged key denies admin access via helper';
-
-    # Explicit user argument takes precedence over stashed API key scoping
-    ok $c->is_operator($arthur), 'explicit user arg bypasses stashed key scoping for operator check';
-    ok $c->is_admin($arthur), 'explicit user arg bypasses stashed key scoping for admin check';
 };
 
 done_testing();

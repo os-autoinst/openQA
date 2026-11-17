@@ -78,19 +78,18 @@ sub _current_user ($c) {
     return $current_user && defined $current_user->{user} ? $current_user->{user} : undef;
 }
 
-# Administrator status implies operator access. Explicit $user inspects target account directly.
-sub _is_operator ($c, $user = undef) {
-    my $api_key = $user ? undef : $c->stash('current_api_key');
-    $user //= $c->current_user;
+sub _is_operator ($c) {
+    my $user = $c->current_user;
     return 0 unless $user;
+    my $api_key = $c->stash('current_api_key');
     return ($user->is_admin && $api_key->is_admin) || ($user->is_operator && $api_key->is_operator) if $api_key;
     return $user->is_admin || $user->is_operator;
 }
 
-sub _is_admin ($c, $user = undef) {
-    my $api_key = $user ? undef : $c->stash('current_api_key');
-    $user //= $c->current_user;
+sub _is_admin ($c) {
+    my $user = $c->current_user;
     return 0 unless $user;
+    my $api_key = $c->stash('current_api_key');
     return $user->is_admin && $api_key->is_admin if $api_key;
     return $user->is_admin;
 }
@@ -109,7 +108,6 @@ sub _role_to_permissions ($c, $role) {
     return (0, 0);
 }
 
-# Verify requested roles do not exceed the calling user's account roles.
 sub _validate_api_key_role_grant ($c, $is_admin, $is_operator, $user) {
     if ($is_admin && !$user->is_admin) {
         return 'Cannot grant administrator role exceeding own account';
