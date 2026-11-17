@@ -137,3 +137,42 @@ sub _render_specific_not_found ($c, $title, $error_message) {
 sub _via_domain ($c, $domain) { defined $domain && $c->req->url->to_abs->host eq $domain }
 
 1;
+
+=encoding utf8
+
+=head1 NAME
+
+OpenQA::Shared::Plugin::SharedHelpers - Shared Mojolicious helpers for openQA
+
+=head1 DESCRIPTION
+
+Registers helpers for schema access, the current user and role checks,
+API-key permission scoping, request classification, and rendering.
+
+=head2 is_operator
+
+Returns true if the current user has operator access. Administrator access
+implies operator access. When the request is authenticated with an API key,
+the key must also carry the matching C<is_operator> or C<is_admin> flag.
+
+=head2 is_admin
+
+Returns true if the current user is an administrator. When the request is
+authenticated with an API key, the key must also be an administrator.
+
+=head2 format_api_key_role
+
+Returns the effective role of an API key (C<Administrator>, C<Operator>, or
+C<User>), bounded by the owning user's account roles.
+
+=head2 role_to_permissions
+
+Maps a role name (C<admin>, C<operator>, or C<user>) to an C<is_operator> and
+C<is_admin> permission pair.
+
+=head2 validate_api_key_role_grant
+
+Returns an error message if the requested permissions exceed the calling
+user's account roles, or C<undef> when the grant is allowed.
+
+=cut
