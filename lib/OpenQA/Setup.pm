@@ -17,7 +17,7 @@ use Time::HiRes 'gettimeofday';
 use Time::Seconds;
 use Scalar::Util 'looks_like_number';
 use List::Util qw(any max);
-use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT MAX_TIMER);
+use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT MAX_TIMER TIME_LIMIT_DAYS_MAX);
 use OpenQA::JobGroupDefaults;
 use OpenQA::Jobs::Constants qw(OK_RESULTS);
 use OpenQA::Scheduler::DynamicLimit;
@@ -579,7 +579,7 @@ sub set_secure_flag_on_cookies_of_https_connection ($server) {
     $server->hook(before_dispatch => \&set_secure_flag_on_cookies);
 }
 
-sub setup_validator_check_for_datetime ($server) {
+sub setup_validator_checks ($server) {
     $server->validator->add_filter(
         seconds_optional => sub ($v, $name, $value) {
             # add seconds if missing so they become optional
@@ -590,6 +590,13 @@ sub setup_validator_check_for_datetime ($server) {
             try { DateTime::Format::Pg->parse_datetime($value) }
             catch ($e) { return 1 }
             return;
+        });
+    $server->validator->add_check(
+        days => sub ($validation, $name, $value, $min = 0, $max = TIME_LIMIT_DAYS_MAX) {
+            return 1 unless defined $value && $value =~ /^(?:\d+(?:\.\d+)?|\.\d+)$/;
+            return 1 if defined $min && $value < $min;
+            return 1 if defined $max && $value > $max;
+            return undef;
         });
 }
 

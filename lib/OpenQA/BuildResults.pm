@@ -6,7 +6,7 @@ package OpenQA::BuildResults;
 use Mojo::Base -strict, -signatures;
 
 use OpenQA::Jobs::Constants;
-use OpenQA::Constants qw(BUILD_SORT_BY_NAME BUILD_SORT_BY_NEWEST_JOB BUILD_SORT_BY_OLDEST_JOB);
+use OpenQA::Constants qw(BUILD_SORT_BY_NAME BUILD_SORT_BY_NEWEST_JOB BUILD_SORT_BY_OLDEST_JOB TIME_LIMIT_DAYS_MAX);
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Utils;
 use Date::Format;
@@ -178,8 +178,10 @@ sub compute_build_results (
         rows => $row_limit
     );
     my %search_filter = (group_id => {in => $group_ids});
-    $search_filter{t_created} = {'>' => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * $time_limit_days, 'UTC')}
-      if $time_limit_days;
+    if ($time_limit_days && $time_limit_days > 0) {
+        my $capped_days = $time_limit_days > TIME_LIMIT_DAYS_MAX ? TIME_LIMIT_DAYS_MAX : $time_limit_days;
+        $search_filter{t_created} = {'>' => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * $capped_days, 'UTC')};
+    }
     # add search filter for tags
     # caveat: a tag that references only a build, not including a version, might be ambiguous
     if ($tags) {

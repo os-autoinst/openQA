@@ -75,6 +75,18 @@ subtest 'build results' => sub {
         $t->json_is('/build_results/0/tag/type' => 'published');
         $t->json_is('/build_results/0/tag/version' => undef);
     };
+
+    subtest 'invalid time_limit_days' => sub {
+        $t->get_ok("/api/v1/job_groups/$opensuse_group/build_results?time_limit_days=804327260")
+          ->status_is(400, 'excessive time_limit_days rejected')
+          ->json_is('/error' => 'Erroneous parameters (time_limit_days invalid)');
+        $t->get_ok("/api/v1/job_groups/$opensuse_group/build_results?time_limit_days=-5")
+          ->status_is(400, 'negative time_limit_days rejected')
+          ->json_is('/error' => 'Erroneous parameters (time_limit_days invalid)');
+        $t->get_ok("/api/v1/job_groups/$opensuse_group/build_results?time_limit_days=abc")
+          ->status_is(400, 'non-numeric time_limit_days rejected')
+          ->json_is('/error' => 'Erroneous parameters (time_limit_days invalid)');
+    };
 };
 
 subtest 'list job groups' => sub() {

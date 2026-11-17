@@ -1048,7 +1048,9 @@ paths:
           name: time_limit_days
           required: false
           schema:
-            type: integer
+            type: number
+            minimum: 0
+            maximum: 99999
         - in: query
           name: only_tagged
           required: false

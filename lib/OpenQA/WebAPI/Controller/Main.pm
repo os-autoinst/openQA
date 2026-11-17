@@ -23,7 +23,7 @@ use constant INTERVAL => (30, 60, 90, 120, 180);
 sub dashboard_build_results ($self) {
     my $validation = $self->validation;
     $validation->optional('limit_builds')->num;
-    $validation->optional('time_limit_days')->like(qr/^[0-9.]+$/);
+    $validation->optional('time_limit_days')->days;
     $validation->optional('only_tagged');
     $validation->optional('default_expanded');
     $validation->optional('show_tags');
@@ -153,7 +153,7 @@ my %SORTING_NOTE = (
 sub _group_overview ($self, $resultset, $template) {
     my $validation = $self->validation;
     $validation->optional('limit_builds')->num;
-    $validation->optional('time_limit_days')->like(qr/^[0-9.]+$/);
+    $validation->optional('time_limit_days')->days;
     $validation->optional('only_tagged')->num;
     $validation->optional('fullscreen')->num;
     $validation->optional('interval')->num;
