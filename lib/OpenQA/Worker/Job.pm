@@ -188,8 +188,8 @@ sub handle_reconnect ($self) {
         return $self->conclude_upload_if_ongoing;
     }
     log_info("Re-connected while job $job_id is active");
-    $self->conclude_upload_if_ongoing;
-    $self->_upload_results(sub { }) if $self->status eq 'running' && !$self->upload_results_timer;
+    $self->_upload_results(sub { })
+      if $self->status eq 'running' && !$self->upload_results_timer && !$self->is_uploading_results;
     return 1;
 }
 
@@ -849,21 +849,26 @@ sub _upload_results_step_0_prepare ($self, $callback) {
     # determine up to which module the results should be uploaded
     my $current_test_module = $self->current_test_module;
     my $upload_up_to;
+    my $sending_test_order = 0;
     if ($test_state eq 'running' || $finished) {
         my $file_info = stat $self->_result_file_path('test_order.json');
         my ($current_mtime, $current_fsize) = $file_info ? ($file_info->mtime // 0, $file_info->size // 0) : (0, 0);
         my ($last_mtime, $last_fsize) = (($self->{_test_order_mtime} // 0), ($self->{_test_order_fsize} // 0));
         my $test_order;
         my $changed_schedule = $last_mtime && ($current_mtime != $last_mtime || $current_fsize != $last_fsize);
-        if (not $current_test_module or $changed_schedule) {
+        if ($changed_schedule) {
+            log_info('Test schedule has changed, reloading test_order.json');
+            delete $self->{_test_order_uploaded};
+        }
+        if (not $self->{_full_test_order} or $changed_schedule) {
             log_info('Test schedule has changed, reloading test_order.json') if $changed_schedule;
             $test_order = $self->_read_json_file('test_order.json');
-            $status{test_order} = $test_order;
             $self->{_test_order} = $test_order;
             $self->{_full_test_order} = $test_order;
             $self->{_test_order_mtime} = $current_mtime;
             $self->{_test_order_fsize} = $current_fsize;
         }
+        $test_order //= $self->{_full_test_order};
         if (!$current_test_module) {    # first test (or already after the last!)
             if (!$test_order) {
                 $self->stop('no tests scheduled');
@@ -878,6 +883,10 @@ sub _upload_results_step_0_prepare ($self, $callback) {
             # prevent $current_test_module from getting empty
             $self->{_current_test_module} = $current_test_module = $running_test;
         }
+        if ($self->{_full_test_order} && !$self->{_test_order_uploaded}) {
+            $status{test_order} = $self->{_full_test_order};
+            $sending_test_order = 1;
+        }
     }
 
     # adjust $upload_up_to to handle special cases
@@ -885,6 +894,7 @@ sub _upload_results_step_0_prepare ($self, $callback) {
         # ensure everything is uploaded in the end
         $upload_up_to = '';
         $status{test_order} = $self->{_test_order} = $self->{_full_test_order};
+        $sending_test_order = 1;
     }
     elsif ($status{test_execution_paused}) {
         # upload up to the current module when paused so it is possible to open the needle editor
@@ -934,6 +944,7 @@ sub _upload_results_step_0_prepare ($self, $callback) {
                 return $self->_upload_results_step_3_finalize($upload_up_to, $callback);
             }
 
+            $self->{_test_order_uploaded} = 1 if $sending_test_order;
             $self->_reduce_test_order($last_test_module)
               if defined $upload_up_to && defined $last_test_module && !$self->{_has_uploaded_logs_and_assets};
             $self->_ignore_known_images($status_post_res->{known_images});
