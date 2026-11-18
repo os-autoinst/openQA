@@ -1,0 +1,162 @@
+#!/usr/bin/perl
+package table_sizes;
+use strict;
+use warnings;
+use DBI;
+use v5.26;
+use experimental qw(signatures);
+
+# Munin multigraph plugin to monitor PostgreSQL table sizes (total, data-only, and index-only)
+# in the 'openqa' database.
+#
+# Usage
+#
+# To measure tables in the openqa db, add this to
+# /etc/munin/plugin-conf.d/openqa-table-sizes
+#
+#   [table_sizes_openqa]
+#   user root
+#   env.db_host 127.0.0.1
+#   env.db_host /var/run/postgresql
+#   env.db_port 5432
+#   env.db_user user
+#   env.db_pass pass
+#
+# Put script into /usr/lib/munin/plugins/table_sizes_ (or symlink)
+#
+# Create a symlink in /etc/munin/plugins:
+# table_sizes_openqa -> /usr/lib/munin/plugins/table_sizes_
+
+my ($db_name) = $0 =~ m/table_sizes_(\w+)/;
+$db_name ||= $ENV{db_name} || 'openqa';
+my $db_host = $ENV{db_host} // '';
+my $db_port = $ENV{db_port} // '';
+my $db_user = $ENV{db_user} // 'postgres';
+my $db_pass = $ENV{db_pass} // '';
+
+my $dsn = "dbi:Pg:dbname=$db_name";
+$dsn .= ";host=$db_host" if $db_host ne '';
+$dsn .= ";port=$db_port" if $db_port ne '';
+
+my @graphs = (
+    {
+        name  => "${db_name}_table_sizes",
+        title => "$db_name PostgreSQL table sizes (including indices)",
+        info  => "Total disk space used by each table and its associated indexes in the $db_name database.",
+        key   => 'total_bytes',
+    },
+    {
+        name  => "${db_name}_table_data_sizes",
+        title => "$db_name PostgreSQL table sizes (data only)",
+        info  => "Disk space used by table data and TOAST (excluding indexes) in the $db_name database.",
+        key   => 'data_bytes',
+    },
+    {
+        name  => "${db_name}_table_index_sizes",
+        title => "$db_name PostgreSQL index sizes (per table)",
+        info  => "Total disk space used by all indexes per table in the $db_name database.",
+        key   => 'index_bytes',
+    },
+);
+
+sub fetch_data () {
+    my $dbh = DBI->connect(
+        $dsn,
+        $db_user,
+        $db_pass,
+        { RaiseError => 1, AutoCommit => 1, PrintError => 0 }
+    );
+
+    # Fetch user tables in the public schema along with:
+    # - total_bytes: table + toast + indexes
+    # - data_bytes:  table + toast (excluding indexes)
+    # - index_bytes: all indexes associated with the table
+    my $sql = <<~'EOM';
+        SELECT
+            relname AS table_name,
+            pg_total_relation_size(C.oid) AS total_bytes,
+            pg_table_size(C.oid)          AS data_bytes,
+            pg_indexes_size(C.oid)        AS index_bytes
+        FROM pg_class C
+        LEFT JOIN pg_namespace N ON (N.oid = C.relnamespace)
+        WHERE nspname = 'public'
+          AND relkind = 'r'
+        ORDER BY relname ASC;
+        EOM
+
+    my $sth = $dbh->prepare($sql);
+    $sth->execute();
+
+    my @tables;
+    while (my $row = $sth->fetchrow_hashref) {
+        # Sanitize table names to valid Munin field names ([a-zA-Z0-9_])
+        my $fieldname = $row->{table_name};
+        $fieldname =~ s/[^a-zA-Z0-9_]/_/g;
+        $fieldname = "t_$fieldname" if $fieldname =~ /^[0-9]/;
+
+        push @tables, {
+            field       => $fieldname,
+            label       => $row->{table_name},
+            total_bytes => $row->{total_bytes},
+            data_bytes  => $row->{data_bytes},
+            index_bytes => $row->{index_bytes},
+        };
+    }
+
+    $sth->finish();
+    $dbh->disconnect();
+
+    return \@tables;
+}
+
+sub main () {
+    if (defined $ARGV[0] && $ARGV[0] eq 'config') {
+        my $tables = fetch_data();
+        config($tables);
+    }
+    else {
+        my $tables = fetch_data();
+        data($tables);
+    }
+}
+
+sub config ($tables) {
+    for my $g (@graphs) {
+        my $key = $g->{key};
+        # Sort tables from largest to smallest for this specific graph's legend
+        my @sorted = sort {
+            $b->{$key} <=> $a->{$key} || $a->{label} cmp $b->{label}
+        } @$tables;
+
+        print <<~"EOM";
+            multigraph $g->{name}
+            graph_title $g->{title}
+            graph_args --base 1024 -l 0
+            graph_vlabel Bytes
+            graph_category db
+            graph_info $g->{info}
+            EOM
+
+        foreach my $t (@sorted) {
+            print <<~"EOM";
+                $t->{field}.label $t->{label}
+                $t->{field}.type GAUGE
+                $t->{field}.min 0
+                EOM
+        }
+        print "\n";
+    }
+}
+
+sub data ($tables) {
+    for my $g (@graphs) {
+        say "multigraph $g->{name}";
+        my $key = $g->{key};
+        foreach my $t (@$tables) {
+            say "$t->{field}.value $t->{$key}";
+        }
+        print "\n";
+    }
+}
+
+main() unless caller;
