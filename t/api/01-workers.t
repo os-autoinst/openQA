@@ -579,4 +579,90 @@ subtest 'worker registration reservation inheritance' => sub {
     $schema->txn_rollback;
 };
 
+subtest 'unused worker and host activity reporting' => sub {
+    $schema->txn_begin;
+    my $limits = OpenQA::App->singleton->config->{misc_limits};
+    my %original_limits = %$limits{qw(admin_table_max_limit admin_table_default_limit)};
+    @$limits{qw(admin_table_max_limit admin_table_default_limit)} = (1000, 1000);
+    my $now = time;
+    my $now_str = time2str('%Y-%m-%d %H:%M:%S', $now, 'UTC');
+    my $old_str = time2str('%Y-%m-%d %H:%M:%S', $now - 20 * 86400, 'UTC');
+    my $recent_str = time2str('%Y-%m-%d %H:%M:%S', $now - 2 * 86400, 'UTC');
+    $workers->search({id => {'<' => 900}})->delete;
+
+    my $stale = $workers->create({id => 900, host => 'stale-host', instance => 1, t_seen => $now_str});
+    my $active = $workers->create({id => 901, host => 'active-host', instance => 1, t_seen => $now_str});
+    my $never = $workers->create({id => 902, host => 'never-host', instance => 1, t_seen => $now_str});
+    my $j_old
+      = $jobs->create({TEST => 'stale-test', state => 'done', result => 'passed', assigned_worker_id => $stale->id});
+    $j_old->update({t_finished => $old_str});
+    my $j_new
+      = $jobs->create({TEST => 'active-test', state => 'done', result => 'passed', assigned_worker_id => $active->id});
+    $j_new->update({t_finished => $recent_str});
+    my $ids = sub ($url) {
+        [map { $_->{id} } @{$t->get_ok($url)->status_is(200)->tx->res->json->{workers}}]
+    };
+
+    is_deeply $ids->('/api/v1/workers?unused_days=14'), [900, 902], 'only workers without recent jobs are unused';
+    is_deeply $ids->('/api/v1/workers?unused_days=30'), [902],
+      'longer window excludes the worker with a 20 day old job';
+    is_deeply $ids->('/api/v1/workers?unused_days=14&limit=1'), [900], 'unused workers are paged';
+
+    $stale->set_property(RESERVED_BY_ID => 99);
+    is_deeply $ids->('/api/v1/workers?unused_days=14&reserved=1'), [900],
+      'reserved and unused_days filters are combined';
+    is_deeply $ids->('/api/v1/workers?unused_days=14&reserved=0'), [902],
+      'unreserved and unused_days filters are combined';
+
+    my %last = map { $_->{id} => $_->{last_job_finished} }
+      @{$t->get_ok('/api/v1/workers?include_activity=1')->status_is(200)->tx->res->json->{workers}};
+    is $last{900}, time2str('%Y-%m-%dT%H:%M:%SZ', $now - 20 * 86400, 'UTC'), 'last_job_finished of stale worker';
+    is $last{901}, time2str('%Y-%m-%dT%H:%M:%SZ', $now - 2 * 86400, 'UTC'), 'last_job_finished of active worker';
+    ok exists $last{902} && !defined $last{902}, 'last_job_finished is null for worker without finished jobs';
+    ok !exists $t->get_ok('/api/v1/workers?limit=1')->tx->res->json->{workers}->[0]->{last_job_finished},
+      'last_job_finished is only included on request';
+
+    for my $param (qw(unused_days=0 unused_days=-14 unused_days=abc include_activity=2)) {
+        $t->get_ok("/api/v1/workers?$param")->status_is(400, "$param is rejected");
+    }
+
+    $t->get_ok('/api/v1/worker_hosts')->status_is(200, 'worker hosts listing');
+    my $res = $t->tx->res->json;
+    is $res->{days}, 30, 'default window is echoed';
+    my $hosts = $res->{hosts};
+    is $hosts->{'stale-host'}{jobs_last_7d}, 0, 'stale host has no jobs in last 7 days';
+    is $hosts->{'stale-host'}{jobs_last_30d}, 1, 'stale host has one job in last 30 days';
+    is $hosts->{'stale-host'}{jobs_in_window}, 1, 'stale host has one job in the default window';
+    is $hosts->{'stale-host'}{is_idle}, 0, 'stale host is not idle within 30 days';
+    is $hosts->{'active-host'}{jobs_last_7d}, 1, 'active host has one job in last 7 days';
+    is $hosts->{'never-host'}{jobs_last_30d}, 0, 'never host has no jobs in last 30 days';
+    is $hosts->{'never-host'}{is_idle}, 1, 'never host is idle';
+    ok !defined $hosts->{'never-host'}{last_job_finished}, 'never host has no last_job_finished';
+
+    $t->get_ok('/api/v1/worker_hosts?days=14')->status_is(200);
+    $res = $t->tx->res->json;
+    is $res->{days}, 14, 'requested window is echoed';
+    is $res->{hosts}{'stale-host'}{jobs_in_window}, 0, 'stale host has no jobs in 14 day window';
+    is $res->{hosts}{'stale-host'}{is_idle}, 1, 'stale host is idle within 14 days';
+
+    $t->get_ok('/api/v1/worker_hosts?limit=1&offset=1')->status_is(200);
+    is_deeply [keys %{$t->tx->res->json->{hosts}}], ['never-host'], 'hosts are paged alphabetically';
+    ok $t->tx->res->headers->link, 'pagination links are set';
+
+    for my $param (qw(days=0 days=-1 limit=0 offset=-1)) {
+        $t->get_ok("/api/v1/worker_hosts?$param")->status_is(400, "$param is rejected");
+    }
+
+    my $anonymous = Test::Mojo->new($app);
+    $anonymous->ua(OpenQA::Client->new->ioloop(Mojo::IOLoop->singleton));
+    $anonymous->app($app);
+    $anonymous->get_ok('/api/v1/workers')->status_is(200, 'plain worker listing stays public');
+    $anonymous->get_ok('/api/v1/workers?unused_days=14')->status_is(403, 'unused_days requires authentication');
+    $anonymous->get_ok('/api/v1/workers?include_activity=1')
+      ->status_is(403, 'include_activity requires authentication');
+    $anonymous->get_ok('/api/v1/worker_hosts')->status_is(403, 'worker hosts require authentication');
+    @$limits{keys %original_limits} = values %original_limits;
+    $schema->txn_rollback;
+};
+
 done_testing();

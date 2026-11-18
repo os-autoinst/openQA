@@ -39,6 +39,10 @@ Returns a list of workers with useful information for each including its ID, the
 where the worker is located, the worker instance, the worker status and the worker's
 websocket status.
 
+Supports the optional parameters C<limit>, C<offset> and C<reserved>. The parameters C<unused_days>
+(only workers which are not busy and have not finished a job within the given number of days) and
+C<include_activity> (adds C<last_job_finished> to each worker) require authentication.
+
 =back
 
 =cut
@@ -48,7 +52,14 @@ sub list ($self) {
     $validation->optional('limit')->num;
     $validation->optional('offset')->num;
     $validation->optional('reserved')->num(0, 1);
+    $validation->optional('unused_days')->num(1, undef);
+    $validation->optional('include_activity')->num(0, 1);
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
+
+    my $unused_days = $validation->param('unused_days');
+    my $include_activity = $validation->param('include_activity');
+    return $self->render(json => {error => 'Authentication required'}, status => 403)
+      if (defined $unused_days || $include_activity) && !$self->current_user;
 
     my $limits = OpenQA::App->singleton->config->{misc_limits};
     my $limit
@@ -56,6 +67,8 @@ sub list ($self) {
     my $offset = $validation->param('offset') // 0;
 
     my $workers = $self->schema->resultset('Workers');
+    $workers = $workers->find_unused_workers(threshold_days => $unused_days, online_only => 0)
+      if defined $unused_days;
     my $reserved_param = $validation->param('reserved');
     my $condition
       = defined $reserved_param
@@ -65,7 +78,16 @@ sub list ($self) {
     pop @paged if my $has_more = @paged > $limit;
     $self->pagination_links_header($limit, $offset, $has_more);
 
-    $self->render(json => {workers => [map { $_->info } @paged]});
+    my $lf_map = $include_activity ? $workers->last_jobs_finished_per_worker([map { $_->id } @paged]) : {};
+    $self->render(
+        json => {
+            workers => [
+                map {
+                    my $info = $_->info;
+                    $info->{last_job_finished} = $lf_map->{$_->id} if $include_activity;
+                    $info;
+                } @paged
+            ]});
 }
 
 =over 4
@@ -439,6 +461,44 @@ sub release_host ($self) {
         });
 
     $self->render(json => {message => "Worker host '$host' reservation released successfully."});
+}
+
+=over 4
+
+=item list_hosts()
+
+Returns an activity summary per worker host: instance counts, the time of the last finished job,
+the number of jobs finished within the last C<days> days (default 30), over the last 7 and over the last 30
+days, the worker classes and whether the host is idle within the C<days> window. Supports C<limit> and
+C<offset> over the alphabetically sorted host names. Requires authentication.
+
+=back
+
+=cut
+
+sub list_hosts ($self) {
+    my $validation = $self->validation;
+    $validation->optional('days')->num(1, undef);
+    $validation->optional('limit')->num(1, undef);
+    $validation->optional('offset')->num(0, undef);
+    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
+
+    my $limits = OpenQA::App->singleton->config->{misc_limits};
+    my $limit
+      = min($limits->{admin_table_max_limit}, $validation->param('limit') // $limits->{admin_table_default_limit});
+    my $offset = $validation->param('offset') // 0;
+    my $days = $validation->param('days') // 30;
+
+    my $workers = $self->schema->resultset('Workers');
+    my @hosts
+      = map { $_->host }
+      $workers->search({},
+        {columns => ['host'], distinct => 1, order_by => 'host', rows => $limit + 1, offset => $offset})->all;
+    pop @hosts if my $has_more = @hosts > $limit;
+    $self->pagination_links_header($limit, $offset, $has_more);
+
+    my $summary = $workers->search({host => {-in => \@hosts}})->host_activity_summary($days);
+    $self->render(json => {days => $days + 0, hosts => $summary});
 }
 
 1;
