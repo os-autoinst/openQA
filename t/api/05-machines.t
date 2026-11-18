@@ -349,4 +349,41 @@ subtest 'server-side limit with pagination' => sub {
     };
 };
 
+subtest 'deprecation/lifecycle enforcement' => sub {
+    my $admin_t = client($t, apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR');
+
+    $admin_t->app->config->{job_settings_lifecycle} = {
+        rule_error => 'BAD_SETTING:=~foo:error:BAD_SETTING with foo is not allowed',
+        rule_warn => 'BAD_SETTING:=~bar:warning:BAD_SETTING with bar is deprecated',
+    };
+    delete $admin_t->app->config->{misc_limits}->{job_settings_lifecycle_rules};
+
+    $admin_t->post_ok(
+        '/api/v1/machines',
+        json => {
+            name => 'bad_machine_foo',
+            backend => 'qemu',
+            settings => {
+                BAD_SETTING => 'foo_val',
+                GOOD_SETTING => 'baz',
+            }})->status_is(400);
+    like $admin_t->tx->res->body,
+      qr/Setting 'BAD_SETTING' has deprecated value 'foo_val': BAD_SETTING with foo is not allowed/,
+      'error response message matches';
+
+    $admin_t->post_ok(
+        '/api/v1/machines',
+        json => {
+            name => 'warn_machine_bar',
+            backend => 'qemu',
+            settings => {
+                BAD_SETTING => 'bar_val',
+                GOOD_SETTING => 'baz',
+            }})->status_is(200);
+
+    delete $admin_t->app->config->{job_settings_lifecycle};
+    delete $admin_t->app->config->{misc_limits}->{job_settings_lifecycle_rules};
+    client($t);
+};
+
 done_testing();
