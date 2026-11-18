@@ -51,6 +51,11 @@ subtest 'batched last_jobs_finished_per_worker' => sub {
     is $workers->last_jobs_finished_per_worker(\@ids)->{$worker_active->id},
       $newer_time->strftime('%Y-%m-%dT%H:%M:%SZ'),
       'worker with multiple finished jobs reports the most recent t_finished';
+
+    $job_newer->update({t_finished => $newer_time->clone->set_nanosecond(123_456_000)});
+    is $workers->last_jobs_finished_per_worker(\@ids)->{$worker_active->id},
+      $newer_time->strftime('%Y-%m-%dT%H:%M:%SZ'),
+      'fractional seconds of t_finished are dropped';
 };
 
 subtest 'host_activity_summary and unused filtering' => sub {
@@ -142,7 +147,7 @@ subtest 'host_activity_summary and unused filtering' => sub {
         ok $data, "$case->{desc}: host entry exists";
         is $data->{total_instances}, $case->{expected_total}, "$case->{desc}: total instances match";
         is $data->{online_instances}, $case->{expected_online}, "$case->{desc}: online instances match";
-        is $data->{jobs_count_recent}, $case->{expected_recent_jobs}, "$case->{desc}: recent jobs count matches";
+        is $data->{jobs_in_window}, $case->{expected_recent_jobs}, "$case->{desc}: jobs in window count matches";
         is $data->{is_idle}, $case->{expected_is_idle}, "$case->{desc}: is_idle matches";
         is_deeply $data->{worker_classes}, $case->{expected_classes}, "$case->{desc}: worker classes match";
         if ($case->{has_finished}) {
@@ -154,6 +159,10 @@ subtest 'host_activity_summary and unused filtering' => sub {
             is $data->{idle_seconds}, undef, "$case->{desc}: idle_seconds is undef";
         }
     }
+
+    my $unused_rs = $scope_rs->find_unused_workers(threshold_days => 14, online_only => 1);
+    isa_ok $unused_rs, 'DBIx::Class::ResultSet', 'find_unused_workers in scalar context';
+    is $unused_rs->count, 3, 'unused workers can be counted and paged in SQL';
 
     my @unused_workers_online = $scope_rs->find_unused_workers(threshold_days => 14, online_only => 1);
     my @unused_worker_ids = sort { $a <=> $b } map { $_->id } @unused_workers_online;

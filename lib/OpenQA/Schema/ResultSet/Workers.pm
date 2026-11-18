@@ -6,7 +6,8 @@ use Mojo::Base 'DBIx::Class::ResultSet', -signatures;
 
 use DateTime;
 use Mojo::Date;
-use OpenQA::Constants qw(WORKER_CLASS_LIMIT_REGEX);
+use OpenQA::App;
+use OpenQA::Constants qw(WORKER_CLASS_LIMIT_REGEX DB_TIMESTAMP_ACCURACY);
 use OpenQA::Jobs::Constants;
 use OpenQA::WorkerReservation qw(RESERVATION_PROPERTIES reservation_active reservation_info reservation_error);
 
@@ -107,12 +108,9 @@ sub release_host ($self, $host, $user, %args) {
     return \@workers;
 }
 
-sub _iso_timestamp ($t) {
-    return undef unless defined $t;
-    return $t if $t =~ /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
-    my $epoch = Mojo::Date->new($t)->epoch;
-    return defined $epoch ? Mojo::Date->new($epoch)->to_datetime : undef;
-}
+sub _iso_timestamp ($t) { Mojo::Date->new(int Mojo::Date->new($t)->epoch)->to_datetime }
+
+sub _db_timestamp ($self, $dt) { $self->result_source->schema->storage->datetime_parser->format_datetime($dt) }
 
 sub last_jobs_finished_per_worker ($self, $worker_ids) {
     return {} unless @$worker_ids;
@@ -135,11 +133,10 @@ sub host_activity_summary ($self, $days = 30) {
     my $dt_recent = $now->clone->subtract(days => $days);
     my $dt_7 = $now->clone->subtract(days => 7);
     my $dt_30 = $now->clone->subtract(days => 30);
-    my $dt_parser = $self->result_source->schema->storage->datetime_parser;
-    my $cutoff_str = $dt_parser->format_datetime($days > 30 ? $dt_recent : $dt_30);
-    my $dt_recent_str = $dt_parser->format_datetime($dt_recent);
-    my $dt_7_str = $dt_parser->format_datetime($dt_7);
-    my $dt_30_str = $dt_parser->format_datetime($dt_30);
+    my $cutoff_str = $self->_db_timestamp($days > 30 ? $dt_recent : $dt_30);
+    my $dt_recent_str = $self->_db_timestamp($dt_recent);
+    my $dt_7_str = $self->_db_timestamp($dt_7);
+    my $dt_30_str = $self->_db_timestamp($dt_30);
 
     my $jobs_rs = $self->result_source->schema->resultset('Jobs')->search(
         {assigned_worker_id => {-in => \@worker_ids}, state => DONE, t_finished => {'>=' => $cutoff_str}},
@@ -150,13 +147,13 @@ sub host_activity_summary ($self, $days = 30) {
                 \['COUNT(CASE WHEN t_finished >= ? THEN 1 END)', $dt_7_str],
                 \['COUNT(CASE WHEN t_finished >= ? THEN 1 END)', $dt_30_str],
             ],
-            as => [qw(worker_id count_recent count_7d count_30d)],
+            as => [qw(worker_id count_in_window count_7d count_30d)],
             group_by => ['assigned_worker_id']});
 
-    my (%recent, %last7, %last30);
+    my (%in_window, %last7, %last30);
     for my $row ($jobs_rs->all) {
         my $wid = $row->get_column('worker_id');
-        $recent{$wid} = $row->get_column('count_recent');
+        $in_window{$wid} = $row->get_column('count_in_window');
         $last7{$wid} = $row->get_column('count_7d');
         $last30{$wid} = $row->get_column('count_30d');
     }
@@ -169,7 +166,7 @@ sub host_activity_summary ($self, $days = 30) {
                 online_instances => 0,
                 last_job_finished => undef,
                 idle_seconds => undef,
-                jobs_count_recent => 0,
+                jobs_in_window => 0,
                 jobs_last_7d => 0,
                 jobs_last_30d => 0,
                 worker_classes => {},
@@ -178,7 +175,7 @@ sub host_activity_summary ($self, $days = 30) {
         $entry->{total_instances}++;
         $entry->{online_instances}++ unless $w->dead;
         my $wid = $w->id;
-        $entry->{jobs_count_recent} += $recent{$wid} || 0;
+        $entry->{jobs_in_window} += $in_window{$wid} || 0;
         $entry->{jobs_last_7d} += $last7{$wid} || 0;
         $entry->{jobs_last_30d} += $last30{$wid} || 0;
         $entry->{busy} = 1 if $w->job_id;
@@ -197,24 +194,32 @@ sub host_activity_summary ($self, $days = 30) {
     for my $h (values %hosts) {
         $h->{worker_classes} = [sort keys %{$h->{worker_classes}}];
         $h->{idle_seconds} = time - Mojo::Date->new($h->{last_job_finished})->epoch if $h->{last_job_finished};
-        $h->{is_idle} = ($h->{jobs_count_recent} == 0 && !$h->{busy}) ? 1 : 0;
+        $h->{is_idle} = ($h->{jobs_in_window} == 0 && !$h->{busy}) ? 1 : 0;
         delete $h->{busy};
     }
     return \%hosts;
 }
 
+# Returns a resultset (or list of rows in list context). Both filters run in SQL so
+# callers can page without loading all workers.
 sub find_unused_workers ($self, %args) {
     my $days = $args{threshold_days} // 14;
     my $online_only = $args{online_only} // 1;
-    my $threshold = Mojo::Date->new(DateTime->now(time_zone => 'UTC')->subtract(days => $days)->epoch)->to_datetime;
-
-    my @workers = $self->all;
-    my $last_finished_map = $self->last_jobs_finished_per_worker([map { $_->id } @workers]);
-    return grep {
-           !($online_only && $_->dead)
-        && !$_->job_id
-          && (!defined $last_finished_map->{$_->id} || $last_finished_map->{$_->id} lt $threshold)
-    } @workers;
+    my $me = $self->current_source_alias;
+    my $now = DateTime->now(time_zone => 'UTC');
+    my $recent_threshold = $self->_db_timestamp($now->clone->subtract(days => $days));
+    my @conditions = (
+        {"$me.job_id" => undef},
+        \[
+"NOT EXISTS (SELECT 1 FROM jobs j WHERE j.assigned_worker_id = $me.id AND j.state = ? AND j.t_finished >= ?)",
+            DONE,
+            $recent_threshold
+        ]);
+    if ($online_only) {
+        my $timeout = OpenQA::App->singleton->config->{global}->{worker_timeout} - DB_TIMESTAMP_ACCURACY;
+        push @conditions, {"$me.t_seen" => {'>=' => $self->_db_timestamp($now->clone->subtract(seconds => $timeout))}};
+    }
+    return $self->search({-and => \@conditions});
 }
 
 sub find_unused_hosts ($self, %args) {
