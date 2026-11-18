@@ -20,11 +20,23 @@ sub register ($self, $app, $config) {
     # special anchor tag for post links
     $app->helper(link_post => sub ($c, @args) { $c->action_link('post', @args) });
 
-    # Allow "_method" query parameter to override request method
+    # Map deprecated "format" parameter to "_format" for content negotiation
+    # and allow "_method" parameter to override request method
     $app->hook(
         before_dispatch => sub ($c) {
-            return unless my $method = $c->req->param('_method');
-            $c->req->method($method);
+            my $req = $c->req;
+            for my $params ($req->query_params, $req->body_params) {
+                my $formats = $params->every_param('format');
+                next unless @$formats;
+                $params->remove('format');
+                unless (@{$params->every_param('_format')}) {
+                    $params->append(_format => $_) for @$formats;
+                }
+            }
+            # Clear cached merged params in Mojo::Message::Request so param() re-reads updated sources
+            delete $req->{params};
+            return unless my $method = $req->param('_method');
+            $req->method($method);
         });
 }
 
