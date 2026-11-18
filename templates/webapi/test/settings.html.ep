@@ -1,3 +1,19 @@
+% if ($has_deprecated_settings && defined $deprecated_settings) {
+  % my $alert_class = (grep { $_->{level} eq 'error' } values %$deprecated_settings) ? 'alert-danger' : 'alert-warning';
+  <div class="alert <%= $alert_class %>" role="alert">
+    <strong>Deprecated settings found in this test:</strong>
+    <ul>
+      % for my $k (sort keys %$deprecated_settings) {
+        % my $match = $deprecated_settings->{$k};
+        <li>
+          <span class="badge <%= $match->{level} eq 'error' ? 'bg-danger' : 'bg-warning text-dark' %>"><%= uc $match->{level} %></span>
+          <strong><%= $k %></strong>: <%= $match->{explanation} %>
+        </li>
+      % }
+    </ul>
+  </div>
+% }
+
 <table class="infotbl table table-striped" id="settings_box">
     <thead>
         <tr><th colspan="2">Settings</th></tr>
@@ -7,7 +23,15 @@
         % for my $k (sort keys %$s) {
           % my $v = $s->{$k};
           <tr>
-            <td><%= $k %></td>
+            <td>
+              <%= $k %>
+              % if ($deprecated_settings && exists $deprecated_settings->{$k}) {
+                % my $match = $deprecated_settings->{$k};
+                <span class="badge <%= $match->{level} eq 'error' ? 'bg-danger' : 'bg-warning text-dark' %>" data-bs-toggle="tooltip" title="<%= $match->{explanation} %>">
+                  <%= $match->{level} %>
+                </span>
+              % }
+            </td>
             % if (link_key_exists $k) {
               <td><%= setting_link $v, $job->id %></td>
             % } else {
