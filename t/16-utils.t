@@ -500,7 +500,16 @@ subtest 'signal handling in Minion jobs' => sub {
         $job->called_ok('note');
         $job->called_ok('retry');
         $job->called_args_pos_is(0, 3, 'Received signal INT, scheduling retry and releasing locks');
+        is_deeply scalar(($job->call_args(2))[1]), {delay => 30}, 'retry called with default delay';
         $job->clear;
+    };
+    subtest 'signal arrives with custom delay' => sub {
+        my $job_custom = Test::MockObject->new;
+        $job_custom->set_true($_) for qw(retry finish note);
+        my $guard = OpenQA::Task::SignalGuard->new($job_custom, retry_delay => 45);
+        is exit_code { kill INT => $$ }, 0, 'exited';
+        $job_custom->called_ok('retry');
+        is_deeply scalar(($job_custom->call_args(2))[1]), {delay => 45}, 'retry called with custom delay';
     };
     subtest 'signal arrives after retry disabled' => sub {
         $signal_guard->retry(0);
