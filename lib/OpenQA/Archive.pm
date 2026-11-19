@@ -98,9 +98,10 @@ sub create_job_archive ($job, $category = 'all') {
 
     cleanup_cache();
     my $temp_path = $cache_dir->child($archive_name . '.tmp.' . random_hex(8));
+    # the archive is only served once it has been renamed, so a partial file must never survive
+    my $remove_temp_guard = scope_guard sub () { $temp_path->remove if -e $temp_path };
     my $status = $zip->writeToFileNamed($temp_path->to_string);
     unless ($status == AZ_OK) {
-        $temp_path->remove if -e $temp_path;
         log_error "Failed to write archive for job $job_id to $temp_path: $status";
         die "Failed to create archive: $status";
     }

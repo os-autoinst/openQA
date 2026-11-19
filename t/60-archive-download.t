@@ -256,6 +256,19 @@ subtest 'Create archive failure' => sub {
         });
     throws_ok { OpenQA::Archive::create_job_archive($mock_job) } qr/Failed to create archive/,
       'Archive creation throws error on ZIP library failure';
+    is_deeply [$cache_dir->list->grep(sub { $_->basename =~ /\.tmp\./ })->each], [],
+      'no temporary file is left behind when the ZIP library reports an error';
+    $mock_zip_module->mock(
+        writeToFileNamed => sub {
+            my ($self, $file) = @_;
+            path($file)->spew('dummy');
+            die "No space left on device\n";
+        });
+    throws_ok { OpenQA::Archive::create_job_archive($mock_job) } qr/No space left on device/,
+      'Archive creation propagates an exception raised while writing';
+    is_deeply [$cache_dir->list->grep(sub { $_->basename =~ /\.tmp\./ })->each], [],
+      'no temporary file is left behind when writing raises an exception';
+    ok !-e $cache_dir->child('job_444.zip'), 'no archive is published for the failed creation';
 };
 
 subtest 'CreateZipArchive Minion task' => sub {
