@@ -96,6 +96,34 @@ subtest 'abort early if there is enough free disk space' => sub {
     is $job->{state}, undef, 'job not finished when proceeding with cleanup';
 };
 
+subtest 'job details archive cache is cleaned up although the result cleanup is skipped' => sub {
+    my $archive_cache_root = tempdir();
+    my $cache_dir = path($archive_cache_root, 'archive_cache')->make_path;
+    local $ENV{OPENQA_JOB_DETAILS_ARCHIVE_CACHE_DIR} = $cache_dir->to_string;
+    local $app->config->{job_details_archive} = {
+        job_details_archive_cache_limit_gb => 0.0000005,
+        job_details_archive_cache_min_free_percentage => 1,
+        job_details_archive_cache_watermark_percentage => 1,
+    };
+    $app->config->{misc_limits}->{result_cleanup_max_free_percentage} = 10;
+    my %previous_df = %df_main_storage;
+    %df_main_storage = (bavail => 11, blocks => 100);
+    $mock_df->();
+    my $now = time;
+    my $old_archive = $cache_dir->child('job_1.zip')->spew('x' x 1000);
+    utime $now - 200, $now - 200, $old_archive->to_string;
+
+    my $job;
+    combined_like { $job = run_gru_job($app, limit_results_and_logs => []) }
+    qr/Removing old archive .*job_1\.zip/, 'archive cache cleanup logged although the result cleanup is skipped';
+
+    is $job->{state}, 'finished', 'result cleanup still considered successful';
+    like $job->{result}, qr/Skipping.*exceeds configured percentage 10 %/, 'result cleanup was skipped';
+    ok !-e $old_archive, 'archive cache is rotated although the result cleanup was skipped';
+    %df_main_storage = %previous_df;
+    $mock_df->();
+};
+
 subtest 'abort early during the loop' => sub {
     # We will simulate `df` returning low space on the first call, and high space on the second call.
     my $df_call_count = 0;
