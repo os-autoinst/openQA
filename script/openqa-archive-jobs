@@ -6,7 +6,7 @@
 use Mojo::Base -strict, -signatures;
 
 use FindBin qw($RealBin);
-use lib "$RealBin/../lib", '/usr/share/openqa/lib';
+use lib "$RealBin/../lib";
 
 use Getopt::Long::Descriptive;
 use Feature::Compat::Try;
@@ -65,7 +65,8 @@ unless (@job_ids) {
 }
 
 my $schema = OpenQA::Schema::connect_db(deploy => 0, silent => 1, from_script => 1);
-my $minion = $opt->no_locks ? undef : minion_for_schema($schema);
+my $minion = ($opt->no_locks || $opt->dry_run) ? undef : minion_for_schema($schema);
+my $global_guard;    # acquired once for the whole batch, see ensure_global_lock
 
 # use the same Minion backend as the Gru plugin so locks are shared with the openqa-gru service
 sub minion_for_schema ($schema) {
@@ -95,19 +96,30 @@ sub wait_until ($description, $cb) {
     }
 }
 
-# mirror the locking done by the archive_job_results Gru task (OpenQA::Task::Job::ArchiveResults)
-sub acquire_locks ($job_id) {
-    return [] unless $minion;
-    my ($global_guard, $job_guard);
+# mirror the locking done by the archive_job_results Gru task (OpenQA::Task::Job::ArchiveResults):
+# the global lock is held for the whole batch, the per-job lock only while that job is archived
+sub acquire_global_lock () {
+    return undef unless $minion;
+    my $guard;
     wait_until(
         'running result cleanup/archiving tasks to finish',
         sub {
             return 0 if $minion->is_locked('limit_results_and_logs_task');
-            $global_guard = $minion->guard('process_job_results_task', ONE_DAY, {limit => 5});
+            $guard = $minion->guard('process_job_results_task', ONE_DAY, {limit => 5});
         });
+    return $guard;
+}
+
+# the global lock is only taken when there is actually something to archive, so a batch consisting
+# of jobs that are all skipped does not wait for running cleanup tasks first
+sub ensure_global_lock () { return $global_guard ||= acquire_global_lock() }
+
+sub acquire_job_lock ($job_id) {
+    return undef unless $minion;
+    my $guard;
     wait_until('other result processing of this job to finish',
-        sub { $job_guard = $minion->guard("process_job_results_for_$job_id", ONE_DAY) });
-    return [$job_guard, $global_guard];
+        sub { $guard = $minion->guard("process_job_results_for_$job_id", ONE_DAY) });
+    return $guard;
 }
 
 # returns the outcome category and a message
@@ -125,7 +137,8 @@ sub archive_job ($job_id) {
         return (archived => "would move $result_dir to $archived_dir");
     }
 
-    my $locks = acquire_locks($job_id);
+    ensure_global_lock();
+    my $job_guard = acquire_job_lock($job_id);    # released when this job is done (or on error)
     $job->discard_changes;    # the job might have been changed while waiting for locks
     my $ret = $job->archive;
     return (skipped => 'skipped (archived or changed meanwhile)') unless defined $ret;
