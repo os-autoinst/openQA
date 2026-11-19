@@ -1,0 +1,156 @@
+#!/usr/bin/env perl
+
+# Copyright SUSE LLC
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+use Mojo::Base -strict, -signatures;
+
+use FindBin qw($RealBin);
+use lib "$RealBin/../lib", '/usr/share/openqa/lib';
+
+use Getopt::Long::Descriptive;
+use Feature::Compat::Try;
+use Minion;
+use Mojo::File qw(path);
+use Mojo::Pg;
+use Time::Seconds;
+use OpenQA::Schema;
+
+my ($opt, $usage) = describe_options(
+    <<"EOM",
+$0 %o [<job id> ...]
+
+Archive the results of the specified openQA jobs: copy each job's result
+directory into the archive location (OPENQA_ARCHIVEDIR, default
+<OPENQA_BASEDIR>/openqa/archive), flag the job as archived and remove the
+original result directory.
+
+No retention, importance or disk-space based selection is applied; every job
+given on the command line (or via --file) is archived. Jobs that are already
+archived or not yet finished are skipped.
+
+Run as the user owning the result directories (usually geekotest).
+EOM
+    ['file|f=s', 'Read job IDs (whitespace/comma separated) from file, "-" for STDIN'],
+    ['dry-run|n', 'Only show what would be done'],
+    ['no-locks', 'Do not coordinate with running Gru tasks via Minion locks'],
+    ['lock-timeout=i', 'Seconds to wait for Minion locks per job (0 = wait forever)', {default => ONE_HOUR}],
+    ['help|h', 'Print usage message and exit', {shortcircuit => 1}],
+);
+
+if ($opt->help) {
+    print $usage->text;
+    exit 0;
+}
+
+sub parse_ids (@chunks) {
+    my @ids;
+    for my $token (map { split /[\s,]+/ } @chunks) {
+        next unless length $token;
+        die "Invalid job ID '$token'\n" unless $token =~ /^\d+$/;
+        push @ids, $token;
+    }
+    return @ids;
+}
+
+my @input = @ARGV;
+if (my $file = $opt->file) {
+    push @input, $file eq '-' ? do { local $/; <STDIN> } : path($file)->slurp;
+}
+my %seen;
+my @job_ids = grep { !$seen{$_}++ } parse_ids(@input);
+unless (@job_ids) {
+    print STDERR "No job IDs specified.\n", $usage->text;
+    exit 1;
+}
+
+my $schema = OpenQA::Schema::connect_db(deploy => 0, silent => 1, from_script => 1);
+my $minion = $opt->no_locks ? undef : minion_for_schema($schema);
+
+# use the same Minion backend as the Gru plugin so locks are shared with the openqa-gru service
+sub minion_for_schema ($schema) {
+    my $conn = Mojo::Pg->new;
+    my $connect_info = $schema->storage->connect_info->[0];
+    if (ref $connect_info eq 'HASH') {
+        $conn->dsn($connect_info->{dsn});
+        $conn->username($connect_info->{user});
+        $conn->password($connect_info->{password});
+    }
+    else {
+        $conn->dsn($connect_info);
+    }
+    return Minion->new(Pg => $conn);
+}
+
+sub wait_until ($description, $cb) {
+    my $timeout = $opt->lock_timeout;
+    my $start = time;
+    my $announced;
+    while (1) {
+        my $result = $cb->();
+        return $result if $result;
+        die "Timed out after ${timeout}s waiting for $description\n" if $timeout && time - $start >= $timeout;
+        print "  waiting for $description\n" unless $announced++;
+        sleep 10;
+    }
+}
+
+# mirror the locking done by the archive_job_results Gru task (OpenQA::Task::Job::ArchiveResults)
+sub acquire_locks ($job_id) {
+    return [] unless $minion;
+    my ($global_guard, $job_guard);
+    wait_until(
+        'running result cleanup/archiving tasks to finish',
+        sub {
+            return 0 if $minion->is_locked('limit_results_and_logs_task');
+            $global_guard = $minion->guard('process_job_results_task', ONE_DAY, {limit => 5});
+        });
+    wait_until('other result processing of this job to finish',
+        sub { $job_guard = $minion->guard("process_job_results_for_$job_id", ONE_DAY) });
+    return [$job_guard, $global_guard];
+}
+
+# returns the outcome category and a message
+sub archive_job ($job_id) {
+    my $job = $schema->resultset('Jobs')->find($job_id);
+    return (skipped => 'does not exist, skipping') unless $job;
+    return (skipped => 'already archived, skipping') if $job->archived;
+    return (skipped => "not finished (state: @{[$job->state]}), skipping") unless $job->is_final;
+
+    if ($opt->dry_run) {
+        my $result_dir = $job->result_dir;
+        return (skipped => 'has no result directory, would only be flagged as archived')
+          unless $result_dir && -d $result_dir;
+        my $archived_dir = $job->add_result_dir_prefix($job->remove_result_dir_prefix($result_dir), 1);
+        return (archived => "would move $result_dir to $archived_dir");
+    }
+
+    my $locks = acquire_locks($job_id);
+    $job->discard_changes;    # the job might have been changed while waiting for locks
+    my $ret = $job->archive;
+    return (skipped => 'skipped (archived or changed meanwhile)') unless defined $ret;
+    return (flagged => 'no result directory, flagged as archived') if ref $ret;
+    return (archived => "archived to $ret");
+}
+
+my %count = (archived => 0, flagged => 0, skipped => 0, failed => 0);
+my $total = @job_ids;
+my $index = 0;
+for my $job_id (@job_ids) {
+    my $prefix = '[' . ++$index . "/$total] job $job_id:";
+    try {
+        my ($outcome, $message) = archive_job($job_id);
+        ++$count{$outcome};
+        print "$prefix $message\n";
+    }
+    catch ($e) {
+        chomp $e;
+        ++$count{failed};
+        print STDERR "$prefix failed: $e\n";
+    }
+}
+
+print "\nSummary: "
+  . join(', ', map { "$_: $count{$_}" } qw(archived flagged skipped failed))
+  . ($opt->dry_run ? ' (dry run)' : '') . "\n";
+exit($count{failed} ? 1 : 0);
