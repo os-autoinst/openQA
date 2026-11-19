@@ -1,0 +1,139 @@
+#!/usr/bin/env perl
+
+# Copyright SUSE LLC
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+use Mojo::Base -strict, -signatures;
+
+use FindBin qw($RealBin);
+use lib "$RealBin/../lib";
+
+use Getopt::Long::Descriptive;
+use Feature::Compat::Try;
+use Mojo::File qw(path);
+use OpenQA::Schema;
+
+use constant OUTCOMES => qw(archived flagged skipped failed);
+
+sub parse_options () {
+    return describe_options(
+        <<"EOM",
+$0 %o [<job id> ...]
+
+Archive the results of the specified openQA jobs: copy each job's result
+directory into the archive location (OPENQA_ARCHIVEDIR, default
+<OPENQA_BASEDIR>/openqa/archive), flag the job as archived and remove the
+original result directory.
+
+No retention, importance or disk-space based selection is applied; every job
+given on the command line (or via --file) is archived. Jobs that are already
+archived or not yet finished are skipped. Minion locks of running Gru tasks
+are neither checked nor taken.
+
+Do not run this as root but as the user owning the result directories
+(usually geekotest), otherwise the archived files end up owned by root:
+
+  sudo -u geekotest /usr/share/openqa/script/openqa-archive-jobs --dry-run 1234 1235
+EOM
+        ['file|f=s', 'Read job IDs (whitespace/comma separated) from file, "-" for STDIN'],
+        ['dry-run|n', 'Only show what would be done'],
+        ['help|h', 'Print usage message and exit', {shortcircuit => 1}],
+    );
+}
+
+sub read_stdin () {
+    local $/;
+    return <STDIN>;
+}
+
+sub parse_ids (@chunks) {
+    my @ids;
+    for my $token (map { split /[\s,]+/ } @chunks) {
+        next unless length $token;
+        die "Invalid job ID '$token'\n" unless $token =~ /^\d+$/;
+        push @ids, $token;
+    }
+    return @ids;
+}
+
+sub read_job_ids ($opt, @args) {
+    my @input = @args;
+    if (my $file = $opt->file) {
+        push @input, $file eq '-' ? read_stdin : path($file)->slurp;
+    }
+    my %seen;
+    return grep { !$seen{$_}++ } parse_ids(@input);
+}
+
+# returns the outcome category and a message, like archive_job
+sub preview_job ($job) {
+    my $result_dir = $job->result_dir;
+    return (flagged => 'has no result directory, would only be flagged as archived')
+      unless $result_dir && -d $result_dir;
+    my $archived_dir = $job->add_result_dir_prefix($job->remove_result_dir_prefix($result_dir), 1);
+    return (archived => "would move $result_dir to $archived_dir");
+}
+
+# returns the outcome category and a message
+sub archive_job ($schema, $job_id, $dry_run) {
+    my $job = $schema->resultset('Jobs')->find($job_id);
+    return (skipped => 'does not exist, skipping') unless $job;
+    return (skipped => 'already archived, skipping') if $job->archived;
+    return (skipped => "not finished (state: @{[$job->state]}), skipping") unless $job->is_final;
+    return preview_job($job) if $dry_run;
+
+    my $ret = $job->archive;
+    return (skipped => 'skipped (archived or changed meanwhile)') unless defined $ret;
+    return (flagged => 'no result directory, flagged as archived') if ref $ret;
+    return (archived => "archived to $ret");
+}
+
+# returns the number of jobs per outcome category
+sub archive_jobs ($schema, $job_ids, $dry_run) {
+    my %count = map { ($_ => 0) } OUTCOMES;
+    my $total = @$job_ids;
+    my $index = 0;
+    for my $job_id (@$job_ids) {
+        my $prefix = '[' . ++$index . "/$total] job $job_id:";
+        try {
+            my ($outcome, $message) = archive_job($schema, $job_id, $dry_run);
+            ++$count{$outcome};
+            print "$prefix $message\n";
+        }
+        catch ($e) {
+            chomp $e;
+            ++$count{failed};
+            print STDERR "$prefix failed: $e\n";
+        }
+    }
+    return \%count;
+}
+
+sub print_summary ($count, $dry_run) {
+    print "\nSummary: " . join(', ', map { "$_: $count->{$_}" } OUTCOMES) . ($dry_run ? ' (dry run)' : '') . "\n";
+}
+
+sub main () {
+    my ($opt, $usage) = parse_options();
+    if ($opt->help) {
+        print $usage->text;
+        return 0;
+    }
+    die "Do not run $0 as root, run it as the user owning the result directories (usually geekotest).\n"
+      if $> == 0;
+
+    my @job_ids = read_job_ids($opt, @ARGV);
+    unless (@job_ids) {
+        print STDERR "No job IDs specified.\n", $usage->text;
+        return 1;
+    }
+
+    my $schema = OpenQA::Schema::connect_db(deploy => 0, silent => 1, from_script => 1);
+    my $count = archive_jobs($schema, \@job_ids, $opt->dry_run);
+    print_summary($count, $opt->dry_run);
+    return $count->{failed} ? 1 : 0;
+}
+
+exit main() unless caller;
+
+1;
