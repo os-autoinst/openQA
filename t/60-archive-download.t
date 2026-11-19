@@ -21,6 +21,7 @@ use OpenQA::Task::Job::CreateZipArchive;
 use OpenQA::Test::Utils qw(perform_minion_jobs);
 use OpenQA::Archive;
 use Archive::Zip qw(:ERROR_CODES :CONSTANTS);
+use Fcntl qw(:flock);
 
 my $tmp = tempdir();
 $ENV{OPENQA_BASEDIR} = $tmp->to_string;
@@ -206,6 +207,62 @@ subtest 'Cache cleanup execution' => sub {
     $app->config->{job_details_archive} = $orig_config;
 };
 
+subtest 'Cleanup of stale cache files' => sub {
+    my $dir = $tmp->child('stale_cache')->make_path;
+    local $ENV{OPENQA_JOB_DETAILS_ARCHIVE_CACHE_DIR} = $dir->to_string;
+    local $app->config->{job_details_archive} = {job_details_archive_cache_limit_gb => 5};
+    my $now = time;
+    my $stale = $now - 2 * 24 * 60 * 60;
+    my $stale_tmp = $dir->child('job_1.zip.tmp.ABCD1234')->spew('x' x 1000);
+    my $stale_orphan_lock = $dir->child('job_2.zip.lock')->spew('');
+    my $fresh_tmp = $dir->child('job_3.zip.tmp.ABCD1234')->spew('x' x 1000);
+    my $fresh_lock = $dir->child('job_4.zip.lock')->spew('');
+    my $archive = $dir->child('job_5.zip')->spew('x' x 1000);
+    my $archive_lock = $dir->child('job_5.zip.lock')->spew('');
+    my $locked_tmp = $dir->child('job_6.zip.tmp.ABCD1234')->spew('x' x 1000);
+    my $locked_lock = $dir->child('job_6.zip.lock')->spew('');
+    my $lock_fh = $locked_lock->open('>');
+    flock $lock_fh, LOCK_EX or die "cannot lock $locked_lock: $!";
+    utime $stale, $stale, map { $_->to_string } $stale_tmp, $stale_orphan_lock, $archive, $archive_lock, $locked_tmp,
+      $locked_lock;
+
+    OpenQA::Archive::cleanup_cache();
+
+    ok !-e $stale_tmp, 'stale temporary file of an interrupted creation is removed';
+    ok !-e $stale_orphan_lock, 'stale lock file without an archive is removed';
+    ok -e $fresh_tmp, 'recent temporary file is kept';
+    ok -e $fresh_lock, 'recent lock file is kept';
+    ok -e $archive, 'archive is kept while the cache is within its limit';
+    ok -e $archive_lock, 'lock file is kept while its archive exists';
+    ok -e $locked_tmp, 'temporary file of an ongoing creation is kept';
+    ok -e $locked_lock, 'lock file of an ongoing creation is kept';
+
+    close $lock_fh;
+    OpenQA::Archive::cleanup_cache();
+
+    ok !-e $locked_tmp, 'temporary file is removed once its lock is released';
+    ok !-e $locked_lock, 'lock file is removed once its temporary file is gone';
+};
+
+subtest 'Temporary files count towards the cache limit' => sub {
+    my $dir = $tmp->child('limit_cache')->make_path;
+    local $ENV{OPENQA_JOB_DETAILS_ARCHIVE_CACHE_DIR} = $dir->to_string;
+    local $app->config->{job_details_archive} = {
+        job_details_archive_cache_limit_gb => 0.00001,
+        job_details_archive_cache_min_free_percentage => 1,
+        job_details_archive_cache_watermark_percentage => 1,
+    };
+    my $now = time;
+    my $archive = $dir->child('job_7.zip')->spew('x' x 1000);
+    utime $now - 200, $now - 200, $archive->to_string;
+    my $tmp_file = $dir->child('job_8.zip.tmp.ABCD1234')->spew('x' x 2_000_000);
+
+    OpenQA::Archive::cleanup_cache();
+
+    ok !-e $archive, 'old archive is rotated away because the temporary file counts towards the limit';
+    ok -e $tmp_file, 'the temporary file itself is not rotated as an archive';
+};
+
 subtest 'Create archive details' => sub {
     my $mock_job = Test::MockObject->new;
     $mock_job->set_always(id => 789);
@@ -240,6 +297,11 @@ subtest 'Create archive details' => sub {
     my $archive_path2 = OpenQA::Archive::create_job_archive($mock_job);
     is $archive_path2->to_string, $archive_path_missing->to_string,
       'Archive request returns existing file if already present in cache';
+    ok !-e $cache_dir->child('job_7890.zip.lock'), 'lock file is removed when the archive already exists';
+    $mock_job->set_always(id => 7891);
+    my $archive_path3 = OpenQA::Archive::create_job_archive($mock_job);
+    ok -e $archive_path3, 'Archive is created for a job that has not been archived yet';
+    ok !-e $cache_dir->child('job_7891.zip.lock'), 'lock file is removed after the archive has been created';
 };
 
 subtest 'Create archive failure' => sub {
