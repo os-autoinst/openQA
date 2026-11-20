@@ -1,8 +1,87 @@
 #!/bin/bash
 set -euo pipefail
+
 DUMP_FOLDER=${DUMP_FOLDER:-"/var/lib/openqa/backup"}
 DAYS_TO_KEEP=${DAYS_TO_KEEP:-"7"}
-[[ ${1-} = '-h' ]] || [[ ${1-} = '--help' ]] && echo "Dump the openQA postgresql database to ${DUMP_FOLDER} and clean-up backups older than ${DAYS_TO_KEEP} days." && exit
 
-ionice -c3 nice -n19 pg_dump -Fc -c openqa -f "${DUMP_FOLDER}/$(date -Idate).dump"
-find -L "${DUMP_FOLDER}" -type f -mtime "+${DAYS_TO_KEEP}" -print0 -delete
+usage() {
+    cat << EOF
+Usage: $(basename "$0") [OPTIONS]
+
+Dump the openQA PostgreSQL database to DUMP_FOLDER and clean up backups older than DAYS_TO_KEEP days.
+
+Options:
+  -f, --folder PATH   Target backup directory (default: \$DUMP_FOLDER or /var/lib/openqa/backup)
+  -d, --days DAYS     Number of days to keep backups (default: \$DAYS_TO_KEEP or 7)
+  -h, --help          Show this help message and exit
+
+Environment variables:
+  DUMP_FOLDER         Fallback path if --folder is omitted
+  DAYS_TO_KEEP        Fallback retention in days if --days is omitted
+  PG*                 Standard PostgreSQL libpq connection variables (e.g. PGHOST, PGPORT)
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h | --help)
+            usage
+            exit 0
+            ;;
+        -f | --folder)
+            [[ $# -lt 2 ]] && {
+                echo "Error: $1 requires an argument" >&2
+                exit 1
+            }
+            DUMP_FOLDER="$2"
+            shift 2
+            ;;
+        --folder=*)
+            DUMP_FOLDER="${1#*=}"
+            shift
+            ;;
+        -d | --days)
+            [[ $# -lt 2 ]] && {
+                echo "Error: $1 requires an argument" >&2
+                exit 1
+            }
+            DAYS_TO_KEEP="$2"
+            shift 2
+            ;;
+        --days=*)
+            DAYS_TO_KEEP="${1#*=}"
+            shift
+            ;;
+        *)
+            echo "Error: Unknown option: $1" >&2
+            usage >&2
+            exit 1
+            ;;
+    esac
+done
+
+[[ "$DAYS_TO_KEEP" =~ ^[0-9]+$ ]] || {
+    echo "Error: DAYS_TO_KEEP must be a non-negative integer" >&2
+    exit 1
+}
+
+DUMP_DATE=$(date -Idate)
+TMP_FILE="${DUMP_FOLDER}/.${DUMP_DATE}.dump.tmp.$$"
+cleanup() {
+    if [[ -n "${TMP_FILE:-}" && -f "${TMP_FILE}" ]]; then
+        rm -f "${TMP_FILE}"
+    fi
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+FINAL_DUMP="${DUMP_FOLDER}/${DUMP_DATE}.dump"
+
+ionice -c3 nice -n19 pg_dump -Fc -c openqa -f "${TMP_FILE}"
+mv -f "${TMP_FILE}" "${FINAL_DUMP}"
+TMP_FILE=""
+
+# Stale temp files are left behind by killed runs, prune them after one day
+find -L "${DUMP_FOLDER}" -maxdepth 1 -name ".*.dump.tmp.*" -type f -mtime +0 -delete
+find -L "${DUMP_FOLDER}" -maxdepth 1 -name "*.dump" -type f -mtime "+${DAYS_TO_KEEP}" -delete
