@@ -21,6 +21,8 @@ subtest '404 error page' => sub {
     is_deeply [$dom->find('h1')->map('text')->each], ['Page not found'], 'correct page';
     is_deeply [$dom->find('h2')->map('text')->each], ['Available routes'], 'available routes shown';
     ok index($t->tx->res->text, 'Each entry contains the') >= 0, 'description shown';
+
+    $t->get_ok('/unavailable_page', {Accept => 'application/json'})->status_is(404)->json_is('/error_status' => 404);
 };
 
 subtest 'error pages shown for OpenQA::WebAPI::Controller::Step' => sub {

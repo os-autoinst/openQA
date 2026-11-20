@@ -544,7 +544,7 @@ sub startup ($self) {
     $app->hook(
         before_render => sub ($c, $args) {
             # return errors as JSON if accepted but HTML not
-            if (!$c->accepts('html') && $c->accepts('json') && $args->{status} && $args->{status} != HTTP_OK) {
+            if ($args->{status} && $args->{status} != HTTP_OK && !$c->accepts('html') && $c->accepts('json')) {
                 # the JSON API might already provide JSON in some error cases which must be preserved
                 (($args->{json} //= {})->{error_status}) = $args->{status};
             }
