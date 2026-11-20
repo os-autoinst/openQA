@@ -153,15 +153,23 @@ subtest 'create result dir, delete results' => sub {
         $job->update({state => DONE});
         $job->discard_changes;
 
+        my $archive_dir = $job->add_result_dir_prefix($job->remove_result_dir_prefix($result_dir), 1);
+        my $partial_dir = "$archive_dir.partial.$$";
+
         my $copy_mock = Test::MockModule->new('File::Copy::Recursive', no_auto => 1);
-        $copy_mock->redefine(dircopy => sub { $! = 4; return 0 });
+        my $copy_target;
+        $copy_mock->redefine(dircopy => sub { $copy_target = $_[1]; $! = 4; return 0 });
         throws_ok { $job->archive } qr/Unable to copy '.+' to '.+': .+/, 'error when copying archive handled';
+        is $copy_target, $partial_dir, 'results copied into a partial directory';
         ok -d $result_dir, 'normal result directory still exists';
+        ok !-e $partial_dir, 'partial copy removed when copying fails';
+        ok !-e $archive_dir, 'no archive result directory published when copying fails';
         undef $copy_mock;
 
         my $signal_guard = OpenQA::Task::SignalGuard->new(undef);
-        my $archive_dir = $job->archive($signal_guard);
-        ok -d $archive_dir, 'archive result directory created';
+        is $job->archive($signal_guard), $archive_dir, 'archive result directory created';
+        ok -d $archive_dir, 'archive result directory published';
+        ok !-e $partial_dir, 'no partial copy left behind after publishing';
         ok !-d $result_dir, 'normal result directory removed';
         ok !$signal_guard->retry, 'signal guard retry disabled in the end';
         undef $signal_guard;
