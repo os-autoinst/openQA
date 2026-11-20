@@ -543,6 +543,7 @@ sub startup ($self) {
     # add method to be called before rendering
     $app->hook(
         before_render => sub ($c, $args) {
+            return unless $c->tx;
             # return errors as JSON if accepted but HTML not
             if ($args->{status} && $args->{status} != HTTP_OK && !$c->accepts('html') && $c->accepts('json')) {
                 # the JSON API might already provide JSON in some error cases which must be preserved

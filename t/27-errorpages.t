@@ -82,5 +82,11 @@ subtest 'error pages shown for OpenQA::WebAPI::Controller::Step' => sub {
     };
 };
 
+subtest 'before_render hook with destroyed transaction' => sub {
+    my $c = $t->app->build_controller;
+    delete $c->{tx};
+    lives_ok { $t->app->plugins->emit_hook(before_render => $c, {status => 404}) }
+    'before_render does not crash when transaction is destroyed';
+};
 
 done_testing;
