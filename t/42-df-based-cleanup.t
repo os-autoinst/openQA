@@ -21,6 +21,7 @@ use Test::Output qw(combined_like combined_from);
 use Test::MockModule;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
+use Time::Seconds;
 
 my $schema = OpenQA::Test::Database->new->create(fixtures_glob => '03-users.pl');
 my $t = Test::Mojo->new('OpenQA::WebAPI');
@@ -48,6 +49,23 @@ subtest 'abort early in case of misconfiguration' => sub {
     my $job = job_log_like qr|result_cleanup_.*_percentage.*foo.*not.*number|, 'error logged';
     is $job->{state}, 'failed', 'result cleanup still considered successful';
     like $job->{result}, qr|.*result_cleanup_min_free_percentage.*foo.*not.*|, 'result cleanup skipped early';
+};
+
+subtest 'abort limit results and logs task early in case of misconfigured upfront archiving' => sub {
+    my %invalid_settings = (
+        archive_important_jobs_min_free_percentage => 'foo',
+        archive_keep_free_percentage => 101,
+        archive_max_duration => 'unlimited',
+    );
+    for my $setting (sort keys %invalid_settings) {
+        my $value = $invalid_settings{$setting};
+        local $app->config->{archiving}->{$setting} = $value;
+        my $job;
+        combined_like { $job = run_gru_job($app, limit_results_and_logs => []) }
+        qr/Gru job error: Configured \Q$setting\E .* is not/, "error about invalid $setting is logged";
+        is $job->{state}, 'failed', "limit results and logs task fails for invalid $setting";
+        like $job->{result}, qr/\Q$setting\E \(\Q$value\E\) is not/, "failure names $setting and its invalid value";
+    }
 };
 
 # provide fake data for df
@@ -437,6 +455,168 @@ qr/Resuming job group cleanup after group ID @{[$g1->id]}.*Saved cleanup status:
     };
 
     unlink $cache_file_path;
+    $schema->txn_rollback;
+};
+
+subtest 'upfront archiving in limit_results_and_logs' => sub {
+    $schema->txn_begin;
+
+    $schema->resultset('Jobs')->delete;
+
+    my $g_foo = $job_groups->create({name => 'foo'});
+    my $job_unimportant = $jobs->create(
+        {TEST => 'unimportant-job', BUILD => 'unimp', group_id => $g_foo->id, state => 'done', result => 'passed'});
+    my $job_important = $jobs->create(
+        {TEST => 'important-job', BUILD => 'imp', group_id => $g_foo->id, state => 'done', result => 'passed'});
+    my $job_important_2 = $jobs->create(
+        {TEST => 'important-job-2', BUILD => 'imp', group_id => $g_foo->id, state => 'done', result => 'passed'});
+
+    my $job_groups_mock = Test::MockModule->new('OpenQA::Schema::Result::JobGroups');
+    $job_groups_mock->redefine(important_builds => sub { [['none_tag'], ['imp']] });
+
+    my @archived_ids;
+    my $archive_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
+    $archive_mock->redefine(
+        archive => sub ($self, @) {
+            push @archived_ids, $self->id;
+            $self->update({archived => 1});
+            return '/path/to/archive/' . $self->id;
+        });
+
+    my %storage_data = (
+        resultdir() => {bavail => 15, blocks => 100},
+        archivedir() => {bavail => 10, blocks => 100});
+    my $df_mock = Test::MockModule->new('Filesys::Df', no_auto => 1);
+    $df_mock->redefine(
+        df => sub ($dir, @) {
+            my $data = $storage_data{$dir} // {bavail => 100, blocks => 100};
+            return ref $data eq 'CODE' ? $data->() : $data;
+        });
+
+    local $app->config->{archiving}->{archive_preserved_important_jobs} = 1;
+    local $app->config->{archiving}->{archive_important_jobs_min_free_percentage} = 20;
+    local $app->config->{archiving}->{archive_keep_free_percentage} = 5;
+    local $app->config->{archiving}->{archive_max_duration} = 300;
+
+    subtest 'does not archive if results and archive are on the same device' => sub {
+        @archived_ids = ();
+        $jobs->search({id => [$job_important->id, $job_important_2->id]})->update({archived => 0});
+        path(resultdir())->make_path;
+        path(archivedir())->make_path;
+
+        my $minion_job;
+        combined_like { $minion_job = run_gru_job($app, limit_results_and_logs => []) }
+        qr/Resuming|Starting/s, 'runs cleanup job';
+
+        is_deeply \@archived_ids, [], 'nothing archived when results and archive share a device';
+        is $minion_job->{notes}->{archived_jobs}, 0, 'notes 0 archived jobs';
+        is $minion_job->{notes}->{archiving_stopped}, 'resultdir and archivedir are on the same device',
+          'notes correct stopping reason';
+    };
+
+    my $device_mock = Test::MockModule->new('OpenQA::Task::Job::Limit');
+    $device_mock->redefine(_dirs_on_same_device => sub { 0 });
+
+    subtest 'archives the oldest important job until the results threshold is reached' => sub {
+        @archived_ids = ();
+        $jobs->search({id => [$job_important->id, $job_important_2->id]})->update({archived => 0});
+        my $df_call_count = 0;
+        $storage_data{resultdir()} = sub { {bavail => $df_call_count++ == 0 ? 15 : 25, blocks => 100} };
+
+        my $minion_job;
+        combined_like { $minion_job = run_gru_job($app, limit_results_and_logs => []) }
+        qr/Archiving important job @{[$job_important->id]}/, 'logs archiving of first job';
+
+        is_deeply \@archived_ids, [$job_important->id],
+          'only the first important job was archived before threshold was reached';
+        ok !$jobs->find($job_unimportant->id)->archived, 'unimportant job was not archived';
+        is $minion_job->{notes}->{archived_jobs}, 1, 'notes exact count of archived jobs';
+        is $minion_job->{notes}->{archiving_stopped}, 'results threshold reached', 'notes correct stopping reason';
+    };
+
+    subtest 'stops when the archive floor is reached' => sub {
+        @archived_ids = ();
+        $jobs->search({id => [$job_important->id, $job_important_2->id]})->update({archived => 0});
+        $storage_data{resultdir()} = {bavail => 15, blocks => 100};
+        $storage_data{archivedir()} = {bavail => 4, blocks => 100};
+
+        my $minion_job;
+        combined_like { $minion_job = run_gru_job($app, limit_results_and_logs => []) }
+        qr/Resuming|Starting/s, 'runs cleanup job';
+        is_deeply \@archived_ids, [], 'no jobs archived as archive space is too low';
+        is $minion_job->{notes}->{archived_jobs}, 0, 'notes 0 archived jobs';
+        is $minion_job->{notes}->{archiving_stopped}, 'archive floor reached', 'stops due to archive floor';
+    };
+
+    subtest 'stops when the time budget is exceeded' => sub {
+        @archived_ids = ();
+        $jobs->search({id => [$job_important->id, $job_important_2->id]})->update({archived => 0});
+        $storage_data{resultdir()} = {bavail => 15, blocks => 100};
+        $storage_data{archivedir()} = {bavail => 10, blocks => 100};
+        local $app->config->{archiving}->{archive_max_duration} = 1;
+
+        my $slow_archive_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
+        $slow_archive_mock->redefine(
+            archive => sub ($self, @) {
+                sleep 1;
+                push @archived_ids, $self->id;
+                $self->update({archived => 1});
+                return '/path/to/archive/' . $self->id;
+            });
+
+        my $minion_job;
+        combined_like { $minion_job = run_gru_job($app, limit_results_and_logs => []) }
+        qr/Archiving/s, 'runs cleanup job';
+        is_deeply \@archived_ids, [$job_important->id], 'only one job archived as second check exceeded budget';
+        is $minion_job->{notes}->{archived_jobs}, 1, 'notes 1 archived job';
+        is $minion_job->{notes}->{archiving_stopped}, 'time budget exceeded', 'stops due to time budget';
+    };
+
+    subtest 'continues and skips on archive exception' => sub {
+        @archived_ids = ();
+        $jobs->search({id => [$job_important->id, $job_important_2->id]})->update({archived => 0});
+        $storage_data{resultdir()} = {bavail => 15, blocks => 100};
+        $storage_data{archivedir()} = {bavail => 10, blocks => 100};
+
+        my $throw_once = 1;
+        my $failing_archive_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
+        $failing_archive_mock->redefine(
+            archive => sub ($self, @) {
+                if ($throw_once && $self->id == $job_important->id) {
+                    $throw_once = 0;
+                    die 'mocked archive failure';
+                }
+                push @archived_ids, $self->id;
+                $self->update({archived => 1});
+                return '/path/to/archive/' . $self->id;
+            });
+
+        my $minion_job;
+        combined_like { $minion_job = run_gru_job($app, limit_results_and_logs => []) }
+        qr/Failed to archive job @{[$job_important->id]}/, 'logs copy exception and continues';
+
+        is_deeply \@archived_ids, [$job_important_2->id],
+          'first job failed and skipped, second job archived successfully';
+        is $minion_job->{notes}->{archived_jobs}, 1, 'notes 1 archived job';
+        is $minion_job->{notes}->{archiving_stopped}, 'no candidates left', 'notes finished candidates';
+    };
+
+    subtest 'skips jobs which are currently processed by another task' => sub {
+        @archived_ids = ();
+        $jobs->search({id => [$job_important->id, $job_important_2->id]})->update({archived => 0});
+        $storage_data{resultdir()} = {bavail => 15, blocks => 100};
+        $storage_data{archivedir()} = {bavail => 10, blocks => 100};
+        my $guard = $app->minion->guard('process_job_results_for_' . $job_important->id, ONE_DAY);
+
+        my $minion_job;
+        combined_like { $minion_job = run_gru_job($app, limit_results_and_logs => []) }
+        qr/Archiving important job @{[$job_important_2->id]}/, 'archives the next candidate';
+
+        is_deeply \@archived_ids, [$job_important_2->id], 'skipped the job which is currently processed';
+        is $minion_job->{notes}->{archived_jobs}, 1, 'notes 1 archived job';
+        is $minion_job->{notes}->{archiving_stopped}, 'no candidates left', 'notes no further candidates';
+    };
+
     $schema->txn_rollback;
 };
 
