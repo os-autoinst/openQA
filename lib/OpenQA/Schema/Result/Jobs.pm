@@ -260,14 +260,17 @@ sub archive ($self, $signal_guard = undef) {
     return $self->update({archived => 1}) unless $normal_result_dir && -d $normal_result_dir;
 
     my $archived_result_dir = $self->add_result_dir_prefix($self->remove_result_dir_prefix($normal_result_dir), 1);
+    my $partial_result_dir = "$archived_result_dir.partial.$$";
     # create destination directory manually because directory creation of File::Copy::Recursive has a race condition
     # and therefore might fail when running archiving jobs using the same prefix-directory in parallel
-    path($archived_result_dir)->make_path;
-    if (!File::Copy::Recursive::dircopy($normal_result_dir, $archived_result_dir)) {
+    path($partial_result_dir)->make_path;
+    if (!File::Copy::Recursive::dircopy($normal_result_dir, $partial_result_dir)) {
         my $error = $!;
-        File::Path::rmtree($archived_result_dir);    # avoid leftovers
+        File::Path::remove_tree($partial_result_dir);    # avoid leftovers
         die "Unable to copy '$normal_result_dir' to '$archived_result_dir': $error";
     }
+    # publish only the complete copy so a half-populated directory is never visible as an archive
+    path($partial_result_dir)->move_to($archived_result_dir);
 
     $signal_guard->retry(0) if $signal_guard;
     $self->update({archived => 1});
