@@ -271,8 +271,7 @@ function setupOverview(options) {
     parentChild[i].addEventListener('mouseout', unhighlightDeps);
   }
 
-  const cookies = new URLSearchParams(document.cookie);
-  const flash = cookies.get('flash');
+  const flash = getCookie('flash');
   if (flash) {
     addFlash(...flash.split(':', 2));
     document.cookie = 'flash=; expires=Thu, 01 Jan 1970 00:00:00 UTC;';

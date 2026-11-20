@@ -649,14 +649,17 @@ subtest 'add comments' => sub {
 
     $driver->find_element_by_link_text('Login')->click;
     $driver->get('/tests/overview?state=done&result=failed');
+    $driver->execute_script("document.cookie = 'berghain=test_session_data';");
     $driver->find_element('button[title="Restart or comment jobs"]')->click;
     my $comment_text = 'comment via add-comments';
     my $submit_button = $driver->find_element('#add-comments-controls button[id="commentJobsBtn"]');
     $driver->find_element_by_id('text')->send_keys($comment_text);
     is $submit_button->get_text, 'Comment on all 2 jobs', 'submit button displayed with number of jobs';
     $submit_button->click;
-    ok wait_for_element(selector => '#flash-messages .alert-info', like => qr/The comments have been created\./),
-      'info about success shown';
+    ok wait_for_element(selector => '#flash-messages .alert-info span', like => qr/^The comments have been created\.$/),
+      'info about success shown without cookie data';
+    like $driver->execute_script('return document.cookie'), qr/berghain=test_session_data/, 'other cookies not cleared';
+    unlike $driver->execute_script('return document.cookie'), qr/\bflash=/, 'flash cookie cleared';
     ok wait_for_element(selector => '.label_comment', is_displayed => 1), 'comment shown without manual reloading';
 
     my @failed_job_ids = map { $_->id } $jobs->search({result => FAILED})->all;
