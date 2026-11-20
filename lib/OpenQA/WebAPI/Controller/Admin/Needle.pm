@@ -108,6 +108,7 @@ sub delete ($self) {
         }
     )->then(
         sub ($result) {
+            return unless $self->tx;    # uncoverable statement
             my $removed_ids = ($result->{removed_ids} //= []);
             $self->emit_event(openqa_needle_delete => {id => $removed_ids}) if @$removed_ids;
             $self->render(json => $result);

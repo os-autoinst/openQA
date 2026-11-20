@@ -89,4 +89,13 @@ subtest 'before_render hook with destroyed transaction' => sub {
     'before_render does not crash when transaction is destroyed';
 };
 
+subtest 'reply.gru_result helper' => sub {
+    my $c = $t->app->build_controller;
+    delete $c->{tx};
+    is $c->reply->gru_result({error => 'fail'}), undef, 'returns undef when transaction is destroyed';
+
+    $c = $t->app->build_controller;
+    ok $c->reply->gru_result({ok => 1}), 'renders when transaction is present';
+};
+
 done_testing;
