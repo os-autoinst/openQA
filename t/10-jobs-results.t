@@ -139,12 +139,90 @@ subtest 'create result dir, delete results' => sub {
 
     # note: Deleting results is tested in 42-screenshots.t because the screenshots are the interesting part here.
 
-    subtest 'delete results of job whose results are already gone' => sub {
-        my $job = $jobs->create({TEST => 'already-cleaned', logs_present => 0, result_size => 0});
-        $job->discard_changes;
-        is_deeply [$job->delete_results], [0, 0], 'nothing deleted and no error for job without results left';
-        $job->discard_changes;
-        is $job->result_size, 0, 'result size still 0';
+    subtest 'delete results of jobs already cleaned up or without screenshots' => sub {
+        my $job_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs', no_auto => 1);
+        my $orig_update = OpenQA::Schema::Result::Jobs->can('update');
+        my ($update_calls, $exclusive_calls) = (0, 0);
+        $job_mock->redefine(update => sub ($self, @args) { $update_calls++; $self->$orig_update(@args) });
+        $job_mock->redefine(exclusively_used_screenshot_ids => sub ($self) { $exclusive_calls++; [] });
+
+        my @cases = (
+            {desc => 'results already deleted', logs_present => 0, result_size => 0, updates => 0},
+            {
+                desc => 'results already deleted but logs flagged present',
+                logs_present => 1,
+                result_size => 0,
+                updates => 1
+            },
+        );
+        for my $case (@cases) {
+            subtest $case->{desc} => sub {
+                my $job = $jobs->create(
+                    {
+                        TEST => 'already-cleaned',
+                        logs_present => $case->{logs_present},
+                        result_size => $case->{result_size}});
+                $job->discard_changes;
+                ($update_calls, $exclusive_calls) = (0, 0);
+                is_deeply [$job->delete_results], [0, 0], 'nothing deleted';
+                is $exclusive_calls, 0, 'screenshot lookup skipped without screenshot links';
+                is $update_calls, $case->{updates}, 'job only updated if its state changes';
+            };
+        }
+
+        subtest 'results on disk deleted without screenshots' => sub {
+            my $job = $jobs->create({TEST => 'no-screenshots', logs_present => 1, result_size => 1000});
+            $job->discard_changes;
+            my $result_dir = path($job->create_result_dir);
+            $result_dir->child('autoinst-log.txt')->spew('12345');
+            ($update_calls, $exclusive_calls) = (0, 0);
+            is_deeply [$job->delete_results], [5, 0], 'size of deleted results returned, no screenshots deleted';
+            ok !-e $result_dir, 'result directory removed';
+            is $exclusive_calls, 0, 'screenshot lookup skipped without screenshot links';
+            is $update_calls, 1, 'job updated once';
+            $job->discard_changes;
+            is $job->result_size, 0, 'result size cleared';
+            is $job->logs_present, 0, 'logs not considered present anymore';
+        };
+
+        subtest 'delete logs does not update job when logs are not flagged present and none on disk' => sub {
+            my $job = $jobs->create({TEST => 'logs-not-present', logs_present => 0, result_size => 0});
+            $job->discard_changes;
+            $job->create_result_dir;
+            ($update_calls, $exclusive_calls) = (0, 0);
+            is $job->delete_logs, 0, 'nothing deleted';
+            is $update_calls, 0, 'job not updated';
+        };
+
+        subtest 'delete logs accounts size when logs not flagged present but on disk' => sub {
+            my $job = $jobs->create({TEST => 'logs-not-flagged', logs_present => 0, result_size => 1000});
+            $job->discard_changes;
+            path($job->create_result_dir)->child('autoinst-log.txt')->spew('12345');
+            ($update_calls, $exclusive_calls) = (0, 0);
+            is $job->delete_logs, 5, 'size of deleted logs returned';
+            is $update_calls, 1, 'job updated once';
+            $job->discard_changes;
+            is $job->result_size, 995, 'deleted size subtracted from result size';
+        };
+
+        subtest 'delete results of job without result size, dir or logs' => sub {
+            my $job = $jobs->create({TEST => 'unknown-size', logs_present => 0, result_size => undef});
+            $job->discard_changes;
+            ($update_calls, $exclusive_calls) = (0, 0);
+            is_deeply [$job->delete_results], [0, 0], 'nothing deleted';
+            $job->discard_changes;
+            is $job->result_size, 0, 'result size set to 0';
+            is $update_calls, 1, 'job updated once';
+        };
+
+        subtest 'delete results of job with zero result size but files on disk' => sub {
+            my $job = $jobs->create({TEST => 'zero-size-files', logs_present => 0, result_size => 0});
+            $job->discard_changes;
+            my $result_dir = path($job->create_result_dir);
+            $result_dir->child('autoinst-log.txt')->spew('12345');
+            is_deeply [$job->delete_results], [5, 0], 'size of files on disk returned';
+            ok !-e $result_dir, 'result directory removed';
+        };
     };
 
     subtest 'archiving job' => sub {

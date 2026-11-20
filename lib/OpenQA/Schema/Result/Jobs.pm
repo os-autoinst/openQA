@@ -1188,7 +1188,8 @@ sub delete_logs ($self, $dry = 0) {
         find_video_files($result_dir),
     );
     my $deleted_size = _delete_returning_size_from_array(\@files, $dry);
-    $self->update({logs_present => 0, result_size => \"greatest(0, result_size - $deleted_size)"}) unless $dry;
+    $self->update({logs_present => 0, result_size => \"greatest(0, result_size - $deleted_size)"})
+      if !$dry && ($self->logs_present || $deleted_size);
     return $deleted_size;
 }
 
@@ -1206,7 +1207,8 @@ sub delete_videos ($self, $dry = 0) {
 sub delete_results ($self, $dry = 0) {
     my $result_dir = $self->result_dir;
     my $has_dir = $result_dir && -d $result_dir;
-    return (0, 0) if !$has_dir && ($self->result_size // 1) == 0 && !$self->logs_present;
+    my $is_size_zero = defined $self->result_size && $self->result_size == 0;
+    return (0, 0) if !$has_dir && $is_size_zero && !$self->logs_present && !$self->screenshot_links->first;
 
     # delete the entire results directory
     my $deleted_size_res = 0;
@@ -1217,19 +1219,22 @@ sub delete_results ($self, $dry = 0) {
     }
 
     # delete all screenshot links and all exclusively used screenshots
-    my $job_id = $self->id;
-    my $exclusively_used_screenshot_ids = $self->exclusively_used_screenshot_ids;
-    my $schema = $self->result_source->schema;
-    my $screenshots = $schema->resultset('Screenshots');
     my $deleted_size_screenshots = 0;
-    my $screenshot_deletion = OpenQA::ScreenshotDeletion->new(
-        dbh => $schema->storage->dbh,
-        deleted_size => \$deleted_size_screenshots,
-        dry => $dry
-    );
-    $self->screenshot_links->delete unless $dry;
-    $screenshot_deletion->delete_screenshot($_, $screenshots->find($_)->filename) for @$exclusively_used_screenshot_ids;
-    $self->update({logs_present => 0, result_size => 0}) unless $dry;
+    if ($self->screenshot_links->first) {
+        my $exclusively_used_screenshot_ids = $self->exclusively_used_screenshot_ids;
+        my $schema = $self->result_source->schema;
+        my $screenshots = $schema->resultset('Screenshots');
+        my $screenshot_deletion = OpenQA::ScreenshotDeletion->new(
+            dbh => $schema->storage->dbh,
+            deleted_size => \$deleted_size_screenshots,
+            dry => $dry
+        );
+        $self->screenshot_links->delete unless $dry;    # note: A dry run must not modify the database.
+        $screenshot_deletion->delete_screenshot($_, $screenshots->find($_)->filename)
+          for @$exclusively_used_screenshot_ids;
+    }
+    $self->update({logs_present => 0, result_size => 0})
+      if !$dry && ($self->logs_present || !defined $self->result_size || $self->result_size != 0);
     return ($deleted_size_res, $deleted_size_screenshots);
 }
 
