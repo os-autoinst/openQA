@@ -45,6 +45,7 @@ sub register_tasks ($self) {
       OpenQA::Task::Job::CreateZipArchive
       OpenQA::Task::Job::FinalizeResults
       OpenQA::Task::Job::HookScript
+      OpenQA::Task::Job::LeftoverResults
       OpenQA::Task::Job::Restart
       OpenQA::Task::Iso::Schedule
       OpenQA::Task::Bug::Limit
