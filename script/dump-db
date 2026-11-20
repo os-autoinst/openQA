@@ -1,8 +1,27 @@
 #!/bin/bash
 set -euo pipefail
+
 DUMP_FOLDER=${DUMP_FOLDER:-"/var/lib/openqa/backup"}
 DAYS_TO_KEEP=${DAYS_TO_KEEP:-"7"}
 [[ ${1-} = '-h' ]] || [[ ${1-} = '--help' ]] && echo "Dump the openQA postgresql database to ${DUMP_FOLDER} and clean-up backups older than ${DAYS_TO_KEEP} days." && exit
 
-ionice -c3 nice -n19 pg_dump -Fc -c openqa -f "${DUMP_FOLDER}/$(date -Idate).dump"
-find -L "${DUMP_FOLDER}" -type f -mtime "+${DAYS_TO_KEEP}" -print0 -delete
+DUMP_DATE=$(date -Idate)
+TMP_FILE="${DUMP_FOLDER}/.${DUMP_DATE}.dump.tmp.$$"
+cleanup() {
+    if [[ -n "${TMP_FILE:-}" && -f "${TMP_FILE}" ]]; then
+        rm -f "${TMP_FILE}"
+    fi
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+FINAL_DUMP="${DUMP_FOLDER}/${DUMP_DATE}.dump"
+
+ionice -c3 nice -n19 pg_dump -Fc -c openqa -f "${TMP_FILE}"
+mv -f "${TMP_FILE}" "${FINAL_DUMP}"
+TMP_FILE=""
+
+# Stale temp files are left behind by killed runs, prune them after one day
+find -L "${DUMP_FOLDER}" -maxdepth 1 -name ".*.dump.tmp.*" -type f -mtime +0 -delete
+find -L "${DUMP_FOLDER}" -maxdepth 1 -name "*.dump" -type f -mtime "+${DAYS_TO_KEEP}" -delete
