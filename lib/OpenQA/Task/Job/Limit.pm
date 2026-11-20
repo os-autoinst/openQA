@@ -8,8 +8,7 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Log qw(log_debug log_info log_warning);
 use OpenQA::ScreenshotDeletion;
 use OpenQA::Utils qw(:DEFAULT prjdir resultdir archivedir check_df);
-use OpenQA::Task::Utils
-  qw(acquire_limit_lock_or_retry finish_job_if_storage_usage_below_percentage is_storage_usage_below_percentage);
+use OpenQA::Task::Utils qw(acquire_limit_lock_or_retry is_storage_usage_below_percentage);
 use OpenQA::Task::SignalGuard;
 use Scalar::Util 'looks_like_number';
 use List::Util 'min';
@@ -31,6 +30,7 @@ sub register ($self, $app, @args) {
 
 sub _limit ($job, $args = undef) {
     my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($job);
+    my $dry_run = $args->{dry_run};
 
     # prevent multiple limit_results_and_logs tasks and limit_screenshots_task/archive_job_results to run in parallel
     my $app = $job->app;
@@ -43,17 +43,29 @@ sub _limit ($job, $args = undef) {
 
     return undef unless my $limit_guard = acquire_limit_lock_or_retry($job);
 
-    return undef
-      if finish_job_if_storage_usage_below_percentage(
-        job => $job,
-        setting => 'result_cleanup_max_free_percentage',
-        dir => resultdir,
-      );
+    # note: A dry run has to process all job groups to report what would be cleaned up, hence the skip threshold is
+    #       only logged and not acted upon
+    if (
+        my $msg = is_storage_usage_below_percentage(
+            job => $job,
+            setting => 'result_cleanup_max_free_percentage',
+            dir => resultdir
+        ))
+    {
+        if ($dry_run) {
+            log_debug "Ignoring storage usage threshold during dry run: $msg";
+        }
+        else {
+            log_info $msg;
+            return $job->finish($msg);
+        }
+    }
 
     # create temporary job group outside of DB to collect
     # jobs without job_group_id
     my $schema = $app->schema;
-    $schema->resultset('JobGroups')->new({})->limit_results_and_logs;
+    my $ungrouped_stats = $schema->resultset('JobGroups')->new({})->limit_results_and_logs(undef, $dry_run);
+    my %cleanup_stats = (groups => 0, %$ungrouped_stats);
 
     my $cache_file_path = prjdir() . '/webui/cache/cleanup-status.json';
     my $last_id;
@@ -92,20 +104,33 @@ sub _limit ($job, $args = undef) {
                 dir => resultdir
             ))
         {
-            log_info "Early abort during job groups loop (halted before processing group '@{[$group->name]}'): $msg";
-            $job->note(early_abort_results => $msg);
-            last;
+            if ($dry_run) {
+                log_debug "Ignoring storage usage threshold during dry run: $msg";
+            }
+            else {
+                log_info
+                  "Early abort during job groups loop (halted before processing group '@{[$group->name]}'): $msg";
+                $job->note(early_abort_results => $msg);
+                last;
+            }
         }
         my @preserved_important_jobs;
-        $group->limit_results_and_logs(\@preserved_important_jobs);
+        my $stats = $group->limit_results_and_logs(\@preserved_important_jobs, $dry_run);
+        $cleanup_stats{groups}++;
+        $cleanup_stats{$_} += $stats->{$_} for keys %$stats;
 
         # archive openQA jobs that were preserved because they are important
-        $gru->enqueue(archive_job_results => [$_->id], \%options) for @preserved_important_jobs;
+        if (!$dry_run) {
+            $gru->enqueue(archive_job_results => [$_->id], \%options) for @preserved_important_jobs;
+        }
 
         $last_processed_id = $group->id;
     }
 
-    if (defined $last_processed_id) {
+    if ($dry_run) {
+        log_debug 'Not saving cleanup status during dry run';
+    }
+    elsif (defined $last_processed_id) {
         try {
             my $cache_file = Mojo::File->new("$cache_file_path.new");
             $cache_file->dirname->make_path();
@@ -119,6 +144,13 @@ sub _limit ($job, $args = undef) {
     }
 
     $ensure_task_retry_on_termination_signal_guard->retry(0);
+
+    # note: A dry run must not enqueue further jobs which then delete screenshots or results for real
+    if ($dry_run) {
+        $job->note(dry_run_stats => \%cleanup_stats);
+        $job->note(screenshot_cleanup => 'skipped, dry run');
+        return undef;
+    }
 
     # prevent enqueuing new limit_screenshot if there are still inactive/delayed ones
     my $limit_screenshots_jobs

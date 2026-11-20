@@ -386,6 +386,7 @@ subtest 'job groups are processed in stateful round-robin order' => sub {
     $job_group_mock->redefine(
         limit_results_and_logs => sub ($self, @args) {
             push @processed, $self->name if $self->name;
+            return {};
         });
 
     subtest 'processing default ascending ID order when no state cache exists' => sub {
@@ -440,6 +441,66 @@ qr/Resuming job group cleanup after group ID @{[$g1->id]}.*Saved cleanup status:
     $schema->txn_rollback;
 };
 
+subtest 'dry run of the periodic cleanup' => sub {
+    local $ENV{OPENQA_BASEDIR} = tempdir;
+    path(resultdir)->make_path;
+    $job_mock->unmock('delete_results');
+    my $cleanup_jobs_before = $app->minion->jobs({tasks => ['ensure_results_below_threshold']})->total;
+    my $cache_file_path = prjdir() . '/webui/cache/cleanup-status.json';
+    unlink $cache_file_path;
+
+    my $group = $job_groups->create(
+        {name => 'dry-run', keep_jobs_in_days => 0, keep_results_in_days => 1, keep_logs_in_days => 1});
+    $group->discard_changes;
+    my $job = $jobs->create(
+        {
+            TEST => 'dry-run-expired',
+            BUILD => 'dry',
+            group_id => $group->id,
+            t_created => '2000-01-01 00:00:00',
+            result_size => 5,
+            logs_present => 1,
+        });
+    $job->discard_changes;
+    my $result_dir = path($job->create_result_dir);
+    my $log_file = $result_dir->child('autoinst-log.txt');
+    $log_file->spew('12345');
+
+    $app->config->{misc_limits}->{result_cleanup_max_free_percentage} = 10;
+    %df_main_storage = (bavail => 11, blocks => 100);
+    my $dry_job;
+    combined_like { $dry_job = run_gru_job($app, limit_results_and_logs => [{dry_run => 1}]) }
+    qr/Ignoring storage usage threshold during dry run.*would delete.*autoinst-log\.txt/s,
+      'deletion of results and logs only logged and skip threshold ignored';
+
+    is $dry_job->{state}, 'finished', 'dry run considered successful';
+    my $stats = $dry_job->{notes}->{dry_run_stats};
+    is $stats->{results_bytes}, 5, 'size of results that would be deleted reported';
+    is $stats->{logs_bytes}, 5, 'size of logs that would be deleted reported';
+    is $stats->{screenshots_bytes}, 0, 'no screenshots would be deleted';
+    is $stats->{jobs_deleted}, 0, 'no jobs would be deleted';
+    cmp_ok $stats->{groups}, '>', 0, 'number of processed groups reported';
+    is $dry_job->{notes}->{screenshot_cleanup}, 'skipped, dry run', 'screenshot cleanup skipped';
+    is $app->minion->jobs({tasks => ['limit_screenshots']})->total, 0, 'no screenshot cleanup jobs enqueued';
+    is $app->minion->jobs({tasks => ['ensure_results_below_threshold']})->total, $cleanup_jobs_before,
+      'no results cleanup jobs enqueued';
+    is $app->minion->jobs({tasks => ['archive_job_results']})->total, 0, 'no archiving jobs enqueued';
+    ok !-e $cache_file_path, 'cleanup status cache not written';
+    $job->discard_changes;
+    is $job->result_size, 5, 'result size unchanged';
+    is $job->logs_present, 1, 'logs still considered present';
+    ok -e $log_file, 'log file still present';
+
+    subtest 'subsequent normal run still cleans everything' => sub {
+        $app->config->{misc_limits}->{result_cleanup_max_free_percentage} = 100;
+        combined_from { run_gru_job($app, limit_results_and_logs => []) };
+        $job->discard_changes;
+        is $job->result_size, 0, 'result size cleared';
+        is $job->logs_present, 0, 'logs not considered present anymore';
+        ok !-e $result_dir, 'result dir deleted';
+        ok -f $cache_file_path, 'cleanup status cache written';
+    };
+};
 subtest 'expired results only searched for jobs still holding results' => sub {
     $schema->txn_begin;
     my $group = $job_groups->create(
