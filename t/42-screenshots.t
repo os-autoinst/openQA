@@ -195,6 +195,24 @@ subtest 'deleting screenshots of a single job' => sub {
 
     ok -d (my $result_dir = path($job->create_result_dir)), 'result directory created';
     $result_dir->child('foo')->spew('-----');
+
+    subtest 'dry run keeps results and screenshot links' => sub {
+        my ($dry_deleted_results, $dry_deleted_screenshots);
+        combined_like {
+            ($dry_deleted_results, $dry_deleted_screenshots) = $job->delete_results(1);
+        }
+        qr/would delete .*\/00099982-delete-results\/foo/, 'deletion would have happened';
+        is $dry_deleted_results, 5, 'size of results a dry run would delete returned';
+        is $dry_deleted_screenshots, 2 * (2 + 3), 'size of screenshots a dry run would delete returned';
+        is $screenshot_links->search({job_id => $job->id})->count, 3, 'screenshot links kept';
+        ok -e path($imagesdir, $_), "screenshot $_ kept" for @fake_screenshots;
+        ok -e path($thumsdir, $_), "screenshot thumbnail $_ kept" for @fake_screenshots;
+        ok -e $result_dir, 'result dir kept';
+        $job->discard_changes;
+        is $job->logs_present, 1, 'logs still considered present';
+        is $job->result_size, 1000, 'result size unchanged';
+    };
+
     my ($deleted_results, $deleted_screenshots) = $job->delete_results;
     is $deleted_results, 5, 'size of deleted results returned';
     is $deleted_screenshots, 2 * (2 + 3), 'size of deleted screenshots returned';
