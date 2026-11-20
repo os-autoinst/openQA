@@ -440,4 +440,23 @@ qr/Resuming job group cleanup after group ID @{[$g1->id]}.*Saved cleanup status:
     $schema->txn_rollback;
 };
 
+subtest 'expired results only searched for jobs still holding results' => sub {
+    $schema->txn_begin;
+    my $group = $job_groups->create(
+        {name => 'expired-results', keep_results_in_days => 1, keep_important_results_in_days => 0});
+    $group->discard_changes;
+    my @common_args = (BUILD => 'expired', t_created => '2000-01-01 00:00:00', group_id => $group->id);
+    my %job_id_by_desc
+      = map { $_->{desc} => $jobs->create({TEST => $_->{desc}, result_size => $_->{result_size}, @common_args})->id } (
+        {desc => 'results present', result_size => 42},
+        {desc => 'result size unknown', result_size => undef},
+        {desc => 'results already deleted', result_size => 0},
+      );
+    my @expired = sort { $a <=> $b } map { $_->id } @{$group->find_jobs_with_expired_results};
+    my @expected = sort { $a <=> $b } @job_id_by_desc{'results present', 'result size unknown'};
+    is_deeply \@expired, \@expected, 'only jobs with results or unknown result size returned'
+      or always_explain \@expired;
+    $schema->txn_rollback;
+};
+
 done_testing();

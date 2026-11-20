@@ -139,6 +139,14 @@ subtest 'create result dir, delete results' => sub {
 
     # note: Deleting results is tested in 42-screenshots.t because the screenshots are the interesting part here.
 
+    subtest 'delete results of job whose results are already gone' => sub {
+        my $job = $jobs->create({TEST => 'already-cleaned', logs_present => 0, result_size => 0});
+        $job->discard_changes;
+        is_deeply [$job->delete_results], [0, 0], 'nothing deleted and no error for job without results left';
+        $job->discard_changes;
+        is $job->result_size, 0, 'result size still 0';
+    };
+
     subtest 'archiving job' => sub {
         my $job = $jobs->create({TEST => 'to-be-archived'});
         $job->discard_changes;
