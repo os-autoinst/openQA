@@ -385,14 +385,11 @@ sub _archive_important_jobs_upfront (%args) {
             next;
         }
         log_info "Archiving important job $job_id";
-        try {
-            $candidate->archive($signal_guard);
-            $archive_jobs_count++;
-        }
-        catch ($e) {
-            log_warning "Failed to archive job $job_id: $e";
-            push @skipped_ids, $job_id;
-        }
+        my $archived_path;
+        try { $archived_path = $candidate->archive($signal_guard); }
+        catch ($e) { log_warning "Failed to archive job $job_id: $e" }
+        if ($archived_path) { $archive_jobs_count++ }
+        else { push @skipped_ids, $job_id }
     }
     $job->note(archived_jobs => $archive_jobs_count);
     $job->note(archiving_stopped => $archiving_stopped_reason);

@@ -609,6 +609,34 @@ subtest 'upfront archiving in limit_results_and_logs' => sub {
         is $minion_job->{notes}->{archiving_stopped}, 'no candidates left', 'notes finished candidates';
     };
 
+    subtest 'does not count jobs whose results were not moved' => sub {
+        @archived_ids = ();
+        $jobs->search({id => [$job_important->id, $job_important_2->id]})->update({archived => 0});
+        $storage_data{resultdir()} = {bavail => 15, blocks => 100};
+        $storage_data{archivedir()} = {bavail => 10, blocks => 100};
+
+        my $skip_once = 1;
+        my $no_path_archive_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
+        $no_path_archive_mock->redefine(
+            archive => sub ($self, @) {
+                push @archived_ids, $self->id;
+                if ($skip_once && $self->id == $job_important->id) {
+                    $skip_once = 0;
+                    return undef;
+                }
+                $self->update({archived => 1});
+                return '/path/to/archive/' . $self->id;
+            });
+
+        my $minion_job;
+        combined_like { $minion_job = run_gru_job($app, limit_results_and_logs => []) } qr/Archiving/s,
+          'runs cleanup job';
+
+        is_deeply \@archived_ids, [$job_important->id, $job_important_2->id],
+          'job without archive path skipped and not retried, next candidate archived';
+        is $minion_job->{notes}->{archived_jobs}, 1, 'notes only the job whose results were moved';
+    };
+
     subtest 'skips jobs which are currently processed by another task' => sub {
         @archived_ids = ();
         $jobs->search({id => [$job_important->id, $job_important_2->id]})->update({archived => 0});
