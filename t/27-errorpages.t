@@ -6,6 +6,7 @@ use Test::Most;
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Test::Mojo;
+use Test::Output qw(combined_like);
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::Case;
 use OpenQA::Test::TimeLimit '10';
@@ -96,6 +97,21 @@ subtest 'reply.gru_result helper' => sub {
 
     $c = $t->app->build_controller;
     ok $c->reply->gru_result({ok => 1}), 'renders when transaction is present';
+};
+
+subtest 'reply.exception helper' => sub {
+    my $c = $t->app->build_controller;
+    delete $c->{tx};
+    combined_like {
+        $c->helpers->reply->exception('Transaction already destroyed');
+    }
+    qr/debug.*abort processing/, 'destroyed transactions logged as debug message';
+
+    my $c2 = $t->app->build_controller;
+    combined_like {
+        $c2->helpers->reply->exception('Some regular error');
+    }
+    qr/error.*Some regular error/, 'regular exceptions logged as errors';
 };
 
 done_testing;
