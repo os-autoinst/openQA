@@ -44,7 +44,8 @@ my $fake_needle = {
 
 subtest 'run (arbitrary) command' => sub {
     ok run_cmd_with_log([qw(echo Hallo Welt)]), 'run simple command';
-    stdout_like { is run_cmd_with_log([qw(false)]), '' } qr/[WARN].*[ERROR]/i;
+    stdout_like { is run_cmd_with_log([qw(false)]), '' } qr/\[ERROR\]/i;
+    stdout_like { is run_cmd_with_log([qw(perl -E), q{warn "oops"; exit 1}]), '' } qr/\[WARN\].*\[ERROR\]/si;
 
     my $res = run_cmd_with_log_return_error([qw(echo Hallo Welt)]);
     is $res->{return_code}, 0, 'correct zero exit code returned ($? >> 8)';
