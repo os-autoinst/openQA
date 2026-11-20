@@ -576,7 +576,7 @@ subtest 'archiving and labeling jobs to be considered important' => sub {
             my $job = $jobs->find(99936);
             ok !$job->archived, 'job not initially archived';
             ok !$job->result_dir, 'job has no result dir';
-            $job->archive;
+            is $job->archive, undef, 'no archive path returned for a job without results';
             $job->discard_changes;
             ok $job->archived, 'job archived';
         };
