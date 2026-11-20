@@ -244,7 +244,7 @@ sub _delete_results ($dry, $jobs, $max_job_id, $not_important_cond, $important_c
     my $from = $archived ? 'archive' : 'results dir';
     return (1, "Nothing to do for $from") if $$margin_bytes >= 0;
 
-    my @search = (id => {'<=' => $max_job_id}, archived => $archived);
+    my @search = (id => {'<=' => $max_job_id}, archived => $archived, result_size => [{'>' => 0}, undef]);
     my @common = ($jobs, $from, $margin_bytes, $margin_bytes_main_storage, $dry);
     my @res;
     for my $step_args (

@@ -459,4 +459,27 @@ subtest 'expired results only searched for jobs still holding results' => sub {
     $schema->txn_rollback;
 };
 
+subtest 'df-based results cleanup skips jobs whose results are already gone' => sub {
+    my $group = $job_groups->create({name => 'df-skip-cleaned'});
+    my $with_results
+      = $jobs->create({TEST => 'with-results', BUILD => 'df', group_id => $group->id, result_size => 42});
+    my $cleaned = $jobs->create({TEST => 'cleaned', BUILD => 'df', group_id => $group->id, result_size => 0});
+    my @visited_for_results;
+    my $mocked_delete_results = OpenQA::Schema::Result::Jobs->can('delete_results');
+    $job_mock->redefine(
+        delete_results => sub ($self, $dry) {
+            push @visited_for_results, $self->id;
+            $self->$mocked_delete_results($dry);
+        });
+    my ($margin_bytes, $margin_bytes_main_storage) = (-1, -1);
+    combined_from {
+        OpenQA::Task::Job::Limit::_delete_results($dry_run_expected, $jobs, $cleaned->id, [], [], \$margin_bytes,
+            \$margin_bytes_main_storage, 0);
+    };
+    $job_mock->redefine(delete_results => $mocked_delete_results);
+    my %visited = map { $_ => 1 } @visited_for_results;
+    ok $visited{$with_results->id}, 'job with results visited' or always_explain \@visited_for_results;
+    ok !$visited{$cleaned->id}, 'job without results not visited' or always_explain \@visited_for_results;
+};
+
 done_testing();
