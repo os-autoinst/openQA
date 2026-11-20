@@ -471,7 +471,7 @@ subtest 'checking limits' => sub {
     $df_mock->redefine(df => {});
     $cache_log = '';
     is $cache->_exceeds_limit(21), 0, 'limit ignored when free disk space cannot be determined';
-    like $cache_log, qr/.*Unable to determine disk usage of.*/,
+    like $cache_log, qr/.*Unable to determine storage usage of.*/,
       'warning shown when free disk space cannot be determined';
     $cache_log = '';
 };

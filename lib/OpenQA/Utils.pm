@@ -919,7 +919,7 @@ sub check_df ($dir) {
     my $df = Filesys::Df::df($dir, 1) // {};
     my $available_bytes = $df->{bavail};
     my $total_bytes = $df->{blocks};
-    die "Unable to determine disk usage of '$dir'"
+    die "Unable to determine storage usage of '$dir'"
       if !(looks_like_number($available_bytes)
         && looks_like_number($total_bytes)
         && $total_bytes > 0
