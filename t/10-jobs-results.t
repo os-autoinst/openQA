@@ -166,11 +166,30 @@ subtest 'create result dir, delete results' => sub {
         ok !-e $archive_dir, 'no archive result directory published when copying fails';
         undef $copy_mock;
 
+        # simulate an interrupted previous archiving attempt where the archive was published
+        # and removal of normal_result_dir was partially done (e.g. some-file deleted)
+        path($archive_dir)->make_path->child('subdir')->make_path->child('some-file')->spew('test');
+        $result_dir->child('subdir', 'some-file')->remove;
+        $result_dir->child('other-file')->spew('remaining');
+
+        my $removal_mock = Test::MockModule->new('File::Path', no_auto => 1);
+        $removal_mock->redefine(
+            remove_tree => sub ($dir, $opts) { ${$opts->{error}} = [{$dir => 'Permission denied'}]; return 0 });
+        throws_ok { $job->archive } qr/Unable to remove '.+to-be-archived': .+Permission denied/,
+          'error when removing source results handled';
+        is $job->archived, 0, 'job not flagged as archived when removing its results fails';
+        ok -d $result_dir, 'normal result directory kept when removing it fails';
+        is path($archive_dir, 'subdir', 'some-file')->slurp, 'test',
+          'pre-existing complete archive preserved and not replaced with partial source';
+        undef $removal_mock;
+
         my $signal_guard = OpenQA::Task::SignalGuard->new(undef);
-        is $job->archive($signal_guard), $archive_dir, 'archive result directory created';
+        is $job->archive($signal_guard), $archive_dir, 'archive result directory returned';
+        ok $job->archived, 'job flagged as archived once its results are gone';
         ok -d $archive_dir, 'archive result directory published';
         ok !-e $partial_dir, 'no partial copy left behind after publishing';
         ok !-d $result_dir, 'normal result directory removed';
+        is path($archive_dir, 'subdir', 'some-file')->slurp, 'test', 'archived files intact';
         ok !$signal_guard->retry, 'signal guard retry disabled in the end';
         undef $signal_guard;
 

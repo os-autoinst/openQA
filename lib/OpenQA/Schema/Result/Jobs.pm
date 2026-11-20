@@ -257,26 +257,48 @@ sub archive ($self, $signal_guard = undef) {
 
     # flag jobs without results as archived and return early
     my $normal_result_dir = $self->result_dir;
-    return $self->update({archived => 1}) unless $normal_result_dir && -d $normal_result_dir;
-
     my $archived_result_dir = $self->add_result_dir_prefix($self->remove_result_dir_prefix($normal_result_dir), 1);
-    my $partial_result_dir = "$archived_result_dir.partial.$$";
-    # create destination directory manually because directory creation of File::Copy::Recursive has a race condition
-    # and therefore might fail when running archiving jobs using the same prefix-directory in parallel
-    path($partial_result_dir)->make_path;
-    if (!File::Copy::Recursive::dircopy($normal_result_dir, $partial_result_dir)) {
-        my $error = $!;
-        File::Path::remove_tree($partial_result_dir);    # avoid leftovers
-        die "Unable to copy '$normal_result_dir' to '$archived_result_dir': $error";
-    }
-    # publish only the complete copy so a half-populated directory is never visible as an archive
-    path($partial_result_dir)->move_to($archived_result_dir);
+    return $self->update({archived => 1})
+      unless ($normal_result_dir && -d $normal_result_dir) || ($archived_result_dir && -d $archived_result_dir);
 
+    # an existing archive directory is already this job's complete published archive from a previous attempt
+    # that failed or was interrupted while removing source results; never re-copy from a partially removed source
+    unless (-d $archived_result_dir) {
+        my $partial_result_dir = "$archived_result_dir.partial.$$";
+        # create destination directory manually because directory creation of File::Copy::Recursive has a race condition
+        # and therefore might fail when running archiving jobs using the same prefix-directory in parallel
+        path($partial_result_dir)->make_path;
+        if (!File::Copy::Recursive::dircopy($normal_result_dir, $partial_result_dir)) {
+            my $error = $!;
+            File::Path::remove_tree($partial_result_dir);    # avoid leftovers
+            die "Unable to copy '$normal_result_dir' to '$archived_result_dir': $error";
+        }
+        # publish only the complete copy so a half-populated directory is never visible as an archive
+        path($partial_result_dir)->move_to($archived_result_dir);
+    }
     $signal_guard->retry(0) if $signal_guard;
+
+    # flag the job only once its results are actually gone so any crash keeps it an archiving candidate
+    if ($normal_result_dir && -d $normal_result_dir) {
+        my $removal_error = _remove_tree_collecting_errors($normal_result_dir);
+        die "Unable to remove '$normal_result_dir': $removal_error" if -e $normal_result_dir;
+    }
     $self->update({archived => 1});
     $self->discard_changes;
-    File::Path::remove_tree($normal_result_dir);
     return $archived_result_dir;
+}
+
+sub _remove_tree_collecting_errors ($dir) {
+    File::Path::remove_tree($dir, {error => \my $err});
+    return @$err
+      ? join(
+        ', ',
+        map {
+            my $h = $_;
+            map { "$_: $h->{$_}" } sort keys %$h
+        } @$err
+      )
+      : '';
 }
 
 sub name ($self) {
