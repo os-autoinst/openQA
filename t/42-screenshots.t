@@ -212,6 +212,38 @@ subtest 'deleting screenshots of a single job' => sub {
     }
 };
 
+subtest 'dry run keeps results, screenshot links and screenshots' => sub {
+    $ENV{OPENQA_BASEDIR} = my $base_dir = tempdir;
+    path(resultdir)->make_path;
+    my $imagesdir = path(imagesdir);
+    my $thumsdir = path($imagesdir, '.thumbs');
+    my $job = $jobs->create({TEST => 'dry-run-results', logs_present => 1, result_size => 1000});
+    $job->discard_changes;
+    my @fake_screenshots = qw(dry-a dry-b);
+    $screenshots->populate_images_to_job(\@fake_screenshots, $job->id);
+    $thumsdir->make_path;
+    for my $screenshot (@fake_screenshots) {
+        path($imagesdir, $screenshot)->spew('--');
+        path($thumsdir, $screenshot)->spew('---');
+    }
+    my $result_dir = path($job->create_result_dir);
+    $result_dir->child('foo')->spew('-----');
+
+    my @deleted_sizes;
+    combined_like { @deleted_sizes = $job->delete_results(1) } qr/would delete/, 'deletion of results only logged';
+
+    is_deeply \@deleted_sizes, [5, 2 * (2 + 3)], 'sizes of results and screenshots that would be deleted returned';
+    $job->discard_changes;
+    is $job->logs_present, 1, 'logs still considered present';
+    is $job->result_size, 1000, 'result size unchanged';
+    ok -d $result_dir, 'result dir preserved';
+    is $screenshot_links->search({job_id => $job->id})->count, 2, 'screenshot links preserved';
+    is $screenshots->search({filename => {-in => \@fake_screenshots}})->count, 2, 'screenshots preserved';
+    ok -e path($imagesdir, $_), "screenshot $_ preserved" for @fake_screenshots;
+    ok -e path($thumsdir, $_), "thumbnail of $_ preserved" for @fake_screenshots;
+    $job->delete;
+};
+
 subtest 'unable to delete screenshot' => sub {
     # create a new screenshot and simply put a directory in its place (dirs can not be deleted via unlink)
     my $tempdir = tempdir;

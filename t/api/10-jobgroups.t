@@ -398,6 +398,27 @@ subtest 'prevent deleting non-empty job group' => sub() {
     $t->get_ok('/api/v1/job_groups/1002/jobs')->status_is(404);
 };
 
+subtest 'expired jobs listed only if they still hold results' => sub {
+    $schema->txn_begin;
+    my $group = $schema->resultset('JobGroups')
+      ->create({name => 'expired-results-api', keep_results_in_days => 1, keep_important_results_in_days => 0});
+    my @common_args = (BUILD => 'expired', t_created => '2000-01-01 00:00:00', group_id => $group->id);
+    my %job_id_by_desc = map {
+        $_->{desc} =>
+          $schema->resultset('Jobs')->create({TEST => $_->{desc}, result_size => $_->{result_size}, @common_args})->id
+    } (
+        {desc => 'results present', result_size => 42},
+        {desc => 'result size unknown', result_size => undef},
+        {desc => 'results already deleted', result_size => 0},
+    );
+    my @expected = sort { $a <=> $b } @job_id_by_desc{'results present', 'result size unknown'};
+    $t->get_ok('/api/v1/job_groups/' . $group->id . '/jobs?expired=1')->status_is(200);
+    is_deeply [sort { $a <=> $b } @{$t->tx->res->json->{ids}}], \@expected,
+      'only expired jobs with results or unknown result size listed'
+      or always_explain $t->tx->res->json;
+    $schema->txn_rollback;
+};
+
 subtest 'prevent deleting non-empty parent group' => sub() {
     my $parent_id = $t->post_ok('/api/v1/parent_groups', form => {name => 'Non-empty Parent'})->tx->res->json->{id};
     $t->post_ok('/api/v1/job_groups', form => {name => 'Child Group', parent_id => $parent_id})->status_is(200);
