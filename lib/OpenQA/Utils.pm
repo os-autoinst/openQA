@@ -362,7 +362,7 @@ sub run_cmd_with_log_return_error ($cmd, %args) {
             log_info $message;
         }
         else {
-            log_warning($stdout . $stderr);
+            log_warning($stdout . $stderr) if length($stdout . $stderr);
             log_error $message;
         }
         return {

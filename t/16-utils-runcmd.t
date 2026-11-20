@@ -51,6 +51,7 @@ subtest 'run (arbitrary) command' => sub {
     ok $res->{status}, 'status ok';
     is $res->{stdout}, "Hallo Welt\n", 'cmd output returned';
 
+    stdout_unlike { $res = run_cmd_with_log_return_error([qw(false)]) } qr/\[warn\]/i;
     stdout_like { $res = run_cmd_with_log_return_error([qw(false)]) } qr/.*\[error\].*cmd returned [1-9][0-9]*/i;
     is $res->{return_code}, 1, 'correct non-zero exit code returned ($? >> 8)';
     ok !$res->{status}, 'status not ok non-zero status returned';
