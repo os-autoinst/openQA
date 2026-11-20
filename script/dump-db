@@ -3,7 +3,67 @@ set -euo pipefail
 
 DUMP_FOLDER=${DUMP_FOLDER:-"/var/lib/openqa/backup"}
 DAYS_TO_KEEP=${DAYS_TO_KEEP:-"7"}
-[[ ${1-} = '-h' ]] || [[ ${1-} = '--help' ]] && echo "Dump the openQA postgresql database to ${DUMP_FOLDER} and clean-up backups older than ${DAYS_TO_KEEP} days." && exit
+
+usage() {
+    cat << EOF
+Usage: $(basename "$0") [OPTIONS]
+
+Dump the openQA PostgreSQL database to DUMP_FOLDER and clean up backups older than DAYS_TO_KEEP days.
+
+Options:
+  -f, --folder PATH   Target backup directory (default: \$DUMP_FOLDER or /var/lib/openqa/backup)
+  -d, --days DAYS     Number of days to keep backups (default: \$DAYS_TO_KEEP or 7)
+  -h, --help          Show this help message and exit
+
+Environment variables:
+  DUMP_FOLDER         Fallback path if --folder is omitted
+  DAYS_TO_KEEP        Fallback retention in days if --days is omitted
+  PG*                 Standard PostgreSQL libpq connection variables (e.g. PGHOST, PGPORT)
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h | --help)
+            usage
+            exit 0
+            ;;
+        -f | --folder)
+            [[ $# -lt 2 ]] && {
+                echo "Error: $1 requires an argument" >&2
+                exit 1
+            }
+            DUMP_FOLDER="$2"
+            shift 2
+            ;;
+        --folder=*)
+            DUMP_FOLDER="${1#*=}"
+            shift
+            ;;
+        -d | --days)
+            [[ $# -lt 2 ]] && {
+                echo "Error: $1 requires an argument" >&2
+                exit 1
+            }
+            DAYS_TO_KEEP="$2"
+            shift 2
+            ;;
+        --days=*)
+            DAYS_TO_KEEP="${1#*=}"
+            shift
+            ;;
+        *)
+            echo "Error: Unknown option: $1" >&2
+            usage >&2
+            exit 1
+            ;;
+    esac
+done
+
+[[ "$DAYS_TO_KEEP" =~ ^[0-9]+$ ]] || {
+    echo "Error: DAYS_TO_KEEP must be a non-negative integer" >&2
+    exit 1
+}
 
 DUMP_DATE=$(date -Idate)
 TMP_FILE="${DUMP_FOLDER}/.${DUMP_DATE}.dump.tmp.$$"

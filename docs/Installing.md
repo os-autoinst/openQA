@@ -1539,7 +1539,9 @@ perform daily database backups. This service is triggered by the
 systemctl enable --now openqa-dump-db.timer
 ```
 
-Backups are stored at `/var/lib/openqa/backup`.
+Backups are stored at `/var/lib/openqa/backup`. Destination folder and retention
+period can be customized via environment variables or CLI flags (see
+`openqa-dump-db --help`).
 
 ## Auditing - tracking openQA changes
 

@@ -16,16 +16,49 @@ use Time::Seconds;
 my $dump_script = "$Bin/../script/dump-db";
 ok -x $dump_script, 'script/dump-db is executable';
 
-sub run_dump ($env = {}) {
+sub run_dump ($args = [], $env = {}) {
     my ($in, $out, $err);
     local %ENV = (%ENV, %$env);
-    my $success = eval { run [$dump_script], \$in, \$out, \$err, timeout(10); };
+    my $success = eval { run [$dump_script, @$args], \$in, \$out, \$err, timeout(10); };
     return ($success, $out, $err, $? >> 8);
 }
 
 sub leftover_tmp ($dir) {
     return [grep { /^\.\d{4}-\d{2}-\d{2}\.dump\.tmp\./ } map { $_->basename } @{$dir->list({hidden => 1})}];
 }
+
+subtest 'Help and argument validation' => sub {
+    my ($success, $out, $err, $exit) = run_dump(['--help']);
+    ok $success, 'dump-db --help succeeds';
+    is $exit, 0, 'dump-db --help exits with 0';
+    like $out, qr/Usage: dump-db/, 'help output displays usage';
+    like $out, qr/--folder/, 'help output displays folder option';
+    like $out, qr/--days/, 'help output displays days option';
+
+    ($success, $out, $err, $exit) = run_dump(['-h']);
+    ok $success, 'dump-db -h succeeds';
+    is $exit, 0, 'dump-db -h exits with 0';
+
+    ($success, $out, $err, $exit) = run_dump(['--invalid-flag']);
+    ok !$success, 'dump-db with unknown flag fails';
+    is $exit, 1, 'dump-db with unknown flag exits with 1';
+    like $err, qr/Unknown option: --invalid-flag/, 'error message mentions unknown flag';
+
+    ($success, $out, $err, $exit) = run_dump(['--folder']);
+    ok !$success, 'dump-db --folder without value fails';
+    is $exit, 1, 'dump-db --folder without value exits with 1';
+    like $err, qr/requires an argument/, 'error message mentions missing argument';
+
+    ($success, $out, $err, $exit) = run_dump(['--days']);
+    ok !$success, 'dump-db --days without value fails';
+    is $exit, 1, 'dump-db --days without value exits with 1';
+    like $err, qr/requires an argument/, 'error message mentions missing argument';
+
+    ($success, $out, $err, $exit) = run_dump(['--days', 'invalid']);
+    ok !$success, 'dump-db --days with non-integer value fails';
+    is $exit, 1, 'dump-db --days with non-integer value exits with 1';
+    like $err, qr/must be a non-negative integer/, 'error message mentions non-negative integer requirement';
+};
 
 my $mock_bin = tempdir;
 my $mock_pg_dump = $mock_bin->child('pg_dump');
@@ -63,7 +96,7 @@ my $today_dump = strftime('%Y-%m-%d.dump', localtime);
 
 subtest 'Atomic success creates final dump and leaves no temp file' => sub {
     my $dump_dir = tempdir;
-    my ($success, $out, $err, $exit) = run_dump({%$test_env, DUMP_FOLDER => "$dump_dir"});
+    my ($success, $out, $err, $exit) = run_dump(['--folder', "$dump_dir"], $test_env);
     ok $success, 'dump-db succeeds with mock pg_dump';
     is $exit, 0, 'dump-db exits with 0 on success';
 
@@ -79,8 +112,8 @@ subtest 'Atomic failure preserves existing dump and cleans up temp file' => sub 
     my $final_file = $dump_dir->child($today_dump);
     $final_file->spurt("original-intact-dump\n");
 
-    my $fail_env = {%$test_env, DUMP_FOLDER => "$dump_dir", MOCK_PG_DUMP_FAIL => '1'};
-    my ($success, $out, $err, $exit) = run_dump($fail_env);
+    my $fail_env = {%$test_env, MOCK_PG_DUMP_FAIL => '1'};
+    my ($success, $out, $err, $exit) = run_dump(['--folder', "$dump_dir"], $fail_env);
     ok !$success, 'dump-db fails when pg_dump fails';
     isnt $exit, 0, 'dump-db exits with non-zero when pg_dump fails';
 
@@ -92,8 +125,8 @@ subtest 'Atomic failure preserves existing dump and cleans up temp file' => sub 
 
 subtest 'Signal termination triggers cleanup and exits with signal exit code' => sub {
     my $dump_dir = tempdir;
-    my $sig_env = {%$test_env, DUMP_FOLDER => "$dump_dir", MOCK_PG_DUMP_SIGNAL => '1'};
-    my ($success, $out, $err, $exit) = run_dump($sig_env);
+    my $sig_env = {%$test_env, MOCK_PG_DUMP_SIGNAL => '1'};
+    my ($success, $out, $err, $exit) = run_dump(['--folder', "$dump_dir"], $sig_env);
     ok !$success, 'dump-db fails on SIGTERM';
     is $exit, 143, 'dump-db exits with 143 on SIGTERM';
 
@@ -127,8 +160,8 @@ subtest 'Pruning removes dumps older than retention and stale tmp files' => sub 
     $non_dump->spurt("important-notes\n");
     utime $old_time, $old_time, "$non_dump";
 
-    my ($success, $out, $err, $exit) = run_dump({%$test_env, DUMP_FOLDER => "$dump_dir", DAYS_TO_KEEP => '5'});
-    ok $success, 'dump-db with retention from environment succeeds';
+    my ($success, $out, $err, $exit) = run_dump(['-f', "$dump_dir", '-d', '5'], $test_env);
+    ok $success, 'dump-db with short option flags succeeds';
     is $exit, 0, 'dump-db exits with 0';
 
     ok !-f $old_dump, 'dump older than DAYS_TO_KEEP was pruned';
@@ -137,6 +170,33 @@ subtest 'Pruning removes dumps older than retention and stale tmp files' => sub 
     ok -f $active_tmp, 'active temporary file newer than 1 day was preserved';
     ok -f $non_dump, 'non-dump file was not pruned even if older than DAYS_TO_KEEP';
     ok -f $dump_dir->child($today_dump), 'new daily dump was successfully created';
+};
+
+subtest 'Environment variables fallback and CLI precedence' => sub {
+    my $dump_dir = tempdir;
+    my $env = {
+        %$test_env,
+        DUMP_FOLDER => "$dump_dir",
+        DAYS_TO_KEEP => '3',
+    };
+    my ($success, $out, $err, $exit) = run_dump([], $env);
+    ok $success, 'dump-db succeeds reading DUMP_FOLDER and DAYS_TO_KEEP from environment';
+    is $exit, 0, 'dump-db exits with 0';
+
+    my $final_file = $dump_dir->child($today_dump);
+    ok -f $final_file, 'dump file created in DUMP_FOLDER path from environment';
+
+    my $override_dir = tempdir;
+    ($success, $out, $err, $exit) = run_dump(['--folder', "$override_dir", '--days', '5'], $env);
+    ok $success, 'dump-db succeeds with CLI arguments overriding environment variables';
+    is $exit, 0, 'dump-db with overrides exits with 0';
+    ok -f $override_dir->child($today_dump), 'explicit --folder argument takes precedence over DUMP_FOLDER';
+
+    my $equals_dir = tempdir;
+    ($success, $out, $err, $exit) = run_dump(["--folder=$equals_dir", '--days=5'], $env);
+    ok $success, 'dump-db succeeds with --folder=... and --days=... syntax';
+    is $exit, 0, 'dump-db with equals-syntax exits with 0';
+    ok -f $equals_dir->child($today_dump), 'dump file created via --folder=... option';
 };
 
 done_testing;
