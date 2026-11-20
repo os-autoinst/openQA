@@ -166,8 +166,29 @@ subtest 'create result dir, delete results' => sub {
         ok !-e $archive_dir, 'no archive result directory published when copying fails';
         undef $copy_mock;
 
+        path($archive_dir)->make_path->child('stale-marker')->spew('stale');
+        my $removal_mock = Test::MockModule->new('File::Path', no_auto => 1);
+        $removal_mock->redefine(
+            remove_tree => sub ($dir, $opts) { ${$opts->{error}} = [[$dir, 'Permission denied']]; return 0 });
+        my @warnings;
+        my $log_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs', no_auto => 1);
+        $log_mock->redefine(log_warning => sub { push @warnings, $_[0] });
+        throws_ok { $job->archive } qr/Unable to remove '.+to-be-archived': .+Permission denied/,
+          'error when removing source results handled';
+        like join('', @warnings), qr/Unable to remove '.*\.stale\.\d+': .*Permission denied/,
+          'failed removal of the replaced archive directory logged';
+        is $job->archived, 0, 'job not flagged as archived when removing its results fails';
+        ok -d $result_dir, 'normal result directory kept when removing it fails';
+        ok !-e path($archive_dir, 'stale-marker'), 'pre-existing archive directory replaced';
+        is path($archive_dir, 'subdir', 'some-file')->slurp, 'test', 'complete copy published';
+        ok -e "$archive_dir.stale.$$", 'replaced archive directory left over for cleanup';
+        undef $log_mock;
+        undef $removal_mock;
+
         my $signal_guard = OpenQA::Task::SignalGuard->new(undef);
         is $job->archive($signal_guard), $archive_dir, 'archive result directory created';
+        ok $job->archived, 'job flagged as archived once its results are gone';
+        ok !-e "$archive_dir.stale.$$", 'left-over archive directory removed';
         ok -d $archive_dir, 'archive result directory published';
         ok !-e $partial_dir, 'no partial copy left behind after publishing';
         ok !-d $result_dir, 'normal result directory removed';

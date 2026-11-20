@@ -261,6 +261,13 @@ sub archive ($self, $signal_guard = undef) {
 
     my $archived_result_dir = $self->add_result_dir_prefix($self->remove_result_dir_prefix($normal_result_dir), 1);
     my $partial_result_dir = "$archived_result_dir.partial.$$";
+    my $stale_result_dir = "$archived_result_dir.stale.$$";
+    # replace an existing target instead of resuming into it because a half-populated target cannot be told apart
+    # from a complete one; a stale directory is the leftover of an earlier, failed attempt of this process
+    if (-e $archived_result_dir) {
+        _remove_tree_warning_on_errors($stale_result_dir);
+        path($archived_result_dir)->move_to($stale_result_dir);
+    }
     # create destination directory manually because directory creation of File::Copy::Recursive has a race condition
     # and therefore might fail when running archiving jobs using the same prefix-directory in parallel
     path($partial_result_dir)->make_path;
@@ -271,12 +278,26 @@ sub archive ($self, $signal_guard = undef) {
     }
     # publish only the complete copy so a half-populated directory is never visible as an archive
     path($partial_result_dir)->move_to($archived_result_dir);
-
     $signal_guard->retry(0) if $signal_guard;
+    _remove_tree_warning_on_errors($stale_result_dir);
+
+    # flag the job only once its results are actually gone so any crash keeps it an archiving candidate
+    my $removal_error = _remove_tree_collecting_errors($normal_result_dir);
+    die "Unable to remove '$normal_result_dir': $removal_error" if -e $normal_result_dir;
     $self->update({archived => 1});
     $self->discard_changes;
-    File::Path::remove_tree($normal_result_dir);
     return $archived_result_dir;
+}
+
+sub _remove_tree_collecting_errors ($dir) {
+    File::Path::remove_tree($dir, {error => \my $err});
+    return @$err ? join(', ', map { "$_->[0]: $_->[1]" } @$err) : '';
+}
+
+sub _remove_tree_warning_on_errors ($dir) {
+    return unless -e $dir;
+    my $error = _remove_tree_collecting_errors($dir);
+    log_warning("Unable to remove '$dir': $error") if $error;
 }
 
 sub name ($self) {
