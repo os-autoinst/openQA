@@ -62,6 +62,14 @@ sub _limit ($job, $args = undef) {
         dir => resultdir,
       );
 
+    _archive_important_jobs_upfront(
+        job => $job,
+        archiving_cfg => $archiving_cfg,
+        min_free => $min_free,
+        keep_free => $keep_free,
+        max_dur => $max_dur,
+    );
+
     # create temporary job group outside of DB to collect
     # jobs without job_group_id
     my $schema = $app->schema;
@@ -292,6 +300,81 @@ sub _build_important_conditions ($schema, $job) {
     $job->note(important_builds_with_version => \@important_builds_with_version);
     $job->note(important_builds_without_version => \@important_builds_without_version);
     return (\@not_important_cond, \@important_cond);
+}
+
+sub _free_percentage ($dir) {
+    my ($available_bytes, $total_bytes) = check_df($dir);
+    return $available_bytes / $total_bytes * 100;
+}
+
+sub _dirs_on_same_device ($dir_a, $dir_b) {
+    my $device_a = (stat $dir_a)[0];
+    my $device_b = (stat $dir_b)[0];
+    return defined $device_a && defined $device_b && $device_a == $device_b;
+}
+
+sub _archive_important_jobs_upfront (%args) {
+    my ($job, $cfg, $min_free, $keep_free, $max_dur) = @args{qw(job archiving_cfg min_free keep_free max_dur)};
+    return if !$cfg->{archive_preserved_important_jobs} || $min_free <= 0;
+    if (_dirs_on_same_device(resultdir(), archivedir())) {
+        $job->note(archived_jobs => 0);
+        $job->note(archiving_stopped => 'resultdir and archivedir are on the same device');
+        return;
+    }
+
+    my $signal_guard = OpenQA::Task::SignalGuard->new($job);
+    my $app = $job->app;
+    my $schema = $app->schema;
+    my $jobs_rs = $schema->resultset('Jobs');
+    my ($not_important_cond, $important_cond) = _build_important_conditions($schema, $job);
+    my $start_time = time;
+    my $archive_jobs_count = 0;
+    my $archiving_stopped_reason = '';
+    my @skipped_ids;
+
+    while (1) {
+        if ($max_dur > 0 && (time - $start_time) >= $max_dur) {
+            $archiving_stopped_reason = 'time budget exceeded';
+            last;
+        }
+        if (_free_percentage(resultdir()) >= $min_free) {
+            $archiving_stopped_reason = 'results threshold reached';
+            last;
+        }
+        if (_free_percentage(archivedir()) <= $keep_free) {
+            $archiving_stopped_reason = 'archive floor reached';
+            last;
+        }
+        my $candidate = $jobs_rs->search(
+            {
+                @$important_cond,
+                archived => 0,
+                state => {-in => [FINAL_STATES]},
+                (@skipped_ids ? (id => {-not_in => \@skipped_ids}) : ()),
+            },
+            {order_by => {-asc => 'id'}, rows => 1})->first;
+        if (!$candidate) {
+            $archiving_stopped_reason = 'no candidates left';
+            last;
+        }
+        my $job_id = $candidate->id;
+        my $guard = $app->minion->guard("process_job_results_for_$job_id", ONE_DAY);
+        if (!$guard) {
+            push @skipped_ids, $job_id;
+            next;
+        }
+        log_info "Archiving important job $job_id";
+        try {
+            $candidate->archive($signal_guard);
+            $archive_jobs_count++;
+        }
+        catch ($e) {
+            log_warning "Failed to archive job $job_id: $e";
+            push @skipped_ids, $job_id;
+        }
+    }
+    $job->note(archived_jobs => $archive_jobs_count);
+    $job->note(archiving_stopped => $archiving_stopped_reason);
 }
 
 sub _ensure_results_below_threshold ($job, @) {
