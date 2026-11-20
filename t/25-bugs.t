@@ -50,4 +50,11 @@ subtest 'Unreferenced bugs cleanup job works' => sub {
     ok $bugs->find({bugid => 'poo#202'}), 'Bug poo#202 not cleaned up due to reference from comment';
 };
 
+subtest 'implicit insert of a bug that was inserted meanwhile' => sub {
+    is $bugs->_insert_implicit('poo#300'), undef, 'nothing returned for a bug that did not exist yet';
+    my $bug = $bugs->_insert_implicit('poo#300');
+    is $bug->bugid, 'poo#300', 'existing bug returned instead of a duplicate key error';
+    is $bugs->search({bugid => 'poo#300'})->count, 1, 'bug not inserted twice';
+};
+
 done_testing();
