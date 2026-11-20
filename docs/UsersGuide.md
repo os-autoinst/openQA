@@ -1865,6 +1865,20 @@ before moving each job's results. It stops immediately if:
 > archived important job exceeds the retention for important jobs, it is still
 > subject to deletion during the standard cleanup.
 
+Archiving is crash-safe: a job is only marked as archived once its results have
+left the results directory, and the archive directory only ever contains
+complete copies. An interrupted archiving job is therefore picked up again by
+the next cleanup run instead of leaving behind a job that looks archived while
+its results still occupy results storage.
+
+Results left behind by an interrupted or failed archiving attempt, including
+aborted copies inside the archive directory, are removed automatically by a
+daily cleanup task.
+
+Archived results still consume archive storage. They are only removed by the
+cleanup of the archive file system, for example according to
+`archive_cleanup_min_free_percentage` or the retention for important jobs.
+
 ### Space-aware cleanup
 
 The cleanup of logs/results uses time-based retentions and hence is independent
