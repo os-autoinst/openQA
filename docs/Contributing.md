@@ -404,6 +404,45 @@ Assuming you have already followed steps 1. to 4. above:
     Everything will be owned by `your_username`.
 4.  Configure openQA to use that database as in step 7. above.
 
+#### Validating cleanup changes against a database dump
+
+Cleanup code decides what data is deleted, so changes to it must be validated
+against real data before they are rolled out. The validation runs against a
+restored dump, never against the instance the dump was taken from:
+
+1.  Restore the schema and the tables the cleanup queries read: `jobs` plus the
+    job group and comment tables holding the retention settings and the
+    important-build tags. Skipping the multi-gigabyte tables such as
+    `screenshots` and `screenshot_links` shortens the restore from hours to
+    minutes:
+
+    ```sh
+    tables='users|job_group_parents|job_groups|jobs|comments|dbix_class_deploymenthandler_versions'
+    pg_restore -d openqa-local --schema-only path/to/dump
+    pg_restore -l path/to/dump | grep -E "TABLE DATA public ($tables) |SEQUENCE SET public ($tables)_id_seq " > whitelist.lst
+    pg_restore -d openqa-local --data-only -L whitelist.lst path/to/dump
+    ```
+
+2.  Run the candidate queries of the old and the new revision against that
+    database and compare the job IDs they return per job group. Use
+    `OPENQA_DATABASE=test`, `TEST_PG` pointing at the restored database and an
+    empty `OPENQA_BASEDIR`. Run both revisions back-to-back: jobs crossing their
+    retention period between the two runs show up as spurious differences.
+3.  Verify that no job with `result_size > 0` is dropped by a candidate filter
+    and that jobs with `result_size IS NULL` are still considered.
+4.  Compare the statements a cleanup run issues per job group. Wrap the run in a
+    transaction and roll it back so the restored data stays untouched:
+
+    ```perl
+    $schema->txn_begin;
+    my $stats = $job_group->limit_results_and_logs(undef, 1);    # 1 = dry run
+    $schema->txn_rollback;
+    ```
+
+    A dry run must not issue any `INSERT`, `UPDATE` or `DELETE` statements (count
+    them via `pg_stat_statements`) and must report the same candidate counts as
+    a regular run.
+
 ### Manual daemon setup
 
 This section should give you a general idea how to start daemons manually for
