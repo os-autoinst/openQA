@@ -1204,10 +1204,13 @@ sub delete_videos ($self, $dry = 0) {
 }
 
 sub delete_results ($self, $dry = 0) {
+    my $result_dir = $self->result_dir;
+    my $has_dir = $result_dir && -d $result_dir;
+    return (0, 0) if !$has_dir && ($self->result_size // 1) == 0 && !$self->logs_present;
+
     # delete the entire results directory
     my $deleted_size_res = 0;
-    my $result_dir = $self->result_dir;
-    if ($result_dir && -d $result_dir) {
+    if ($has_dir) {
         $result_dir = path($result_dir);
         $deleted_size_res += _delete_returning_size_from_array([$result_dir->list_tree({hidden => 1})], $dry);
         $result_dir->remove_tree unless $dry;

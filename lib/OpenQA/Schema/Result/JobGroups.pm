@@ -281,7 +281,7 @@ sub find_jobs_with_expired_results ($self, $preserved_important_jobs_out = undef
         $self->keep_important_results_in_days,
         $preserved_important_jobs_out
     );
-    return $expired ? [$expired->all] : [];
+    return $expired ? [$expired->search({result_size => [{'>' => 0}, undef]})->all] : [];
 }
 
 sub find_jobs_with_expired_logs ($self, $preserved_important_jobs_out = undef) {
