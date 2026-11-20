@@ -291,17 +291,32 @@ sub find_jobs_with_expired_logs ($self, $preserved_important_jobs_out = undef) {
 }
 
 # helper function for cleanup task
-sub limit_results_and_logs ($self, $preserved_important_jobs_out = undef) {
+# note: Returns the amount of data cleaned up or, in a dry run, the amount of data that would have been cleaned up.
+sub limit_results_and_logs ($self, $preserved_important_jobs_out = undef, $dry = 0) {
     my $config = OpenQA::App->singleton->config;
     my $preserved = $config->{archiving}->{archive_preserved_important_jobs} ? $preserved_important_jobs_out : undef;
+    my %stats = (jobs_deleted => 0, results_bytes => 0, logs_bytes => 0, screenshots_bytes => 0);
+
     my $expired_jobs = $self->find_expired_jobs($preserved);
-    $_->delete for @$expired_jobs;
+    $stats{jobs_deleted} = $dry ? scalar @$expired_jobs : grep { $_->delete } @$expired_jobs;
 
-    my $expired_results_jobs = $self->find_jobs_with_expired_results($preserved);
-    $_->delete_results for @$expired_results_jobs;
+    my %results_cleaned;
+    for my $job (@{$self->find_jobs_with_expired_results($preserved)}) {
+        my ($results_bytes, $screenshots_bytes) = $job->delete_results($dry);
+        $stats{results_bytes} += $results_bytes;
+        $stats{screenshots_bytes} += $screenshots_bytes;
+        $results_cleaned{$job->id} = 1;
+    }
 
+    # note: delete_results clears logs_present so a regular run drops these jobs from the logs candidates;
+    #       a dry run keeps the flag, so skip them here to report the same bytes as a regular run.
     my $jobs_with_expired_logs = $self->find_jobs_with_expired_logs($preserved);
-    $_->delete_logs for @$jobs_with_expired_logs;
+    for my $job (@$jobs_with_expired_logs) {
+        next if $results_cleaned{$job->id};
+        $stats{logs_bytes} += ($job->delete_logs($dry) // 0);
+    }
+
+    return \%stats;
 }
 
 sub tags ($self) {
