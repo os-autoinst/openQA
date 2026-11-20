@@ -76,6 +76,11 @@ sub _limit ($job, $args = undef) {
         $job->note(archiving_stopped => "error: $e");
     }
 
+    # enqueue the cleanup of results left behind by interrupted archiving unless one is already pending
+    my $leftover_jobs
+      = $app->minion->jobs({tasks => ['delete_leftover_results'], states => ['inactive', 'active']})->total;
+    $app->gru->enqueue(delete_leftover_results => [], {delay => ONE_DAY}) unless $leftover_jobs;
+
     # create temporary job group outside of DB to collect
     # jobs without job_group_id
     my $schema = $app->schema;

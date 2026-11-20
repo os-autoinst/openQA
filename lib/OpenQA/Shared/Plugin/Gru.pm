@@ -6,6 +6,7 @@ package OpenQA::Shared::Plugin::Gru;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use Minion;
+use DateTime;
 use DBIx::Class::Timestamps 'now';
 use OpenQA::App;
 use OpenQA::Schema;
@@ -45,6 +46,7 @@ sub register_tasks ($self) {
       OpenQA::Task::Job::CreateZipArchive
       OpenQA::Task::Job::FinalizeResults
       OpenQA::Task::Job::HookScript
+      OpenQA::Task::Job::LeftoverResults
       OpenQA::Task::Job::Restart
       OpenQA::Task::Iso::Schedule
       OpenQA::Task::Bug::Limit
@@ -194,7 +196,20 @@ sub enqueue ($self, $task, $args = [], $options = {}, $jobs = []) {
 
     $args = [$args] if ref $args eq 'HASH';
 
-    my $delay = $options->{run_at} && $options->{run_at} > now() ? $options->{run_at} - now() : 0;
+    my $delay = $options->{delay} // 0;
+    my $run_at = $options->{run_at};
+    if ($run_at) {
+        my $run_at_epoch = ref $run_at ? $run_at->epoch : $run_at;
+        my $now_dt = now();
+        $delay = $run_at_epoch > $now_dt->epoch ? $run_at_epoch - $now_dt->epoch : 0;
+        $run_at = DateTime->from_epoch(epoch => $run_at_epoch) unless ref $run_at;
+    }
+    elsif ($delay) {
+        $run_at = DateTime->now->add(seconds => $delay);
+    }
+    else {
+        $run_at = now();
+    }
 
     my $schema = OpenQA::Schema->singleton;
     my $priority = $options->{priority} // 0;
@@ -204,7 +219,7 @@ sub enqueue ($self, $task, $args = [], $options = {}, $jobs = []) {
             taskname => $task,
             priority => $priority,
             args => $args,
-            run_at => $options->{run_at} // now(),
+            run_at => $run_at,
             jobs => \@jobsarrayhref,
         });
     my $gru_id = $gru->id;

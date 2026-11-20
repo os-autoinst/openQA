@@ -211,6 +211,22 @@ subtest 'enqueue and keep track of gru task' => sub {
         is $result, 'Manual user error', 'result returned';
         is $error_code, undef, 'no error returned';
     };
+
+    subtest 'enqueue with delay and run_at' => sub {
+        my $delayed_job = $app->gru->enqueue('wait_for_grutask', {}, {delay => 60});
+        my $minion_job = $minion->job($delayed_job->{minion_id});
+        is $minion_job->info->{state}, 'inactive', 'job with delay is inactive';
+        cmp_ok $minion_job->info->{delayed}, '>=', time + 50, 'job delayed in minion';
+
+        my $run_at_dt = DateTime->now->add(seconds => 120);
+        my $run_at_job = $app->gru->enqueue('wait_for_grutask', {}, {run_at => $run_at_dt});
+        my $minion_run_at = $minion->job($run_at_job->{minion_id});
+        cmp_ok $minion_run_at->info->{delayed}, '>=', time + 100, 'job with run_at DateTime delayed in minion';
+
+        my $run_at_epoch_job = $app->gru->enqueue('wait_for_grutask', {}, {run_at => time + 180});
+        my $minion_epoch = $minion->job($run_at_epoch_job->{minion_id});
+        cmp_ok $minion_epoch->info->{delayed}, '>=', time + 160, 'job with run_at epoch delayed in minion';
+    };
 };
 
 # list initially existing assets
