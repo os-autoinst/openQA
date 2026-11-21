@@ -124,7 +124,7 @@ sub _get_job_groups ($self, $id, $name) {
     return \%yaml;
 }
 
-sub _update_job_templates ($self, $job_template_names, $job_group, $user_errors, $json, $yaml) {
+sub _update_job_templates ($self, $job_template_names, $job_group, $user_errors, $json, $yaml, $is_preview) {
     my $job_templates = $self->schema->resultset('JobTemplates');
     my $group_id = $job_group->id;
     my @job_template_ids;
@@ -147,8 +147,8 @@ sub _update_job_templates ($self, $job_template_names, $job_group, $user_errors,
     }
 
     # Preview mode: Get the expected YAML and rollback the result
-    if ($self->validation->param('preview')) {
-        $json->{preview} = int($self->validation->param('preview'));
+    if ($is_preview) {
+        $json->{preview} = int $is_preview;
         $self->schema->txn_rollback;
     }
     else {
@@ -231,6 +231,25 @@ in the response if any changes to the database were made.
 =cut
 
 sub update ($self) {
+    return $self->_update_or_validate();
+}
+
+=over 4
+
+=item validate()
+
+Validates a job group template without writing any changes to the database.
+Behaves identically to C<update()>, but the B<preview> parameter is always forced to 1.
+
+=back
+
+=cut
+
+sub validate ($self) {
+    return $self->_update_or_validate(1);
+}
+
+sub _update_or_validate ($self, $force_preview = 0) {
     my $validation = $self->validation;
     # Note: id is a regular param because it's part of the path
     $validation->required('name') unless $self->param('id');
@@ -248,6 +267,7 @@ sub update ($self) {
     my $to_expand = $validation->param('expand');
     my $id = $self->param('id');
     my $name = $validation->param('name');
+    my $preview = $force_preview || $validation->param('preview');
     try {
         $data = load_yaml(string => $validation->param('template'));
         $user_errors
@@ -262,7 +282,8 @@ sub update ($self) {
     my $json = {};
     my @server_errors;
     try {
-        $self->_perform_update($id, $name, $json, $data, $yaml, $template_reference, $to_expand, $user_errors);
+        $self->_perform_update($id, $name, $json, $data, $yaml, $template_reference, $to_expand, $user_errors,
+            $preview);
     }
     catch ($e) {
         # Push the exception to the list of errors without the trailing new line
@@ -281,11 +302,11 @@ sub update ($self) {
             json => {json => $json, status => (@server_errors ? HTTP_INTERNAL_SERVER_ERROR : HTTP_BAD_REQUEST)});
     }
 
-    $self->emit_event('openqa_jobtemplate_create', $json) unless $validation->param('preview');
+    $self->emit_event('openqa_jobtemplate_create', $json) unless $preview;
     $self->respond_to(json => {json => $json});
 }
 
-sub _perform_update ($self, $id, $name, $json, $data, $yaml, $reference, $to_expand, $user_errors) {
+sub _perform_update ($self, $id, $name, $json, $data, $yaml, $reference, $to_expand, $user_errors, $preview) {
     my $job_groups = $self->schema->resultset('JobGroups');
     my $job_group
       = $job_groups->find($id ? {id => $id} : ($name ? {name => $name} : undef), {select => [qw(id name template)]});
@@ -311,7 +332,7 @@ sub _perform_update ($self, $id, $name, $json, $data, $yaml, $reference, $to_exp
         $json->{result} = $job_group->expand_yaml($job_template_names);
     }
     $self->schema->txn_do(
-        sub { $self->_update_job_templates($job_template_names, $job_group, $user_errors, $json, $yaml) });
+        sub { $self->_update_job_templates($job_template_names, $job_group, $user_errors, $json, $yaml, $preview) });
 }
 
 =over 4
