@@ -48,12 +48,52 @@
         </tbody>
     </table>
 
+    <h3 class="mt-4">SSH keys</h3>
+    <div class="card">
+        <div class="card-header">Add SSH key</div>
+        <div class="card-body">
+            %= form_for ssh_keys => (id => 'ssh-key-form', method => 'post') => begin
+                <div class="mb-3">
+                    <label class="form-label" for="ssh-key-title">Title</label>
+                    <input type="text" class="form-control" id="ssh-key-title" name="title" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="ssh-key-public-key">Public key</label>
+                    <textarea class="form-control" id="ssh-key-public-key" name="public_key" rows="3" required placeholder="ssh-ed25519 AAAA..."></textarea>
+                </div>
+                <div class="mb-3">
+                    %= submit_button 'Add', class => 'btn btn-primary'
+                </div>
+            % end
+        </div>
+    </div>
+
+    <table class="table table-striped">
+        <thead>
+            <tr><th>Title</th><th>Fingerprint</th><th>Last used</th><th>Action</th></tr>
+        </thead>
+        <tbody id="ssh-keys-tbody">
+            % for my $ssh_key (@$ssh_keys) {
+                <tr id="ssh_key_<%= $ssh_key->id %>">
+                    <td class="title"><%= $ssh_key->title %></td>
+                    <td class="fingerprint"><%= $ssh_key->fingerprint %></td>
+                    <td class="last-used"><%= format_time($ssh_key->last_used) || 'never' %></td>
+                    <td class="action">
+                        <a class="btn btn-light" href="<%= url_for('ssh_key', sshkeyid => $ssh_key->id) %>" data-method="delete" title="Delete">
+                            <i class="fa-regular fa-trash-can"></i>
+                        </a>
+                    </td>
+                </tr>
+            % }
+        </tbody>
+    </table>
+
     <div class="card mt-4 border-danger">
         <div class="card-header bg-danger text-white">Delete My Account</div>
         <div class="card-body">
             <p>Deleting your account will:</p>
             <ul>
-                <li>Remove all your API keys</li>
+                <li>Remove all your API keys and SSH keys</li>
                 <li>Anonymize your comments (your username will be removed)</li>
                 <li>Anonymize audit log entries (your username will be replaced)</li>
                 <li>Replace your username, email, and profile information with placeholder values</li>
