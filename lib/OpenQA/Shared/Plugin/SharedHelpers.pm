@@ -20,6 +20,9 @@ sub register ($self, $app, @args) {
     $app->helper(current_user => \&_current_user);
     $app->helper(is_operator => \&_is_operator);
     $app->helper(is_admin => \&_is_admin);
+    $app->helper(format_api_key_role => \&_format_api_key_role);
+    $app->helper(role_to_permissions => \&_role_to_permissions);
+    $app->helper(validate_api_key_role_grant => \&_validate_api_key_role_grant);
     $app->helper(is_api_request => \&_is_api_request);
     $app->helper(is_local_request => \&_is_local_request);
     $app->helper(render_specific_not_found => \&_render_specific_not_found);
@@ -75,14 +78,46 @@ sub _current_user ($c) {
     return $current_user && defined $current_user->{user} ? $current_user->{user} : undef;
 }
 
+# Administrator status implies operator access. Explicit $user inspects target account directly.
 sub _is_operator ($c, $user = undef) {
+    my $api_key = $user ? undef : $c->stash('current_api_key');
     $user //= $c->current_user;
-    return ($user && $user->is_operator);
+    return 0 unless $user;
+    return ($user->is_admin && $api_key->is_admin) || ($user->is_operator && $api_key->is_operator) if $api_key;
+    return $user->is_admin || $user->is_operator;
 }
 
 sub _is_admin ($c, $user = undef) {
+    my $api_key = $user ? undef : $c->stash('current_api_key');
     $user //= $c->current_user;
-    return ($user && $user->is_admin);
+    return 0 unless $user;
+    return $user->is_admin && $api_key->is_admin if $api_key;
+    return $user->is_admin;
+}
+
+sub _format_api_key_role ($c, $key, $user = undef) {
+    $user //= $c->current_user;
+    return 'User' unless $user && $key;
+    return 'Administrator' if $key->is_admin && $user->is_admin;
+    return 'Operator' if $key->is_operator && ($user->is_admin || $user->is_operator);
+    return 'User';
+}
+
+sub _role_to_permissions ($c, $role) {
+    return (1, 1) if $role eq 'admin';
+    return (1, 0) if $role eq 'operator';
+    return (0, 0);
+}
+
+# Verify requested roles do not exceed the calling user's account roles.
+sub _validate_api_key_role_grant ($c, $is_admin, $is_operator, $user) {
+    if ($is_admin && !$user->is_admin) {
+        return 'Cannot grant administrator role exceeding own account';
+    }
+    if ($is_operator && !$user->is_operator && !$user->is_admin) {
+        return 'Cannot grant operator role exceeding own account';
+    }
+    return undef;
 }
 
 sub _is_api_request ($c) {
