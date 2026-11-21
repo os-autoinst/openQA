@@ -153,15 +153,44 @@ subtest 'create result dir, delete results' => sub {
         $job->update({state => DONE});
         $job->discard_changes;
 
+        my $archive_dir = $job->add_result_dir_prefix($job->remove_result_dir_prefix($result_dir), 1);
+        my $partial_dir = "$archive_dir.partial.$$";
+
         my $copy_mock = Test::MockModule->new('File::Copy::Recursive', no_auto => 1);
-        $copy_mock->redefine(dircopy => sub { $! = 4; return 0 });
+        my $copy_target;
+        $copy_mock->redefine(dircopy => sub { $copy_target = $_[1]; $! = 4; return 0 });
         throws_ok { $job->archive } qr/Unable to copy '.+' to '.+': .+/, 'error when copying archive handled';
+        is $copy_target, $partial_dir, 'results copied into a partial directory';
         ok -d $result_dir, 'normal result directory still exists';
+        ok !-e $partial_dir, 'partial copy removed when copying fails';
+        ok !-e $archive_dir, 'no archive result directory published when copying fails';
         undef $copy_mock;
 
+        path($archive_dir)->make_path->child('stale-marker')->spew('stale');
+        my $removal_mock = Test::MockModule->new('File::Path', no_auto => 1);
+        $removal_mock->redefine(
+            remove_tree => sub ($dir, $opts) { ${$opts->{error}} = [[$dir, 'Permission denied']]; return 0 });
+        my @warnings;
+        my $log_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs', no_auto => 1);
+        $log_mock->redefine(log_warning => sub { push @warnings, $_[0] });
+        throws_ok { $job->archive } qr/Unable to remove '.+to-be-archived': .+Permission denied/,
+          'error when removing source results handled';
+        like join('', @warnings), qr/Unable to remove '.*\.stale\.\d+': .*Permission denied/,
+          'failed removal of the replaced archive directory logged';
+        is $job->archived, 0, 'job not flagged as archived when removing its results fails';
+        ok -d $result_dir, 'normal result directory kept when removing it fails';
+        ok !-e path($archive_dir, 'stale-marker'), 'pre-existing archive directory replaced';
+        is path($archive_dir, 'subdir', 'some-file')->slurp, 'test', 'complete copy published';
+        ok -e "$archive_dir.stale.$$", 'replaced archive directory left over for cleanup';
+        undef $log_mock;
+        undef $removal_mock;
+
         my $signal_guard = OpenQA::Task::SignalGuard->new(undef);
-        my $archive_dir = $job->archive($signal_guard);
-        ok -d $archive_dir, 'archive result directory created';
+        is $job->archive($signal_guard), $archive_dir, 'archive result directory created';
+        ok $job->archived, 'job flagged as archived once its results are gone';
+        ok !-e "$archive_dir.stale.$$", 'left-over archive directory removed';
+        ok -d $archive_dir, 'archive result directory published';
+        ok !-e $partial_dir, 'no partial copy left behind after publishing';
         ok !-d $result_dir, 'normal result directory removed';
         ok !$signal_guard->retry, 'signal guard retry disabled in the end';
         undef $signal_guard;
