@@ -1537,6 +1537,9 @@ subtest 'handling upload timeout' => sub {
     my $img_proc = Test::MockObject->new->set_always(pid => 1_234_568);
     $job->{_upload_images_subprocess} = $img_proc;
     $job->{_is_uploading_results} = 1;
+    my $callback_invoked = 0;
+    $job->{_upload_results_callback} = sub { $callback_invoked++ };
+    $client->sent_messages([]);
 
     combined_like {
         $job->_handle_upload_timeout;
@@ -1549,6 +1552,19 @@ subtest 'handling upload timeout' => sub {
     ok !defined $job->{_upload_subprocess}, 'upload subprocess cleaned up';
     ok !defined $job->{_upload_images_subprocess}, 'upload images subprocess cleaned up';
     ok !$job->is_uploading_results, 'ongoing upload concluded';
+    ok !$callback_invoked, 'ongoing upload callback not invoked after timeout';
+    is_deeply $client->sent_messages,
+      [
+        {
+            json => undef,
+            path => 'jobs/2/set_done',
+            reason => 'timeout: upload exceeded MAX_UPLOAD_TIME',
+            result => TIMEOUT_EXCEEDED,
+            worker_id => 1,
+        },
+      ],
+      'only one set_done call sent with timeout_exceeded'
+      or always_explain $client->sent_messages;
     is $job->_format_reason(undef, TIMEOUT_EXCEEDED, WORKER_SR_TIMEOUT),
       'timeout: upload exceeded MAX_UPLOAD_TIME', 'format reason for upload timeout';
 
@@ -1558,6 +1574,9 @@ subtest 'handling upload timeout' => sub {
         $job->on(status_changed => sub ($job, $data) { $event_data = $data });
         $job->{_upload_subprocess} = Test::MockObject->new->set_always(pid => 1_234_569);
         $job->{_is_uploading_results} = 1;
+        my $inactivity_cb_invoked = 0;
+        $job->{_upload_results_callback} = sub { $inactivity_cb_invoked++ };
+        $client->sent_messages([]);
 
         combined_like {
             $job->_handle_upload_inactivity_timeout;
@@ -1569,6 +1588,19 @@ subtest 'handling upload timeout' => sub {
         is $event_data->{reason}, WORKER_SR_TIMEOUT, 'stop reason is timeout';
         ok !defined $job->{_upload_subprocess}, 'upload subprocess cleaned up';
         ok !$job->is_uploading_results, 'ongoing upload concluded';
+        ok !$inactivity_cb_invoked, 'ongoing upload callback not invoked after inactivity timeout';
+        is_deeply $client->sent_messages,
+          [
+            {
+                json => undef,
+                path => 'jobs/3/set_done',
+                reason => 'timeout: upload exceeded UPLOAD_INACTIVITY_TIMEOUT',
+                result => TIMEOUT_EXCEEDED,
+                worker_id => 1,
+            },
+          ],
+          'only one set_done call sent with timeout_exceeded on inactivity timeout'
+          or always_explain $client->sent_messages;
         is $job->_format_reason(undef, TIMEOUT_EXCEEDED, WORKER_SR_TIMEOUT),
           'timeout: upload exceeded UPLOAD_INACTIVITY_TIMEOUT', 'format reason for upload inactivity timeout';
     };
@@ -1606,6 +1638,85 @@ subtest 'handling upload timeout' => sub {
           or always_explain $fake_process->progress_args;
 
         $job_mock->unmock($_) for qw(_stop_step_5_1_upload _upload_log_file_or_asset);
+    };
+
+    subtest 'regular teardown aborted/skipped after upload timed out' => sub {
+        my $job = OpenQA::Worker::Job->new($worker, $client, {id => 101, URL => $engine_url});
+        $job->_set_status(stopping => {reason => WORKER_SR_DONE});
+        $job->{_upload_timeout} = 1;
+
+        subtest '_reset_upload_inactivity_timeout does nothing' => sub {
+            $job->_reset_upload_inactivity_timeout;
+            ok !defined $job->{_upload_inactivity_timer}, 'inactivity timer not armed if upload timeout set';
+        };
+        subtest '_conclude_upload does not re-arm inactivity timer and does not invoke callback' => sub {
+            my $conclude_cb = 0;
+            $job->{_is_uploading_results} = 1;
+            $job->{_upload_results_callback} = sub { $conclude_cb++ };
+            $job->_conclude_upload;
+            ok !$conclude_cb, 'callback not invoked on conclude_upload after timeout';
+            ok !defined $job->{_upload_inactivity_timer}, 'inactivity timer not armed in conclude_upload';
+            ok !$job->is_uploading_results, 'job no longer uploading results';
+        };
+        subtest 'teardown steps return undef and skip callback' => sub {
+            my $cb_invoked = 0;
+            is $job->_stop_step_4_upload(WORKER_SR_DONE, sub { $cb_invoked++ }), undef,
+              '_stop_step_4_upload returns early';
+            is $job->_stop_step_5_1_upload(WORKER_SR_DONE, sub { $cb_invoked++ }), undef,
+              '_stop_step_5_1_upload returns early';
+            is $job->_stop_step_5_2_upload(WORKER_SR_DONE, sub { $cb_invoked++ }), undef,
+              '_stop_step_5_2_upload returns early';
+            ok !$cb_invoked, 'callbacks not invoked by teardown steps';
+        };
+        subtest '_stop_step_4_upload finish callback returns early' => sub {
+            my $step5_1_called = 0;
+            $job_mock->redefine(_stop_step_5_1_upload => sub { $step5_1_called++ });
+            delete $job->{_upload_timeout};
+            $job->_stop_step_4_upload(WORKER_SR_DONE, sub { });
+            $job->{_upload_timeout} = 1;
+            Mojo::IOLoop->one_tick;
+            ok !$step5_1_called, 'step 5.1 not called by step 4 finish callback after timeout';
+            ok !defined $job->{_upload_subprocess}, 'step 4 subprocess cleaned up';
+            $job_mock->unmock('_stop_step_5_1_upload');
+        };
+        subtest '_upload_results_step_2_upload_images finish callback returns early' => sub {
+            my $step2_2_called = 0;
+            $job_mock->redefine(_upload_results_step_2_2_upload_images => sub { $step2_2_called++ });
+            $job_mock->redefine(_upload_results_step_2_1_upload_images => sub { 1 });
+            $job->_upload_results_step_2_upload_images(sub { });
+            $job->{_upload_timeout} = 1;
+            Mojo::IOLoop->one_tick;
+            ok !$step2_2_called, 'step 2.2 not called by image upload finish callback after timeout';
+            ok !defined $job->{_upload_images_subprocess}, 'image upload subprocess cleaned up';
+            $job_mock->unmock($_) for qw(_upload_results_step_2_2_upload_images _upload_results_step_2_1_upload_images);
+        };
+        subtest 'stop() step 2 callback returns early when timeout occurred while posting status' => sub {
+            my $step3_called = 0;
+            $job_mock->redefine(_stop_step_3_announce => sub { $step3_called++ });
+            my $job_s2 = OpenQA::Worker::Job->new($worker, $client, {id => 102, URL => $engine_url});
+            $job_s2->_set_status(running => {});
+            my $step2_cb;
+            $job_mock->redefine(_stop_step_2_post_status => sub ($self, $reason, $cb) { $step2_cb = $cb });
+            $job_s2->stop(WORKER_SR_DONE);
+            $job_s2->{_upload_timeout} = 1;
+            $step2_cb->();
+            ok !$step3_called, 'step 3 not called when step 2 callback sees upload timeout';
+            $job_mock->unmock($_) for qw(_stop_step_2_post_status _stop_step_3_announce);
+        };
+        subtest 'stop() step 3 callback returns early when timeout occurred while announcing' => sub {
+            my $step4_called = 0;
+            $job_mock->redefine(_stop_step_2_post_status => sub ($self, $reason, $cb) { $cb->() });
+            $job_mock->redefine(_stop_step_4_upload => sub { $step4_called++ });
+            my $job_s3 = OpenQA::Worker::Job->new($worker, $client, {id => 103, URL => $engine_url});
+            $job_s3->_set_status(running => {});
+            my $step3_cb;
+            $job_mock->redefine(_stop_step_3_announce => sub ($self, $reason, $cb) { $step3_cb = $cb });
+            $job_s3->stop(WORKER_SR_DONE);
+            $job_s3->{_upload_timeout} = 1;
+            $step3_cb->();
+            ok !$step4_called, 'step 4 not called when step 3 callback sees upload timeout';
+            $job_mock->unmock($_) for qw(_stop_step_2_post_status _stop_step_3_announce _stop_step_4_upload);
+        };
     };
 };
 
