@@ -334,14 +334,25 @@ sub wait_until ($check_function, $check_description, $timeout = undef, $check_in
     }
 }
 
-sub wait_until_element_gone ($selector, @args) {
-    wait_until(
-        sub {
-            return scalar(@{$_DRIVER->find_elements($selector)}) == 0;
-        },
-        $selector . ' gone',
-        @args,
-    );
+sub wait_until_element_gone ($selector, $description = undef, $timeout = undef, $check_interval = undef) {
+    disable_timeout();
+    my $res;
+    try {
+        $res = wait_until(
+            sub {
+                return scalar(@{$_DRIVER->find_elements($selector)}) == 0;
+            },
+            $description // ($selector . ' gone'),
+            $timeout,
+            $check_interval,
+        );
+    }
+    catch ($e) {
+        enable_timeout();    # uncoverable statement
+        die $e;    # uncoverable statement
+    }
+    enable_timeout();
+    return $res;
 }
 
 sub wait_for_element (%args) {
