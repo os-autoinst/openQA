@@ -28,7 +28,7 @@ use Module::Loaded 'is_loaded';
 use Mojo::IOLoop::ReadWriteProcess 'process';
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 use Mojo::IOLoop::ReadWriteProcess::Container 'container';
-use Mojo::IOLoop::ReadWriteProcess::CGroup 'cgroupv2';
+use OpenQA::Worker::CGroup;
 use Mojo::Collection 'c';
 use Mojo::File 'path';
 use Mojo::Util qw(trim scope_guard);
@@ -372,7 +372,8 @@ sub _configure_cgroupv2 ($job_info) {
     }
     my $cgroup;
     try {
-        $cgroup = cgroupv2(name => $cgroup_name)->from($cgroup_slice // '')->child($job_info->{id})->create;
+        # child() creates the job cgroup incl. parents; cgroupv2() would also create the top-level one (e.g. systemd)
+        $cgroup = OpenQA::Worker::CGroup->new->from($cgroup_slice // '')->child($job_info->{id});
         my $query_cgroup_path = $cgroup->can('_cgroup');
         log_info('Using cgroup ' . $query_cgroup_path->($cgroup)) if $query_cgroup_path;
     }
