@@ -8,6 +8,7 @@ use Feature::Compat::Try;
 use List::Util qw(min);
 use OpenQA::App;
 use OpenQA::Constants 'API_KEY_COMMENT_MAX_LENGTH';
+use OpenQA::SSHKey 'parse_public_key';
 
 =pod
 
@@ -194,6 +195,88 @@ Delete a specific API key of the current user.
 sub delete_api_key ($self) {
     my $user = $self->current_user;
     my $key = $user->api_keys->find({key => $self->param('key')});
+    return $self->render(json => {error => 'Not found'}, status => 404) unless $key;
+    $key->delete;
+    $self->render(json => {result => 1});
+}
+
+=over 4
+
+=item list_ssh_keys()
+
+List the SSH public keys of the current user.
+
+=back
+
+=cut
+
+sub list_ssh_keys ($self) {
+    my @keys = map {
+        {
+            id => $_->id,
+            title => $_->title,
+            fingerprint => $_->fingerprint,
+            public_key => $_->public_key,
+            last_used => $_->last_used,
+            t_created => $_->t_created,
+        }
+    } $self->current_user->ssh_keys->all;
+    $self->render(json => {keys => \@keys});
+}
+
+=over 4
+
+=item create_ssh_key()
+
+Add an SSH public key for the current user. Requires the C<public_key> and
+C<title> form params. Rejects input that is not exactly one public key, and keys
+whose fingerprint is already registered.
+
+=back
+
+=cut
+
+sub create_ssh_key ($self) {
+    my $validation = $self->validation;
+    $validation->required('public_key');
+    $validation->required('title')->size(1, API_KEY_COMMENT_MAX_LENGTH);
+    return $self->render(json => {error => 'public_key and title are required'}, status => 400)
+      if $validation->has_error;
+
+    my $parsed = parse_public_key($validation->param('public_key'));
+    return $self->render(json => {error => 'Invalid SSH public key'}, status => 400) unless $parsed;
+
+    my $schema = $self->schema;
+    my $fingerprint = $parsed->{fingerprint};
+    return $self->render(json => {error => 'SSH key already registered'}, status => 409)
+      if $schema->resultset('SshKeys')->search({fingerprint => $fingerprint})->count;
+
+    my $ssh_key = $self->current_user->ssh_keys->create(
+        {
+            public_key => $parsed->{public_key},
+            fingerprint => $fingerprint,
+            title => $validation->param('title'),
+        });
+    $self->render(
+        json => {
+            id => $ssh_key->id,
+            title => $ssh_key->title,
+            fingerprint => $ssh_key->fingerprint,
+        });
+}
+
+=over 4
+
+=item delete_ssh_key()
+
+Delete an SSH public key of the current user.
+
+=back
+
+=cut
+
+sub delete_ssh_key ($self) {
+    my $key = $self->current_user->ssh_keys->find({id => $self->param('id')});
     return $self->render(json => {error => 'Not found'}, status => 404) unless $key;
     $key->delete;
     $self->render(json => {result => 1});
