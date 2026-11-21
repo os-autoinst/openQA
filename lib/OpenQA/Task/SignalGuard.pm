@@ -17,6 +17,12 @@ has retry => 1;
 #       action twice.
 has abort => 0;
 
+# delay in seconds before retrying the job after receiving a termination signal
+# note: Prevents shutting-down worker manager processes from immediately dequeuing
+#       the retried job and spawning a new child during shutdown, which would miss
+#       the initial signal and cause systemd to hit its stop timeout and send SIGKILL.
+has retry_delay => 30;
+
 my $SIGNALED = 0;
 
 # retries the specified Minion job when receiving SIGTERM/SIGINT as long as the returned object exists
@@ -50,7 +56,7 @@ sub _handle_signal ($self_weak, $signal) {
 
     # schedule a retry before stopping the job's execution prematurely
     $job->note(signal_handler => "Received signal $signal, scheduling retry and releasing locks");
-    $job->retry;
+    $job->retry({delay => $self_weak->retry_delay});
     exit;
 }
 
