@@ -5,6 +5,7 @@ use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
+use Mojo::Base -signatures;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::TimeLimit '20';
@@ -70,6 +71,10 @@ sub prepare_database () {
             existing => 1,
             refreshed => 1,
         });
+
+    $schema->resultset('Workers')->create({id => 1000, host => 'myworker', instance => 1});
+    $jobs->find(99946)->update({assigned_worker_id => 1000});
+    $jobs->find(99947)->update({assigned_worker_id => 1000});
 }
 
 prepare_database;
@@ -83,9 +88,17 @@ sub goto_next_previous_tab () {
     wait_for_ajax(msg => 'Next & previous table ready');
 }
 
+sub check_worker_cell ($td, $job_id) {
+    my $link = $driver->find_child_element($td, 'a', 'css');
+    is $link->get_text(), 'myworker:1', "worker name of job $job_id is myworker:1";
+    like $link->get_attribute('href'), qr{/admin/workers/1000$},
+      "worker link of job $job_id points to admin worker page";
+}
+
 # check job next and previous not loaded when open tests/x
 $t->get_ok('/tests/99946')->status_is(200)->element_exists_not('#job_next_previous_table_wrapper .dt-container',
-    'datatable of job next and previous not loaded when open tests/x');
+    'datatable of job next and previous not loaded when open tests/x')
+  ->text_is('#job_next_previous_table th:nth-child(5)' => 'Worker', 'Worker column header present');
 
 my $job_header = $t->tx->res->dom->at('#next_previous #scenario');
 like
@@ -94,6 +107,17 @@ like
   'header for job scenario';
 
 # trigger job next and previous for current job
+$t->get_ok('/tests/99946/ajax', 'request next/previous ajax payload')->status_is(200);
+my $ajax_data = $t->tx->res->json->{data};
+my ($ajax_job_99946) = grep { $_->{id} == 99946 } @$ajax_data;
+ok $ajax_job_99946, 'ajax payload contains job 99946';
+is_deeply $ajax_job_99946->{worker},
+  {id => 1000, name => 'myworker:1'},
+  'ajax payload includes worker details with id and name';
+my ($ajax_job_99901) = grep { $_->{id} == 99901 } @$ajax_data;
+ok $ajax_job_99901, 'ajax payload contains job 99901';
+is $ajax_job_99901->{worker}, undef, 'ajax payload has undef worker when unassigned';
+
 $driver->title_is('openQA', 'on main page');
 $driver->find_element_by_link_text('All Tests')->click();
 wait_for_ajax(msg => 'wait for All Tests displayed before looking for 99946');
@@ -109,6 +133,7 @@ is +(shift @tds)->get_text(), 'C', '99946 is current job';
 is +(shift @tds)->get_text() =~ s/\s+\d+$//r, 'zypper_up', 'failed module of 99946';
 is +(shift @tds)->get_text(), '0091', 'build of 99946 is 0091';
 is +(shift @tds)->get_text(), '3 hours ago ( 01:00 hours )', 'finished and duration of 99946';
+check_worker_cell(shift @tds, 99946);
 
 my $job99947 = $driver->find_element('#job_next_previous_table #job_result_99947');
 @tds = $driver->find_child_elements($job99947, 'td');
@@ -116,6 +141,8 @@ is +(shift @tds)->get_text(), 'L', '99947 is the latest job';
 my $state = $driver->find_child_element(shift @tds, '.status', 'css');
 is $state->get_attribute('title'), 'Done: passed', 'the latest job 99947 was passed';
 is +(shift @tds)->get_text(), '0092', 'build of 99947 is 0092';
+is +(shift @tds)->get_text(), '2 hours ago ( 01:58 hours )', 'finished and duration of 99947';
+check_worker_cell(shift @tds, 99947);
 is scalar @{$driver->find_elements('#job_next_previous_table #job_result_99945')},
   1, 'found nearest previous job 99945';
 is scalar @{$driver->find_elements(q{//*[@title='Done: incomplete']}, 'xpath')}, 6, 'include 6 incomletes in page 1';
@@ -139,9 +166,11 @@ $state = $driver->find_child_element(shift @tds, '.status', 'css');
 is $state->get_attribute('title'), 'Done: passed', 'the latest job 99901 was passed';
 is +(shift @tds)->get_text(), '0091', 'build of 99901 is 0091';
 is +(shift @tds)->get_text(), '4 hours ago ( 01:00 hours )', 'finished and duration of 99901';
+is +(shift @tds)->get_text(), '', 'worker column is empty for job 99901 without worker';
 is scalar @{$driver->find_elements('#job_next_previous_table #job_result_99902')}, 1, 'found nearest next job 99902';
 $driver->find_element('[aria-label="Previous"]')->click();
 is scalar @{$driver->find_elements('#job_next_previous_table #job_result_99946')}, 1, 'found farmost next job 99946';
+check_worker_cell($driver->find_element('#job_next_previous_table #job_result_99946 td:nth-child(5)'), 99946);
 is scalar @{$driver->find_elements('#job_next_previous_table #job_result_99947')}, 1, 'found next and latest job 99947';
 
 # select the latest job in the table and check its job next and previous results
@@ -157,6 +186,7 @@ $state = $driver->find_child_element(shift @tds, '.status', 'css');
 is $state->get_attribute('title'), 'Done: passed', 'the latest job 99947 was passed';
 is +(shift @tds)->get_text(), '0092', 'build of 99947 is 0092';
 is +(shift @tds)->get_text(), '2 hours ago ( 01:58 hours )', 'finished and duration of 99947';
+check_worker_cell(shift @tds, 99947);
 is scalar @{$driver->find_elements('#job_next_previous_table #job_result_99946')},
   1, 'found nearest previous job 99946';
 $driver->find_element('[aria-label="Next"]')->click();
@@ -308,6 +338,9 @@ subtest 'server-side limit has precedence over user-specified limit' => sub {
       selector => '#job_next_previous_table tbody tr:nth-child(2)',
       desc => 'next limit shown';
     like $info->get_text, qr/omitted.*0.*next/is, 'info about next jobs being limited shown';
+    is $driver->find_element('#job_next_previous_table tbody tr:nth-child(2) td:nth-child(2)')
+      ->get_attribute('colspan'),
+      '4', 'notes row cell spans remaining 4 columns';
     $info = wait_for_element selector => '#job_next_previous_table tbody tr:last-child', desc => 'previous limit shown';
     like $info->get_text, qr/previous.*6.*exceeded/is, 'info about previous jobs being limited shown';
 };
