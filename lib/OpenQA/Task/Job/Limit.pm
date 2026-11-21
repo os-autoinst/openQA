@@ -5,6 +5,7 @@ package OpenQA::Task::Job::Limit;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use OpenQA::Jobs::Constants;
+use OpenQA::Archive;
 use OpenQA::Log qw(log_debug log_info log_warning);
 use OpenQA::ScreenshotDeletion;
 use OpenQA::Utils qw(:DEFAULT prjdir resultdir archivedir check_df);
@@ -42,6 +43,9 @@ sub _limit ($job, $args = undef) {
       unless my $limit_screenshots_guard = $app->minion->guard('limit_screenshots_task', ONE_DAY);
 
     return undef unless my $limit_guard = acquire_limit_lock_or_retry($job);
+
+    # leftovers of interrupted download preparations only grow while the cleanup below is skipped
+    OpenQA::Archive::cleanup_cache();
 
     return undef
       if finish_job_if_storage_usage_below_percentage(
