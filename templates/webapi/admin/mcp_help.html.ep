@@ -3,6 +3,40 @@
   <h2><%= title %></h2>
   %= include 'layouts/info'
   <p>
-      To configure an MCP client to connect to openQA, check out the
-      <%= link_to 'documentation about MCP support' => url_for('https://open.qa/docs/#mcp-support') %>.
+      This instance serves the MCP endpoint at <%= url_for('/mcp')->to_abs %> with mode
+      <b><%= $mcp_mode %></b>. Requests authenticate with a Bearer API token, which can be created under
+      <%= link_to 'Manage API keys' => url_for('api_keys') %>.
+  </p>
+
+  <h3>Tools</h3>
+  <table class="table table-sm">
+    <thead>
+      <tr><th>Tool</th><th>Description</th><th>Role</th><th>Destructive</th></tr>
+    </thead>
+    <tbody>
+% for my $tool (@$mcp_tools) {
+      <tr>
+        <td><%= $tool->{name} %></td>
+        <td><%= $tool->{description} %></td>
+        <td><%= $tool->{role} %></td>
+        <td><%= $tool->{destructive} %></td>
+      </tr>
+% }
+    </tbody>
+  </table>
+
+  <h3>Client configuration</h3>
+  <p>Example for opencode, in <b>~/.config/opencode/opencode.json</b>:</p>
+<pre>{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "openqa": {
+      "type": "remote",
+      "url": "<%= url_for('/mcp')->to_abs %>",
+      "headers": { "Authorization": "Bearer &lt;API key&gt;" }
+    }
+  }
+}</pre>
+  <p>
+      See also the <%= link_to 'documentation about MCP support' => url_for('https://open.qa/docs/#mcp-support') %>.
   </p>
