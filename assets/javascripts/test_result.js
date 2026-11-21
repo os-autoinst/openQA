@@ -1253,6 +1253,7 @@ function renderInvestigationTab(response) {
   const tbodyElement = document.createElement('tbody');
   let alertbox;
   Object.keys(response).forEach(key => {
+    if (/^diff_.*_lines$/.test(key)) return;
     const value = response[key];
     let type = 'pre';
 
@@ -1271,7 +1272,7 @@ function renderInvestigationTab(response) {
 
     const valueElement = document.createElement('td');
 
-    let textLinesRest;
+    let moreContent;
 
     if (type === 'link') {
       const html = document.createElement('a');
@@ -1327,22 +1328,32 @@ function renderInvestigationTab(response) {
             }
           }
         }
+      } else if (Array.isArray(response[key + '_lines'])) {
+        // groups are shown as a whole so a pair of changed lines is never split by "Show more"
+        const groups = response[key + '_lines'];
+        let shown = 0;
+        let count = 0;
+        while (shown < groups.length && count < DISPLAY_LINE_LIMIT) count += groups[shown++].length;
+        preElement.appendChild(renderDiffGroups(groups.slice(0, shown)));
+        if (shown < groups.length) moreContent = renderDiffGroups(groups.slice(shown));
       } else {
         let textLines = typeof value === 'string' ? value.split('\n') : [value];
+        let textLinesRest;
 
         if (textLines.length > DISPLAY_LINE_LIMIT) {
           textLinesRest = textLines.slice(DISPLAY_LINE_LIMIT, textLines.length);
           textLines = textLines.slice(0, DISPLAY_LINE_LIMIT);
         }
         preElement.appendChild(document.createTextNode(textLines.join('\n')));
+        if (textLinesRest) moreContent = document.createTextNode(textLinesRest.join('\n'));
       }
 
       valueElement.appendChild(preElement);
 
-      if (textLinesRest) {
+      if (moreContent) {
         enable_more = true;
         preElementMore = document.createElement('pre');
-        preElementMore.appendChild(document.createTextNode(textLinesRest.join('\n')));
+        preElementMore.appendChild(moreContent);
       }
       if (enable_more) {
         preElementMore.style = 'display: none';
@@ -1377,6 +1388,26 @@ function renderInvestigationTab(response) {
   }
   tabPanelElement.appendChild(tableElement);
   tabPanelElement.dataset.initialized = true;
+}
+
+function createDiffLine({sign, parts}) {
+  const line = document.createElement('span');
+  line.className = 'diff-line' + (sign === '+' ? ' diff-add' : sign === '-' ? ' diff-del' : '');
+  line.appendChild(document.createTextNode(sign));
+  parts.forEach(([kind, text]) => {
+    if (!kind) return line.appendChild(document.createTextNode(text));
+    const element = document.createElement(kind === 'changed' ? 'b' : 'i');
+    element.className = 'diff-' + kind;
+    element.textContent = text;
+    line.appendChild(element);
+  });
+  return line;
+}
+
+function renderDiffGroups(groups) {
+  const fragment = document.createDocumentFragment();
+  groups.forEach(group => group.forEach(line => fragment.appendChild(createDiffLine(line))));
+  return fragment;
 }
 
 function toggleSign(elem) {
