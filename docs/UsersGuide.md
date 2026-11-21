@@ -1809,6 +1809,29 @@ Further remarks:
 - The [Auditing](Installing.md#auditing) section explains the cleanup of
   the audit log.
 
+### Crosscheck of results in the database against the filesystem
+
+The cleanup removes a job's result directory and records the removal by setting
+the job's `result_size` to zero, so a mismatch between a job row and the
+filesystem is not looked at again once the job is past its retention. The
+periodic crosscheck re-examines both directions:
+
+1.  Jobs recorded as cleaned (`result_size` zero) must not have a result
+    directory, jobs recorded as present must have one. These checks run per job
+    group, reusing the group's retention.
+2.  Every result directory of the results and archive trees is matched against a
+    job row. Directories without a job row, directories of jobs recorded as
+    cleaned, and directories in the tree that their job row does not record are
+    reported.
+
+The crosscheck reports counts plus up to 20 sample paths in the note of its
+Minion job and runs at the lowest priority, so the _daily_ cleanup keeps the disk
+slots. It only reports and never deletes anything. Enabling `crosscheck = 1` in
+the `[cleanup]` section of the web UI configuration makes
+`openqa-enqueue-result-crosscheck.timer` enqueue it. The timer ticks daily and
+enqueues a run only when the last finished run is older than
+`crosscheck_interval_days` days (default 30, zero means every tick).
+
 ### Automatic archiving of old jobs
 
 Archiving of important jobs can be enabled:

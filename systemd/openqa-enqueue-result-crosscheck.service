@@ -1,0 +1,10 @@
+[Unit]
+Description=openQA enqueue crosscheck of results in the database against the filesystem
+After=postgresql.service openqa-setup-db.service
+Wants=openqa-setup-db.service
+
+[Service]
+Type=oneshot
+User=geekotest
+ExecStart=/usr/share/openqa/script/openqa-enqueue-result-crosscheck
+SuccessExitStatus=SIGTERM

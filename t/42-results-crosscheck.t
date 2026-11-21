@@ -369,4 +369,31 @@ subtest 'sample paths are capped' => sub {
     $group->delete;
 };
 
+subtest 'enqueue_if_due only enqueues an enabled run that is due' => sub {
+    perform_minion_jobs($app->minion);
+    my $enqueue_if_due = \&OpenQA::Task::Job::Crosscheck::enqueue_if_due;
+    $app->config->{cleanup}{crosscheck_interval_days} = 30;
+
+    $app->config->{cleanup}{crosscheck} = 0;
+    is $enqueue_if_due->($app), undef, 'disabled crosscheck not enqueued';
+
+    $app->config->{cleanup}{crosscheck} = 1;
+    is $enqueue_if_due->($app), undef, 'run finished minutes ago suppresses the enqueue within the interval';
+
+    $app->config->{cleanup}{crosscheck_interval_days} = 0;
+    my $first = $enqueue_if_due->($app);
+    ok $first, 'zero interval enqueues on every tick';
+    my $enqueued = $app->minion->job($first)->info;
+    is $enqueued->{priority}, -100, 'enqueued run uses the lowest priority';
+    is_deeply $enqueued->{args}, [], 'enqueued run takes no arguments';
+
+    my $worker = $app->minion->worker->register;
+    $worker->dequeue(0, {id => $first})->execute;
+    $worker->unregister;
+    is $app->minion->job($first)->info->{state}, 'finished', 'enqueued run performs the crosscheck';
+
+    $app->config->{cleanup}{crosscheck_interval_days} = 30;
+    is $enqueue_if_due->($app), undef, 'the run that just finished suppresses the next enqueue';
+};
+
 done_testing();

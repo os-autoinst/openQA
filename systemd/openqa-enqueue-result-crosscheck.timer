@@ -1,0 +1,9 @@
+[Unit]
+Description=Enqueues the crosscheck of results in the database against the filesystem for openQA when it is due.
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+
+[Install]
+WantedBy=timers.target

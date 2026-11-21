@@ -22,6 +22,7 @@ use OpenQA::JobGroupDefaults;
 use OpenQA::Jobs::Constants qw(OK_RESULTS);
 use OpenQA::Scheduler::DynamicLimit;
 use OpenQA::Task::Job::Limit;
+use OpenQA::Task::Job::Crosscheck;
 use Feature::Compat::Try;
 
 my %CARRY_OVER_DEFAULTS = (lookup_depth => 10, state_changes_limit => 3);
@@ -262,6 +263,8 @@ sub default_config () {
         },
         cleanup => {
             concurrent => 0,
+            crosscheck => 0,
+            crosscheck_interval_days => OpenQA::Task::Job::Crosscheck::DEFAULT_INTERVAL_DAYS,
         },
         default_group_limits => {
             asset_size_limit => OpenQA::JobGroupDefaults::SIZE_LIMIT_GB,

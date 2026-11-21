@@ -16,6 +16,7 @@ use Feature::Compat::Try;
 
 use constant DEFAULT_GROUPS_PER_BATCH => 20;
 use constant DEFAULT_PREFIXES_PER_BATCH => 20;
+use constant DEFAULT_INTERVAL_DAYS => 30;
 use constant MAX_SAMPLES => 20;
 use constant MIN_DIR_AGE => ONE_DAY;
 use constant TASK_NAME => 'crosscheck_results_consistency';
@@ -26,6 +27,18 @@ use constant CLEANUP_TASK => 'limit_results_and_logs';
 
 sub register ($self, $app, @args) {
     $app->minion->add_task(TASK_NAME, \&_crosscheck);
+}
+
+# the timer ticks daily, so the interval comes from the config and a finished run within it suppresses the enqueue
+sub enqueue_if_due ($app) {
+    return undef unless $app->config->{cleanup}->{crosscheck};
+    my $interval_days = $app->config->{cleanup}->{crosscheck_interval_days} // DEFAULT_INTERVAL_DAYS;
+    if ($interval_days > 0) {
+        my $last
+          = $app->minion->backend->list_jobs(0, 1, {tasks => [TASK_NAME], states => ['finished']})->{jobs}->[0];
+        return undef if $last && ($last->{finished} // 0) > time - $interval_days * ONE_DAY;
+    }
+    return $app->gru->enqueue(TASK_NAME, [], {priority => TASK_PRIORITY, ttl => TASK_TTL, limit => 1})->{minion_id};
 }
 
 my %PHASES = (parent => \&_parent, groups => \&_groups, prefixes => \&_prefixes, summary => \&_summary);
@@ -311,5 +324,8 @@ batch reports jobs whose results are recorded as cleaned but that still have a d
 are recorded as present but that have no directory. A prefix batch reports directories without a job row and
 directories that are not the place their job row records. A summary job aggregates the counts of all batches into
 the note of the parent job. It is a read-only integrity check: nothing is deleted or repaired.
+
+The function C<enqueue_if_due> is the entry point for the systemd timer: it enqueues a run unless the
+C<[cleanup] crosscheck> switch is off or a run finished within C<[cleanup] crosscheck_interval_days> days.
 
 =cut
