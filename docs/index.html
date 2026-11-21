@@ -2573,7 +2573,10 @@ be enabled to perform daily database backups. This service is triggered
 by the <code>openqa-dump-db.timer</code>. To enable automatic database
 backup, run:</p>
 <div class="sourceCode" id="cb81"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb81-1"><a href="#cb81-1" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> enable <span class="at">--now</span> openqa-dump-db.timer</span></code></pre></div>
-<p>Backups are stored at <code>/var/lib/openqa/backup</code>.</p>
+<p>Backups are stored at <code>/var/lib/openqa/backup</code>.
+Destination folder and retention period can be customized via
+environment variables or CLI flags (see
+<code>openqa-dump-db --help</code>).</p>
 <h2 data-number="2.11" id="auditing---tracking-openqa-changes"><span class="header-section-number">2.11</span> Auditing - tracking openQA
 changes</h2>
 <p>Auditing plugin enables openQA administrators to maintain overview
