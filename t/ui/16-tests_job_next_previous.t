@@ -75,7 +75,6 @@ sub prepare_database () {
 prepare_database;
 
 driver_missing unless my $driver = call_driver;
-disable_timeout;
 
 sub goto_next_previous_tab () {
     my $tab_link = wait_for_element(selector => 'Next & previous results', method => 'link_text');

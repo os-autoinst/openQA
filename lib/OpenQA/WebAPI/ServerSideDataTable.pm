@@ -45,7 +45,8 @@ sub render_response (%args) {
         push @order_by_params, {'-' . $column_order => $columns->[$column_index]};
         ++$index;
     }
-    push @order_by_params, 'me.id';
+    my $primary_order = $controller->param('order[0][dir]') // '';
+    push @order_by_params, ($primary_order eq 'desc' ? {-desc => 'me.id'} : 'me.id');
     $params->{order_by} = \@order_by_params;
 
     # add parameter for paging

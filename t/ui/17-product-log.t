@@ -119,14 +119,16 @@ subtest 'trigger actions' => sub {
 };
 
 subtest 'rescheduled ISO shown after refreshing page' => sub {
-    $driver->refresh;
     $driver->find_element('#user-action a')->click();
     $driver->find_element_by_link_text('Scheduled products')->click();
     like $driver->get_title(), qr/Scheduled products log/, 'on product log';
+    wait_for_ajax(msg => 'server-side scheduled products table');
     $table = $driver->find_element_by_id('product_log_table');
     ok $table, 'products tables found';
-    @rows = $driver->find_child_elements($table, './tbody/tr[./td[text() = "whatever.iso"]]', 'xpath');
-    is scalar @rows, 2, 'rescheduled ISO shown';
+    @rows = @{
+        wait_for_element_count(
+            '#product_log_table tbody tr', 2, description => 'rescheduled ISO shown'
+        )};
     like $rows[0]->get_text(), qr/2.*Demo.*added/,
       'newly added product shown as first row; status is added as async flag was passed';
     like

@@ -1011,6 +1011,11 @@ chromedriver instance the variable `OPENQA_SELENIUM_TEST_STARTUP_TIMEOUT` can
 be set to a higher value. See
 <https://metacpan.org/pod/Selenium>::Chrome#startup_timeout for details.
 
+The variable `OPENQA_SELENIUM_SCRIPT_TIMEOUT_MS` (default 2000) sets how long a script executed via
+`execute_script` may run before chromedriver reports it as stuck. It is scaled by the same factor as the
+TimeLimit budgets. Note that chromedriver treats 0 as a zero budget rather than as "no timeout", which
+makes every `execute_script` fail.
+
 <a id="circleci-local-container"></a>
 
 ### Run tests using the circleci tool
