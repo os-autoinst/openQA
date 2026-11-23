@@ -13,7 +13,11 @@ use OpenQA::Test::Utils qw(run_cmd test_cmd);
 
 
 # prevent all network access to stay local
-my $cmd = 'unshare -r -n script/openqa-clone-custom-git-refspec';
+my $unshare_error = qx{unshare -r -n echo 2>&1 1>/dev/null};
+note "unable to restrict network access via unshare: $unshare_error" if $unshare_error;
+my $unshare_note = $unshare_error ? ' - likely a false positive as network access could not be restricted' : '';
+my $cmd = 'script/openqa-clone-custom-git-refspec';
+$cmd = "unshare -r -n $cmd" unless $unshare_error;
 
 sub run_once (@args) { run_cmd($cmd, @args) }
 
@@ -33,7 +37,7 @@ test_once '--help', qr/Usage:/, 'help text shown', 0, 'help screen is regarded a
 test_once '--invalid-arg', qr/Usage:/, 'invalid args also yield help', 1, 'help screen but no success recorded';
 my $args = 'https://github.com/user/repo/pull/9128 https://openqa.opensuse.org/tests/1234';
 my $pr_args = $args;
-combined_like { $ret = run_once($args) } qr/Unable to fetch/, 'without network we fail with fetch error';
+combined_like { $ret = run_once($args) } qr/Unable to fetch/, "without network we fail with fetch error$unshare_note";
 isnt $ret, 0, 'without network we exit non-zero';
 # mock any external access with all arguments
 $ENV{curl_github} = qq{echo -e '{"head": {"label": "user:my/branch"}, "body": "Lorem ipsum"}'; true};
