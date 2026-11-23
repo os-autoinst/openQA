@@ -155,7 +155,7 @@ $app->config->{misc_limits}->{result_cleanup_min_free_percentage} = 20;
 
 subtest 'df returns bad data' => sub {
     %df_main_storage = (bavail => 10, blocks => 5);
-    my $expected_log = qr{Unable to determine disk usage of \'.*/data/openqa/testresults\'};
+    my $expected_log = qr{Unable to determine storage usage of \'.*/data/openqa/testresults\'};
     my $job = job_log_like $expected_log, 'error logged';
     is $job->{state}, 'failed', 'job considered failed';
     like $job->{result}, $expected_log, 'error if df returns bad results';

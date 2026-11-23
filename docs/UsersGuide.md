@@ -1857,6 +1857,11 @@ three distinct configuration families exist:
 | **Cleanup Lower Bound**    | `[misc_limits]` | Deletes older logs and results (independently of time retentions) until the specified free percentage is restored. | `result_cleanup_min_free_percentage`<br>`archive_cleanup_min_free_percentage`                                                            |
 | **Cleanup Skip Threshold** | `[misc_limits]` | Skips or aborts the cleanup job early if there is already sufficient free headroom, saving system I/O resources.   | `result_cleanup_max_free_percentage`<br>`asset_cleanup_max_free_percentage`                                                              |
 
+In addition to these thresholds, `cleanup_min_free_dry_run` in `[misc_limits]` is a
+switch: instead of cleaning up, it evaluates the space-aware cleanup and accounts
+for the space the deletions would free while leaving the files on the file
+systems in place.
+
 The deletion during the space-aware cleanup lower bound happens in the following order:
 
 1.  Videos of unimportant jobs
