@@ -58,8 +58,13 @@ sub lookup_config_files ($config_dir_within_home, $name, $silent = 0) {
             my $extension = $main_config_file->extname;
             my $has_main_config = -r $main_config_file;
             $config_name //= $main_config_file->basename(".$extension");
-            push @config_file_paths, $main_config_file if $has_main_config;
-            push @config_file_paths, @{$config_path->child("$name.d")->list->grep(qr/\.$extension$/)->sort};
+            try {
+                push @config_file_paths, $main_config_file if $has_main_config;
+                push @config_file_paths, @{$config_path->child("$name.d")->list->grep(qr/\.$extension$/)->sort};
+            }
+            catch ($e) {
+                log_warning(qq{Unable to add config files under "$config_path": $e}) unless $silent;
+            }
             last if $has_main_config;
         }
         if (@config_file_paths) {
