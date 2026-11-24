@@ -4959,6 +4959,11 @@ free headroom, saving system I/O resources.</td>
 </tr>
 </tbody>
 </table>
+<p>In addition to these thresholds,
+<code>cleanup_min_free_dry_run</code> in <code>[misc_limits]</code> is a
+switch: instead of cleaning up, it evaluates the space-aware cleanup and
+accounts for the space the deletions would free while leaving the files
+on the file systems in place.</p>
 <p>The deletion during the space-aware cleanup lower bound happens in
 the following order:</p>
 <ol type="1">
