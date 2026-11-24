@@ -694,6 +694,50 @@ subtest 'CacheService::run exit code handling' => sub {
     }
 };
 
+subtest 'API::status handling of retried or failed downloading_job' => sub {
+    my $app = $t->app;
+    my $dl_id = $app->minion->enqueue(
+        cache_asset => [123, 'hdd', 'test.qcow2', 'host'] => {notes => {lock => 'test_lock_status'}});
+    my $dep_id = $app->minion->enqueue(cache_asset => [124, 'hdd', 'test.qcow2', 'host'] =>
+          {notes => {lock => 'test_lock_status', downloading_job => $dl_id}});
+    my $worker = $app->minion->worker->register;
+    my $dep_job = $worker->dequeue(0, {id => $dep_id});
+    $dep_job->finish;
+
+    my $dl_job;
+    subtest 'dependent job reports downloading while downloading job is inactive or active' => sub {
+        $t->get_ok("/status/$dep_id")->status_is(200)->json_is('/status' => 'downloading');
+
+        $dl_job = $worker->dequeue(0, {id => $dl_id});
+        $t->get_ok("/status/$dep_id")->status_is(200)->json_is('/status' => 'downloading');
+    };
+
+    subtest 'dependent job returns error when downloading job failed' => sub {
+        $dl_job->fail('Something broke');
+        $t->get_ok("/status/$dep_id")->status_is(500)
+          ->json_like('/error' => qr/Minion job #$dl_id failed: Something broke/);
+    };
+
+    subtest 'dependent job reports downloading again when downloading job is retried' => sub {
+        $dl_job->retry;
+        $t->get_ok("/status/$dep_id")->status_is(200)->json_is('/status' => 'downloading');
+    };
+
+    subtest 'dependent job is processed once downloading job finishes' => sub {
+        $dl_job = $worker->dequeue(0, {id => $dl_id});
+        $dl_job->note(output => 'Downloaded ok', has_download_error => Mojo::JSON->false);
+        $dl_job->finish;
+        $t->get_ok("/status/$dep_id")->status_is(200)->json_is('/status' => 'processed')
+          ->json_is('/output' => 'Downloaded ok')->json_is('/has_download_error' => Mojo::JSON->false);
+        $t->get_ok("/status/$dl_id")->status_is(200)->json_is('/status' => 'processed')
+          ->json_is('/output' => 'Downloaded ok')->json_is('/has_download_error' => Mojo::JSON->false);
+    };
+
+    $worker->unregister;
+    $dep_job->remove;
+    $dl_job->remove;
+};
+
 done_testing;
 
 END {
