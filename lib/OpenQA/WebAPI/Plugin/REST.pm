@@ -21,23 +21,28 @@ sub register ($self, $app, $config) {
     $app->helper(link_post => sub ($c, @args) { $c->action_link('post', @args) });
 
     # Map deprecated "format" parameter to "_format" for content negotiation
-    # and allow "_method" parameter to override request method
+    # and allow "_method" parameter to override request method. Only the merged
+    # parameter view is rewritten, not the request URL: the URL is the basis of
+    # the API signature verification (see OpenQA::Shared::Controller::Auth::_key_auth).
     $app->hook(
         before_dispatch => sub ($c) {
             my $req = $c->req;
-            for my $params ($req->query_params, $req->body_params) {
-                my $formats = $params->every_param('format');
-                next unless @$formats;
-                $params->remove('format');
-                unless (@{$params->every_param('_format')}) {
-                    $params->append(_format => $_) for @$formats;
-                }
-            }
-            # Clear cached merged params in Mojo::Message::Request so param() re-reads updated sources
-            delete $req->{params};
+            # Merge like Mojo::Message::Request::params: body parameters first, query parameters last
+            $req->{params} = _with_mapped_format($req->body_params)->append(_with_mapped_format($req->query_params));
             return unless my $method = $req->param('_method');
             $req->method($method);
         });
+}
+
+sub _with_mapped_format ($params) {
+    my $mapped = $params->clone;
+    my $formats = $mapped->every_param('format');
+    return $mapped unless @$formats;
+    $mapped->remove('format');
+    unless (@{$mapped->every_param('_format')}) {
+        $mapped->append(_format => $_) for @$formats;
+    }
+    return $mapped;
 }
 
 1;

@@ -124,6 +124,23 @@ subtest 'access granted for admins' => sub {
     $t->put_ok('/api/v1/operator_plugin')->status_is(200)->content_is('API operator plugin works!');
 };
 
+subtest 'signed requests with format in query' => sub {
+    $t->ua->apikey('ARTHURKEY01');
+    $t->ua->apisecret('EXCALIBUR');
+    $t->put_ok('/api/v1/operator_plugin?format=json')
+      ->status_is(200, 'signature covers the query as sent by the client');
+
+    $t->ua->once(
+        start => sub ($ua, $tx) {
+            my $url = $tx->req->url->clone;
+            $url->query->remove('format')->append(_format => 'json');
+            my $timestamp = $tx->req->headers->header('X-API-Microtime');
+            $tx->req->headers->header(
+                'X-API-Hash' => hmac_sha1_sum(OpenQA::UserAgent::_path_query($url) . $timestamp, $ua->apisecret));
+        });
+    $t->put_ok('/api/v1/operator_plugin?format=json')->status_is(403, 'signature over the rewritten query is rejected');
+};
+
 subtest 'wrong api key - expired' => sub {
     $t->ua->apikey('EXPIREDKEY01');
     $t->ua->apisecret('WHOCARESAFTERALL');
