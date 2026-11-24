@@ -324,6 +324,23 @@ subtest 'Auth::check validation including localhost fallback and API key verific
     $hash = hmac_sha1_sum($c->req->url->to_string . $microtime, 'EXCALIBUR');
     $c->req->headers->header('X-API-Hash' => $hash);
     ok $c->check, 'API key authentication succeeds with valid HMAC and timestamp';
+
+    my $check = sub ($hash) {
+        my $c = OpenQA::Shared::Controller::Auth->new(app => $t->app);
+        my $tx = Mojo::Transaction::HTTP->new;
+        $c->tx($tx);
+        $c->req->url->base(Mojo::URL->new('http://localhost'));
+        $c->req->url->parse('/api/v1/jobs?comment=via%20restart');
+        $c->req->headers->host('localhost');
+        $c->req->headers->header('X-API-Key' => 'ARTHURKEY01');
+        $c->req->headers->header('X-API-Microtime' => $microtime);
+        $c->req->headers->header('X-API-Hash' => $hash);
+        return $c->check;
+    };
+    ok !$check->(hmac_sha1_sum('/api/v1/jobs?comment=via%20restart' . $microtime, 'EXCALIBUR')),
+      'API key authentication fails for a query signed with its raw percentage encoding';
+    ok $check->(hmac_sha1_sum('/api/v1/jobs?comment=via+restart' . $microtime, 'EXCALIBUR')),
+      'API key authentication succeeds for a query signed as the client re-serializes it';
 };
 
 
