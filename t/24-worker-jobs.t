@@ -203,6 +203,7 @@ $engine_mock->redefine(
 
 # Mock log file and asset uploads to collect diagnostics
 my $job_mock = Test::MockModule->new('OpenQA::Worker::Job');
+my $client_mock = Test::MockModule->new('Test::FakeClient', no_auto => 1);
 my $upload_stats = {upload_result => 1, uploaded_files => [], uploaded_assets => []};
 
 sub upload_mock ($key, $self, @args) {
@@ -1660,13 +1661,25 @@ subtest 'handling upload timeout' => sub {
         };
         subtest 'teardown steps return undef and skip callback' => sub {
             my $cb_invoked = 0;
+            my $invoke_after_called = 0;
+            my $upload_results_called = 0;
+            $job_mock->redefine(_invoke_after_result_upload => sub { $invoke_after_called++ });
+            $job_mock->redefine(_upload_results => sub { $upload_results_called++ });
+
             is $job->_stop_step_4_upload(WORKER_SR_DONE, sub { $cb_invoked++ }), undef,
               '_stop_step_4_upload returns early';
             is $job->_stop_step_5_1_upload(WORKER_SR_DONE, sub { $cb_invoked++ }), undef,
               '_stop_step_5_1_upload returns early';
+            ok !$invoke_after_called, '_invoke_after_result_upload not called by step 5.1 after timeout';
+            ok !$job->{_has_uploaded_logs_and_assets}, 'step 5.1 does not set _has_uploaded_logs_and_assets';
+
             is $job->_stop_step_5_2_upload(WORKER_SR_DONE, sub { $cb_invoked++ }), undef,
               '_stop_step_5_2_upload returns early';
+            ok !$upload_results_called, '_upload_results not called by step 5.2 after timeout';
+
             ok !$cb_invoked, 'callbacks not invoked by teardown steps';
+
+            $job_mock->unmock($_) for qw(_invoke_after_result_upload _upload_results);
         };
         subtest '_stop_step_4_upload finish callback returns early' => sub {
             my $step5_1_called = 0;
@@ -1683,6 +1696,7 @@ subtest 'handling upload timeout' => sub {
             my $step2_2_called = 0;
             $job_mock->redefine(_upload_results_step_2_2_upload_images => sub { $step2_2_called++ });
             $job_mock->redefine(_upload_results_step_2_1_upload_images => sub { 1 });
+            delete $job->{_upload_timeout};
             $job->_upload_results_step_2_upload_images(sub { });
             $job->{_upload_timeout} = 1;
             Mojo::IOLoop->one_tick;
@@ -1716,6 +1730,110 @@ subtest 'handling upload timeout' => sub {
             $step3_cb->();
             ok !$step4_called, 'step 4 not called when step 3 callback sees upload timeout';
             $job_mock->unmock($_) for qw(_stop_step_2_post_status _stop_step_3_announce _stop_step_4_upload);
+        };
+        subtest '_stop_step_5_2_upload API failure set_done callback returns early after timeout' => sub {
+            my $reg_called = 0;
+            my $cb_invoked = 0;
+            $client_mock->redefine(register => sub { $reg_called++ });
+            my $set_done_cb;
+            $job_mock->redefine(_set_job_done => sub ($self, $reason, $params, $cb) { $set_done_cb = $cb });
+            my $job_api = OpenQA::Worker::Job->new($worker, $client, {id => 104, URL => $engine_url});
+            $job_api->_set_status(stopping => {reason => WORKER_SR_API_FAILURE});
+            $job_api->_stop_step_5_2_upload(WORKER_SR_API_FAILURE, sub { $cb_invoked++ });
+            ok $set_done_cb, '_set_job_done callback captured';
+            $job_api->{_upload_timeout} = 1;
+            is $set_done_cb->(), undef, '_set_job_done callback returns undef after timeout';
+            ok !$reg_called, 'register not called after upload timeout';
+            ok !$cb_invoked, 'teardown callback not invoked after upload timeout';
+            $job_mock->unmock('_set_job_done');
+            $client_mock->unmock('register');
+        };
+        subtest '_stop_step_5_2_upload quit duplicate callback returns early after timeout' => sub {
+            my $upload_results_called = 0;
+            $job_mock->redefine(_upload_results => sub { $upload_results_called++ });
+            my $dup_cb;
+            $client_mock->redefine(
+                send => sub ($self, %args) {
+                    $dup_cb = $args{callback} if ($args{post} // '') =~ /duplicate/;
+                });
+            my $job_quit = OpenQA::Worker::Job->new($worker, $client, {id => 105, URL => $engine_url});
+            $job_quit->_set_status(stopping => {reason => WORKER_COMMAND_QUIT});
+            $job_quit->_stop_step_5_2_upload(WORKER_COMMAND_QUIT, sub { });
+            ok $dup_cb, 'duplicate callback captured';
+            $job_quit->{_upload_timeout} = 1;
+            is $dup_cb->(1), undef, 'duplicate callback returns undef after timeout';
+            ok !$upload_results_called, '_upload_results not called by duplicate callback after timeout';
+            $job_mock->unmock('_upload_results');
+            $client_mock->unmock('send');
+        };
+        subtest '_upload_results returns early when upload timeout set' => sub {
+            my $job_ur = OpenQA::Worker::Job->new($worker, $client, {id => 106, URL => $engine_url});
+            $job_ur->{_upload_timeout} = 1;
+            is $job_ur->_upload_results(sub { }), undef, '_upload_results returns undef';
+            ok !$job_ur->is_uploading_results, 'job is not uploading results';
+        };
+        subtest '_upload_results status post error callback returns early after timeout' => sub {
+            my $job_st = OpenQA::Worker::Job->new($worker, $client, {id => 107, URL => $engine_url});
+            $job_st->_set_status(running => {});
+            my $step3_called = 0;
+            $job_mock->redefine(_upload_results_step_3_finalize => sub { $step3_called++ });
+            my $status_cb;
+            $client_mock->redefine(
+                send => sub ($self, %args) {
+                    $status_cb = $args{callback} if ($args{post} // '') =~ /status/;
+                });
+            $job_st->_upload_results(sub { });
+            ok $status_cb, 'status post callback captured';
+            $job_st->{_upload_timeout} = 1;
+            is $status_cb->(undef), undef, 'status post error callback returns undef after timeout';
+            ok !$step3_called, '_upload_results_step_3_finalize not called after timeout';
+            ok !defined $job_st->{_upload_results_timer}, 'results timer not scheduled';
+            $job_mock->unmock('_upload_results_step_3_finalize');
+            $client_mock->unmock('send');
+        };
+        subtest '_upload_results status post success callback returns early after timeout' => sub {
+            my $job_st = OpenQA::Worker::Job->new($worker, $client, {id => 108, URL => $engine_url});
+            $job_st->_set_status(running => {});
+            my $step2_called = 0;
+            $job_mock->redefine(_upload_results_step_2_upload_images => sub { $step2_called++ });
+            my $status_cb;
+            $client_mock->redefine(
+                send => sub ($self, %args) {
+                    $status_cb = $args{callback} if ($args{post} // '') =~ /status/;
+                });
+            $job_st->_upload_results(sub { });
+            ok $status_cb, 'status post callback captured';
+            $job_st->{_upload_timeout} = 1;
+            is $status_cb->({known_images => [], known_files => []}), undef,
+              'status post success callback returns undef after timeout';
+            ok !$step2_called, '_upload_results_step_2_upload_images not called after timeout';
+            $job_mock->unmock('_upload_results_step_2_upload_images');
+            $client_mock->unmock('send');
+        };
+        subtest '_upload_results_step_2_upload_images returns early after timeout' => sub {
+            my $job_img = OpenQA::Worker::Job->new($worker, $client, {id => 109, URL => $engine_url});
+            $job_img->{_upload_timeout} = 1;
+            is $job_img->_upload_results_step_2_upload_images(sub { }), undef, 'returns early';
+            ok !defined $job_img->{_upload_images_subprocess}, 'images subprocess not started';
+        };
+        subtest '_upload_results_step_3_finalize returns early after timeout' => sub {
+            my $job_fin = OpenQA::Worker::Job->new($worker, $client, {id => 110, URL => $engine_url});
+            $job_fin->{_upload_timeout} = 1;
+            is $job_fin->_upload_results_step_3_finalize(undef, sub { }), undef, 'returns early';
+            ok !defined $job_fin->{_upload_results_timer}, 'results timer not scheduled';
+        };
+        subtest '_terminate_upload_due_to_timeout cannot run multiple times' => sub {
+            my $job_term = OpenQA::Worker::Job->new($worker, $client, {id => 112, URL => $engine_url});
+            $job_term->_set_status(stopping => {reason => WORKER_SR_DONE});
+            $client->sent_messages([]);
+            combined_like {
+                $job_term->_handle_upload_timeout;
+                wait_until_job_status_ok($job_term, 'stopped');
+            }
+            qr/stopped because upload exceeded MAX_UPLOAD_TIME/, 'upload timeout logged';
+            is scalar @{$client->sent_messages}, 1, 'first timeout handler terminates';
+            is $job_term->_handle_upload_inactivity_timeout, undef, 'second timeout handler returns undef';
+            is scalar @{$client->sent_messages}, 1, 'second timeout handler does not send another set_done';
         };
     };
 };
