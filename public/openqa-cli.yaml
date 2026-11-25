@@ -41,6 +41,7 @@ options:
                       credentials. Prefer config file or env variables.
   - apisecret=s     --API secret. Use is discouraged due to risk of leaking
                       credentials. Prefer config file or env variables.
+  - ssh-key=s       --Path to an SSH private key used to sign requests instead of an API key.
   - host=s          --Target host, defaults to http://localhost
   - help|h          --Get more information on a specific command
   - osd             --Set target host to http://openqa.suse.de

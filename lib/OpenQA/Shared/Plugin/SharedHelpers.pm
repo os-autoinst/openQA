@@ -6,7 +6,7 @@ use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use Mojo::URL;
 use OpenQA::Schema;
-use OpenQA::Constants 'DEFAULT_ADMIN';
+use OpenQA::Constants qw(DEFAULT_ADMIN SSH_KEY_TITLE_MAX_LENGTH);
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 
@@ -20,6 +20,7 @@ sub register ($self, $app, @args) {
     $app->helper(current_user => \&_current_user);
     $app->helper(is_operator => \&_is_operator);
     $app->helper(is_admin => \&_is_admin);
+    $app->helper(validate_ssh_key_params => \&_validate_ssh_key_params);
     $app->helper(is_api_request => \&_is_api_request);
     $app->helper(is_local_request => \&_is_local_request);
     $app->helper(render_specific_not_found => \&_render_specific_not_found);
@@ -78,6 +79,12 @@ sub _current_user ($c) {
 sub _is_operator ($c, $user = undef) {
     $user //= $c->current_user;
     return ($user && $user->is_operator);
+}
+
+sub _validate_ssh_key_params ($c, $validation) {
+    $validation->required('public_key');
+    $validation->required('title')->size(1, SSH_KEY_TITLE_MAX_LENGTH);
+    return $validation;
 }
 
 sub _is_admin ($c, $user = undef) {
