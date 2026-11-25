@@ -231,4 +231,6 @@ style_check_requires:
   shfmt:
   python3-gitlint:
   python3-ruff:
+  python3-ty:
   python3-typer:
+  python3-vulture:

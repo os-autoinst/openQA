@@ -51,9 +51,10 @@ mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
 unstables := $(shell cat tools/unstable_tests.txt | tr '\n' :)
 shellfiles := $$(file --mime-type script/* t/* container/worker/*.sh tools/* | sed -n 's/^\(.*\):.*text\/x-shellscript.*$$/\1/p')
-pyfiles ?= $(shell git ls-files | grep -v '\.md$$' | xargs file --mime-type 2>/dev/null | grep -E 'text/x-script\.python|text/x-python' | grep --invert-match -E '^(t/data|container/openqa_data/)' | cut -d: -f1)
+pyfiles ?= $(shell (git ls-files | grep -v '\.md$$' | xargs file --mime-type 2>/dev/null | grep -E 'text/x-script\.python|text/x-python' | cut -d: -f1; git ls-files '*.py') | grep --invert-match -E '^(t/data|container/openqa_data/)' | sort -u)
 PYTEST_ARGS ?=
 PYTEST_COVERAGE_ARGS ?= --cov --cov-report=term-missing
+PYTHON ?= python3
 
 # tests need these environment variables to be unset
 OPENQA_BASEDIR =
@@ -487,15 +488,15 @@ test-shfmt: ## Run shfmt on scripts
 	shfmt -d -i 4 -bn -ci -sr $(shellfiles)
 
 .PHONY: test-python-static-checks ## Run all static checks on Python scripts
-test-python-static-checks: test-ruff test-python-conventions
+test-python-static-checks: test-ruff test-python-conventions test-python-types test-python-code-health
 
 .PHONY: test-python-unit
 test-python-unit: ## Run Python unit tests with statement and branch coverage enforcement
-	python3 -m pytest $(PYTEST_COVERAGE_ARGS) $(PYTEST_ARGS)
+	$(PYTHON) -m pytest $(PYTEST_COVERAGE_ARGS) $(PYTEST_ARGS)
 
 .PHONY: test-python-unit-no-coverage
 test-python-unit-no-coverage: ## Run Python unit tests without coverage
-	python3 -m pytest $(PYTEST_ARGS)
+	$(PYTHON) -m pytest $(PYTEST_ARGS)
 
 .PHONY: test-python
 test-python: test-python-static-checks test-python-unit ## Run Python static checks and unit tests
@@ -508,6 +509,16 @@ test-markdown: ## Check markdown files for style and consistency
 test-ruff: ## Run `ruff format --check` and `ruff check` on Python scripts
 	@command -v ruff >/dev/null 2>&1 || echo "Command 'ruff' not found, can not execute python style checks"
 	@if [ -n "$(pyfiles)" ]; then ruff format --check $(pyfiles) && ruff check $(pyfiles); fi
+
+.PHONY: test-python-types
+test-python-types: ## Run type checks on Python scripts
+	@command -v ty >/dev/null 2>&1 || (echo "Command 'ty' not found, install 'python3-ty' (Tumbleweed, Leap 16)" && false)
+	ty check --python "$$($(PYTHON) -c 'import sys; print(sys.prefix)')" $(pyfiles)
+
+.PHONY: test-python-code-health
+test-python-code-health: ## Check Python scripts for dead code
+	@command -v vulture >/dev/null 2>&1 || (echo "Command 'vulture' not found, install 'python3-vulture'" && false)
+	vulture $(pyfiles) --min-confidence 80
 
 .PHONY: test-python-conventions
 test-python-conventions: ## Checks whether Python scripts follow certain coding conventions
