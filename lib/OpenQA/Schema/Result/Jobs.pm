@@ -498,8 +498,9 @@ sub to_hash ($job, %args) {
         my @args = $dependencies ? ($dependencies->{children} || [], $dependencies->{parents} || []) : ();
         $j = {%$j, %{$job->dependencies(@args)}};
     }
-    if ($args{details}) {
-        my $test_modules = read_test_modules($job);
+    if (my $details = $args{details}) {
+        my $options = ref $details eq 'HASH' ? $details : {};
+        my $test_modules = read_test_modules($job, %$options);
         $j->{testresults} = ($test_modules ? $test_modules->{modules} : []);
         $j->{logs} = $job->test_resultfile_list;
         $j->{ulogs} = $job->test_uploadlog_list;

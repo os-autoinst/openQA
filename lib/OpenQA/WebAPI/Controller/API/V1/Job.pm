@@ -450,23 +450,56 @@ current job.
 Pass descendants=1 as query parameter to include how many restarts have happened as of the
 current job.
 
+Pass details=1 as query parameter to include the test module details. The route
+C</api/v1/jobs/I<jobid>/details> always includes them and additionally accepts:
+
+=over 4
+
+=item modules
+
+Restrict the returned modules to a comma-separated list of names or to C<failed> (which
+includes softfailed modules). Defaults to C<all>.
+
+=item needles
+
+Control the needle candidates of each step: C<all> (default), C<worst> for the three
+candidates with the highest similarity or C<none>.
+
+=back
+
 =back
 
 =cut
 
 sub show ($self) {
+    my $validation = $self->validation;
+    $validation->optional('needles')->in(qw(all worst none));
+    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
+
     my $job_id = int($self->stash('jobid'));
-    my $details = $self->stash('details') || 0;
+    my $details = $self->stash('details') || $self->param('details') || 0;
+    my @modules = grep { length } map { split /,/, $_ } @{$self->every_param('modules')};
+    return $self->render(
+        json => {error => 'The reserved modules values all and failed cannot be combined with module names'},
+        status => HTTP_BAD_REQUEST
+    ) if @modules > 1 && (grep { /^(?:all|failed)$/ } @modules);
+
     my $check_assets = !!$self->param('check_assets');
     my $follow = $self->param('follow');
     my $unredacted = $self->param('unredacted') && $self->is_operator;
     return unless my $job = $self->find_job_or_render_not_found($job_id, $follow ? {prefetch => 'settings'} : {});
     $job = $job->latest_job if $follow;
+    my $details_options;
+    if ($details) {
+        $details_options = {needles => $validation->param('needles') // 'all'};
+        if (@modules == 1 && $modules[0] =~ /^(?:all|failed)$/) { $details_options->{modules} = $modules[0] }
+        elsif (@modules) { $details_options->{modules} = \@modules }
+    }
     my $job_data = $job->to_hash(
         assets => 1,
         check_assets => $check_assets,
         deps => 1,
-        details => $details,
+        details => $details_options // $details,
         parent_group => 1,
         unredacted => $unredacted,
     );

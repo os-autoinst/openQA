@@ -627,13 +627,45 @@ sub human_readable_size ($size) {
     return $p . _round_a_bit($size) . ' GiB';
 }
 
-sub read_test_modules ($job) {
+sub _needle_similarity ($needle) {
+    my $similarity = 0;
+    for my $area (@{$needle->{area} // []}) {
+        my $candidate = $area->{similarity} // 0;
+        $similarity = $candidate if $candidate > $similarity;
+    }
+    return $similarity;
+}
+
+sub _restrict_needles ($details, $mode) {
+    for my $step (@$details) {
+        next unless my $needles = $step->{needles};
+        if ($mode eq 'none') {
+            delete $step->{needles};
+            next;
+        }
+        my @sorted = sort { _needle_similarity($b) <=> _needle_similarity($a) } @$needles;
+        splice @sorted, 3 if @sorted > 3;
+        $step->{needles}
+          = [map { {name => $_->{name}, error => $_->{error}, similarity => _needle_similarity($_)} } @sorted];
+    }
+}
+
+sub read_test_modules ($job, %options) {
     return undef unless my $testresultdir = $job->result_dir;
 
     my $has_parser_text_results = 0;
     my (@modlist, @errors);
+    my $modules = $job->modules_with_job_prefetched;
+    my $module_filter = $options{modules};
+    if (ref $module_filter eq 'ARRAY' && @$module_filter) {
+        $modules = $modules->search({'me.name' => {-in => $module_filter}});
+    }
+    elsif (defined $module_filter && $module_filter eq 'failed') {
+        $modules = $modules->search({'me.result' => [qw(failed softfailed)]});
+    }
+    my $needles_mode = $options{needles} // 'all';
 
-    for my $module ($job->modules_with_job_prefetched->all) {
+    for my $module ($modules->all) {
         my $name = $module->name();
         # add link to $testresultdir/$name*.png via png CGI
         my @details;
@@ -660,6 +692,7 @@ sub read_test_modules ($job) {
         }
 
         $has_parser_text_results = 1 if ($has_module_parser_text_result);
+        _restrict_needles(\@details, $needles_mode) if $needles_mode ne 'all';
 
         push @modlist,
           {

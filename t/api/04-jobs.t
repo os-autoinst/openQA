@@ -1523,6 +1523,45 @@ subtest 'job details' => sub {
 
 };
 
+subtest 'job details filters' => sub {
+    my $details = sub ($url) {
+        $t->get_ok($url)->status_is(200);
+        return $t->tx->res->json->{job}->{testresults};
+    };
+
+    my $default = $details->('/api/v1/jobs/99937/details');
+    ok scalar @$default > 1, 'all modules returned by default';
+    my ($kate) = grep { $_->{name} eq 'kate' } @$default;
+    ok $kate->{details}[0]{needles}, 'needle candidates returned by default';
+
+    my $only_kate = $details->('/api/v1/jobs/99937/details?modules=kate');
+    is_deeply [map { $_->{name} } @$only_kate], ['kate'], 'only the requested module returned';
+
+    my $two = $details->('/api/v1/jobs/99937/details?modules=kate,shutdown');
+    is_deeply [sort map { $_->{name} } @$two], [qw(kate shutdown)], 'comma-separated modules returned';
+    $two = $details->('/api/v1/jobs/99937/details?modules=kate&modules=shutdown');
+    is_deeply [sort map { $_->{name} } @$two], [qw(kate shutdown)], 'repeated modules parameter supported';
+
+    my $failed = $details->('/api/v1/jobs/99937/details?modules=failed');
+    is_deeply [sort map { $_->{name} } @$failed], [qw(kate shutdown zypper_up)], 'only failed modules returned';
+    my ($shutdown) = grep { $_->{name} eq 'shutdown' } @$failed;
+    is scalar @{$shutdown->{details}}, 3, 'all steps of a failed module retained';
+
+    my $no_needles = $details->('/api/v1/jobs/99937/details?modules=kate&needles=none');
+    ok !exists $no_needles->[0]{details}[0]{needles}, 'needle candidates omitted with needles=none';
+
+    my $worst = $details->('/api/v1/jobs/99937/details?modules=kate&needles=worst');
+    my $candidates = $worst->[0]{details}[0]{needles};
+    is scalar @$candidates, 1, 'candidate list limited to the closest ones';
+    is_deeply [sort keys %{$candidates->[0]}], [qw(error name similarity)], 'only summary fields kept';
+
+    $t->get_ok('/api/v1/jobs/99937/details?needles=bogus')->status_is(400);
+    $t->get_ok('/api/v1/jobs/99937/details?modules=all,kate')->status_is(400);
+
+    $t->get_ok('/api/v1/jobs/99937?details=1')->status_is(200);
+    $t->json_has('/job/testresults/0', 'details query parameter works');
+};
+
 subtest 'check for missing assets' => sub {
     $t->get_ok('/api/v1/jobs/99939?check_assets=1')->status_is(200, 'status for job with missing asset');
     $t->json_is('/job/assets/hdd/0', 'openSUSE-13.1-x86_64.hda', 'present asset returned');
