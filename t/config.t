@@ -18,6 +18,7 @@ use OpenQA::Config;
 use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT MAX_TIMER);
 use OpenQA::Test::TimeLimit '4';
 use OpenQA::Setup;
+use OpenQA::Utils qw(parse_duration);
 use OpenQA::JobGroupDefaults;
 use OpenQA::Task::Job::Limit;
 use Mojo::File qw(path tempdir);
@@ -202,38 +203,61 @@ subtest 'openqa.ini documentation check' => sub {
     ok -r $ini_path, "can read $ini_path";
     my $content = $ini_path->slurp;
 
-    my %documented;
+    my (%documented, %commented_value);
     my $current_section;
     for (split /\n/, $content) {
         if (/^#?\[([^\]]+)\]/) {
             $current_section = $1;
         }
-        elsif ($current_section && /^#?\s*([a-z0-9_]+)\s*=/) {
-            $documented{$current_section}->{$1} = 1;
+        elsif ($current_section && /^(#?)\s*([a-z0-9_]+)\s*=(.*)$/) {
+            my ($commented, $key, $value) = ($1, $2, $3);
+            $documented{$current_section}->{$key} = 1;
+            $value =~ s/^\s+|\s+$//g;
+            $commented_value{$current_section}->{$key} = $value if $commented;
         }
     }
 
+    my %pending_decision = (global => {auto_clone_regex => 1});
+    my $is_skipped = sub ($section, $key) {
+        return 1
+          if $section =~ /^(plugin_links|hooks|test_preset example|assets\/storage_duration|hypnotoad|secrets)$/;
+        return 1
+          if $section eq 'global'
+          && $key
+          =~ /^(scm|parallel_children_collapsable_results_sel|file_domain|prio_throttling_data|access_control_allow_origin_header|changelog_file|file_subdomain|search_results_limit)$/;
+        return 1 if $pending_decision{$section}->{$key};
+        return 1 if $section eq 'job_settings_ui' && $key eq 'default_data_dir';
+        return 1
+          if $section eq 'misc_limits'
+          && $key
+          =~ /^(prio_throttling_data|prio_group_data|mcp_max_result_size|results_min_free_disk_space_percentage|archive_min_free_disk_space_percentage|dry_min_free_disk_space_cleanup)$/;
+        return 1 if $section eq 'rate_limits' && $key eq 'search';
+        return 1 if $section eq 'audit' && $key eq 'blacklist';
+        return 0;
+    };
+
+    my $normalize = sub ($value) { parse_duration($value) // $value };
+    my %compared;
     for my $section (sort keys %$defaults) {
-        # skip internal/dynamic sections
-        next if $section =~ /^(plugin_links|hooks|test_preset example|assets\/storage_duration|carry_over)$/;
         for my $key (sort keys %{$defaults->{$section}}) {
-            # skip deprecated/internal/currently undocumented keys
-            next
-              if $section eq 'global'
-              && $key
-              =~ /^(scm|parallel_children_collapsable_results_sel|file_domain|prio_throttling_data|access_control_allow_origin_header|changelog_file|file_subdomain|search_results_limit)$/;
-            next if $section eq 'hypnotoad';
-            next if $section eq 'job_settings_ui' && $key eq 'default_data_dir';
-            next
-              if $section eq 'misc_limits'
-              && $key
-              =~ /^(prio_throttling_data|prio_group_data|mcp_max_result_size|results_min_free_disk_space_percentage|archive_min_free_disk_space_percentage|dry_min_free_disk_space_cleanup)$/;
-            next if $section eq 'rate_limits' && $key eq 'search';
-            next if $section eq 'secrets';
-            next if $section eq 'audit' && $key eq 'blacklist';
+            next if $is_skipped->($section, $key);
             ok $documented{$section}->{$key}, "key '$key' in section '[$section]' is documented in openqa.ini";
+            my $default = $defaults->{$section}->{$key};
+            next if !defined $default || ref $default || $default eq '';
+            my $value = $commented_value{$section}->{$key};
+            note "not comparing '$key' in section '[$section]': documented as an active value only"
+              if $documented{$section}->{$key} && !defined $value;
+            next unless defined $value;
+            $compared{$section}->{$key} = 1;
+            is $normalize->($value), $normalize->($default),
+              "commented value of '$key' in section '[$section]' states the default from OpenQA::Setup::default_config";
         }
     }
+
+    is $compared{$_->[0]}->{$_->[1]}, 1, "key '$_->[1]' in section '[$_->[0]]' is compared against its default"
+      for [auth => 'method'], [global => 'branding'], [global => 'hide_asset_types'], [global => 'max_rss_limit'],
+      [misc_limits => 'all_tests_max_finished_jobs'], [obs_rsync => 'retry_max_count'],
+      [worker_reservation => 'default_duration'];
 };
 
 subtest 'trim whitespace characters from both ends of openqa.ini value' => sub {
