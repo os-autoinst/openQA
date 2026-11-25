@@ -1,0 +1,246 @@
+#!/usr/bin/env perl
+
+# Copyright SUSE LLC
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+=head1 NAME
+
+openqa-audit-retention - report effective cleanup retention of job groups
+
+=head1 SYNOPSIS
+
+openqa-audit-retention [OPTIONS]
+
+=head1 DESCRIPTION
+
+Prints the effective value and the source of the six retention settings of every
+job group and parent group: C<keep_logs_in_days>,
+C<keep_important_logs_in_days>, C<keep_results_in_days>,
+C<keep_important_results_in_days>, C<keep_jobs_in_days> and
+C<keep_important_jobs_in_days>. The source is C<own> if the row sets the column
+itself, C<parent> if the value comes from the C<default_keep_*> column of the
+parent group and C<default> if it comes from C<[default_group_limits]> in the
+configuration (for parent groups C<own> and C<default> apply to their
+C<default_keep_*> columns). The values are read through the C<keep_*> and
+C<default_keep_*> accessors of the schema, which resolve the same order as
+C<OpenQA::Schema::Result::JobGroups::_get_column_or_default>; the reported source
+has to stay in sync with that method.
+
+A retention value of C<0>, or a value missing from the configuration, means
+"forever". Each group is classified as follows:
+
+=over 4
+
+=item C<logs_not_shorter_than_results>
+
+Log retention is at least the result retention, so deleting results removes the
+logs first and the log retention never takes effect.
+
+=item C<important_logs_not_shorter_than_important_results>
+
+The same for the important results.
+
+=item C<results_gt_jobs>
+
+Result retention is longer than job retention, so the job row is deleted before
+the result directory expires.
+
+=item C<important_results_gt_important_jobs>
+
+The same for the important jobs.
+
+=item C<forever>
+
+At least one of the six settings never expires. This includes a C<0> for the
+non-important setting of a pair, which disables the whole cleanup category
+because C<OpenQA::Schema::Result::JobGroups::_find_expired_jobs> returns early:
+not even the important results, logs or jobs of such a group expire.
+
+=back
+
+The script only reads from the database and issues no writes.
+
+=head1 OUTPUT
+
+The default text output has one line per job group and parent group. A setting
+reads C<< <column>=<value>(<source>) >> with C<,forever> appended when the value
+never expires, followed by the classifications in brackets:
+
+  group 42 'Maintenance: SLE 15 SP5' (parent 8 'Maintenance: Single Incidents'): keep_logs_in_days=30(own) keep_important_logs_in_days=90(parent) keep_results_in_days=30(own) keep_important_results_in_days=730(default) keep_jobs_in_days=500(default) keep_important_jobs_in_days=1000(default) [logs_not_shorter_than_results]
+
+C<--format json> prints the same data as objects with a numeric C<value>
+(C<null> when no value is configured), a C<source> per setting, the
+classifications, the C<forever> columns and the C<config_defaults> used.
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<--format> I<text>|I<json>
+
+Output format, defaults to C<text> which prints one line per group, C<json>
+prints the same data including the configuration defaults used.
+
+=item B<--help>, B<-h>
+
+Print the usage message and exit.
+
+=back
+
+=cut
+
+use Mojo::Base -strict, -signatures;
+
+use FindBin '$RealBin';
+use lib "$RealBin/../lib";
+
+use Cpanel::JSON::XS ();
+use Getopt::Long::Descriptive;
+use Mojo::Log;
+use Mojolicious;
+use OpenQA::App;
+use OpenQA::Schema;
+use OpenQA::Setup;
+
+my @FORMATS = qw(text json);
+
+my @SETTINGS = qw(
+  keep_logs_in_days
+  keep_important_logs_in_days
+  keep_results_in_days
+  keep_important_results_in_days
+  keep_jobs_in_days
+  keep_important_jobs_in_days
+);
+my %CONFIG_SETTING = (
+    keep_logs_in_days => 'log_storage_duration',
+    keep_important_logs_in_days => 'important_log_storage_duration',
+    keep_results_in_days => 'result_storage_duration',
+    keep_important_results_in_days => 'important_result_storage_duration',
+    keep_jobs_in_days => 'job_storage_duration',
+    keep_important_jobs_in_days => 'important_job_storage_duration',
+);
+
+my $JSON = Cpanel::JSON::XS->new->utf8->canonical->pretty;
+
+sub read_config () {
+    my $app = Mojolicious->new(log => Mojo::Log->new(level => 'warn'));
+    OpenQA::App->set_singleton($app);
+    OpenQA::Setup::read_config($app);
+    return $app->config->{default_group_limits};
+}
+
+# values inherited from the configuration are strings, so make every value a number
+sub as_number ($value) { return defined $value ? 0 + $value : undef; }
+
+sub is_forever ($value) { !defined $value || $value == 0 }
+
+sub compare_retention ($left, $right) {
+    return 0 if is_forever($left) && is_forever($right);
+    return 1 if is_forever($left);
+    return -1 if is_forever($right);
+    return $left <=> $right;
+}
+
+sub setting_source ($row, $column, $is_parent) {
+    my $prefix = $is_parent ? 'default_' : '';
+    return 'own' if defined $row->get_column("$prefix$column");
+    return 'parent' if !$is_parent && defined $row->parent && defined $row->parent->get_column("default_$column");
+    return 'default';
+}
+
+sub effective_settings ($row, $is_parent) {
+    my %settings;
+    for my $column (@SETTINGS) {
+        my $accessor = $is_parent ? "default_$column" : $column;
+        $settings{$column}
+          = {value => as_number($row->$accessor), source => setting_source($row, $column, $is_parent)};
+    }
+    return \%settings;
+}
+
+sub classify ($record) {
+    my $value = {map { $_ => $record->{settings}->{$_}->{value} } @SETTINGS};
+    my @classifications;
+    push @classifications, 'logs_not_shorter_than_results'
+      if compare_retention($value->{keep_logs_in_days}, $value->{keep_results_in_days}) >= 0;
+    push @classifications, 'important_logs_not_shorter_than_important_results'
+      if compare_retention($value->{keep_important_logs_in_days}, $value->{keep_important_results_in_days}) >= 0;
+    push @classifications, 'results_gt_jobs'
+      if compare_retention($value->{keep_results_in_days}, $value->{keep_jobs_in_days}) > 0;
+    push @classifications, 'important_results_gt_important_jobs'
+      if compare_retention($value->{keep_important_results_in_days}, $value->{keep_important_jobs_in_days}) > 0;
+    $record->{forever} = [grep { is_forever($value->{$_}) } @SETTINGS];
+    push @classifications, 'forever' if @{$record->{forever}};
+    $record->{classifications} = \@classifications;
+    return $record;
+}
+
+sub record_for ($row, $is_parent) {
+    my $parent = $is_parent ? undef : $row->parent;
+    return classify(
+        {
+            id => $row->id,
+            kind => $is_parent ? 'parent' : 'group',
+            name => $row->name,
+            parent => $parent ? {id => $parent->id, name => $parent->name} : undef,
+            settings => effective_settings($row, $is_parent),
+        });
+}
+
+sub collect_records ($schema) {
+    my $parents = $schema->resultset('JobGroupParents')->search({}, {order_by => 'me.id'});
+    my $groups = $schema->resultset('JobGroups')->search({}, {prefetch => 'parent', order_by => 'me.id'});
+    return [map { record_for($_, 1) } $parents->all], [map { record_for($_, 0) } $groups->all];
+}
+
+sub format_setting ($setting, $column) {
+    my $value = $setting->{value};
+    $value = 'unset' unless defined $value;
+    my $details = $setting->{source};
+    $details .= ',forever' if is_forever($setting->{value});
+    return "$column=$value($details)";
+}
+
+sub text_line ($record) {
+    my $parent = $record->{parent};
+    my $scope = $parent ? sprintf "parent %d '%s'", $parent->{id}, $parent->{name} : 'no parent';
+    my $settings = join ' ', map { format_setting($record->{settings}->{$_}, $_) } @SETTINGS;
+    my $classifications = join ',', @{$record->{classifications}};
+    return sprintf "%s %d '%s' (%s): %s [%s]\n",
+      $record->{kind}, $record->{id}, $record->{name}, $scope, $settings, $classifications;
+}
+
+my ($opt, $usage) = describe_options(
+    "$0 %o\n\nReport the effective cleanup retention settings of all job groups and parent groups.",
+    ['format=s', 'output format: text or json', {default => 'text'}],
+    ['help|h', 'print usage message and exit'],
+);
+
+if ($opt->help) {
+    print $usage->text;
+    exit 0;
+}
+
+my $format = $opt->format;
+if (!grep { $_ eq $format } @FORMATS) {
+    print STDERR "Unsupported format '$format'.\n";
+    print STDERR $usage->text;
+    exit 1;
+}
+
+my $defaults = read_config();
+my $schema = OpenQA::Schema::connect_db(deploy => 0, silent => 1, from_script => 1);
+my ($parents, $groups) = collect_records($schema);
+
+if ($format eq 'json') {
+    print $JSON->encode(
+        {
+            config_defaults => {map { $_ => as_number($defaults->{$CONFIG_SETTING{$_}}) } @SETTINGS},
+            parent_groups => $parents,
+            job_groups => $groups,
+        });
+}
+else {
+    print map { text_line($_) } @$parents, @$groups;
+}
