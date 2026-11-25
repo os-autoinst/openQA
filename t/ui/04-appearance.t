@@ -7,6 +7,7 @@ use Mojo::Base -signatures;
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
 use Test::Mojo;
+use Time::Seconds;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::TimeLimit '8';
 use OpenQA::Test::Case;
@@ -33,14 +34,21 @@ sub check_page ($theme, $enabled, $overlay) {
     }
 }
 
-subtest 'No login, no themes' => sub {
-    $t->get_ok('/appearance')->status_is(302);
+subtest 'Appearance can be changed without login' => sub {
+    $t->ua->max_redirects(5);
+    check_form('light', 'auto');
+    check_page('light', $season, 0);
+    $t->post_ok('/appearance' => form => {theme => 'dark', seasonal_decorations => 'on'})->status_is(200);
+    check_form('dark', 'on');
+    check_page('dark', 'true', 1);
+    $t->get_ok('/')->element_exists('#user-action a[href$="/login"]')
+      ->element_exists('nav a.nav-link[href$="/appearance"]');
+    $t->reset_session;
 };
 
 subtest 'Login as Percival' => sub {
     $t->get_ok('/tests');
     $test_case->login($t, 'percival');
-    $t->ua->max_redirects(5);
 };
 
 subtest 'Default is light theme with seasonal decorations enabled during October' => sub {
@@ -95,6 +103,30 @@ subtest 'Invalid parameters are rejected' => sub {
     $t->post_ok('/appearance' => form => {theme => 'dark', seasonal_decorations => 'bogus'})->status_is(500);
     $t->post_ok('/appearance' => form => {theme => 'bogus', seasonal_decorations => 'auto'})->status_is(500);
     check_form('dark', 'on');
+};
+
+sub cookie_for ($name) {
+    (grep { $_->name eq $name } @{$t->ua->cookie_jar->all})[0];
+}
+
+subtest 'Preferences are stored in cookies that outlive the login session' => sub {
+    my $max_age = cookie_for('theme')->max_age;
+    cmp_ok $max_age, '>', 2 * ONE_DAY, 'theme cookie outlives the login session';
+    is cookie_for('seasonal_decorations')->max_age, $max_age, 'seasonal_decorations cookie has the same lifetime';
+    my $jar = $t->ua->cookie_jar;
+    my @appearance = grep { $_->name =~ /^(?:theme|seasonal_decorations)$/ } @{$jar->all};
+    $jar->empty;
+    $jar->add($_) for @appearance;
+    ok !cookie_for('mojolicious'), 'session cookie is gone';
+    check_page('dark', 'true', 1);
+};
+
+subtest 'Invalid cookie values fall back to the defaults' => sub {
+    $t->ua->cookie_jar->empty;
+    $t->ua->cookie_jar->add(
+        Mojo::Cookie::Response->new(name => $_, value => 'bogus', domain => 'localhost', path => '/'))
+      for qw(theme seasonal_decorations);
+    check_page('light', $season, 0);
 };
 
 done_testing();
