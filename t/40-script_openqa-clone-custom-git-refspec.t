@@ -10,10 +10,15 @@ use Test::Warnings ':report_warnings';
 use Test::Output;
 use OpenQA::Test::TimeLimit '20';
 use OpenQA::Test::Utils qw(run_cmd test_cmd);
-
+use File::Which;
 
 # prevent all network access to stay local
-my $cmd = 'unshare -r -n script/openqa-clone-custom-git-refspec';
+my $landrun = which('landrun');
+my $limit_cmd
+  = $landrun    # use landrun if available as we cannot run unshare when the env is already sandboxed via landrun
+  ? "'$landrun' --unrestricted-filesystem --env curl_github --env  curl_openqa --env dry_run --env FOO_BAR --env repo_name --env pr --env host --env job --env testsuite --env needles_dir --env productdir --"
+  : 'unshare -r -n';
+my $cmd = "$limit_cmd script/openqa-clone-custom-git-refspec";
 
 sub run_once (@args) { run_cmd($cmd, @args) }
 
