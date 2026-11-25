@@ -124,6 +124,23 @@ subtest 'access granted for admins' => sub {
     $t->put_ok('/api/v1/operator_plugin')->status_is(200)->content_is('API operator plugin works!');
 };
 
+subtest 'signed requests with format in query' => sub {
+    $t->ua->apikey('ARTHURKEY01');
+    $t->ua->apisecret('EXCALIBUR');
+    $t->put_ok('/api/v1/operator_plugin?format=json')
+      ->status_is(200, 'signature covers the query as sent by the client');
+
+    $t->ua->once(
+        start => sub ($ua, $tx) {
+            my $url = $tx->req->url->clone;
+            $url->query->remove('format')->append(_format => 'json');
+            my $timestamp = $tx->req->headers->header('X-API-Microtime');
+            $tx->req->headers->header(
+                'X-API-Hash' => hmac_sha1_sum(OpenQA::UserAgent::_path_query($url) . $timestamp, $ua->apisecret));
+        });
+    $t->put_ok('/api/v1/operator_plugin?format=json')->status_is(403, 'signature over the rewritten query is rejected');
+};
+
 subtest 'wrong api key - expired' => sub {
     $t->ua->apikey('EXPIREDKEY01');
     $t->ua->apisecret('WHOCARESAFTERALL');
@@ -324,6 +341,23 @@ subtest 'Auth::check validation including localhost fallback and API key verific
     $hash = hmac_sha1_sum($c->req->url->to_string . $microtime, 'EXCALIBUR');
     $c->req->headers->header('X-API-Hash' => $hash);
     ok $c->check, 'API key authentication succeeds with valid HMAC and timestamp';
+
+    my $check = sub ($hash) {
+        my $c = OpenQA::Shared::Controller::Auth->new(app => $t->app);
+        my $tx = Mojo::Transaction::HTTP->new;
+        $c->tx($tx);
+        $c->req->url->base(Mojo::URL->new('http://localhost'));
+        $c->req->url->parse('/api/v1/jobs?comment=via%20restart');
+        $c->req->headers->host('localhost');
+        $c->req->headers->header('X-API-Key' => 'ARTHURKEY01');
+        $c->req->headers->header('X-API-Microtime' => $microtime);
+        $c->req->headers->header('X-API-Hash' => $hash);
+        return $c->check;
+    };
+    ok !$check->(hmac_sha1_sum('/api/v1/jobs?comment=via%20restart' . $microtime, 'EXCALIBUR')),
+      'API key authentication fails for a query signed with its raw percentage encoding';
+    ok $check->(hmac_sha1_sum('/api/v1/jobs?comment=via+restart' . $microtime, 'EXCALIBUR')),
+      'API key authentication succeeds for a query signed as the client re-serializes it';
 };
 
 

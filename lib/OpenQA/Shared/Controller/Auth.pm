@@ -34,7 +34,7 @@ sub check ($self) {
             # It has no expiration date or it's in the future
             if (!$exp || $exp->epoch > time) {
                 if (my $secret = $api_key->secret) {
-                    my $sum = hmac_sha1_sum($self->req->url->to_string . $remote_timestamp, $secret);
+                    my $sum = hmac_sha1_sum($self->_signing_url . $remote_timestamp, $secret);
                     $user = $api_key->user if secure_compare($hash, $sum);
                     log_trace(sprintf 'API auth by user: %s, operator: %d', $user->username, $user->is_operator)
                       if $user;
@@ -188,6 +188,14 @@ sub _token_auth ($self, $reason, $userinfo) {
     return (undef, $reason);
 }
 
+sub _signing_url ($self) {
+    # Clients sign the query re-serialized by Mojo::Parameters (see OpenQA::UserAgent::_path_query), so the
+    # verification must not depend on whether the received URL's query has been parsed elsewhere already.
+    my $url = $self->req->url->clone;
+    $url->query->pairs;
+    return $url;
+}
+
 sub _key_auth ($self, $reason, $key) {
     my $log = $self->app->log;
 
@@ -197,7 +205,7 @@ sub _key_auth ($self, $reason, $key) {
 
         my $headers = $self->req->headers;
         my $url = $self->req->url;
-        my $msg = $url->path eq '/api/v1/auth' ? ($headers->header('X-Original-URI') // $url) : $url;
+        my $msg = $url->path eq '/api/v1/auth' ? ($headers->header('X-Original-URI') // $url) : $self->_signing_url;
         my $hash = $headers->header('X-API-Hash');
         my $remote_timestamp = $headers->header('X-API-Microtime');
         my $our_timestamp = time;
