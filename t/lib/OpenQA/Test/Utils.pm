@@ -58,7 +58,7 @@ BEGIN {
 }
 
 our @EXPORT_OK = qw(
-  MAX_WORKER_INSTANCES
+  MAX_WORKER_INSTANCES generate_ssh_key
   setup_mojo_app_with_default_worker_timeout create_user_for_workers
   create_webapi create_websocket_server create_scheduler create_live_view_handler
   unresponsive_worker broken_worker rejective_worker setup_share_dir setup_fullstack_temp_dir run_gru_job
@@ -634,6 +634,11 @@ sub simulate_load ($load, $from) {
     $load_avg_file->spew($load);
     $ENV{OPENQA_LOAD_AVG_FILE} = $load_avg_file;
     return $load_avg_file;
+}
+
+sub generate_ssh_key ($file, $type = 'ed25519') {
+    system('ssh-keygen', '-q', '-t', $type, '-N', '', '-f', $file) == 0 or die "ssh-keygen failed for $type";
+    return Mojo::File->new("$file.pub")->slurp;
 }
 
 1;

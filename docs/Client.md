@@ -76,6 +76,10 @@ key = 1234567890ABCDEF
 secret = ABCDEF1234567890
 ```
 
+Instead of `key` and `secret`, a host section can set `ssh_key` to the path of an
+SSH private key (see [SSH key](#ssh-key)). It is only used when no API key or
+secret is given, so an explicit `--apikey` is never overridden by it.
+
 Alternatively specify key and secret in environment variables `OPENQA_API_KEY`
 and `OPENQA_API_SECRET`. For ad-hoc use all `openqa-cli` subcommands use the `--apikey` and
 `--apisecret` options which will override whatever the environment or config
@@ -85,6 +89,31 @@ files may contain.
 openqa-cli api --host http://openqa.example.com --apikey 1234567890ABCDEF \
     --apisecret ABCDEF1234567890 -X POST jobs/2/comments text=hello
 ```
+
+### SSH key
+
+Instead of an API key and secret, `openqa-cli` can sign requests with an SSH
+key that is registered for your user on the API keys page of the web UI (or with
+`POST /api/v1/users/me/ssh_keys`). Pass the private key with `--ssh-key`:
+
+```sh
+openqa-cli api --host http://openqa.example.com --ssh-key ~/.ssh/id_ed25519 jobs/4160811
+```
+
+Each request is signed with `ssh-keygen -Y sign` in the namespace `openqa`
+over the HTTP method, the request path, a timestamp and the SHA256 hash of the
+request body. The server verifies the signature with `ssh-keygen -Y verify` and
+accepts the request within the same 5 minute window as API key requests. Within
+that window a captured signed request can be replayed, because signatures carry
+no nonce. This matches the API key scheme. A proxy
+that performs forward authentication has no way yet to pass the original method
+through, so the server verifies the signature against the method of the auth
+subrequest. SSH signatures therefore only work through forward authentication
+for requests sent with the same method. A request must not carry
+API key and SSH headers at the same time. When `--ssh-key` is given, it takes
+precedence over any API key or secret configured in the environment or config
+files, which are then not sent. Deleting the key on the API keys page
+revokes access for it immediately.
 
 ### Personal access token
 

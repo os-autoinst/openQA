@@ -24,8 +24,9 @@ description: |2
         Configuration:
           API key and secret are read from "client.conf" or environment
           variables "OPENQA_API_KEY" and "OPENQA_API_SECRET" if not specified
-          via CLI arguments. The config file is checked for under
-          "$OPENQA_CONFIG", "~/.config/openqa" and "/etc/openqa" in this
+          via CLI arguments. Alternatively "ssh_key" in "client.conf" names an
+          SSH private key to sign requests with. The config file is checked for
+          under "$OPENQA_CONFIG", "~/.config/openqa" and "/etc/openqa" in this
           order. It must look like this:
 
             [openqa.opensuse.org]
@@ -41,6 +42,7 @@ options:
                       credentials. Prefer config file or env variables.
   - apisecret=s     --API secret. Use is discouraged due to risk of leaking
                       credentials. Prefer config file or env variables.
+  - ssh-key=s       --Path to an SSH private key used to sign requests instead of an API key.
   - host=s          --Target host, defaults to http://localhost
   - help|h          --Get more information on a specific command
   - osd             --Set target host to http://openqa.suse.de
