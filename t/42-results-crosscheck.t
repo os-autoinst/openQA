@@ -19,6 +19,7 @@ use DateTime;
 use Time::Seconds;
 use Test::Output qw(combined_like);
 use Test::Mojo;
+use Test::MockModule;
 use Test::Warnings ':report_warnings';
 
 setup_fullstack_temp_dir('crosscheck');
@@ -366,6 +367,60 @@ subtest 'sample paths are capped' => sub {
     my $batch = run_gru_job($app, crosscheck_results_consistency => [{phase => 'groups', group_ids => [$group->id]}]);
     is scalar @{$batch->{notes}{crosscheck}{samples}}, 20, 'sample list capped at 20 paths';
     is $batch->{notes}{crosscheck}{cleaned_with_dir}, 25, 'all mismatching jobs counted';
+    $group->delete;
+};
+
+subtest 'repair mode removes only leftover directories' => sub {
+    my $group = create_group('repair', 1);
+    my $cleaned = create_job($group, 0, 'done', 'old');
+    my $young = create_job($group, 0, 'done', 'young');
+    my $non_final = create_job($group, 0, 'running', 'old');
+    my $present = create_job($group, 100, 'done', 'removed');
+    my $orphan = path(resultdir(), '00003', '00003000-crosscheck');
+    my $young_orphan = path(resultdir(), '00003', '00003001-crosscheck');
+    create_prefix_dir($orphan);
+    create_prefix_dir($young_orphan, time);
+
+    my $report_only
+      = run_gru_job($app, crosscheck_results_consistency => [{phase => 'groups', group_ids => [$group->id]}]);
+    is $report_only->{notes}{crosscheck}{cleaned_with_dir}, 1, 'report-only run counts the leftover';
+    ok !exists $report_only->{notes}{crosscheck}{repaired}, 'report-only run does not count repairs';
+    ok -d $cleaned->{dir}, 'report-only run keeps the leftover directory';
+
+    my $groups_batch
+      = run_gru_job($app,
+        crosscheck_results_consistency => [{phase => 'groups', group_ids => [$group->id], repair => 1}]);
+    ok !-d $cleaned->{dir}, 'repair removes the leftover directory of the cleaned job';
+    ok -d $young->{dir}, 'repair keeps a directory younger than a day';
+    ok -d $non_final->{dir}, 'repair keeps the directory of a job in a non-final state';
+    is $groups_batch->{notes}{crosscheck}{repaired}, 1, 'one repair counted';
+    is $groups_batch->{notes}{crosscheck}{results_without_dir}, 1,
+      'a job recorded as present without a directory is still only reported';
+
+    my $prefix_batch = run_gru_job($app,
+        crosscheck_results_consistency =>
+          [{phase => 'prefixes', prefixes => [{base => resultdir(), prefix => '00003'}], repair => 1}]);
+    ok !-d $orphan, 'repair removes the directory without a job row';
+    ok -d $young_orphan, 'repair keeps an orphan directory younger than a day';
+    is $prefix_batch->{notes}{crosscheck}{repaired}, 1, 'one orphan repair counted';
+
+    path(resultdir(), '00003')->remove_tree;
+    $group->delete;
+};
+
+subtest 'a removal that fails is reported and not counted' => sub {
+    my $group = create_group('repair_failure', 1);
+    my $job = create_job($group, 0, 'done', 'old');
+    my $mock = Test::MockModule->new('Mojo::File');
+    $mock->redefine(remove_tree => sub ($self) { die "simulated permission error\n" });
+    my $batch;
+    combined_like {
+        $batch = run_gru_job($app,
+            crosscheck_results_consistency => [{phase => 'groups', group_ids => [$group->id], repair => 1}]);
+    }
+    qr/Unable to remove leftover \Q$job->{dir}\E: simulated permission error/, 'removal failure warned';
+    is $batch->{notes}{crosscheck}{repaired}, 0, 'failed removal not counted';
+    ok -d $job->{dir}, 'directory kept when the removal fails';
     $group->delete;
 };
 

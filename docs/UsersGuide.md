@@ -1826,11 +1826,14 @@ periodic crosscheck re-examines both directions:
 
 The crosscheck reports counts plus up to 20 sample paths in the note of its
 Minion job and runs at the lowest priority, so the _daily_ cleanup keeps the disk
-slots. It only reports and never deletes anything. Enabling `crosscheck = 1` in
-the `[cleanup]` section of the web UI configuration makes
-`openqa-enqueue-result-crosscheck.timer` enqueue it. The timer ticks daily and
-enqueues a run only when the last finished run is older than
-`crosscheck_interval_days` days (default 30, zero means every tick).
+slots. Enabling `crosscheck = 1` in the `[cleanup]` section of the web UI
+configuration makes `openqa-enqueue-result-crosscheck.timer` enqueue it. The timer
+ticks daily and enqueues a run only when the last finished run is older than
+`crosscheck_interval_days` days (default 30, zero means every tick). A run started
+with `repair` removes the directories it reports as cleaned-with-directory or as
+without a job row, and logs each removal. Repair is never the default and the
+timer never uses it. Directories reported as present-but-missing or as found in
+the wrong tree are always left to a manual decision.
 
 ### Automatic archiving of old jobs
 

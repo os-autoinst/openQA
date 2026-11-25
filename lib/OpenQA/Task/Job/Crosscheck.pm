@@ -34,8 +34,7 @@ sub enqueue_if_due ($app) {
     return undef unless $app->config->{cleanup}->{crosscheck};
     my $interval_days = $app->config->{cleanup}->{crosscheck_interval_days} // DEFAULT_INTERVAL_DAYS;
     if ($interval_days > 0) {
-        my $last
-          = $app->minion->backend->list_jobs(0, 1, {tasks => [TASK_NAME], states => ['finished']})->{jobs}->[0];
+        my $last = $app->minion->backend->list_jobs(0, 1, {tasks => [TASK_NAME], states => ['finished']})->{jobs}->[0];
         return undef if $last && ($last->{finished} // 0) > time - $interval_days * ONE_DAY;
     }
     return $app->gru->enqueue(TASK_NAME, [], {priority => TASK_PRIORITY, ttl => TASK_TTL, limit => 1})->{minion_id};
@@ -80,8 +79,24 @@ sub _is_stale ($dir) { Mojo::File->new($dir)->stat->mtime < time - MIN_DIR_AGE }
 
 sub _add_sample ($samples, $path) { push @$samples, $path if @$samples < MAX_SAMPLES }
 
+# repair is limited to directories the crosscheck reported as leftover, and only a directory that is still there
+# right now is removed, so a concurrent cleanup or a newer upload cannot be hit
+sub _remove_leftover ($repair, $counts, $dir, $what) {
+    return undef unless $repair && -d $dir && _is_stale($dir);
+    try {
+        Mojo::File->new($dir)->remove_tree;
+    }
+    catch ($e) {
+        log_warning("Unable to remove leftover $dir: $e");
+        return undef;
+    }
+    $counts->{repaired} += 1;
+    log_info("Removed $what at $dir");
+    return 1;
+}
+
 # jobs whose results are recorded as cleaned must not have a directory anymore
-sub _count_cleaned_with_dir ($group, $counts, $samples) {
+sub _count_cleaned_with_dir ($group, $counts, $samples, $repair) {
     return undef unless my $jobs = $group->find_jobs_with_cleaned_results;
     for my $openqa_job ($jobs->all) {
         $counts->{checked_jobs} += 1;
@@ -90,6 +105,7 @@ sub _count_cleaned_with_dir ($group, $counts, $samples) {
         $counts->{cleaned_with_dir} += 1;
         log_debug('job ' . $openqa_job->id . ' is recorded as cleaned, but ' . $dir . ' still exists');
         _add_sample($samples, $dir);
+        _remove_leftover($repair, $counts, $dir, 'the results directory of cleaned job ' . $openqa_job->id);
     }
 }
 
@@ -114,12 +130,14 @@ sub _groups ($job, $args) {
     my $group_ids = $args->{group_ids};
     my $groups = $job->app->schema->resultset('JobGroups');
     my %counts = (checked_jobs => 0, cleaned_with_dir => 0, results_without_dir => 0, groups_checked => 0);
+    my $repair = $args->{repair};
+    $counts{repaired} = 0 if $repair;
     my @samples;
     for my $group_id (@$group_ids) {
         # a group can be deleted between the parent job and the batch
         next unless my $group = $groups->find($group_id);
         $counts{groups_checked} += 1;
-        _count_cleaned_with_dir($group, \%counts, \@samples);
+        _count_cleaned_with_dir($group, \%counts, \@samples, $repair);
         _count_results_without_dir($group, \%counts, \@samples);
     }
 
@@ -143,6 +161,8 @@ sub _prefixes ($job, $args) {
         archived_with_dir => 0,
         archived_copy => 0
     );
+    my $repair = $args->{repair};
+    $counts{repaired} = 0 if $repair;
     my @samples;
     for my $batch (@{$args->{prefixes}}) {
         my $prefix_dir = Mojo::File->new($batch->{base}, $batch->{prefix});
@@ -181,6 +201,11 @@ sub _prefixes ($job, $args) {
             $counts{$counter} += 1;
             log_debug('job ' . $id . $why);
             _add_sample(\@samples, "$entry");
+            # the wrong tree and the missing directory are manual decisions, only leftovers are safe to remove
+            _remove_leftover($repair, \%counts, "$entry", 'results directory without a job row')
+              if $counter eq 'orphan_dirs';
+            _remove_leftover($repair, \%counts, "$entry", "results directory of cleaned job $id")
+              if $counter eq 'cleaned_with_dir';
         }
     }
 
@@ -264,19 +289,29 @@ sub _parent ($job, $args) {
     # lowest priority: the daily cleanup runs with 5, archive and screenshot children with -20, and the
     # Minion backend dequeues the highest priority first
     my %options = (priority => TASK_PRIORITY, ttl => TASK_TTL);
+    # repair is never implied: without the explicit argument the run only reports
+    my $repair = $args->{repair} ? 1 : 0;
+    log_info('Crosscheck runs in repair mode, leftover directories will be removed') if $repair;
     my @child_ids;
     my @batches;
     my @prefix_batches;
     for (my $i = 0; $i < @groups; $i += $groups_per_batch) {
         my @batch = @groups[$i .. min($#groups, $i + $groups_per_batch - 1)];
-        my $child = $gru->enqueue(TASK_NAME, {phase => 'groups', group_ids => \@batch}, \%options);
+        my $child = $gru->enqueue(TASK_NAME, {phase => 'groups', group_ids => \@batch, repair => $repair}, \%options);
         push @child_ids, $child->{minion_id};
         push @batches, {min_group_id => $batch[0], max_group_id => $batch[-1]};
     }
     for (my $i = 0; $i < @prefix_keys; $i += $prefixes_per_batch) {
         my @batch = @prefix_keys[$i .. min($#prefix_keys, $i + $prefixes_per_batch - 1)];
-        my $child
-          = $gru->enqueue(TASK_NAME, {phase => 'prefixes', prefixes => [map { $prefixes{$_} } @batch]}, \%options);
+        my $child = $gru->enqueue(
+            TASK_NAME,
+            {
+                phase => 'prefixes',
+                prefixes => [map { $prefixes{$_} } @batch],
+                repair => $repair
+            },
+            \%options
+        );
         push @child_ids, $child->{minion_id};
         push @prefix_batches, {min_prefix => $batch[0], max_prefix => $batch[-1]};
     }
@@ -323,7 +358,9 @@ chunks the job groups and the result prefix directories of the results and the a
 batch reports jobs whose results are recorded as cleaned but that still have a directory, and jobs whose results
 are recorded as present but that have no directory. A prefix batch reports directories without a job row and
 directories that are not the place their job row records. A summary job aggregates the counts of all batches into
-the note of the parent job. It is a read-only integrity check: nothing is deleted or repaired.
+the note of the parent job. It is a read-only integrity check by default: nothing is deleted or repaired. Only a
+run that is started with C<repair> set removes the directories it reports as C<cleaned_with_dir> or C<orphan_dirs>,
+counts them as C<repaired> and logs each removal.
 
 The function C<enqueue_if_due> is the entry point for the systemd timer: it enqueues a run unless the
 C<[cleanup] crosscheck> switch is off or a run finished within C<[cleanup] crosscheck_interval_days> days.
