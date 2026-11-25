@@ -53,6 +53,7 @@ unstables := $(shell cat tools/unstable_tests.txt | tr '\n' :)
 shellfiles := $$(file --mime-type script/* t/* container/worker/*.sh tools/* | sed -n 's/^\(.*\):.*text\/x-shellscript.*$$/\1/p')
 pyfiles ?= $(shell git ls-files | grep -v '\.md$$' | xargs file --mime-type 2>/dev/null | grep -E 'text/x-script\.python|text/x-python' | grep --invert-match -E '^(t/data|container/openqa_data/)' | cut -d: -f1)
 PYTEST_ARGS ?=
+PYTEST_COVERAGE_ARGS ?= --cov --cov-report=term-missing
 
 # tests need these environment variables to be unset
 OPENQA_BASEDIR =
@@ -267,7 +268,7 @@ else
 compile_tests = test-compile
 endif
 
-test: $(checkstyle_tests) $(compile_tests) test-with-database ## Run all tests (including checkstyle, compile test and database tests)
+test: $(checkstyle_tests) $(compile_tests) test-python-unit test-with-database ## Run all tests (including checkstyle, compile test, python tests and database tests)
 ifeq ($(CONTAINER_TEST),1)
 ifeq ($(TESTS),)
 test: test-containers-compose
@@ -456,7 +457,7 @@ setup-hooks: ## Install pre-commit git hooks
 
 # all additional checks not called by prove
 .PHONY: test-checkstyle-standalone
-test-checkstyle-standalone: test-shellcheck test-yaml test-shfmt test-gitlint test-python-static-checks test-markdown ## Run all style and static analysis checks
+test-checkstyle-standalone: test-shellcheck test-yaml test-shfmt test-gitlint test-python test-markdown ## Run all style and static analysis checks
 ifeq ($(CONTAINER_TEST),1)
 test-checkstyle-standalone: test-check-containers
 endif
@@ -489,8 +490,11 @@ test-shfmt: ## Run shfmt on scripts
 test-python-static-checks: test-ruff test-python-conventions
 
 .PHONY: test-python-unit
-# not wired into `test` yet: bare pytest exits 5 as long as there are no tests
-test-python-unit: ## Run Python unit tests
+test-python-unit: ## Run Python unit tests with statement and branch coverage enforcement
+	python3 -m pytest $(PYTEST_COVERAGE_ARGS) $(PYTEST_ARGS)
+
+.PHONY: test-python-unit-no-coverage
+test-python-unit-no-coverage: ## Run Python unit tests without coverage
 	python3 -m pytest $(PYTEST_ARGS)
 
 .PHONY: test-python

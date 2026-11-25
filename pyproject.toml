@@ -30,6 +30,7 @@ dev = [
 
 [tool.coverage.run]
 branch = true
+source = ["script", "tools"]
 
 [tool.coverage.report]
 fail_under = 100
