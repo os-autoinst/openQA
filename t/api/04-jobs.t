@@ -1562,6 +1562,29 @@ subtest 'job details filters' => sub {
     $t->json_has('/job/testresults/0', 'details query parameter works');
 };
 
+subtest 'job details module counts' => sub {
+    my $job = sub {
+        $t->get_ok(shift)->status_is(200);
+        return $t->tx->res->json->{job};
+    };
+
+    my $default = $job->('/api/v1/jobs/99937/details');
+    my $counts = $default->{module_counts};
+    is $counts->{failed}, 3, 'failed module count';
+    is $counts->{softfailed}, 0, 'softfailed module count';
+    is $counts->{$_} // 0, 0, "no $_ modules" for qw(cancelled running none);
+    is $counts->{passed} + $counts->{failed} + $counts->{softfailed} + $counts->{skipped},
+      scalar @{$default->{testresults}}, 'counts add up to the modules of the job';
+
+    my $filtered = $job->('/api/v1/jobs/99937/details?modules=kate');
+    is_deeply $filtered->{module_counts}, $counts, 'counts describe the whole job when filtering';
+
+    my $plain = $job->('/api/v1/jobs/99937');
+    ok !exists $plain->{module_counts}, 'no module counts without details';
+
+    $t->get_ok('/api/v1/jobs/99937?details=1')->status_is(200)->json_has('/job/module_counts/failed');
+};
+
 subtest 'check for missing assets' => sub {
     $t->get_ok('/api/v1/jobs/99939?check_assets=1')->status_is(200, 'status for job with missing asset');
     $t->json_is('/job/assets/hdd/0', 'openSUSE-13.1-x86_64.hda', 'present asset returned');

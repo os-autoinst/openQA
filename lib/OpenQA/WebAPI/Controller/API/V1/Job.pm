@@ -465,6 +465,9 @@ includes softfailed modules). Defaults to C<all>.
 Control the needle candidates of each step: C<all> (default), C<worst> for the three
 candidates with the highest similarity or C<none>.
 
+The response includes C<module_counts>, the number of modules per result across the whole
+job, independent of the C<modules> filter.
+
 =back
 
 =back

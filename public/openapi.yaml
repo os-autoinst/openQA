@@ -1783,6 +1783,8 @@ paths:
     get:
       description: >
         Shows details for a specific job including its test modules and steps.
+        The response includes "module_counts" with the number of modules per
+        result across the whole job, independent of the "modules" filter.
       operationId: getJobDetails
       parameters:
         - in: path
