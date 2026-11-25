@@ -230,7 +230,7 @@ style_check_requires:
   ShellCheck:
   shfmt:
   python3-gitlint:
-  python3-ruff:
-  python3-ty:
+  python3-ruff: '>= 0.11.13'
+  python3-ty: '>= 0.0.4'
   python3-typer:
-  python3-vulture:
+  python3-vulture: '>= 2.15'

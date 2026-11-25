@@ -23,6 +23,10 @@ JavaScript (Bootstrap).
   gate.
 - `make test-python-unit-no-coverage`: Run only the Python unit tests, without
   the coverage gate.
+- `make test-python-tool-versions`: Report the ruff/ty/vulture versions and fail
+  below the floors declared in `dependencies.yaml`. The `openqa_ci` container
+  image is authoritative: reproduce a CI-only failure inside it instead of
+  downgrading a local tool or adding a suppression.
 - `make test`: Full test suite.
 
 ## Conventions

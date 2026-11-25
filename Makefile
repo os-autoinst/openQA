@@ -488,7 +488,7 @@ test-shfmt: ## Run shfmt on scripts
 	shfmt -d -i 4 -bn -ci -sr $(shellfiles)
 
 .PHONY: test-python-static-checks ## Run all static checks on Python scripts
-test-python-static-checks: test-ruff test-python-conventions test-python-types test-python-code-health
+test-python-static-checks: test-python-tool-versions test-ruff test-python-conventions test-python-types test-python-code-health
 
 .PHONY: test-python-unit
 test-python-unit: ## Run Python unit tests with statement and branch coverage enforcement
@@ -514,6 +514,23 @@ test-ruff: ## Run `ruff format --check` and `ruff check` on Python scripts
 test-python-types: ## Run type checks on Python scripts
 	@command -v ty >/dev/null 2>&1 || (echo "Command 'ty' not found, install 'python3-ty' (Tumbleweed, Leap 16)" && false)
 	ty check --python "$$($(PYTHON) -c 'import sys; print(sys.prefix)')" $(pyfiles)
+
+.PHONY: test-python-tool-versions
+test-python-tool-versions: ## Check the installed python tool versions against the floors in dependencies.yaml
+	@status=0; for tool in ruff ty vulture; do \
+		floor=$$(sed -n "s/^  python3-$$tool: '>= *\([0-9.]*\)'/\1/p" dependencies.yaml); \
+		installed=$$($$tool --version 2>/dev/null | awk '{print $$2}'); \
+		if [ -z "$$installed" ]; then \
+			echo "Command '$$tool' not found, install 'python3-$$tool'"; status=1; \
+		elif [ -z "$$floor" ]; then \
+			echo "Error: no version floor for $$tool in dependencies.yaml"; status=1; \
+		elif [ "$$(printf '%s\n%s\n' "$$floor" "$$installed" | sort -V | head -n 1)" != "$$floor" ]; then \
+			echo "Error: $$tool $$installed is older than the floor $$floor from dependencies.yaml; use the CI image registry.opensuse.org/devel/openqa/containers/opensuse/openqa_ci:latest"; \
+			status=1; \
+		else \
+			echo "$$tool $$installed (floor $$floor)"; \
+		fi; \
+	done; exit $$status
 
 .PHONY: test-python-code-health
 test-python-code-health: ## Check Python scripts for dead code
