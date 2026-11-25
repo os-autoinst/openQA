@@ -3,7 +3,7 @@ name = "openQA"
 dynamic = ["version"]
 description = "Framework for automated system-level testing (web-frontend, scheduler and tools)"
 readme = "README.md"
-requires-python = ">=3.6"
+requires-python = ">=3.12"
 license = "GPL-2-or-later"
 authors = [
     { name = "SUSE LLC" },
