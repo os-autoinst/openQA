@@ -1224,7 +1224,7 @@ sub delete_results ($self, $dry = 0) {
         deleted_size => \$deleted_size_screenshots,
         dry => $dry
     );
-    $self->screenshot_links->delete;
+    $self->screenshot_links->delete unless $dry;
     $screenshot_deletion->delete_screenshot($_, $screenshots->find($_)->filename) for @$exclusively_used_screenshot_ids;
     $self->update({logs_present => 0, result_size => 0}) unless $dry;
     return ($deleted_size_res, $deleted_size_screenshots);
