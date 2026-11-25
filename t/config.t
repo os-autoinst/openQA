@@ -7,7 +7,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 
 use Test::Warnings ':report_warnings';
-use Test::Output qw(combined_like stderr_like);
+use Test::Output qw(combined_like combined_unlike stderr_like);
 use Test::MockModule;
 use Test::MockObject;
 use Mojolicious;
@@ -366,6 +366,33 @@ subtest 'Lookup precedence/hiding' => sub {
     @expected = ("$t_dir/override/openqa.ini.d/override-drop-in.ini");
     $t_dir->child('override')->child('openqa.ini.d')->make_path->child('override-drop-in.ini')->touch;
     is_deeply lookup_config_files(@args), \@expected, 'drop-in in overridden dir hides all other config';
+};
+
+subtest 'Inaccessible config dir' => sub {
+    my $t_dir = tempdir;
+    my $config_mock = Test::MockModule->new('OpenQA::Config');
+    $config_mock->redefine(_config_dirs => [["$t_dir/inaccessible", "$t_dir/valid"]]);
+
+    my $file_mock = Test::MockModule->new('Mojo::File');
+    my $orig_list = $file_mock->original('list');
+    $file_mock->redefine(
+        list => sub ($self, @args) {
+            die "fake permission denied\n" if $self =~ m{/inaccessible};
+            return $orig_list->($self, @args);
+        });
+
+    my @expected = ("$t_dir/valid/openqa.ini");
+    $t_dir->child('valid')->make_path->child('openqa.ini')->touch;
+
+    combined_like {
+        is_deeply lookup_config_files(undef, 'openqa.ini'), \@expected, 'found config despite inaccessible directory';
+    }
+    qr/Unable to add config files under ".*inaccessible": fake permission denied/, 'warning logged when not silent';
+
+    combined_unlike {
+        is_deeply lookup_config_files(undef, 'openqa.ini', 1), \@expected, 'found config silently';
+    }
+    qr/Unable to add config files/, 'no warning logged when silent';
 };
 
 subtest 'check throttling configuration validation and application' => sub {
