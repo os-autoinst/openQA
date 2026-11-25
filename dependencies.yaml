@@ -201,6 +201,9 @@ test_requires:
   jq:
   os-autoinst:
   postgresql-server: '>= 14'
+  python3-pytest:
+  python3-pytest-cov:
+  python3-pytest-mock:
   python3-setuptools:
   perl(App::cpanminus):
   perl(Selenium::Remote::Driver): '>= 1.23'

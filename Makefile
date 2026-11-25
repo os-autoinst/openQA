@@ -52,6 +52,7 @@ current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
 unstables := $(shell cat tools/unstable_tests.txt | tr '\n' :)
 shellfiles := $$(file --mime-type script/* t/* container/worker/*.sh tools/* | sed -n 's/^\(.*\):.*text\/x-shellscript.*$$/\1/p')
 pyfiles ?= $(shell git ls-files | grep -v '\.md$$' | xargs file --mime-type 2>/dev/null | grep -E 'text/x-script\.python|text/x-python' | grep --invert-match -E '^(t/data|container/openqa_data/)' | cut -d: -f1)
+PYTEST_ARGS ?=
 
 # tests need these environment variables to be unset
 OPENQA_BASEDIR =
@@ -486,6 +487,14 @@ test-shfmt: ## Run shfmt on scripts
 
 .PHONY: test-python-static-checks ## Run all static checks on Python scripts
 test-python-static-checks: test-ruff test-python-conventions
+
+.PHONY: test-python-unit
+# not wired into `test` yet: bare pytest exits 5 as long as there are no tests
+test-python-unit: ## Run Python unit tests
+	python3 -m pytest $(PYTEST_ARGS)
+
+.PHONY: test-python
+test-python: test-python-static-checks test-python-unit ## Run Python static checks and unit tests
 
 .PHONY: test-markdown
 test-markdown: ## Check markdown files for style and consistency

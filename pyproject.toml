@@ -20,6 +20,9 @@ Homepage = "https://open.qa"
 
 [dependency-groups]
 dev = [
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
     "ruff",
     "vulture",
     "ty>=0.0.21",
@@ -43,8 +46,8 @@ markers = ["qem_behavior(mode): configure the fake_qem fixture behavior"]
 include-package-data = true
 zip-safe = false
 
-[tool.setuptools.packages]
-find = {}
+[tool.setuptools.packages.find]
+exclude = ["tests*"]
 
 [tool.ruff]
 line-length = 120
@@ -131,7 +134,7 @@ ignore = [
 max-complexity = 9
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["magic-value-comparison", "any-type", "too-many-arguments", "assert", "hardcoded-password-string", "hardcoded-password-func-arg", "too-many-positional-arguments", "undocumented-public-function"]
+"tests/*" = ["magic-value-comparison", "any-type", "too-many-arguments", "assert", "hardcoded-password-string", "hardcoded-password-func-arg", "too-many-positional-arguments", "undocumented-public-function", "private-member-access"]
 
 [tool.ruff.format]
 # Enable reformatting of code snippets in docstrings.
