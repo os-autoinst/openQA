@@ -507,7 +507,7 @@ test-markdown: ## Check markdown files for style and consistency
 
 .PHONY: test-ruff
 test-ruff: ## Run `ruff format --check` and `ruff check` on Python scripts
-	@command -v ruff >/dev/null 2>&1 || echo "Command 'ruff' not found, can not execute python style checks"
+	@command -v ruff >/dev/null 2>&1 || (echo "Command 'ruff' not found, install 'python3-ruff' (Tumbleweed, Leap 16)" && false)
 	@if [ -n "$(pyfiles)" ]; then ruff format --check $(pyfiles) && ruff check $(pyfiles); fi
 
 .PHONY: test-python-types
@@ -522,7 +522,7 @@ test-python-code-health: ## Check Python scripts for dead code
 
 .PHONY: test-python-conventions
 test-python-conventions: ## Checks whether Python scripts follow certain coding conventions
-	@if [[ -d tests/ ]] && git grep -nE '^\s*@(unittest\.mock\.|mock\.)?patch' tests/; then \
+	@if git grep -nE '^\s*@(unittest\.mock\.|mock\.)?patch' tests/; then \
 		echo "Error: @patch decorator detected. Avoid to prevent argument ordering bugs."; \
 		echo "   Fix: Use the 'mocker' fixture (pytest-mock) or a 'with patch():' context manager."; \
 		exit 1; \

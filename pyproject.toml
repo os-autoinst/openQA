@@ -29,8 +29,8 @@ dev = [
 ]
 
 [tool.coverage.run]
-branch = true
 source = ["script", "tools"]
+branch = true
 
 [tool.coverage.report]
 fail_under = 100
@@ -41,7 +41,6 @@ skip_covered = true
 addopts = "-p no:anyio -p no:doctest -p no:pastebin -p no:nose"
 testpaths = ["tests"]
 python_files = "test_*.py"
-markers = ["qem_behavior(mode): configure the fake_qem fixture behavior"]
 
 [tool.setuptools]
 include-package-data = true
