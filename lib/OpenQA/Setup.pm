@@ -316,6 +316,7 @@ sub default_config () {
             assets_max_limit => 200000,
             max_online_workers => 1000,
             wait_for_grutask_retries => 6,    # exponential, ~4 minutes
+            gru_task_reconcile_grace => 5 * ONE_MINUTE,
             worker_limit_retry_delay => ONE_HOUR / 4,
             mcp_max_result_size => 500000,
             scheduled_product_min_storage_duration => 34,

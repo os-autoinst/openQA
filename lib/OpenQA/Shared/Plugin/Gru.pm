@@ -10,7 +10,7 @@ use DBIx::Class::Timestamps 'now';
 use OpenQA::App;
 use OpenQA::Schema;
 use OpenQA::Shared::GruJob;
-use OpenQA::Log qw(log_debug log_info);
+use OpenQA::Log qw(log_debug log_info log_warning);
 use OpenQA::Utils qw(sharedir);
 use Mojo::Pg;
 use Mojo::Promise;
@@ -18,6 +18,9 @@ use Mojo::File qw(path);
 use Mojo::JSON qw(decode_json);
 use Feature::Compat::Try;
 use HTTP::Status qw(:constants);
+use List::Util qw(any);
+use Scalar::Util qw(looks_like_number);
+use Time::HiRes ();
 
 use constant TRACK_INTERVAL => $ENV{OPENQA_GRU_TASK_TRACK_INTERVAL} // 0.5;
 
@@ -183,6 +186,66 @@ sub obsolete_minion_jobs ($self, $job_ids) {
     my $minion = $self->app->minion;
     for my $job_id (@$job_ids) {
         if (my $job = $minion->job($job_id)) { $job->note(obsolete => 1) }
+    }
+}
+
+sub reconcile_gru_tasks ($self) {
+    try { $self->_reconcile_gru_tasks }
+    catch ($e) { log_warning "Failed to reconcile Gru tasks: $e" }
+}
+
+sub _fail_task ($schema, $gru_id, $message) {
+    my $gru = $schema->resultset('GruTasks')->find($gru_id) or return;
+    $gru->fail($message);
+}
+
+sub _reconcile_gru_tasks ($self) {
+    my $app = $self->app;
+    my $grace = $app->config->{misc_limits}->{gru_task_reconcile_grace};
+    die '"gru_task_reconcile_grace" is invalid (must be number >= 0)' if !looks_like_number $grace || $grace < 0;
+
+    my $schema = OpenQA::Schema->singleton;
+    my $sth = $schema->storage->dbh->prepare(<<~'SQL');
+        SELECT
+            gt.id AS gru_id,
+            count(mj.id) FILTER (WHERE mj.id is not null AND mj.notes -> 'obsolete' is null) AS minion_job_count,
+            array_agg(DISTINCT mj.state::text) AS states,
+            any_value(DISTINCT mj.result #>> '{}') FILTER (WHERE mj.state = 'failed' AND mj.result is not null) AS result,
+            any_value(mj.notes ->> 'user_error') AS user_error,
+            extract(EPOCH FROM max(mj.finished)) AS finished
+        FROM gru_tasks gt
+        LEFT JOIN minion_jobs mj ON mj.notes @> jsonb_build_object('gru_id', gt.id)
+        WHERE gt.t_created < NOW() - (? * INTERVAL '1 second')
+        GROUP BY gru_id
+        ORDER BY gt.id
+        SQL
+    $sth->execute($grace);
+
+    my $cutoff = Time::HiRes::time - $grace;
+    my $gru_tasks = $sth->fetchall_hashref([qw(gru_id)]);
+    for my $gru_id (keys %$gru_tasks) {
+        my $gru_info = $gru_tasks->{$gru_id};
+        if ($gru_info->{minion_job_count} < 1) {
+            log_info "Failing Gru task $gru_id because no matching Minion job exists";
+            _fail_task($schema, $gru_id, 'no matching Minion job found');
+            next;
+        }
+        my $minion_job_states = $gru_info->{states};
+        next if any { $_ eq 'inactive' || $_ eq 'active' } @$minion_job_states;
+        if (my $user_error = $gru_info->{user_error}) {
+            log_info "Failing Gru task $gru_id because its Minion job reported a user error: $user_error";
+            _fail_task($schema, $gru_id, $user_error);
+        }
+        elsif (any { $_ eq 'finished' } @$minion_job_states) {
+            log_info "Deleting Gru task $gru_id because its Minion job finished without cleaning up";
+            $schema->resultset('GruTasks')->search({id => $gru_id})->delete;
+        }
+        elsif (any { $_ eq 'failed' } @$minion_job_states) {
+            next if ($gru_info->{finished} // 0) > $cutoff;
+            my $reason = $gru_info->{result} // 'Minion job failed';
+            log_info "Failing Gru task $gru_id because its Minion job failed: $reason";
+            _fail_task($schema, $gru_id, $reason);
+        }
     }
 }
 

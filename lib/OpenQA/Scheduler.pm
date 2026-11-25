@@ -8,6 +8,7 @@ use Mojo::IOLoop;
 use Mojo::Server::Daemon;
 use Scalar::Util qw(looks_like_number);
 use Time::Seconds;
+use OpenQA::App;
 use OpenQA::Log qw(log_debug setup_log);
 use OpenQA::Schema;
 use OpenQA::Scheduler::Model::Jobs;
@@ -94,7 +95,7 @@ sub setup ($self) {
     push @{$self->plugins->namespaces}, 'OpenQA::Shared::Plugin';
     $self->plugin('Gru');
 
-    # check for stale jobs every 2 minutes
+    # check for stale jobs and orphaned Gru tasks every 2 minutes
     Mojo::IOLoop->recurring(ONE_MINUTE * 2 => \&_check_stale);
 
     # initial schedule
@@ -109,8 +110,9 @@ sub setup ($self) {
 
 sub schema ($self = undef) { OpenQA::Schema->singleton }
 
-# uncoverable statement
-# uncoverable statement count:2
-sub _check_stale ($self = undef) { OpenQA::Scheduler::Model::Jobs->singleton->incomplete_and_duplicate_stale_jobs }
+sub _check_stale ($self = undef) {
+    OpenQA::Scheduler::Model::Jobs->singleton->incomplete_and_duplicate_stale_jobs;
+    OpenQA::App->singleton->gru->reconcile_gru_tasks;
+}
 
 1;

@@ -102,6 +102,20 @@ subtest 'exception during stale job detection handled and logged' => sub {
     ok $mock_singleton_called, 'mocked singleton method has been called';
 };
 
+subtest '_check_stale invokes stale job detection and Gru task reconciliation' => sub {
+    my $jobs_mock = Test::MockModule->new('OpenQA::Scheduler::Model::Jobs');
+    my $stale_jobs_called = 0;
+    $jobs_mock->redefine(incomplete_and_duplicate_stale_jobs => sub { $stale_jobs_called++ });
+    my $gru_mock = Test::MockModule->new('OpenQA::Shared::Plugin::Gru');
+    my $reconcile_called = 0;
+    $gru_mock->redefine(reconcile_gru_tasks => sub { $reconcile_called++ });
+
+    OpenQA::Scheduler::_check_stale;
+
+    is $stale_jobs_called, 1, 'stale job detection invoked';
+    is $reconcile_called, 1, 'Gru task reconciliation invoked';
+};
+
 done_testing();
 
 1;
