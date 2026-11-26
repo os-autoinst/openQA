@@ -1542,13 +1542,17 @@ subtest 'job details filters' => sub {
     $two = $details->('/api/v1/jobs/99937/details?modules=kate&modules=shutdown');
     is_deeply [sort map { $_->{name} } @$two], [qw(kate shutdown)], 'repeated modules parameter supported';
 
-    my $failed = $details->('/api/v1/jobs/99937/details?modules=failed');
+    my $failed = $details->('/api/v1/jobs/99937/details?result=failed');
     is_deeply [sort map { $_->{name} } @$failed], [qw(kate shutdown zypper_up)], 'only failed modules returned';
     my ($shutdown) = grep { $_->{name} eq 'shutdown' } @$failed;
     is scalar @{$shutdown->{details}}, 3, 'all steps of a failed module retained';
 
-    my $no_needles = $details->('/api/v1/jobs/99937/details?modules=kate&needles=none');
-    ok !exists $no_needles->[0]{details}[0]{needles}, 'needle candidates omitted with needles=none';
+    my $combined = $details->('/api/v1/jobs/99937/details?modules=kate,shutdown&result=passed');
+    is_deeply $combined, [], 'module names and result filter combined';
+
+    my $no_needles = $details->('/api/v1/jobs/99937/details?needles=none');
+    my ($kate_no_needles) = grep { $_->{name} eq 'kate' } @$no_needles;
+    ok !exists $kate_no_needles->{details}[0]{needles}, 'needle candidates omitted with needles=none';
 
     my $worst = $details->('/api/v1/jobs/99937/details?modules=kate&needles=worst');
     my $candidates = $worst->[0]{details}[0]{needles};
@@ -1556,7 +1560,7 @@ subtest 'job details filters' => sub {
     is_deeply [sort keys %{$candidates->[0]}], [qw(error name similarity)], 'only summary fields kept';
 
     $t->get_ok('/api/v1/jobs/99937/details?needles=bogus')->status_is(400);
-    $t->get_ok('/api/v1/jobs/99937/details?modules=all,kate')->status_is(400);
+    $t->get_ok('/api/v1/jobs/99937/details?result=bogus')->status_is(400);
 
     $t->get_ok('/api/v1/jobs/99937?details=1')->status_is(200);
     $t->json_has('/job/testresults/0', 'details query parameter works');

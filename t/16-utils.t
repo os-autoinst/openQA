@@ -590,4 +590,27 @@ subtest 'parse_duration' => sub {
     is parse_duration($_), undef, "unparsable duration '" . ($_ // 'undef') . "' returns undef" for @unparsable;
 };
 
+subtest 'restrict needle candidates' => sub {
+    my @steps = (
+        {
+            needles => [
+                {name => 'not_closest', error => 'e1', area => [{similarity => 60}]},
+                {name => 'closest', error => 'e2', area => [{similarity => 90}, {similarity => 95}]},
+                {name => 'third', error => 'e3', area => [{similarity => 70}]},
+                {name => 'second', error => 'e4', area => [{similarity => 80}]},
+            ],
+        },
+        {name => 'step without needles'},
+    );
+    OpenQA::Utils::_restrict_needles(\@steps, 'worst');
+    is_deeply [map { $_->{name} } @{$steps[0]{needles}}], [qw(closest second third)],
+      'three closest candidates kept in descending order';
+    is_deeply [sort keys %{$steps[0]{needles}[0]}], [qw(error name similarity)], 'only summary fields kept';
+    is $steps[0]{needles}[0]{similarity}, 95, 'similarity is the maximum area similarity';
+    ok !exists $steps[1]{needles}, 'step without needles left untouched';
+
+    OpenQA::Utils::_restrict_needles(\@steps, 'none');
+    ok !exists $steps[0]{needles}, 'needles removed in none mode';
+};
+
 done_testing;

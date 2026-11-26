@@ -1795,8 +1795,15 @@ paths:
         - in: query
           name: modules
           description: >
-            A comma-separated list of module names or "failed" to include
-            failed and softfailed modules only. Defaults to "all".
+            A comma-separated list of module names to include. Defaults to all
+            modules.
+          schema:
+            type: string
+        - in: query
+          name: result
+          description: >
+            A comma-separated list of module results to include, e.g.
+            "failed,softfailed". Defaults to all results.
           schema:
             type: string
         - in: query

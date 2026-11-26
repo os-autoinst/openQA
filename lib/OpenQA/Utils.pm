@@ -650,20 +650,17 @@ sub _restrict_needles ($details, $mode) {
     }
 }
 
-sub read_test_modules ($job, %options) {
+sub read_test_modules ($job, $options = {}) {
     return undef unless my $testresultdir = $job->result_dir;
 
     my $has_parser_text_results = 0;
     my (@modlist, @errors);
     my $modules = $job->modules_with_job_prefetched;
-    my $module_filter = $options{modules};
-    if (ref $module_filter eq 'ARRAY' && @$module_filter) {
-        $modules = $modules->search({'me.name' => {-in => $module_filter}});
-    }
-    elsif (defined $module_filter && $module_filter eq 'failed') {
-        $modules = $modules->search({'me.result' => [qw(failed softfailed)]});
-    }
-    my $needles_mode = $options{needles} // 'all';
+    my $module_filter = $options->{modules};
+    $modules = $modules->search({'me.name' => {-in => $module_filter}}) if $module_filter && @$module_filter;
+    my $result_filter = $options->{results};
+    $modules = $modules->search({'me.result' => {-in => $result_filter}}) if $result_filter && @$result_filter;
+    my $needles_mode = $options->{needles} // 'all';
 
     for my $module ($modules->all) {
         my $name = $module->name();
