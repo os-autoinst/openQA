@@ -9,6 +9,16 @@ use LWP::UserAgent;
 use Net::OpenID::Consumer;
 use MIME::Base64 qw(encode_base64url decode_base64url);
 
+sub auth_setup ($server) {
+    my $app = $server->app;
+    my $provider = $app->config->{openid}->{provider} // '';
+    if ($provider =~ m{^https?://(?:www\.)?opensuse\.org/openid}i) {
+        $app->log->warn(
+                "The configured OpenID provider '$provider' is being decommissioned by openSUSE with no replacement. "
+              . 'Migrate to an alternative authentication method or provider.');
+    }
+}
+
 sub auth_login ($c) {
     my $url = $c->app->config->{global}->{base_url} || $c->req->url->base->to_string;
 
