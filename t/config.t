@@ -219,7 +219,7 @@ subtest 'openqa.ini documentation check' => sub {
 
     my $is_skipped = sub ($section, $key) {
         return 1
-          if $section =~ /^(plugin_links|hooks|test_preset example|assets\/storage_duration|hypnotoad|secrets)$/;
+          if $section =~ /^(plugin_links|hooks|assets\/storage_duration|hypnotoad|secrets)$/;
         return 1
           if $section eq 'global'
           && $key
@@ -228,7 +228,7 @@ subtest 'openqa.ini documentation check' => sub {
         return 1
           if $section eq 'misc_limits'
           && $key
-          =~ /^(prio_throttling_data|prio_group_data|mcp_max_result_size|results_min_free_disk_space_percentage|archive_min_free_disk_space_percentage|dry_min_free_disk_space_cleanup)$/;
+          =~ /^(prio_throttling_data|prio_group_data|results_min_free_disk_space_percentage|archive_min_free_disk_space_percentage|dry_min_free_disk_space_cleanup)$/;
         return 1 if $section eq 'rate_limits' && $key eq 'search';
         return 1 if $section eq 'audit' && $key eq 'blacklist';
         return 0;
@@ -255,7 +255,8 @@ subtest 'openqa.ini documentation check' => sub {
     is $compared{$_->[0]}->{$_->[1]}, 1, "key '$_->[1]' in section '[$_->[0]]' is compared against its default"
       for [auth => 'method'], [global => 'auto_clone_regex'], [global => 'branding'], [global => 'hide_asset_types'],
       [global => 'max_rss_limit'], [misc_limits => 'all_tests_max_finished_jobs'],
-      [obs_rsync => 'retry_max_count'], [worker_reservation => 'default_duration'];
+      [misc_limits => 'mcp_max_result_size'], [obs_rsync => 'retry_max_count'],
+      ['test_preset example' => 'info'], [worker_reservation => 'default_duration'];
 };
 
 subtest 'trim whitespace characters from both ends of openqa.ini value' => sub {
