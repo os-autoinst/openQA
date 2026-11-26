@@ -74,4 +74,21 @@ subtest 'debug logging' => sub {
     is_deeply \%res, {redirect => 'index', error => 0}, 'redirected to index' or always_explain \%res;
 };
 
+subtest 'auth_setup warning on decommissioned openSUSE provider' => sub {
+    my $mock_log = Test::MockObject->new->set_true('warn');
+    my $mock_app = Test::MockObject->new->set_always(log => $mock_log);
+    $mock_app->set_always(app => $mock_app);
+
+    $mock_app->set_always(config => {openid => {provider => 'https://www.opensuse.org/openid/user/'}});
+    OpenQA::WebAPI::Auth::OpenID::auth_setup($mock_app);
+    $mock_log->called_ok('warn', 'warning logged for openSUSE provider');
+    my $warn_msg = ($mock_log->call_args(0))[1];
+    like $warn_msg, qr/decommissioned by openSUSE/, 'warning message text matches';
+
+    $mock_log->clear;
+    $mock_app->set_always(config => {openid => {provider => 'https://custom.example.com/openid/'}});
+    OpenQA::WebAPI::Auth::OpenID::auth_setup($mock_app);
+    ok !$mock_log->called('warn'), 'no warning logged for custom provider';
+};
+
 done_testing;

@@ -603,6 +603,11 @@ reported when clocks are too far apart.
 
 #### OpenID
 
+**Note**: The public openSUSE OpenID provider (`https://www.opensuse.org/openid/`)
+is being decommissioned with no replacement for third-party services. Existing
+setups relying on it should migrate to an alternative authentication method
+(such as `OAuth2`).
+
 By default openQA uses OpenID with opensuse.org as OpenID provider.
 OpenID method has its own `openid` section in
 [the web UI configuration](GettingStarted.md#webui-configuration):
