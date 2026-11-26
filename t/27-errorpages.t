@@ -6,6 +6,7 @@ use Test::Most;
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Test::Mojo;
+use Test::Output qw(combined_like);
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::Case;
 use OpenQA::Test::TimeLimit '10';
@@ -21,6 +22,8 @@ subtest '404 error page' => sub {
     is_deeply [$dom->find('h1')->map('text')->each], ['Page not found'], 'correct page';
     is_deeply [$dom->find('h2')->map('text')->each], ['Available routes'], 'available routes shown';
     ok index($t->tx->res->text, 'Each entry contains the') >= 0, 'description shown';
+
+    $t->get_ok('/unavailable_page', {Accept => 'application/json'})->status_is(404)->json_is('/error_status' => 404);
 };
 
 subtest 'error pages shown for OpenQA::WebAPI::Controller::Step' => sub {
@@ -80,5 +83,35 @@ subtest 'error pages shown for OpenQA::WebAPI::Controller::Step' => sub {
     };
 };
 
+subtest 'before_render hook with destroyed transaction' => sub {
+    my $c = $t->app->build_controller;
+    delete $c->{tx};
+    lives_ok { $t->app->plugins->emit_hook(before_render => $c, {status => 404}) }
+    'before_render does not crash when transaction is destroyed';
+};
+
+subtest 'reply.gru_result helper' => sub {
+    my $c = $t->app->build_controller;
+    delete $c->{tx};
+    is $c->reply->gru_result({error => 'fail'}), undef, 'returns undef when transaction is destroyed';
+
+    $c = $t->app->build_controller;
+    ok $c->reply->gru_result({ok => 1}), 'renders when transaction is present';
+};
+
+subtest 'reply.exception helper' => sub {
+    my $c = $t->app->build_controller;
+    delete $c->{tx};
+    combined_like {
+        $c->helpers->reply->exception('Transaction already destroyed');
+    }
+    qr/debug.*abort processing/, 'destroyed transactions logged as debug message';
+
+    my $c2 = $t->app->build_controller;
+    combined_like {
+        $c2->helpers->reply->exception('Some regular error');
+    }
+    qr/error.*Some regular error/, 'regular exceptions logged as errors';
+};
 
 done_testing;

@@ -264,6 +264,7 @@ sub register ($self, $app, $config) {
     $app->helper(find_job_or_render_not_found => \&_find_job_or_render_not_found);
     $app->helper(
         'reply.gru_result' => sub ($c, $result, $error_code = 200) {
+            return unless $c->tx;
             return $c->render(json => $result, status => $error_code);
         });
 

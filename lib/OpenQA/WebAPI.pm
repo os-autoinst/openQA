@@ -540,11 +540,19 @@ sub startup ($self) {
     $reactor->unsubscribe('error');    # avoid default handling of always logging an error
     $reactor->on(error => \&_handle_exception);
 
+    $app->helper(
+        'reply.exception' => sub ($c, $error) {
+            return log_debug 'Connection lost (e.g. closed by client), abort processing request'
+              if ($error // '') =~ m/Transaction already destroyed/;
+            return $c->helpers->reply->http_exception($error);
+        });
+
     # add method to be called before rendering
     $app->hook(
         before_render => sub ($c, $args) {
+            return unless $c->tx;
             # return errors as JSON if accepted but HTML not
-            if (!$c->accepts('html') && $c->accepts('json') && $args->{status} && $args->{status} != HTTP_OK) {
+            if ($args->{status} && $args->{status} != HTTP_OK && !$c->accepts('html') && $c->accepts('json')) {
                 # the JSON API might already provide JSON in some error cases which must be preserved
                 (($args->{json} //= {})->{error_status}) = $args->{status};
             }

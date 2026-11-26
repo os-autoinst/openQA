@@ -206,7 +206,7 @@ sub clone ($self) {
         task_name => 'git_clone',
         task_description => 'cloning test distribution',
         task_args => {testcasedir($distri, $preset->{version}) => $casedir}    # uncoverable statement
-      )->then(sub ($result) { $self->render(json => $result) })    # uncoverable statement
+      )->then(sub ($result) { return unless $self->tx; $self->render(json => $result) })    # uncoverable statement
       ->catch(sub ($error, @) { $self->reply->gru_result($error, HTTP_BAD_REQUEST) });
 }
 
