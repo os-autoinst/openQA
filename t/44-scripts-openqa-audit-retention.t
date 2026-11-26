@@ -47,10 +47,54 @@ my $group_with_results_above_jobs = $groups->create(
         keep_jobs_in_days => 50,
     });
 my $group_without_limits = $groups->create({name => 'group without own or parent limits'});
+my $group_with_results_equal_to_jobs = $groups->create(
+    {
+        name => 'group with result limit equal to job limit',
+        keep_logs_in_days => 10,
+        keep_results_in_days => 30,
+        keep_jobs_in_days => 30,
+        keep_important_results_in_days => 180,
+    });
+my $group_with_logs_above_jobs = $groups->create(
+    {
+        name => 'group with log limit above job limit',
+        keep_logs_in_days => 50,
+        keep_results_in_days => 100,
+        keep_jobs_in_days => 20,
+        keep_important_results_in_days => 180,
+    });
+my $group_with_forever_jobs = $groups->create(
+    {
+        name => 'group keeping jobs forever with important job limit',
+        keep_logs_in_days => 10,
+        keep_results_in_days => 20,
+        keep_jobs_in_days => 0,
+        keep_important_jobs_in_days => 30,
+        keep_important_logs_in_days => 90,
+        keep_important_results_in_days => 180,
+    });
+my $group_with_forever_logs = $groups->create(
+    {
+        name => 'group keeping logs forever with important log limit',
+        keep_logs_in_days => 0,
+        keep_important_logs_in_days => 30,
+    });
+my $group_with_effective_limits = $groups->create(
+    {
+        name => 'group with all limits taking effect',
+        keep_logs_in_days => 10,
+        keep_important_logs_in_days => 90,
+        keep_results_in_days => 20,
+        keep_important_results_in_days => 180,
+        keep_jobs_in_days => 500,
+        keep_important_jobs_in_days => 1000,
+    });
 my $group_count = $groups->count;
 my $parent_count = $parents->count;
-my ($inheriting_parent_id, $own_limits_id, $forever_parent_id)
-  = map { $_->id } ($parent_with_own_limits, $group_with_own_equal_limits, $parent_keeping_results_forever);
+my ($inheriting_parent_id, $own_limits_id, $forever_parent_id, $effective_limits_id)
+  = map { $_->id }
+  ($parent_with_own_limits, $group_with_own_equal_limits, $parent_keeping_results_forever,
+    $group_with_effective_limits);
 
 my $config_dir = tempdir(CLEANUP => 1);
 $config_dir->child('openqa.ini')->spew(<<~'END');
@@ -103,8 +147,12 @@ subtest 'text output shows one line per group with effective values and their so
     is scalar @lines, $group_count + $parent_count, 'one line per job group and parent group';
 
     like $out,
-qr/^group \Q$own_limits_id\E 'group with own equal log and result limits' \(no parent\): keep_logs_in_days=45\(own\) keep_important_logs_in_days=90\(default\) keep_results_in_days=45\(own\) keep_important_results_in_days=0\(default,forever\) keep_jobs_in_days=500\(default\) keep_important_jobs_in_days=1000\(default\) \[/m,
+qr/^group \Q$own_limits_id\E 'group with own equal log and result limits' \(no parent\): keep_logs_in_days=45\(own\) keep_important_logs_in_days=90\(default\) keep_results_in_days=45\(own\) keep_important_results_in_days=0\(default,forever\) keep_jobs_in_days=500\(default\) keep_important_jobs_in_days=1000\(default\) \[ineffective: keep_logs_in_days, keep_important_results_in_days\]$/m,
       'own values and configuration defaults reported with their source';
+
+    like $out,
+qr/^group \Q$effective_limits_id\E 'group with all limits taking effect' \(no parent\): .*keep_important_jobs_in_days=1000\(own\)$/m,
+      'the bracket is omitted when every limit takes effect';
 
     like $out,
 qr/^parent \Q$inheriting_parent_id\E 'parent with own retention limits' \(no parent\): keep_logs_in_days=30\(own\)/m,
@@ -115,21 +163,50 @@ qr/'group inheriting forever important results' \(parent \Q$forever_parent_id\E 
       'inherited value references the parent group';
 };
 
-subtest 'equal log and result limits are classified as ineffective' => sub {
+sub ineffective_of ($records, $name) {
+    return [sort @{$records->{$name}->{ineffective}}];
+}
+
+subtest 'limits not shorter than the deletion before them are ineffective' => sub {
     my (undef, $records) = json_report;
 
-    is_deeply $records->{'group inheriting equal log and result limits'}->{classifications},
-      [qw(logs_not_shorter_than_results important_logs_not_shorter_than_important_results)],
-      'group inheriting equal limits from the parent is classified';
-    is_deeply $records->{'group with own equal log and result limits'}->{classifications},
-      [qw(logs_not_shorter_than_results important_results_gt_important_jobs forever)],
-      'group with own equal limits is classified';
-    is_deeply [sort @{$records->{'parent with own retention limits'}->{classifications}}],
-      [qw(important_logs_not_shorter_than_important_results logs_not_shorter_than_results)],
-      'parent group with equal limits is classified';
-    is_deeply $records->{'group with result limit above job limit'}->{classifications},
-      [qw(results_gt_jobs important_results_gt_important_jobs forever)],
-      'result limit above the job limit is classified';
+    is_deeply ineffective_of($records, 'parent with own retention limits'),
+      [qw(keep_important_logs_in_days keep_logs_in_days)],
+      'equal log and result limits are ineffective for a parent group';
+    is_deeply ineffective_of($records, 'group inheriting equal log and result limits'),
+      [qw(keep_important_logs_in_days keep_logs_in_days)],
+      'equal limits inherited from the parent are ineffective';
+    is_deeply ineffective_of($records, 'group with own equal log and result limits'),
+      [qw(keep_important_results_in_days keep_logs_in_days)],
+      'equal log and result limits and forever important results are ineffective';
+    is_deeply ineffective_of($records, 'group with result limit above job limit'),
+      [qw(keep_important_results_in_days keep_results_in_days)],
+      'a result limit above the job limit is ineffective';
+};
+
+subtest 'limits are compared against every deletion removing the same data' => sub {
+    my (undef, $records) = json_report;
+
+    is_deeply ineffective_of($records, 'group with result limit equal to job limit'), [qw(keep_results_in_days)],
+      'the job row deletes the results of a group with equal result and job limits';
+    is_deeply ineffective_of($records, 'group with log limit above job limit'),
+      [qw(keep_logs_in_days keep_results_in_days)],
+      'the job row bounds both the logs and the results of a group with a low job limit';
+};
+
+subtest 'a forever non-important limit disables the important limit of its category' => sub {
+    my (undef, $records) = json_report;
+
+    is_deeply ineffective_of($records, 'group keeping jobs forever with important job limit'),
+      [qw(keep_important_jobs_in_days)], 'the important job limit never applies when jobs never expire';
+    is_deeply ineffective_of($records, 'group keeping logs forever with important log limit'),
+      [qw(keep_important_logs_in_days keep_important_results_in_days keep_logs_in_days)],
+      'the important log limit never applies when logs never expire';
+};
+
+subtest 'every taking effect limit leaves the ineffective list empty' => sub {
+    my (undef, $records) = json_report;
+    is_deeply ineffective_of($records, 'group with all limits taking effect'), [], 'no ineffective limit reported';
 };
 
 subtest 'forever retention inherited from the configuration' => sub {
@@ -138,9 +215,9 @@ subtest 'forever retention inherited from the configuration' => sub {
     is_deeply $record->{settings}->{keep_important_results_in_days}, {value => 0, source => 'default'},
       'forever important results reported with source default';
     is_deeply $record->{forever}, ['keep_important_results_in_days'], 'forever columns reported';
-    is_deeply [sort @{$record->{classifications}}],
-      [qw(forever important_results_gt_important_jobs)],
-      'forever important results above the important job limit classified';
+    is_deeply ineffective_of($records, 'group without own or parent limits'),
+      [qw(keep_important_results_in_days)],
+      'forever important results above the important job limit are ineffective';
 };
 
 subtest 'json output' => sub {

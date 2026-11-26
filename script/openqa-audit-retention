@@ -27,36 +27,31 @@ C<OpenQA::Schema::Result::JobGroups::_get_column_or_default>; the reported sourc
 has to stay in sync with that method.
 
 A retention value of C<0>, or a value missing from the configuration, means
-"forever". Each group is classified as follows:
+"forever".
 
-=over 4
+The nightly cleanup deletes in a fixed order, see
+C<OpenQA::Schema::Result::JobGroups::limit_results_and_logs>: the job row first,
+which removes the whole result directory of that job including its logs, then the
+results of the remaining jobs, whose whole directory goes away as well, and then
+their log files. Each of the six settings is the deadline of one of those
+steps, for the important or the non-important jobs, so a setting that is not
+shorter than the step deleting the same data before it never takes effect.
+Two settings with the same value make the later step ineffective; a setting C<0>
+or unset never expires and therefore governs only when no earlier step expires.
 
-=item C<logs_not_shorter_than_results>
+A category whose non-important value never expires does not run at all, which
+C<OpenQA::Schema::Result::JobGroups::_find_expired_jobs> implements with an
+early return, so the important value of that category never applies either:
+C<keep_jobs_in_days=0> also disables C<keep_important_jobs_in_days>.
 
-Log retention is at least the result retention, so deleting results removes the
-logs first and the log retention never takes effect.
-
-=item C<important_logs_not_shorter_than_important_results>
-
-The same for the important results.
-
-=item C<results_gt_jobs>
-
-Result retention is longer than job retention, so the job row is deleted before
-the result directory expires.
-
-=item C<important_results_gt_important_jobs>
-
-The same for the important jobs.
-
-=item C<forever>
-
-At least one of the six settings never expires. This includes a C<0> for the
-non-important setting of a pair, which disables the whole cleanup category
-because C<OpenQA::Schema::Result::JobGroups::_find_expired_jobs> returns early:
-not even the important results, logs or jobs of such a group expire.
-
-=back
+Each group reports the settings that never take effect as C<ineffective> and a
+C<forever> list with the settings that never expire. Reported as ineffective
+are C<keep_important_jobs_in_days> when the jobs cleanup does not run at all,
+C<keep_results_in_days> when it is not shorter than C<keep_jobs_in_days>,
+C<keep_important_results_in_days> when it is not shorter than the important jobs
+deadline, C<keep_logs_in_days> when it is not shorter than both the result and
+the job deadline and C<keep_important_logs_in_days> when it is not shorter than
+both important deadlines before it.
 
 The script only reads from the database and issues no writes.
 
@@ -64,13 +59,15 @@ The script only reads from the database and issues no writes.
 
 The default text output has one line per job group and parent group. A setting
 reads C<< <column>=<value>(<source>) >> with C<,forever> appended when the value
-never expires, followed by the classifications in brackets:
+never expires, followed by the ineffective settings in brackets:
 
-  group 42 'Maintenance: SLE 15 SP5' (parent 8 'Maintenance: Single Incidents'): keep_logs_in_days=30(own) keep_important_logs_in_days=90(parent) keep_results_in_days=30(own) keep_important_results_in_days=730(default) keep_jobs_in_days=500(default) keep_important_jobs_in_days=1000(default) [logs_not_shorter_than_results]
+  group 42 'Maintenance: SLE 15 SP5' (parent 8 'Maintenance: Single Incidents'): keep_logs_in_days=30(own) keep_important_logs_in_days=90(parent) keep_results_in_days=30(own) keep_important_results_in_days=730(default) keep_jobs_in_days=500(default) keep_important_jobs_in_days=1000(default) [ineffective: keep_logs_in_days]
+
+The bracket is omitted when every setting takes effect.
 
 C<--format json> prints the same data as objects with a numeric C<value>
 (C<null> when no value is configured), a C<source> per setting, the
-classifications, the C<forever> columns and the C<config_defaults> used.
+C<ineffective> settings, the C<forever> columns and the C<config_defaults> used.
 
 =head1 OPTIONS
 
@@ -112,6 +109,9 @@ my @SETTINGS = qw(
   keep_jobs_in_days
   keep_important_jobs_in_days
 );
+my @JOBS_SETTINGS = qw(keep_jobs_in_days keep_important_jobs_in_days);
+my @RESULTS_SETTINGS = qw(keep_results_in_days keep_important_results_in_days);
+my @LOGS_SETTINGS = qw(keep_logs_in_days keep_important_logs_in_days);
 my %CONFIG_SETTING = (
     keep_logs_in_days => 'log_storage_duration',
     keep_important_logs_in_days => 'important_log_storage_duration',
@@ -135,11 +135,12 @@ sub as_number ($value) { return defined $value ? 0 + $value : undef; }
 
 sub is_forever ($value) { !defined $value || $value == 0 }
 
-sub compare_retention ($left, $right) {
-    return 0 if is_forever($left) && is_forever($right);
-    return 1 if is_forever($left);
-    return -1 if is_forever($right);
-    return $left <=> $right;
+# a deadline of undef never expires, so it governs only when no earlier deadline expires either
+sub governs ($deadline, @earlier_deadlines) {
+    my ($earliest) = sort { $a <=> $b } grep { defined } @earlier_deadlines;
+    return 1 if !defined $deadline && !defined $earliest;
+    return 0 if !defined $deadline;
+    return !defined $earliest || $deadline < $earliest;
 }
 
 sub setting_source ($row, $column, $is_parent) {
@@ -159,20 +160,41 @@ sub effective_settings ($row, $is_parent) {
     return \%settings;
 }
 
+# The cleanup of a category does not run when its non-important value never expires, so the
+# important value of the same category has no deadline either.
+sub deadlines ($value) {
+    my %deadline;
+    for my $category (\@JOBS_SETTINGS, \@RESULTS_SETTINGS, \@LOGS_SETTINGS) {
+        my ($non_important, $important) = @$category;
+        for my $column ($non_important, $important) {
+            $deadline{$column}
+              = is_forever($value->{$non_important}) || is_forever($value->{$column}) ? undef : $value->{$column};
+        }
+    }
+    return \%deadline;
+}
+
 sub classify ($record) {
-    my $value = {map { $_ => $record->{settings}->{$_}->{value} } @SETTINGS};
-    my @classifications;
-    push @classifications, 'logs_not_shorter_than_results'
-      if compare_retention($value->{keep_logs_in_days}, $value->{keep_results_in_days}) >= 0;
-    push @classifications, 'important_logs_not_shorter_than_important_results'
-      if compare_retention($value->{keep_important_logs_in_days}, $value->{keep_important_results_in_days}) >= 0;
-    push @classifications, 'results_gt_jobs'
-      if compare_retention($value->{keep_results_in_days}, $value->{keep_jobs_in_days}) > 0;
-    push @classifications, 'important_results_gt_important_jobs'
-      if compare_retention($value->{keep_important_results_in_days}, $value->{keep_important_jobs_in_days}) > 0;
+    my $value = {map { $_ => $record->{settings}->{$_}{value} } @SETTINGS};
+    my $deadline = deadlines($value);
     $record->{forever} = [grep { is_forever($value->{$_}) } @SETTINGS];
-    push @classifications, 'forever' if @{$record->{forever}};
-    $record->{classifications} = \@classifications;
+
+    # important builds are only deleted by their own deadline, so keep_important_jobs_in_days
+    # applies as soon as the jobs cleanup runs at all
+    my %ineffective;
+    $ineffective{keep_important_jobs_in_days}
+      = !defined $deadline->{keep_important_jobs_in_days} && !is_forever($value->{keep_important_jobs_in_days});
+    $ineffective{keep_results_in_days}
+      = !governs($deadline->{keep_results_in_days}, $deadline->{keep_jobs_in_days});
+    $ineffective{keep_important_results_in_days}
+      = !governs($deadline->{keep_important_results_in_days}, $deadline->{keep_important_jobs_in_days});
+    $ineffective{keep_logs_in_days}
+      = !governs($deadline->{keep_logs_in_days}, $deadline->{keep_jobs_in_days}, $deadline->{keep_results_in_days});
+    $ineffective{keep_important_logs_in_days} = !governs(
+        $deadline->{keep_important_logs_in_days},
+        $deadline->{keep_important_jobs_in_days},
+        $deadline->{keep_important_results_in_days});
+    $record->{ineffective} = [grep { $ineffective{$_} } @SETTINGS];
     return $record;
 }
 
@@ -206,9 +228,12 @@ sub text_line ($record) {
     my $parent = $record->{parent};
     my $scope = $parent ? sprintf "parent %d '%s'", $parent->{id}, $parent->{name} : 'no parent';
     my $settings = join ' ', map { format_setting($record->{settings}->{$_}, $_) } @SETTINGS;
-    my $classifications = join ',', @{$record->{classifications}};
-    return sprintf "%s %d '%s' (%s): %s [%s]\n",
-      $record->{kind}, $record->{id}, $record->{name}, $scope, $settings, $classifications;
+    my $ineffective
+      = @{$record->{ineffective}}
+      ? sprintf ' [ineffective: %s]', join ', ', @{$record->{ineffective}}
+      : '';
+    return sprintf "%s %d '%s' (%s): %s%s\n",
+      $record->{kind}, $record->{id}, $record->{name}, $scope, $settings, $ineffective;
 }
 
 my ($opt, $usage) = describe_options(
