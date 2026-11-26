@@ -51,8 +51,10 @@ JavaScript (Bootstrap).
 
 ## Constraints
 
-- `tasks/`: Read/write access for planning. NEVER run git add, git commit, or
-  git rm on this directory or delete files from there.
+- `tasks/`: Read/write access for planning. Plans never belong to this repo:
+  run `git add`/`git commit` on plan files only inside a dedicated plans repo
+  (`tasks/.git`, e.g. `openQA-tasks`), never in this checkout. Never `rm` a
+  plan file.
 - Never run git clean or any command that deletes unversioned files. Ask the
   user for confirmation.
 - Commit message format: 50/80 rule. You MUST explicitly insert physical
