@@ -783,6 +783,7 @@ openqa-clone-job --skip-chained-deps --within-instance <target_job_url> \
   OS_AUTOINST_GIT_REPO=https://github.com/<your_username>/os-autoinst.git \
   OS_AUTOINST_GIT_BRANCH=<your_test_branch> \
   OS_AUTOINST_CONTAINER_IMAGE=registry.opensuse.org/devel/openqa/containers/osado-dev-container:latest \
+  OS_AUTOINST_CONTAINER_SETUP='zypper in <some_package>' \
   CASEDIR=https://github.com/os-autoinst/os-autoinst-distri-opensuse.git \
   NEEDLES_DIR=https://github.com/os-autoinst/os-autoinst-needles-opensuse.git
 ```
@@ -796,6 +797,9 @@ The variables used in this snippet configure the following:
   `OS_AUTOINST_CONTAINER_IMAGE` requires `OS_AUTOINST_GIT_REPO` to be set.
   For openSUSE test-distribution testing, you can use the `osado-dev-container`
   which pre-installs necessary dependencies like `os-autoinst-distri-opensuse-deps`.
+- `OS_AUTOINST_CONTAINER_SETUP`: Custom setup command executed inside
+  the container between cloning the git repository and starting the engine.
+  You can use it to install additional test dependencies.
 - `CASEDIR` / `NEEDLES_DIR`: Point these to your public Git repositories so the
   container can clone and locate the required test scripts and needles.
 

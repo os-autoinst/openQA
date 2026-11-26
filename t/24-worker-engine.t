@@ -696,6 +696,19 @@ subtest '_construct_isotovideo_cmd' => sub {
           'clones custom branch';
     };
 
+    subtest 'containerized with OS_AUTOINST_GIT_BRANCH and custom setup command' => sub {
+        my $settings = {
+            OS_AUTOINST_GIT_REPO => 'https://github.com/foo/os-autoinst.git',
+            OS_AUTOINST_GIT_BRANCH => 'my_feature',
+            OS_AUTOINST_CONTAINER_SETUP => 'zypper in ipmitool'
+        };
+        my @cmd = OpenQA::Worker::Engines::isotovideo::_construct_isotovideo_cmd($settings, $isotovideo);
+        is scalar(@cmd), 29, 'returns a list of execution arguments';
+        like $cmd[28], qr/git clone --branch=my_feature --depth=1 https:\/\/github.com\/foo\/os-autoinst\.git/,
+          'clones custom branch';
+        like $cmd[28], qr/zypper in ipmitool/, 'executes setup command';
+    };
+
     subtest 'containerized without OS_AUTOINST_GIT_REPO' => sub {
         my $settings = {OS_AUTOINST_CONTAINER_IMAGE => 'my_custom_image:latest'};
         throws_ok {
