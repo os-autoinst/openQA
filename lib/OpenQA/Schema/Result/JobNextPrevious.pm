@@ -6,6 +6,8 @@ package OpenQA::Schema::Result::JobNextPrevious;
 use Mojo::Base 'DBIx::Class::Core', -signatures;
 
 use Moose;
+# Moose::Exporter enables warnings again, which makes the signatures above experimental before Perl 5.36
+no warnings 'experimental::signatures';    ## no critic (TestingAndDebugging::ProhibitNoWarnings)
 extends 'OpenQA::Schema::Result::Jobs';
 
 __PACKAGE__->table_class('DBIx::Class::ResultSource::View');
