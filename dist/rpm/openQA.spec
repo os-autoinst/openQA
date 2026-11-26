@@ -99,7 +99,7 @@
 # The following line is generated from dependencies.yaml
 %define cover_requires perl(Devel::Cover) perl(Devel::Cover::Report::Codecovbash)
 # The following line is generated from dependencies.yaml
-%define devel_no_selenium_requires %build_requires %cover_requires %qemu %style_check_requires %test_requires curl make pandoc perl(Perl::Tidy) perl(TAP::Harness::JUnit) perl(Test::CheckGitStatus) postgresql-devel python3-weasyprint rsync sudo tar xorg-x11-fonts
+%define devel_no_selenium_requires %build_requires %cover_requires %qemu %style_check_requires %test_requires curl make pandoc perl(Perl::Tidy) perl(TAP::Harness::JUnit) perl(Test::CheckGitStatus) postgresql-devel python3-typer python3-weasyprint rsync sudo tar xorg-x11-fonts
 # The following line is generated from dependencies.yaml
 %define devel_requires %devel_no_selenium_requires chromedriver
 
