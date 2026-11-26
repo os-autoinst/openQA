@@ -217,7 +217,6 @@ subtest 'openqa.ini documentation check' => sub {
         }
     }
 
-    my %pending_decision = (global => {auto_clone_regex => 1});
     my $is_skipped = sub ($section, $key) {
         return 1
           if $section =~ /^(plugin_links|hooks|test_preset example|assets\/storage_duration|hypnotoad|secrets)$/;
@@ -225,7 +224,6 @@ subtest 'openqa.ini documentation check' => sub {
           if $section eq 'global'
           && $key
           =~ /^(scm|parallel_children_collapsable_results_sel|file_domain|prio_throttling_data|access_control_allow_origin_header|changelog_file|file_subdomain|search_results_limit)$/;
-        return 1 if $pending_decision{$section}->{$key};
         return 1 if $section eq 'job_settings_ui' && $key eq 'default_data_dir';
         return 1
           if $section eq 'misc_limits'
@@ -255,9 +253,9 @@ subtest 'openqa.ini documentation check' => sub {
     }
 
     is $compared{$_->[0]}->{$_->[1]}, 1, "key '$_->[1]' in section '[$_->[0]]' is compared against its default"
-      for [auth => 'method'], [global => 'branding'], [global => 'hide_asset_types'], [global => 'max_rss_limit'],
-      [misc_limits => 'all_tests_max_finished_jobs'], [obs_rsync => 'retry_max_count'],
-      [worker_reservation => 'default_duration'];
+      for [auth => 'method'], [global => 'auto_clone_regex'], [global => 'branding'], [global => 'hide_asset_types'],
+      [global => 'max_rss_limit'], [misc_limits => 'all_tests_max_finished_jobs'],
+      [obs_rsync => 'retry_max_count'], [worker_reservation => 'default_duration'];
 };
 
 subtest 'trim whitespace characters from both ends of openqa.ini value' => sub {
