@@ -574,8 +574,8 @@ password = somepassword
 
 ### User authentication
 
-openQA supports five different authentication methods: OpenID (default), OAuth2,
-Local, Fake (for development) and None (no authentication).
+openQA supports five different authentication methods: Local (default), OAuth2,
+OpenID (deprecated), Fake (for development) and None (no authentication).
 
 Use the `auth` section in
 [the web UI configuration](GettingStarted.md#webui-configuration) to configure
@@ -584,7 +584,7 @@ the method:
 ```ini
 [auth]
 # method name is case sensitive!
-method = OpenID
+method = Local
 ```
 
 Independently of method used, the first user that logs in (if there is no admin

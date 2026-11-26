@@ -100,7 +100,7 @@ subtest 'Test configuration default modes' => sub {
     $app = Mojolicious->new(mode => 'foo_bar');
     $config = read_config($app, 'reading config from default with mode foo_bar');
     $test_config->{_openid_secret} = $config->{_openid_secret};
-    $test_config->{auth}->{method} = 'OpenID';
+    $test_config->{auth}->{method} = 'Local';
     $test_config->{global}->{service_port_delta} = 2;
     $scheduler_config->{results_min_free_storage_space_percentage} = 5;
     $scheduler_config->{assets_min_free_storage_space_percentage} = 5;

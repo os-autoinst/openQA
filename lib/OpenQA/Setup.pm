@@ -163,7 +163,7 @@ sub default_config () {
             search => 5,
         },
         auth => {
-            method => 'OpenID',
+            method => 'Local',
             require_for_assets => 0,
         },
         'scm git' => {
