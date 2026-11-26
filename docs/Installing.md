@@ -626,6 +626,24 @@ httpsonly = 1
 
 This method supports OpenID version up to 2.0.
 
+#### Migrating user accounts across auth providers
+
+When switching an existing openQA instance from OpenID to `Local` or `OAuth2`,
+user accounts can be migrated using `script/openqa-migrate-auth-provider` to
+preserve existing user IDs, permissions, API keys, comments, and audit logs.
+
+To test the migration with a dry run:
+
+```sh
+script/openqa-migrate-auth-provider --from-provider "" --to-provider "Local" --strip-prefix "^https://www.opensuse.org/openid/user/"
+```
+
+To apply the changes:
+
+```sh
+script/openqa-migrate-auth-provider --from-provider "" --to-provider "Local" --strip-prefix "^https://www.opensuse.org/openid/user/" --apply
+```
+
 #### OAuth2
 
 An additional Mojolicious plugin is required to use this feature:

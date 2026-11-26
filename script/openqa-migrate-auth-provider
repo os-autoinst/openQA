@@ -1,0 +1,133 @@
+#!/usr/bin/env perl
+
+# Copyright SUSE LLC
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+use Mojo::Base -signatures;
+
+use FindBin qw($RealBin);
+use lib "$RealBin/../lib";
+
+use OpenQA::Schema;
+use Getopt::Long::Descriptive;
+
+my ($opt, $usage) = describe_options(
+    <<"EOM",
+%c %o
+
+Migrate user accounts from one authentication provider to another (e.g. from
+legacy OpenID to Local or OAuth2), updating usernames and providers while
+preserving user IDs, roles, API keys, comments, and audit history.
+EOM
+    ['from-provider=s', 'Source provider name (empty string for OpenID)', {default => ''}],
+    ['to-provider=s', 'Target provider name (e.g. "Local", "oauth2@opensuse")', {required => 1}],
+    [
+        'strip-prefix=s',
+        'Regular expression prefix to strip from usernames (e.g. "^https://www.opensuse.org/openid/user/")'
+    ],
+    ['use-nickname', 'Use existing nickname as new username when available'],
+    ['apply', 'Apply changes to database (default is dry-run)'],
+    ['verbose|v', 'Show details for each user'],
+    ['help|h', 'Print usage message and exit', {shortcircuit => 1}],
+);
+
+if ($opt->help) {
+    print $usage->text;
+    exit 0;
+}
+
+my $schema = OpenQA::Schema::connect_db(deploy => 0, silent => 1, from_script => 1);
+my $users_rs = $schema->resultset('Users');
+
+my $from_provider = $opt->from_provider;
+my $to_provider = $opt->to_provider;
+my $strip_prefix = $opt->strip_prefix;
+my $use_nickname = $opt->use_nickname;
+my $is_dry_run = !$opt->apply;
+
+my @users = $users_rs->search({provider => $from_provider, deleted_at => undef})->all;
+
+print 'Running in ' . ($is_dry_run ? 'DRY-RUN mode (pass --apply to execute)' : 'APPLY mode') . "\n";
+print 'Found '
+  . scalar(@users)
+  . " active user accounts with provider '"
+  . ($from_provider || '<empty/OpenID>') . "'\n";
+
+my ($migrated, $skipped, $conflicts) = (0, 0, 0);
+my @plan;
+
+for my $user (@users) {
+    if ($user->username eq 'system') {
+        $skipped++;
+        next;
+    }
+
+    my $old_username = $user->username;
+    my $new_username = $old_username;
+
+    if ($use_nickname && $user->nickname) {
+        $new_username = $user->nickname;
+    }
+    elsif (defined $strip_prefix && $strip_prefix ne '') {
+        $new_username =~ s/$strip_prefix//;
+    }
+
+    if ($new_username eq '') {
+        warn 'User ID ' . $user->id . " ('$old_username'): stripped username is empty, skipping\n";
+        $skipped++;
+        next;
+    }
+
+    my $conflict = $users_rs->find({username => $new_username, provider => $to_provider});
+    if ($conflict && $conflict->id != $user->id) {
+        warn "Conflict: target account '$new_username' (provider '$to_provider') already exists (User ID: "
+          . $conflict->id . ")\n";
+        $conflicts++;
+        next;
+    }
+
+    push @plan,
+      {
+        user => $user,
+        old_username => $old_username,
+        new_username => $new_username,
+        old_provider => $from_provider,
+        new_provider => $to_provider,
+      };
+    $migrated++;
+}
+
+if ($opt->verbose || $is_dry_run) {
+    for my $item (@plan) {
+        print 'User '
+          . $item->{user}->id . ": '"
+          . $item->{old_username} . "' ("
+          . ($item->{old_provider} || 'OpenID')
+          . ") -> '"
+          . $item->{new_username} . "' ("
+          . $item->{new_provider} . ")\n";
+    }
+}
+
+if (!$is_dry_run) {
+    if ($conflicts > 0) {
+        die "Aborting migration: $conflicts conflict(s) detected. Resolve conflicts before applying.\n";
+    }
+
+    $schema->txn_do(
+        sub {
+            for my $item (@plan) {
+                $item->{user}->update(
+                    {
+                        username => $item->{new_username},
+                        provider => $item->{new_provider},
+                    });
+            }
+        });
+    print "Successfully migrated $migrated user account(s) to '$to_provider'\n";
+}
+else {
+    print "Dry-run complete: $migrated account(s) ready to migrate, $skipped skipped, $conflicts conflict(s)\n";
+}
+
+exit($conflicts > 0 ? 1 : 0);
