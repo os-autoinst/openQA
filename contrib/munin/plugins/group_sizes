@@ -1,0 +1,177 @@
+#!/usr/bin/perl
+package group_sizes;
+use strict;
+use warnings;
+use DBI;
+use v5.26;
+use experimental qw(signatures);
+
+# Munin multigraph plugin to monitor PostgreSQL group sizes (jobs, modules,
+# result_size) in the 'openqa' database.
+#
+# Usage
+#
+# To measure groups in the openqa db, add this to
+# /etc/munin/plugin-conf.d/openqa-group-sizes
+#
+#   [group_sizes_openqa]
+#   user root
+#   env.db_host 127.0.0.1
+#   env.db_host /var/run/postgresql
+#   env.db_port 5432
+#   env.db_user user
+#   env.db_pass pass
+#
+# Put script into /usr/lib/munin/plugins/group_sizes_ (or symlink)
+#
+# Create a symlink in /etc/munin/plugins:
+# group_sizes_openqa -> /usr/lib/munin/plugins/group_sizes_
+
+my ($db_name) = $0 =~ m/group_sizes_(\w+)/;
+$db_name ||= $ENV{db_name} || 'openqa';
+my $db_host = $ENV{db_host} // '';
+my $db_port = $ENV{db_port} // '';
+my $db_user = $ENV{db_user} // 'postgres';
+my $db_pass = $ENV{db_pass} // '';
+
+my $dsn = "dbi:Pg:dbname=$db_name";
+$dsn .= ";host=$db_host" if $db_host ne '';
+$dsn .= ";port=$db_port" if $db_port ne '';
+
+$db_name =~ tr/A-Za-z0-9/_/c;
+
+my %graphs = (
+    jobs => {
+        title => 'Jobs per group',
+        description => 'Number of jobs per job group',
+        vlabel => 'Jobs',
+        base => 1000,
+    },
+    job_modules => {
+        title => 'Job modules per group',
+        description => 'Sum of job_module entries per job group',
+        vlabel => 'Job modules',
+        base => 1000,
+    },
+    result_size => {
+        title => 'Result sizes per group',
+        description => 'Sum of result_size per job group',
+        vlabel => 'Bytes',
+        base => 1024,
+    },
+);
+
+my @graph_types = sort keys %graphs;
+
+sub fetch_data () {
+    my $dbh = DBI->connect(
+        $dsn,
+        $db_user,
+        $db_pass,
+        { RaiseError => 1, AutoCommit => 1, PrintError => 0 }
+    );
+
+    # Fetch group names
+    my %parents;
+    my %groups = (0 => {name => 'none'});
+    {
+        my $sql = 'SELECT id, name FROM job_group_parents';
+        my $sth = $dbh->prepare($sql);
+        $sth->execute();
+        %parents = %{$sth->fetchall_hashref('id')};
+        $sql = 'SELECT id, name, parent_id FROM job_groups';
+        $sth = $dbh->prepare($sql);
+        $sth->execute();
+        my %childs = %{$sth->fetchall_hashref('id')};
+        for my $id (keys %childs) {
+            my $row = $childs{$id};
+            my $name = '';
+            if (my $parent_id = $row->{parent_id}) {
+                $name = "$parents{$parent_id}->{name} / ";
+            }
+            $name .= $row->{name};
+            $groups{$row->{id}}->{name} = $name;
+        }
+    }
+
+    my %tasks = (
+        jobs => {
+            sql => 'SELECT COALESCE(group_id, 0) AS group_id, COUNT(*) AS jobs, COALESCE(sum(result_size), 0)::bigint AS result_size FROM jobs j GROUP BY COALESCE(group_id, 0)',
+            fields => [qw(jobs result_size)],
+        },
+        job_modules => {
+            sql => 'SELECT COALESCE(j.group_id, 0) As group_id, COUNT(*) AS job_modules FROM jobs j JOIN job_modules jm ON jm.job_id=j.id GROUP BY COALESCE(j.group_id, 0)',
+            fields => [qw(job_modules)],
+        },
+    );
+    for my $type (sort keys %tasks) {
+        my $sql = $tasks{$type}->{sql};
+        my $sth = $dbh->prepare($sql);
+        $sth->execute();
+
+        my $data = $sth->fetchall_hashref('group_id');
+        for my $id (keys %$data) {
+            my $row = $data->{$id};
+            my $group_id = $row->{group_id};
+            for my $field (@{$tasks{$type}->{fields}}) {
+                $groups{$group_id}->{$field} = $row->{$field};
+            }
+        }
+    }
+    for my $id (keys %groups) {
+        unless (defined $groups{$id}->{jobs}) {
+            delete $groups{$id};
+            next;
+        }
+        $groups{$id}->{$_} //= 0 for @graph_types
+    }
+    return \%groups;
+}
+
+sub main () {
+    my $groups = fetch_data();
+    if (defined $ARGV[0] && $ARGV[0] eq 'config') {
+        config($groups);
+    }
+    else {
+        data($groups);
+    }
+}
+
+sub config ($groups) {
+    for my $type (@graph_types) {
+        print <<~"EOM";
+            multigraph ${db_name}_${type}_by_group
+            graph_title $db_name $graphs{$type}->{title}
+            graph_args --base $graphs{$type}->{base} -l 0
+            graph_vlabel $graphs{$type}->{vlabel}
+            graph_category openqa_groups
+            graph_info $graphs{$type}->{description}
+            EOM
+        # Sort groups from largest to smallest for this specific graph's legend
+        my @sorted = sort {
+            $groups->{$b}->{$type} <=> $groups->{$a}->{$type}
+            || $groups->{$a}->{name} cmp $groups->{$b}->{name}
+        } keys %$groups;
+        for my $id (@sorted) {
+            print <<~"EOM";
+                g_$id.label $groups->{$id}->{name}
+                g_$id.type GAUGE
+                g_$id.min 0
+                EOM
+        }
+        print "\n";
+    }
+}
+
+sub data ($groups) {
+    for my $type (@graph_types) {
+        say "multigraph ${db_name}_${type}_by_group";
+        for my $id (sort { $a <=> $b } keys %$groups) {
+            say "g_$id.value " . ($groups->{$id}->{$type} // 0);
+        }
+        print "\n";
+    }
+}
+
+main() unless caller;

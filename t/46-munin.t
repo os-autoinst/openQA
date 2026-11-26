@@ -138,4 +138,113 @@ subtest table_sizes => sub {
     is $out, $exp, 'data output';
 };
 
+subtest group_sizes => sub {
+    my $script = "$Bin/../contrib/munin/plugins/group_sizes";
+    require $script;
+
+    subtest fetch_data => sub {
+        use Test::MockModule;
+        use Test::MockObject;
+        my $dbi = Test::MockModule->new('DBI');
+        my $dbh = Test::MockObject->new;
+        my $sth = Test::MockObject->new;
+        $dbi->redefine(connect => $dbh);
+        $dbh->mock(prepare => sub { $sth });
+        $sth->set_true('execute');
+        my @test_data = (
+            {
+                1 => {id => 1, name => 'P1'},
+                2 => {id => 2, name => 'P2'},
+            },
+            {
+                1 => {id => 1, name => 'G1', parent_id => 2},
+                2 => {id => 2, name => 'G2', parent_id => 1},
+                3 => {id => 3, name => 'G3', parent_id => 1},
+            },
+            {
+                1 => {group_id => 1, job_modules => 100},
+                2 => {group_id => 2, job_modules => 200},
+                3 => {group_id => 3, job_modules => 300},
+            },
+            {
+                1 => {group_id => 1, jobs => 10, result_size => 1000},
+                2 => {group_id => 2, jobs => 20, result_size => 2000},
+                3 => {group_id => 3, jobs => 30, result_size => 3000},
+            },
+        );
+        my $state = 0;
+        $sth->mock(fetchall_hashref => sub { $test_data[$state++] });
+        my $data = group_sizes::fetch_data();
+        my $expected = {
+            1 => {name => 'P2 / G1', jobs => 10, job_modules => 100, result_size => 1000},
+            2 => {name => 'P1 / G2', jobs => 20, job_modules => 200, result_size => 2000},
+            3 => {name => 'P1 / G3', jobs => 30, job_modules => 300, result_size => 3000},
+        };
+        is_deeply $data, $expected, 'fetch_data as expected';
+    };
+
+    subtest graph => sub {
+        my %groups = (
+            24 => {
+                name => 'Parent / Some',
+                jobs => 1234,
+                job_modules => 30_000,
+                result_size => 50_000_000,
+            },
+        );
+        my $exp = <<~'EOM';
+        multigraph openqa_job_modules_by_group
+        graph_title openqa Job modules per group
+        graph_args --base 1000 -l 0
+        graph_vlabel Job modules
+        graph_category openqa_groups
+        graph_info Sum of job_module entries per job group
+        g_24.label Parent / Some
+        g_24.type GAUGE
+        g_24.min 0
+
+        multigraph openqa_jobs_by_group
+        graph_title openqa Jobs per group
+        graph_args --base 1000 -l 0
+        graph_vlabel Jobs
+        graph_category openqa_groups
+        graph_info Number of jobs per job group
+        g_24.label Parent / Some
+        g_24.type GAUGE
+        g_24.min 0
+
+        multigraph openqa_result_size_by_group
+        graph_title openqa Result sizes per group
+        graph_args --base 1024 -l 0
+        graph_vlabel Bytes
+        graph_category openqa_groups
+        graph_info Sum of result_size per job group
+        g_24.label Parent / Some
+        g_24.type GAUGE
+        g_24.min 0
+
+        EOM
+        my $out = stdout_from {
+            group_sizes::config(\%groups);
+        };
+        is $out, $exp, 'config output';
+
+        $exp = <<~'EOM';
+        multigraph openqa_job_modules_by_group
+        g_24.value 30000
+
+        multigraph openqa_jobs_by_group
+        g_24.value 1234
+
+        multigraph openqa_result_size_by_group
+        g_24.value 50000000
+
+        EOM
+        $out = stdout_from {
+            group_sizes::data(\%groups);
+        };
+        is $out, $exp, 'data output';
+    };
+};
+
 done_testing;
