@@ -827,19 +827,17 @@ export DBIC_TRACE=1
 
 ## Adding new authentication module
 
-openQA comes with multiple authentication modules providing authentication methods:
-OpenID, OAuth2, Local, Fake and None (see [User authentication](Installing.md#authentication)).
+openQA provides authentication modules for `Local` (default), `OAuth2`, `OpenID`,
+`Fake` (for development), and `None` (see
+[User authentication](Installing.md#authentication)).
 
 All authentication modules reside in `lib/OpenQA/WebAPI/Auth` directory. During openQA start, the `[auth]/method` section of
 [the web UI configuration](GettingStarted.md#webui-configuration) is read and
-according to its value (or default OpenID) openQA tries to require
+according to its value (or default Local) openQA tries to require
 `OpenQA::WebAPI::Auth::$method`. If successful, the module for the given method
 is imported or openQA ends with error.
 
 Each authentication module is expected to export `auth_login` and `auth_logout` functions. In case of request-response mechanism (as in OpenID), `auth_response` is imported on demand.
-
-Currently there is no login page because all implemented methods use either 3rd party
-page or none.
 
 Authentication module is expected to return HASH:
 

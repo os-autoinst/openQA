@@ -343,12 +343,12 @@ override settings from preceding ones.
 
 ### Access management
 
-Some actions in openQA require special privileges. openQA provides
-authentication through [openID](http://en.wikipedia.org/wiki/OpenID). By default,
-openQA is configured to use the openSUSE openID provider, but it can very
-easily be configured to use any other valid provider. Every time a new user logs
-into an instance, a new user profile is created. That profile only
-contains the openID identity and two flags used for access control:
+Some actions in openQA require special privileges. openQA provides user
+authentication via `Local` accounts by default, as well as `OAuth2` or `OpenID`
+(deprecated). The first user who registers or logs in automatically receives
+administrator privileges. Every time a new user registers or logs into an
+instance, a user profile is created. That profile contains user details and two
+flags used for access control:
 
 - **operator** Means that the user is able to manage jobs, performing actions like
   creating new jobs, cancelling them, etc.

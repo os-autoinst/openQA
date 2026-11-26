@@ -2100,8 +2100,8 @@ files).
 
 ### Authentication
 
-Authentication via OpenID is enabled by default. Do **not** change the
-authentication method to `Fake` unless access is otherwise restricted.
+Authentication via Local user accounts is enabled by default. Do **not** change
+the authentication method to `Fake` unless access is otherwise restricted.
 
 Note that read-access to most data is possible even without being logged-in.
 So you need to be careful exposing an instance to the public even if

@@ -91,9 +91,9 @@ problems if you wish to set up workers on other hosts (see below). You do need
 root privileges to bind ports 80 and 443 in this way.
 
 It is now necessary to create and store the client keys for openQA. In the next
-two steps, you will set an OpenID provider (if necessary), create the API keys
-in the openQA's web interface, and store the configuration in the Data
-Container.
+two steps, you will register the initial administrator account (using the
+default `Local` authentication method), create the API keys in the openQA web
+interface, and store the configuration in the Data Container.
 
 #### Generate and configure API credentials
 
@@ -289,14 +289,14 @@ possible to use `openqa-clone-job`, e.g.:
 
 Most of these options do **not** apply to the docker-compose setup.
 
-### Change the OpenID provider
+### Configuring OpenID provider (deprecated)
 
-<https://www.opensuse.org/openid/user/> is set as a default OpenID provider. To
-change it, run:
+Container setups use `Local` authentication by default. If using the deprecated
+OpenID method instead, the OpenID provider can be set by running:
 
     podman exec -it openqa_data /scripts/set_openid
 
-and enter the provider's URL.
+and entering the provider's URL.
 
 ### Adding workers on other hosts
 
