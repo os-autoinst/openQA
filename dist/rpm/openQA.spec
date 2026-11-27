@@ -17,7 +17,7 @@
 
 # can't use linebreaks here!
 %define openqa_main_service openqa-webui.service
-%define openqa_extra_services openqa-gru.service openqa-websockets.service openqa-scheduler.service openqa-enqueue-audit-event-cleanup.service openqa-enqueue-audit-event-cleanup.timer openqa-enqueue-asset-cleanup.service openqa-enqueue-git-auto-update.service openqa-enqueue-asset-cleanup.timer openqa-enqueue-result-cleanup.service openqa-enqueue-result-cleanup.timer openqa-enqueue-bug-cleanup.service openqa-enqueue-bug-cleanup.timer openqa-enqueue-git-auto-update.timer openqa-enqueue-needle-ref-cleanup.service openqa-enqueue-needle-ref-cleanup.timer openqa-enqueue-scheduled-product-cleanup.service openqa-enqueue-scheduled-product-cleanup.timer %{openqa_audit_services}
+%define openqa_extra_services openqa-gru.service openqa-websockets.service openqa-scheduler.service openqa-enqueue-audit-event-cleanup.service openqa-enqueue-audit-event-cleanup.timer openqa-enqueue-asset-cleanup.service openqa-enqueue-git-auto-update.service openqa-enqueue-asset-cleanup.timer openqa-enqueue-result-cleanup.service openqa-enqueue-result-cleanup.timer openqa-enqueue-bug-cleanup.service openqa-enqueue-bug-cleanup.timer openqa-enqueue-git-auto-update.timer openqa-enqueue-needle-ref-cleanup.service openqa-enqueue-needle-ref-cleanup.timer openqa-enqueue-scheduled-product-cleanup.service openqa-enqueue-scheduled-product-cleanup.timer
 %define openqa_services %{openqa_main_service} %{openqa_extra_services}
 %define openqa_worker_services openqa-worker.target openqa-slirpvde.service openqa-vde_switch.service openqa-worker-cacheservice.service openqa-worker-cacheservice-minion.service
 %define openqa_localdb_services openqa-setup-db.service openqa-dump-db.service openqa-dump-db.timer
@@ -43,11 +43,6 @@
 %bcond_without python_scripts
 %endif
 
-%if %{with python_scripts}
-%define openqa_audit_services openqa-audit-stale-users.service openqa-audit-stale-users.timer
-%else
-%define openqa_audit_services %{nil}
-%endif
 # exclude additional sub packages that would pull in a lot of extra dependencies on SLE
 %if 0%{?suse_version} && !0%{?is_opensuse}
 %bcond_with devel_package
@@ -439,7 +434,7 @@ rm -rf %{buildroot}/DB
 
 %install
 %if !%{with python_scripts}
-rm script/openqa-label-all
+rm script/openqa-label-all script/openqa-audit-stale-users
 %endif
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
@@ -627,6 +622,17 @@ fi
 %postun continuous-update
 %service_del_postun openqa-continuous-update.timer
 
+%if %{with python_scripts}
+%post python-scripts
+%service_add_post openqa-audit-stale-users.service openqa-audit-stale-users.timer
+
+%preun python-scripts
+%service_del_preun openqa-audit-stale-users.service openqa-audit-stale-users.timer
+
+%postun python-scripts
+%service_del_postun openqa-audit-stale-users.service openqa-audit-stale-users.timer
+%endif
+
 %post local-db
 %service_add_post %{openqa_localdb_services}
 
@@ -707,10 +713,6 @@ fi
 %{_unitdir}/openqa-enqueue-needle-ref-cleanup.timer
 %{_unitdir}/openqa-enqueue-scheduled-product-cleanup.service
 %{_unitdir}/openqa-enqueue-scheduled-product-cleanup.timer
-%if %{with python_scripts}
-%{_unitdir}/openqa-audit-stale-users.service
-%{_unitdir}/openqa-audit-stale-users.timer
-%endif
 %{_tmpfilesdir}/openqa-webui.conf
 # web libs
 %dir %{_datadir}/openqa
@@ -902,6 +904,8 @@ fi
 %{_bindir}/openqa-label-all
 %{_datadir}/openqa/script/openqa-audit-stale-users
 %{_bindir}/openqa-audit-stale-users
+%{_unitdir}/openqa-audit-stale-users.service
+%{_unitdir}/openqa-audit-stale-users.timer
 %endif
 
 %files doc
