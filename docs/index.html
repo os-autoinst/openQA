@@ -4898,23 +4898,62 @@ jobs</h3>
 <span id="cb147-2"><a href="#cb147-2" aria-hidden="true" tabindex="-1"></a><span class="co">## Moves results of important jobs which are preserved during the cleanup</span></span>
 <span id="cb147-3"><a href="#cb147-3" aria-hidden="true" tabindex="-1"></a><span class="co">## to OPENQA_ARCHIVEDIR (/var/lib/openqa/archive/ by default)</span></span>
 <span id="cb147-4"><a href="#cb147-4" aria-hidden="true" tabindex="-1"></a><span class="co">#archive_preserved_important_jobs = 0</span></span></code></pre></div>
-<p>When archiving is enabled important job results are moved to the
-archive directory once they reach the expiration for regular job logs.
-This happens as part of the normal cleanup. In the web UI an icon
-indicates that a job was archived.</p>
+<p>When archiving is enabled, important job results can be moved to the
+archive directory in two different ways:</p>
+<ol type="1">
+<li><strong>Retention-based archiving (on log expiration):</strong>
+Important job results are moved once they exceed the retention period
+for regular job logs. This happens as part of the normal cleanup.</li>
+<li><strong>Space-driven upfront archiving (under storage
+pressure):</strong> Important job results whose retention has not yet
+expired are moved upfront to free up space when the results file system
+runs full. This is triggered during cleanup when the free space on the
+results file system falls below the percentage configured by
+<code>archive_important_jobs_min_free_percentage</code>.</li>
+</ol>
+<p>In the web UI, an icon indicates that a job was archived.</p>
 <p>This means a job is &quot;in the archive&quot; if:</p>
 <ol type="1">
 <li>it is important.</li>
-<li>its age is between the retention of regular jobs and important
-jobs.</li>
+<li>its age is between the retention of regular jobs and important jobs
+or it was archived upfront under storage pressure.</li>
 <li>thresholds for space-aware cleanup do not prevent the cleanup of job
 results from happening at all (because if the cleanup is skipped, also
 archiving is skipped).</li>
 </ol>
+<p>Upfront archiving under storage pressure can be tuned using the
+settings <code>archive_important_jobs_min_free_percentage</code>,
+<code>archive_keep_free_percentage</code>, and
+<code>archive_max_duration</code> under the <code>[archiving]</code>
+section in the configuration.</p>
+<p>Only important jobs are considered: regular jobs are subject to
+deletion by design, so archiving them would consume archive space and
+I/O without preserving results that openQA intends to keep.</p>
+<p>The upfront archiving process runs sequentially starting from the
+oldest important unarchived job in a final state and checks the
+configured boundaries before moving each job&#39;s results. It stops
+immediately if:</p>
+<ul>
+<li>The free space on the results file system reaches the target
+threshold
+(<code>archive_important_jobs_min_free_percentage</code>).</li>
+<li>The free space on the archive file system drops below the safety
+floor (<code>archive_keep_free_percentage</code>).</li>
+<li>The time budget for archiving is exhausted
+(<code>archive_max_duration</code>).</li>
+<li>The free space on the results or archive file system cannot be
+determined (for example when the archive directory does not exist
+yet).</li>
+<li>No further eligible important unarchived jobs are left in final
+states.</li>
+</ul>
 <blockquote>
-<p><strong>NOTE:</strong> Archiving does <strong>not</strong> prevent
-cleanup. If an archived important job exceeds the retention for
-important jobs it is still subject to cleanup.</p>
+<p><strong>NOTE:</strong> Upfront archiving only frees up results
+storage space if the results directory and the archive directory are on
+separate file systems; the phase is skipped when both are on the same
+device. Archiving does <strong>not</strong> prevent cleanup: if an
+archived important job exceeds the retention for important jobs, it is
+still subject to deletion during the standard cleanup.</p>
 </blockquote>
 <h3 data-number="3.8.2" id="space-aware-cleanup"><span class="header-section-number">3.8.2</span> Space-aware cleanup</h3>
 <p>The cleanup of logs/results uses time-based retentions and hence is
@@ -4927,7 +4966,7 @@ they are deleted until the specified percentage of file system space is
 free. This extended deletion happens independently of configured
 time-based retention thresholds.</p>
 <p>To help distinguish between the different storage-aware thresholds in
-openQA, three distinct configuration families exist:</p>
+openQA, four distinct configuration families exist:</p>
 <table>
 <thead>
 <tr>
@@ -4958,6 +4997,13 @@ until the specified free percentage is restored.</td>
 <td>Skips or aborts the cleanup job early if there is already sufficient
 free headroom, saving system I/O resources.</td>
 <td><code>result_cleanup_max_free_percentage</code><br><code>asset_cleanup_max_free_percentage</code></td>
+</tr>
+<tr>
+<td><strong>Upfront Archiving</strong></td>
+<td><code>[archiving]</code></td>
+<td>Moves results of important jobs to the archive before their
+retention expires when results storage runs low.</td>
+<td><code>archive_important_jobs_min_free_percentage</code><br><code>archive_keep_free_percentage</code></td>
 </tr>
 </tbody>
 </table>
