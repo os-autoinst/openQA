@@ -16,6 +16,7 @@ use OpenQA::Test::Client 'client';
 use OpenQA::WebAPI::Controller::API::V1::JobTemplate;
 use Mojo::File 'path';
 use Mojo::IOLoop;
+use Mojo::Util qw(encode);
 use OpenQA::YAML qw(load_yaml dump_yaml);
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 04-products.pl');
@@ -571,6 +572,22 @@ subtest 'content-type' => sub {
       ['opensuse', 'opensuse test'],
       [sort keys %$yaml], '[no explicit Accept header] YAML of all groups contains names'
       || always_explain $t->tx->res->body;
+};
+
+subtest 'non-ASCII characters in YAML output' => sub {
+    my $unicode_template = "# comment with arrow: \x{2192}\nscenarios: {}\n";
+    my $previous_template = $opensuse->template;
+    $opensuse->update({template => $unicode_template});
+
+    $t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id, $accept_yaml)->status_is(200)
+      ->content_type_is('text/yaml;charset=UTF-8');
+    is $t->tx->res->body, encode('UTF-8', $unicode_template), 'single group YAML is returned as UTF-8 bytes';
+
+    $t->get_ok('/api/v1/job_templates_scheduling', $accept_yaml)->status_is(200);
+    my $all_yaml = load_yaml(string => $t->tx->res->text);
+    is $all_yaml->{opensuse}, $unicode_template, 'all groups YAML contains the non-ASCII character';
+
+    $opensuse->update({template => $previous_template});
 };
 
 subtest 'Migration' => sub {

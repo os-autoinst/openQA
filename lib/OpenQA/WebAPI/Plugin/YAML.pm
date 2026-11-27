@@ -8,11 +8,8 @@ use OpenQA::YAML 'validate_data';
 use Feature::Compat::Try;
 
 sub register ($self, $app, $conf = undef) {
-    $app->renderer->add_handler(
-        yaml => sub ($renderer, $c, $output, $options) {
-            delete $options->{encoding};
-            $$output = $c->stash->{yaml};
-        });
+    # The renderer always passes four arguments and signatures enforce arity
+    $app->renderer->add_handler(yaml => sub ($renderer, $c, $output, $options) { $$output = $c->stash->{yaml} });
     $app->hook(
         before_render => sub ($c, $args) {
             if (exists $args->{yaml} || exists $c->stash->{yaml}) {

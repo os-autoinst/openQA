@@ -95,7 +95,7 @@ sub schedules ($self) {
     my $json_code = sub { $self->render(json => $yaml) };
     my $yaml_code = sub {
         # In the case of a single group we return the template directly
-        # without encoding it to a string.
+        # without serializing it to a YAML string.
         # This is different to the behaviour when JSON is requested.
         # It is deprecated.
         unless ($single) {
