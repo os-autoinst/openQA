@@ -13,11 +13,12 @@ use OpenQA::App;
 use File::Basename;
 use Feature::Compat::Try;
 use Fcntl qw(:flock);
+use Time::Seconds;
 
 use constant VALID_CATEGORIES => qw(all resultfiles ulogs assets);
 
 # how long a leftover of an interrupted archive creation is kept before it is removed
-use constant STALE_ARCHIVE_AGE_SECONDS => 24 * 60 * 60;
+use constant STALE_ARCHIVE_AGE_SECONDS => ONE_DAY;
 
 sub archive_cache_dir () {
     return $ENV{OPENQA_JOB_DETAILS_ARCHIVE_CACHE_DIR} if $ENV{OPENQA_JOB_DETAILS_ARCHIVE_CACHE_DIR};
