@@ -123,7 +123,7 @@ def check_ldap(ldap_host: str, ldap_base: str, nick: str) -> tuple[str, str]:
     return "error", "LDAP: suseudbenabled attribute missing, status unknown"
 
 
-def render_table(stale_users: list[dict[str, Any]], summary: dict[str, int], *, dry_run: bool) -> None:
+def render_table(stale_users: list[dict[str, Any]], summary: dict[str, int], *, mode: str) -> None:
     """Print audit results and summary as a formatted text table."""
     if stale_users:
         header = f"{'ID':<8} {'USERNAME':<30} {'NICK':<15} {'ADMIN':<6} {'OPER':<6} {'KEYS':<8} {'STATUS':<12} REASON"
@@ -141,18 +141,18 @@ def render_table(stale_users: list[dict[str, Any]], summary: dict[str, int], *, 
     else:
         typer.echo("No stale user accounts found.\n")
 
-    mode = " (dry-run)" if dry_run else " (applied)"
-    typer.echo(f"Summary{mode}:")
+    typer.echo(f"Summary ({mode}):")
     typer.echo(f"  Total active users: {summary['total_active_users']}")
     typer.echo(f"  Confirmed stale accounts: {summary['stale_accounts']}")
     typer.echo(f"  Active API keys held by stale accounts: {summary['active_api_keys']}")
     typer.echo(f"  Privileged roles held by stale accounts: {summary['privileged_roles']}")
 
 
-def render_json(stale_users: list[dict[str, Any]], summary: dict[str, int], *, dry_run: bool) -> None:
+def render_json(stale_users: list[dict[str, Any]], summary: dict[str, int], *, dry_run: bool, aborted: bool) -> None:
     """Print audit results and summary in JSON format."""
     payload = {
         "dry_run": dry_run,
+        "aborted": aborted,
         "summary": summary,
         "stale_users": stale_users,
     }
@@ -398,13 +398,14 @@ def audit(  # ruff: ignore[too-many-arguments]
             err=True,
         )
     failures = 0 if is_suspicious or is_dry_run else anonymize_stale_users(stale_users, host)
+    mode = "aborted" if is_suspicious else ("dry-run" if is_dry_run else "applied")
 
     if normalized_format == "json":
-        render_json(stale_users, summary, dry_run=is_dry_run)
+        render_json(stale_users, summary, dry_run=is_dry_run, aborted=is_suspicious)
     elif normalized_format == "csv":
         render_csv(stale_users, summary)
     else:
-        render_table(stale_users, summary, dry_run=is_dry_run)
+        render_table(stale_users, summary, mode=mode)
 
     if is_suspicious or failures:
         raise typer.Exit(code=1)

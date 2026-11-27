@@ -208,6 +208,7 @@ def test_audit_dry_run_table(runner: CliRunner, sample_users: list[dict], tmp_pa
         assert "staleuser1" in res.stdout
         assert "staleuser2" in res.stdout
         assert "activeuser" not in res.stdout
+        assert "Summary (dry-run):" in res.stdout
         assert "Total active users: 5" in res.stdout
         assert "Confirmed stale accounts: 2" in res.stdout
         assert "Active API keys held by stale accounts: 2" in res.stdout
@@ -230,6 +231,7 @@ def test_audit_json_and_csv(runner: CliRunner, sample_users: list[dict], tmp_pat
         assert json_res.exit_code == 0
         data = json.loads(json_res.stdout)
         assert data["dry_run"] is True
+        assert data["aborted"] is False
         assert data["summary"]["stale_accounts"] == 2
         assert data["summary"]["active_api_keys"] == 2
         assert len(data["stale_users"]) == 2
@@ -318,9 +320,13 @@ def test_audit_aborts_when_most_accounts_look_stale(
 
     with patch("requests.Session.get", side_effect=mock_get), patch("subprocess.run") as mock_run:
         res = runner.invoke(mod.app, ["--users-file", str(users_file), "--apply"])
+        json_res = runner.invoke(mod.app, ["--users-file", str(users_file), "--apply", "--format", "json"])
 
     assert res.exit_code == 1
     assert "which exceeds --max-stale-percent 50" in res.stderr
+    assert "Summary (aborted):" in res.stdout
+    assert "anonymized" not in res.stdout
+    assert json.loads(json_res.stdout)["aborted"] is True
     assert mock_run.call_count == 0
 
 
