@@ -283,6 +283,22 @@ subtest 'Interrupted WebSocket connection (before we can tell the WebUI that we 
     $client->websocket_connection->sent_messages([]);
 };
 
+subtest 'Load-proportionate delay before accepting a job' => sub {
+    my $delay_mock = Test::MockModule->new('OpenQA::Test::FakeWorker', no_auto => 1);
+    $delay_mock->redefine(_calculate_load_delay => 0.1);
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 14, URL => $engine_url});
+    $job->accept;
+    is $job->status, 'accepting', 'job stays in accepting state until the load-proportionate delay has passed';
+    is_deeply $client->websocket_connection->sent_messages, [],
+      'job not accepted via WebSocket while the delay is pending';
+    wait_until_job_status_ok($job, 'accepted');
+    is_deeply
+      $client->websocket_connection->sent_messages,
+      [{json => {jobid => 14, type => 'accepted'}}], 'job accepted via WebSocket after the delay'
+      or always_explain $client->websocket_connection->sent_messages;
+    $client->websocket_connection->sent_messages([]);
+};
+
 subtest 'Job without id' => sub {
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => undef, URL => $engine_url});
     throws_ok { $job->start } qr/attempt to start job without ID and job info/, 'starting job without id prevented';
