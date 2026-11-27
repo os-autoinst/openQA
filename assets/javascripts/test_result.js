@@ -313,6 +313,7 @@ function setCurrentPreview(stepPreviewContainer, force) {
     })
     .catch(error => {
       console.warn('Failed to load data from: ' + link.dataset.url, error);
+      setCurrentPreview(null);
     });
 }
 

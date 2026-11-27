@@ -631,6 +631,36 @@ subtest 'arrow key navigation between steps' => sub {
     wait_for_ajax(msg => 'escape pressed to close preview');
 };
 
+subtest 'failed step details request resets the preview' => sub {
+    $driver->get('/tests/99946');
+    wait_for_ajax(msg => 'test 99946 loaded');
+    $driver->find_element_by_link_text('Details')->click();
+    wait_for_ajax(msg => 'details tab loaded');
+
+    $driver->find_element('.links_a a[data-url]')->click();
+    wait_for_element(
+        selector => '.links_a.current_preview',
+        is_displayed => 1,
+        timeout => 5,
+        desc => 'preview of the first fetched step shown'
+    );
+
+    $driver->execute_script('window.fetch = () => Promise.reject(new Error("simulated network failure"));');
+    my @step_links = @{$driver->find_elements('.links_a a[data-url]', 'css')};
+    $step_links[1]->click();
+    wait_until(
+        sub {
+            return $driver->execute_script('return document.querySelectorAll(".links_a.current_preview").length;') == 0;
+        },
+        'preview reset after the step details request failed',
+        5
+    );
+    unlike $driver->execute_script('return window.location.hash;'), qr{#step/},
+      'hash does not point at the step that failed to load';
+    is $driver->execute_script('return document.getElementById("preview_container_out").style.display;'), 'none',
+      'preview container hidden';
+};
+
 subtest 'misc details: title, favicon, go back, go to source view, go to log view' => sub {
     $driver->get('/tests/99946');
     wait_for_ajax(msg => 'test 99946 loaded');
