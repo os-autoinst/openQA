@@ -42,7 +42,7 @@ my %fake_events = (
     1080 => 'other_event',
     1081 => 'yet_other_event',
 );
-my $user = $schema->resultset('Users')->create_user('foo');
+my $user = $schema->resultset('Users')->create_user('foo', is_admin => 1, is_operator => 1);
 $events->create(
     {
         id => $_,
@@ -72,6 +72,21 @@ sub assume_events_being_deleted (@event_ids) {
 }
 
 # note: The tested time constraints are defined in t/data/41-audit-log/openqa.ini.
+
+subtest 'server-side sorting' => sub {
+    $events->search({})->update({t_created => make_time(0)});
+    $t->get_ok('/')->status_is(200);
+    ok $test_case->login($t, 'foo'), 'logged in as admin';
+
+    my @sorted_ids = sort { $a <=> $b } map { 0 + $_ } keys %fake_events;
+    my $ajax_ids = sub ($dir) {
+        my $url = '/admin/auditlog/ajax?draw=1&start=0&length=100&order%5B0%5D%5Bcolumn%5D=1';
+        my $data = $t->get_ok("$url&order%5B0%5D%5Bdir%5D=$dir")->status_is(200)->tx->res->json->{data};
+        return [map { $_->{id} } @$data];
+    };
+    is_deeply $ajax_ids->('desc'), [reverse @sorted_ids], 'descending time sort breaks ties on descending id';
+    is_deeply $ajax_ids->('asc'), \@sorted_ids, 'ascending time sort breaks ties on ascending id';
+};
 
 $events->delete_expired_entries;
 is_deeply all_events_ids, [sort keys %fake_events], 'all events considered recent enough to be kept';
