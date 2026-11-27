@@ -290,6 +290,55 @@ subtest 'Repository download re-syncs existing repo directory' => sub {
     $cache_log = '';
 };
 
+subtest 'Repository download leaves no staging or backup directories behind' => sub {
+    my $repo_base = $tempdir->child('cleanrepo');
+    my $repo_dir = $repo_base->child('current');
+    $repo_dir->make_path->child('stale-file')->spurt('outdated');
+    my $from = 'http://example.com/repos/clean/';
+    my $downloader_mock = Test::MockModule->new('OpenQA::Downloader');
+    $downloader_mock->redefine(which => sub ($cmd) { '/usr/bin/' . $cmd });
+    my $utils_mock = Test::MockModule->new('OpenQA::Utils');
+    $utils_mock->redefine(
+        run_cmd_with_log_return_error => sub ($cmd, %args) {
+            my $tmp_dest = $cmd->[-2];
+            path($tmp_dest, 'repodata')->make_path->child('repomd.xml')->spurt('<repomd/>');
+            return {status => 1, return_code => 0, exit_status => 0, stdout => '', stderr => ''};
+        });
+    is $downloader->download($from, $repo_dir, {is_repo => 1}), undef, 'Re-sync succeeds';
+    is_deeply $repo_base->list({dir => 1, hidden => 1})->map('basename')->sort->to_array, ['current'],
+      'Only the repository itself is left behind';
+    $cache_log = '';
+};
+
+subtest 'Repository download restores the previous repository when the swap fails' => sub {
+    my $repo_base = $tempdir->child('swapfail');
+    my $repo_dir = $repo_base->child('current');
+    $repo_dir->make_path->child('stale-file')->spurt('outdated');
+    my $from = 'http://example.com/repos/swapfail/';
+    my $downloader_mock = Test::MockModule->new('OpenQA::Downloader');
+    $downloader_mock->redefine(which => sub ($cmd) { '/usr/bin/' . $cmd });
+    my $utils_mock = Test::MockModule->new('OpenQA::Utils');
+    $utils_mock->redefine(
+        run_cmd_with_log_return_error => sub ($cmd, %args) {
+            my $tmp_dest = $cmd->[-2];
+            path($tmp_dest, 'repodata')->make_path->child('repomd.xml')->spurt('<repomd/>');
+            return {status => 1, return_code => 0, exit_status => 0, stdout => '', stderr => ''};
+        });
+    my $move_to = \&Mojo::File::move_to;
+    my $file_mock = Test::MockModule->new('Mojo::File');
+    $file_mock->redefine(
+        move_to => sub ($self, $to) {
+            die 'fake swap failure' if $self->basename =~ /^\.tmp_/ && $to eq $repo_dir->to_string;
+            return $move_to->($self, $to);
+        });
+    like $downloader->download($from, $repo_dir, {is_repo => 1}), qr/Failed to move repository to destination/,
+      'Swap failure reported';
+    ok -e $repo_dir->child('stale-file'), 'Previous repository restored';
+    is_deeply $repo_base->list({dir => 1, hidden => 1})->map('basename')->sort->to_array, ['current'],
+      'No staging or backup directory left behind';
+    $cache_log = '';
+};
+
 subtest 'Repository download keeps existing repo when remote is empty' => sub {
     my $repo_dir = $tempdir->child('repo', 'clearedrepo');
     $repo_dir->make_path->child('stale-file')->spurt('outdated');

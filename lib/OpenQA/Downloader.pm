@@ -58,6 +58,12 @@ sub download ($self, $url, $target, $options = {}) {
     return $err;
 }
 
+sub _remove_tree ($self, $path) {
+    my $log = $self->log;
+    try { $path->remove_tree }
+    catch ($e) { $log->warn("Unable to remove $path: $e") }    # uncoverable statement
+}
+
 sub _download_repo ($self, $url, $target, $options) {
     my $log = $self->log;
     my $name = path($target)->basename;
@@ -106,10 +112,7 @@ sub _download_repo ($self, $url, $target, $options) {
             closedir $dh;
         }
         if (!@staged) {
-            try { $tmp_target->remove_tree }
-            catch ($e) {
-                $log->warn("Unable to remove empty temporary directory $tmp_target: $e")
-            }    # uncoverable statement
+            $self->_remove_tree($tmp_target);
             if (-e $target_path) {
                 $log->info(qq{Repository "$target" is empty remotely; keeping previously downloaded copy});
                 $options->{on_success}->() if $options->{on_success};
@@ -117,21 +120,27 @@ sub _download_repo ($self, $url, $target, $options) {
             }
             return (undef, qq{Repository download of "$target" produced an empty result});
         }
+        # swap the staging directory into place while keeping the previous copy until the new one is there,
+        # so a job reading the repository never sees it missing
+        my $backup = path($target_dir, ".old_${name}_$$");
         try {
-            $target_path->remove_tree if -e $target_path;
+            $target_path->move_to($backup) if -e $target_path;
             $tmp_target->move_to($target_path);
         }
-        catch ($e) {    # uncoverable statement
-            try { $tmp_target->remove_tree }    # uncoverable statement
-            catch ($e2) { $log->warn("Unable to remove temporary directory $tmp_target: $e2") }  # uncoverable statement
-            return (undef, "Failed to move repository to destination: $e");    # uncoverable statement
+        catch ($e) {
+            try { $backup->move_to($target_path) if -e $backup && !-e $target_path }
+            catch ($e2) {
+                $log->warn("Unable to restore $target from $backup: $e2")    # uncoverable statement
+            }
+            $self->_remove_tree($tmp_target);
+            return (undef, "Failed to move repository to destination: $e");
         }
+        $self->_remove_tree($backup);
         $options->{on_success}->() if $options->{on_success};
         return (undef, undef);
     }
 
-    try { $tmp_target->remove_tree }
-    catch ($e) { $log->warn("Unable to remove temporary directory $tmp_target: $e") }    # uncoverable statement
+    $self->_remove_tree($tmp_target);
     my $code = $res->{return_code};
     if ($res->{stderr} =~ /\b([45]\d{2})\b/) {
         $code = $1;
