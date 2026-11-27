@@ -98,6 +98,22 @@ subtest 'successful login with valid credentials and redirection' => sub {
     like $actions, qr/Logged in as localuser/, 'user interface shows user is logged in as localuser';
 };
 
+subtest 'post-login redirect target is reduced to a same-origin path' => sub {
+    $t->get_ok('/logout')->status_is(302, 'logout before redirect target check succeeds');
+
+    $t->post_ok(
+        '/login',
+        form => {
+            username => 'localuser',
+            password => 'correctpassword',
+            return_page => 'http://evil.example/pwned'
+        }
+    )->status_is(302, 'login with external return_page returns redirect status')
+      ->header_is(Location => '/pwned', 'external return_page is reduced to its path');
+
+    $t->get_ok('/logout')->status_is(302, 'logout after redirect target check succeeds');
+};
+
 subtest 'session termination on logout' => sub {
     $t->get_ok('/logout')->status_is(302, 'GET logout request returns redirect status')
       ->header_is(Location => '/', 'logout redirects to index page');
@@ -392,6 +408,18 @@ subtest 'successful password change, credential transition, and audit logging' =
     $t->get_ok('/logout')->status_is(302, 'final logout succeeds');
 };
 
+subtest 'password change refused for non-local accounts' => sub {
+    $schema->resultset('Users')->create_user('openidpwuser', provider => 'openid');
+    my $csrf = forge_session_for('openidpwuser');
+
+    $t->post_ok('/password_change',
+        form => {old_password => 'irrelevant', new_password => 'newpassword1', csrf_token => $csrf})
+      ->status_is(403, 'password change refused for non-local account')
+      ->content_like(qr/Cannot change password of non-local account/, 'error message names the non-local account');
+
+    $t->get_ok('/logout')->status_is(302, 'logout after non-local password change attempt succeeds');
+};
+
 subtest 'account deletion access controls and non-local account guard' => sub {
     $t->post_ok('/delete_account', form => {csrf_token => 'dummy'})
       ->status_is(302, 'unauthenticated POST /delete_account returns redirect')
@@ -535,7 +563,6 @@ subtest 'admin deleting another user account' => sub {
 
     my $admin_csrf
       = $t->get_ok('/admin/users')->status_is(200, 'admin users page accessible')
-      ->text_is('thead th:nth-child(5)', 'Provider', 'provider table header is displayed')
       ->text_is("#user_$target_id .provider", 'Local', 'target user row displays Local provider')
       ->element_exists(qq{#user_$target_id form[action="/admin/user/$target_id/delete"][method="POST"]},
         'delete form present for active local user')

@@ -5,6 +5,7 @@ package OpenQA::Shared::Controller::Session;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use Carp 'croak';
+use Mojo::URL;
 use OpenQA::WebAPI::Auth::Local qw(hash_password verify_password);
 
 sub _redirect_back ($self) {
@@ -22,6 +23,8 @@ sub _render_forbidden ($self, $text = 'Forbidden') {
     $self->render(text => $text, status => 403);
     return undef;
 }
+
+sub _auth_method_is_local ($self) { ($self->app->config->{auth}->{method} // '') eq 'Local' }
 
 sub ensure_user ($self) { $self->current_user ? 1 : $self->_redirect_back }
 
@@ -66,6 +69,7 @@ sub return_page ($self) { $self->param('return_page') || $self->req->headers->re
 
 sub create ($self) {
     my $ref = $self->param('return_page') || $self->req->headers->referrer;
+    $ref = Mojo::URL->new($ref)->path_query if $ref;
     my $config = $self->app->config;
     my $auth_method = $config->{auth}->{method};
     my $auth_module = "OpenQA::WebAPI::Auth::$auth_method";
@@ -114,12 +118,12 @@ sub _validate_password ($self, $password, $username) {
 }
 
 sub register_form ($self) {
-    return $self->_render_forbidden unless ($self->app->config->{auth}->{method} // '') eq 'Local';
+    return $self->_render_forbidden unless $self->_auth_method_is_local;
     return $self->render('main/register');
 }
 
 sub register ($self) {
-    return $self->_render_forbidden unless ($self->app->config->{auth}->{method} // '') eq 'Local';
+    return $self->_render_forbidden unless $self->_auth_method_is_local;
 
     my $username = $self->param('username');
     my $password = $self->param('password');
@@ -152,17 +156,20 @@ sub register ($self) {
 }
 
 sub password_change_form ($self) {
-    return $self->_render_forbidden unless ($self->app->config->{auth}->{method} // '') eq 'Local';
+    return $self->_render_forbidden unless $self->_auth_method_is_local;
     return undef unless $self->ensure_user;
     return $self->render('main/password_change');
 }
 
 sub password_change ($self) {
-    return $self->_render_forbidden unless ($self->app->config->{auth}->{method} // '') eq 'Local';
+    return $self->_render_forbidden unless $self->_auth_method_is_local;
     return undef unless $self->ensure_user;
     return undef unless $self->_check_csrf_token;
 
     my $user = $self->current_user;
+    return $self->_render_forbidden('Cannot change password of non-local account')
+      if ($user->provider // '') ne 'Local';
+
     my $old_password = $self->param('old_password');
     my $new_password = $self->param('new_password');
 
@@ -187,7 +194,7 @@ sub password_change ($self) {
 }
 
 sub delete_account ($self) {
-    return $self->_render_forbidden unless ($self->app->config->{auth}->{method} // '') eq 'Local';
+    return $self->_render_forbidden unless $self->_auth_method_is_local;
     return undef unless $self->ensure_user;
     return undef unless $self->_check_csrf_token;
 
