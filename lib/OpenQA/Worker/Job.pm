@@ -243,12 +243,15 @@ sub _set_upload_inactivity_timeout ($self, $timeout = undef) {
     $self->{_upload_inactivity_timer} = $loop->timer($timeout => sub { $self->_handle_upload_inactivity_timeout });
 }
 
+sub _is_upload_timeout ($self) { $self->{_upload_timeout} || $self->{_upload_inactivity_timeout_exceeded} }
+
 sub _reset_upload_inactivity_timeout ($self) {
-    return unless $self->status eq 'stopping';
+    return if $self->status ne 'stopping' || $self->_is_upload_timeout;
     $self->_set_upload_inactivity_timeout;
 }
 
 sub _terminate_upload_due_to_timeout ($self, $flag, $message) {
+    return undef if $self->_is_upload_timeout;
     my $job_id = $self->id;
     log_warning("Job $job_id stopped because $message");
     $self->_remove_timer([qw(_upload_results_timer _timeout_timer _upload_timeout_timer _upload_inactivity_timer)]);
@@ -263,6 +266,7 @@ sub _terminate_upload_due_to_timeout ($self, $flag, $message) {
             kill 'KILL', $pid;
         }
     }
+    delete $self->{_upload_results_callback};
     $self->conclude_upload_if_ongoing;
     $self->_stop_step_5_finalize(WORKER_SR_TIMEOUT, {result => TIMEOUT_EXCEEDED});
 }
@@ -403,9 +407,11 @@ sub stop ($self, $reason = undef) {
     $self->_stop_step_2_post_status(
         $reason,
         sub {
+            return undef if $self->_is_upload_timeout;    # _terminate_upload_due_to_timeout will finalize
             $self->_stop_step_3_announce(
                 $reason,
                 sub {
+                    return undef if $self->_is_upload_timeout;    # _terminate_upload_due_to_timeout will finalize
                     $self->kill;
                     $self->_stop_step_4_upload(
                         $reason,
@@ -457,6 +463,7 @@ sub _redact_file ($file_path, $file_name) {
 }
 
 sub _stop_step_4_upload ($self, $reason, $callback) {
+    return undef if $self->_is_upload_timeout;    # _terminate_upload_due_to_timeout will finalize
     my $job_id = $self->id;
     my $pooldir = $self->worker->pool_directory;
 
@@ -542,7 +549,7 @@ sub _stop_step_4_upload ($self, $reason, $callback) {
         sub {
             my ($subprocess, $err, $reason) = @_;
             delete $self->{_upload_subprocess};
-            return if $self->{_upload_timeout} || $self->{_upload_inactivity_timeout_exceeded};
+            return undef if $self->_is_upload_timeout;    # _terminate_upload_due_to_timeout will finalize
             $self->_reset_upload_inactivity_timeout;
             log_error("Upload subprocess error: $err") if $err;
             $self->_stop_step_5_1_upload($reason // WORKER_SR_API_FAILURE, $callback);
@@ -551,6 +558,7 @@ sub _stop_step_4_upload ($self, $reason, $callback) {
 }
 
 sub _stop_step_5_1_upload ($self, $reason, $callback) {
+    return undef if $self->_is_upload_timeout;    # _terminate_upload_due_to_timeout will finalize
 
     # signal a possibly ongoing result upload that logs and assets have been uploaded
     $self->{_has_uploaded_logs_and_assets} = 1;
@@ -563,6 +571,7 @@ sub _stop_step_5_1_upload ($self, $reason, $callback) {
 }
 
 sub _stop_step_5_2_upload ($self, $reason, $callback) {
+    return undef if $self->_is_upload_timeout;    # _terminate_upload_due_to_timeout will finalize
     $self->_reset_upload_inactivity_timeout;
 
     # do final status upload for selected reasons
@@ -588,6 +597,8 @@ sub _stop_step_5_2_upload ($self, $reason, $callback) {
             $reason,
             {result => OpenQA::Jobs::Constants::INCOMPLETE},
             sub {
+                return undef if $self->_is_upload_timeout;    # _terminate_upload_due_to_timeout will finalize
+
                 # try to replenish registration (maybe the error is caused by wrong registration)
                 $self->client->register;
                 $callback->();
@@ -615,6 +626,7 @@ sub _stop_step_5_2_upload ($self, $reason, $callback) {
         params => {dup_type_auto => 1},
         callback => sub {
             my ($duplication_res) = @_;
+            return undef if $self->_is_upload_timeout;    # _terminate_upload_due_to_timeout will finalize
             if (!$duplication_res) {
                 log_warning("Failed to duplicate job $job_id.");
                 $client->add_context_to_last_error("duplication after $reason");
@@ -720,6 +732,7 @@ sub _set_job_done ($self, $reason, $params, $callback) {
 }
 
 sub _stop_step_5_finalize ($self, $reason, $params) {
+    $self->_remove_timer([qw(_upload_timeout_timer _upload_inactivity_timer)]);
     $self->_set_job_done(
         $reason, $params,
         sub ($response = {}) {
@@ -789,11 +802,12 @@ sub _calculate_upload_results_interval ($self) {
 }
 
 sub _conclude_upload ($self, $callback = undef, $result = {}) {
-    $self->_reset_upload_inactivity_timeout if $self->status eq 'stopping';
     my $existing_callback = delete $self->{_upload_results_callback};
     $callback //= $existing_callback;
     $self->{_is_uploading_results} = 0;
     $self->emit(uploading_results_concluded => $result);
+    return undef if $self->_is_upload_timeout;    # _terminate_upload_due_to_timeout will finalize
+    $self->_reset_upload_inactivity_timeout if $self->status eq 'stopping';
     Mojo::IOLoop->next_tick($callback) if $callback;
 }
 
@@ -802,6 +816,8 @@ sub conclude_upload_if_ongoing ($self, $result = {}) {
 }
 
 sub _upload_results ($self, $callback) {
+    return undef if $self->_is_upload_timeout;    # _terminate_upload_due_to_timeout will finalize
+
     # avoid concurrent upload chains; the deferred call removes the timer set by the ongoing one
     return $self->once(uploading_results_concluded => sub (@) { $self->_upload_results($callback) })
       if $self->{_is_uploading_results};
@@ -928,6 +944,7 @@ sub _upload_results_step_0_prepare ($self, $callback) {
         \%status,
         sub {
             my ($status_post_res) = @_;
+            return undef if $self->_is_upload_timeout;    # _terminate_upload_due_to_timeout will finalize
             $self->_reset_upload_inactivity_timeout;
 
             # handle error occurred when posting the status
@@ -1020,17 +1037,19 @@ sub _upload_results_step_2_2_upload_images ($self, $callback, $error) {
 }
 
 sub _upload_results_step_2_upload_images ($self, $callback) {
+    return undef if $self->_is_upload_timeout;    # _terminate_upload_due_to_timeout will finalize
     $self->{_upload_images_subprocess} = Mojo::IOLoop->subprocess(
         sub { $self->_upload_results_step_2_1_upload_images },
         sub ($subprocess, $error, @args) {
             delete $self->{_upload_images_subprocess};
-            return if $self->{_upload_timeout} || $self->{_upload_inactivity_timeout_exceeded};
+            return undef if $self->_is_upload_timeout;    # _terminate_upload_due_to_timeout will finalize
             $self->_reset_upload_inactivity_timeout;
             $self->_upload_results_step_2_2_upload_images($callback, $error);
         });
 }
 
 sub _upload_results_step_3_finalize ($self, $upload_up_to, $callback) {
+    return undef if $self->_is_upload_timeout;    # _terminate_upload_due_to_timeout will finalize
 
     # continue uploading results to update the live log until logs and assets have been uploaded
     unless ($self->{_has_uploaded_logs_and_assets}) {
