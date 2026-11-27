@@ -1102,3 +1102,6 @@ window.renderRestarts = renderRestarts;
 window.renderHttpUrlAsLink = renderHttpUrlAsLink;
 window.getXhrError = getXhrError;
 window.updateTimeago = updateTimeago;
+window.handleJSONResponseOrThrow = handleJSONResponseOrThrow;
+window.setupTablePersistence = setupTablePersistence;
+window.updateOverviewRestartedJobs = updateOverviewRestartedJobs;
