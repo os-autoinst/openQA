@@ -37,15 +37,16 @@ sub render_response (%args) {
 
     # add parameter for sort order
     my @order_by_params;
+    my $primary_order = '';
     my $index = 0;
     while (1) {
         my $column_index = $controller->param("order[$index][column]") // @$columns;
         my $column_order = $controller->param("order[$index][dir]");
         last if $column_index >= @$columns || !grep { $column_order eq $_ } qw(asc desc);
+        $primary_order = $column_order unless $primary_order;
         push @order_by_params, {'-' . $column_order => $columns->[$column_index]};
         ++$index;
     }
-    my $primary_order = $controller->param('order[0][dir]') // '';
     push @order_by_params, ($primary_order eq 'desc' ? {-desc => 'me.id'} : 'me.id');
     $params->{order_by} = \@order_by_params;
 
