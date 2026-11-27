@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: read
+  statuses: read
 
 env:
   OPENQA_HOST: ${{ secrets.OPENQA_URL || 'https://openqa.opensuse.org' }}
@@ -20,6 +21,7 @@ env:
   OPENQA_API_SECRET: ${{ secrets.OPENQA_API_SECRET }}
   OPENQA_GROUP_ID: ${{ secrets.OPENQA_GROUP_ID || '1' }}
   PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+  HEAD_SHA: ${{ github.event.pull_request.head.sha || '' }}
 
 jobs:
   openqa-in-openqa-tests:
@@ -28,30 +30,68 @@ jobs:
     container:
       image: registry.opensuse.org/devel/openqa/containers/tumbleweed:client
     env:
-      OPENQA_REPO_URL: https://download.opensuse.org/repositories/devel:/openQA:/GitHub:/os-autoinst:/openQA:/PR-${{ github.event.pull_request.number || inputs.pr_number }}/openSUSE_Tumbleweed/
+      OBS_PROJECT: devel:openQA:GitHub:os-autoinst:openQA:PR-${{ env.PR_NUMBER }}
+      OPENQA_REPO_URL: https://download.opensuse.org/repositories/devel:/openQA:/GitHub:/os-autoinst:/openQA:/PR-${{ env.PR_NUMBER }}/openSUSE_Tumbleweed/
     steps:
       - name: Validate environment
         run: |
-          if [ -z "$PR_NUMBER" ]; then
-            echo "Error: PR number could not be determined."
-            exit 1
-          fi
+          case "$PR_NUMBER" in
+              ''|*[!0-9]*)
+                  echo "Error: PR number could not be determined."
+                  exit 1
+                  ;;
+          esac
           if [ -z "$OPENQA_API_KEY" ] || [ -z "$OPENQA_API_SECRET" ]; then
             echo "::warning::OPENQA_API_KEY or OPENQA_API_SECRET not set in secrets."
             exit 1
           fi
-      - name: Wait for OBS repository publication
+      - name: Wait for the OBS build of the PR head commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Waiting for OBS repository $OPENQA_REPO_URL to be published..."
+          head_sha="$HEAD_SHA"
+          if [ -z "$head_sha" ]; then
+            head_sha=$(curl -sSf -H "Authorization: Bearer $GH_TOKEN" \
+              "https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" | jq -r .head.sha)
+          fi
+          echo "Waiting for the OBS build of $head_sha in $OBS_PROJECT..."
+          # The OBS SCM/CI statuses are bound to the commit they were built from, so the
+          # repository published for an earlier push to the same PR cannot satisfy this gate.
+          # The newest 100 statuses cover the latest build round of all package contexts.
+          statuses_url="https://api.github.com/repos/$GITHUB_REPOSITORY/commits/$head_sha/statuses?per_page=100"
+          verdict=pending
+          for i in $(seq 1 60); do
+            verdict=$(curl -sSf -H "Authorization: Bearer $GH_TOKEN" "$statuses_url" 2>/dev/null |
+              jq -r '[ .[] | select(.context | test("^OBS: .* - openSUSE_Tumbleweed/x86_64$")) ]
+                | group_by(.context) | map(sort_by(.created_at, .id) | last) as $tw
+                | if ($tw | length) == 0 then "pending"
+                elif ($tw | map(select(.state == "failure" or .state == "error")) | length) > 0 then "failed"
+                elif ($tw | map(select(.state == "success")) | length) == ($tw | length) then "built"
+                else "pending" end' 2>/dev/null)
+            if [ "$verdict" = built ] || [ "$verdict" = failed ]; then
+              break
+            fi
+            verdict=pending
+            echo "No successful Tumbleweed build of $head_sha yet (attempt $i/60), sleeping 30s..."
+            sleep 30
+          done
+          if [ "$verdict" = failed ]; then
+            echo "::error::The OBS build of $head_sha failed, see https://build.opensuse.org/project/show/$OBS_PROJECT"
+            exit 1
+          fi
+          if [ "$verdict" != built ]; then
+            echo "::error::Timeout waiting for the OBS build of $head_sha in $OBS_PROJECT"
+            exit 1
+          fi
           for i in $(seq 1 60); do
             if curl -sSf -I "${OPENQA_REPO_URL}repodata/repomd.xml" >/dev/null 2>&1; then
               echo "OBS repository is published."
               exit 0
             fi
-            echo "Repository metadata not ready yet (attempt $i/60), sleeping 30s..."
+            echo "Repository metadata not served yet (attempt $i/60), sleeping 30s..."
             sleep 30
           done
-          echo "Timeout waiting for OBS repository to be published."
+          echo "::error::Timeout waiting for $OPENQA_REPO_URL to publish its metadata"
           exit 1
       - name: Fetch scenario definitions
         run: >-
@@ -85,4 +125,4 @@ jobs:
           BUILD="PR-${PR_NUMBER}" _GROUP_ID=0
           _OBSOLETE=1 _ONLY_OBSOLETE_SAME_BUILD=1
           OPENQA_REPO_URL="$OPENQA_REPO_URL"
-          OPENQA_OBS_PROJECT="devel:openQA:GitHub:os-autoinst:openQA:PR-${PR_NUMBER}"
+          OPENQA_OBS_PROJECT="$OBS_PROJECT"
