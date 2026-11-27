@@ -126,7 +126,8 @@ sub delete_self ($self) {
 =item create_api_key()
 
 Create a new API key. Accepts optional C<expiration> datetime and optional
-C<comment> as form params. Returns the key, secret, comment, and expiration.
+C<comment> as form params or in a JSON request body. Returns the key, secret,
+comment, and expiration.
 
 =back
 
