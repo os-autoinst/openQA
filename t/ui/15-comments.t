@@ -10,6 +10,7 @@ use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Log qw(log_debug);
+use OpenQA::Jobs::Constants;
 use OpenQA::Test::TimeLimit '37';
 use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
@@ -315,12 +316,11 @@ subtest 'commenting in test results including labels' => sub {
             {
                 id => 80005,
                 state => 'done',
-                result => 'parallel_failed',
+                result => OpenQA::Jobs::Constants::PARALLEL_FAILED,
                 TEST => 'parallel_job',
                 t_finished => '2020-01-01 00:00:00',
                 t_started => '2020-01-01 00:00:00',
                 t_created => '2020-01-01 00:00:00',
-                priority => 50,
             });
         my $urls = <<"EOM";
 Can you see status circles after the URLs?
