@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -36,6 +37,10 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 my $db = $t->app->schema;
 my $workers = $db->resultset('Workers');
 my $jobs = $db->resultset('Jobs');
+
+sub permissions ($user) {
+    return (is_admin => $user->is_admin, is_operator => $user->is_admin || $user->is_operator);
+}
 
 $db->txn_begin;
 
@@ -171,14 +176,44 @@ subtest 'worker reservation model' => sub {
     my $other_operator = $users->create({username => 'galahad', is_operator => 1, feature_version => 0});
 
     my @rejected = (
-        [[$non_operator, 'valid comment', '1h'], qr/Insufficient permissions/, 'non-operator users'],
-        [[$operator, ' ', '1h'], qr/comment is required/, 'a blank comment'],
-        [[$operator, undef, '1h'], qr/comment is required/, 'a missing comment'],
-        [[$operator, 'valid comment', 'soon'], qr/Invalid duration format 'soon'/, 'an unparsable duration'],
-        [[$operator, 'valid comment', '10d'], qr/exceeds the maximum of 432000s/, 'a duration beyond the operator max'],
-        [[$operator, 'valid comment', '0'], qr/only allowed for admins/, 'an indefinite duration as operator'],
         [
-            [$operator, 'valid comment', '1h', 0, 'invalid tag!'],
+            [$non_operator, comment => 'valid comment', duration => '1h', permissions($non_operator)],
+            qr/Insufficient permissions/,
+            'non-operator users'
+        ],
+        [
+            [$operator, comment => ' ', duration => '1h', permissions($operator)],
+            qr/comment is required/,
+            'a blank comment'
+        ],
+        [
+            [$operator, comment => undef, duration => '1h', permissions($operator)],
+            qr/comment is required/,
+            'a missing comment'
+        ],
+        [
+            [$operator, comment => 'valid comment', duration => 'soon', permissions($operator)],
+            qr/Invalid duration format 'soon'/,
+            'an unparsable duration'
+        ],
+        [
+            [$operator, comment => 'valid comment', duration => '10d', permissions($operator)],
+            qr/exceeds the maximum of 432000s/,
+            'a duration beyond the operator max'
+        ],
+        [
+            [$operator, comment => 'valid comment', duration => '0', permissions($operator)],
+            qr/only allowed for admins/,
+            'an indefinite duration as operator'
+        ],
+        [
+            [
+                $operator,
+                comment => 'valid comment',
+                duration => '1h',
+                worker_class => 'invalid tag!',
+                permissions($operator)
+            ],
             qr/Invalid specific worker class/,
             'an invalid specific class tag'
         ],
@@ -187,7 +222,7 @@ subtest 'worker reservation model' => sub {
     ok !$worker->is_reserved, 'worker is not reserved after all rejected attempts';
     is $worker->reservation, undef, 'unreserved worker reports no reservation';
 
-    $worker->reserve($operator, 'operator reservation', '2h');
+    $worker->reserve($operator, comment => 'operator reservation', duration => '2h', permissions($operator));
     ok $worker->is_reserved, 'worker is considered reserved after a successful reserve call';
     is $worker->status, 'reserved', 'worker status reports reserved while the reservation is active';
     is $worker->reservation->{user}, $operator->username, 'reservation names the reserving operator';
@@ -207,30 +242,42 @@ subtest 'worker reservation model' => sub {
         $worker->discard_changes;
     }
 
-    throws_ok { $worker->reserve($other_operator, 'other reservation', '1h') }
+    throws_ok {
+        $worker->reserve(
+            $other_operator,
+            comment => 'other reservation',
+            duration => '1h',
+            permissions($other_operator))
+    }
     qr/already reserved by percival/, 'refuse overlapping reservations and name the current owner';
-    throws_ok { $worker->reserve($admin, 'admin without force', '1h') }
+    throws_ok { $worker->reserve($admin, comment => 'admin without force', duration => '1h', permissions($admin)) }
     qr/already reserved/, 'refuse admin reservations on reserved workers unless forced';
 
-    $worker->reserve($admin, 'admin override reservation', '3h', 1);
+    $worker->reserve(
+        $admin,
+        comment => 'admin override reservation',
+        duration => '3h',
+        force => 1,
+        permissions($admin));
     is $worker->reservation->{user}, $admin->username, 'admin force override changes the reservation owner';
     is $worker->reservation->{comment}, 'admin override reservation', 'admin force override updates the comment';
 
-    throws_ok { $worker->release($other_operator) }
+    throws_ok { $worker->release($other_operator, permissions($other_operator)) }
     qr/Insufficient permissions/, 'refuse release attempts by users other than the owner or an admin';
-    $worker->release($admin);
+    $worker->release($admin, permissions($admin));
     ok !$worker->is_reserved, 'worker is no longer reserved after release';
     is $worker->status, 'idle', 'released worker status goes back to idle';
-    throws_ok { $worker->release($admin) } qr/not reserved/, 'refuse releasing a worker without reservation';
+    throws_ok { $worker->release($admin, permissions($admin)) } qr/not reserved/,
+      'refuse releasing a worker without reservation';
 
-    $worker->reserve($operator, 'expiring reservation', '1h');
+    $worker->reserve($operator, comment => 'expiring reservation', duration => '1h', permissions($operator));
     $worker->set_property(RESERVED_T_EXPIRES => time - 1);
     ok !$worker->is_reserved, 'reservation is inactive once the expiry has passed';
     is $worker->status, 'idle', 'expired reservation status goes back to idle';
     is $worker->reservation, undef, 'expired reservation is not reported despite left over properties';
     is_deeply $workers->active_reservations, {}, 'bulk lookup ignores expired reservations';
 
-    $worker->reserve($admin, 'indefinite reservation', '0');
+    $worker->reserve($admin, comment => 'indefinite reservation', duration => '0', permissions($admin));
     ok $worker->is_reserved, 'a duration of 0 reserves the worker indefinitely';
     is $worker->reservation->{t_expires}, undef, 'indefinite reservation has no expiry timestamp';
 
@@ -276,11 +323,16 @@ subtest 'worker reservation class matching' => sub {
 
     for my $case (@cases) {
         if (defined $case->{reserve_class}) {
-            $worker->reserve($admin, 'test', '1h', 0, $case->{reserve_class});
+            $worker->reserve(
+                $admin,
+                comment => 'test',
+                duration => '1h',
+                worker_class => $case->{reserve_class},
+                permissions($admin));
             is $workers->stats->{reserved_workers}, 1, "tagged worker counts as reserved in stats for: $case->{name}";
         }
         else {
-            $worker->reserve($admin, 'test', '1h', 0);
+            $worker->reserve($admin, comment => 'test', duration => '1h', permissions($admin));
             is $workers->stats->{reserved_workers}, 1, "untagged worker counts as reserved in stats for: $case->{name}";
         }
 
@@ -292,7 +344,7 @@ subtest 'worker reservation class matching' => sub {
               "matching expected $req->{expected} for needed [@$needed] in case: $case->{name}";
         }
 
-        $worker->release($admin);
+        $worker->release($admin, permissions($admin));
     }
 };
 
@@ -302,7 +354,7 @@ subtest 'unlimited admin reservations are capped once admin_max_duration is conf
     $config->{admin_max_duration} = ONE_HOUR;
     my $worker = $workers->first;
     my $admin = $db->resultset('Users')->find(99901);
-    throws_ok { $worker->reserve($admin, 'too long for an admin', '2h') }
+    throws_ok { $worker->reserve($admin, comment => 'too long for an admin', duration => '2h', permissions($admin)) }
     qr/exceeds the maximum of 3600s/, 'admins are limited as well once a maximum is configured';
     ok !$worker->is_reserved, 'worker stays unreserved when the admin duration is rejected';
 };
@@ -317,19 +369,27 @@ subtest 'worker host reservation model' => sub {
     my $w2 = $workers->create({host => 'testhost', instance => 2});
     my $w3 = $workers->create({host => 'testhost', instance => 3});
 
-    $workers->reserve_host('testhost', $operator, comment => 'host maintenance', duration => '2h');
+    $workers->reserve_host(
+        'testhost', $operator,
+        comment => 'host maintenance',
+        duration => '2h',
+        permissions($operator));
     for my $w ($w1, $w2, $w3) {
         $w->discard_changes;
         ok $w->is_reserved, 'instance ' . $w->name . ' is reserved atomically via host reservation';
         is $w->reservation->{scope}, 'host', 'instance ' . $w->name . ' reservation scope is host';
     }
 
-    $workers->release_host('testhost', $operator);
+    $workers->release_host('testhost', $operator, permissions($operator));
 
-    $w2->reserve($operator, 'instance reservation', '1h');
+    $w2->reserve($operator, comment => 'instance reservation', duration => '1h', permissions($operator));
 
     throws_ok {
-        $workers->reserve_host('testhost', $other_operator, comment => 'host maint', duration => '1h');
+        $workers->reserve_host(
+            'testhost', $other_operator,
+            comment => 'host maint',
+            duration => '1h',
+            permissions($other_operator));
     }
     qr/already reserved/, 'refuse overlapping host reservation due to conflict';
 
@@ -338,10 +398,15 @@ subtest 'worker host reservation model' => sub {
     ok !$w1->is_reserved, 'instance 1 was not reserved due to rollback';
     ok !$w3->is_reserved, 'instance 3 was not reserved due to rollback';
 
-    $w2->release($operator);
+    $w2->release($operator, permissions($operator));
 
-    $w2->reserve($operator, 'instance reservation', '1h');
-    $workers->reserve_host('testhost', $admin, comment => 'admin force', duration => '1h', force => 1);
+    $w2->reserve($operator, comment => 'instance reservation', duration => '1h', permissions($operator));
+    $workers->reserve_host(
+        'testhost', $admin,
+        comment => 'admin force',
+        duration => '1h',
+        force => 1,
+        permissions($admin));
     for my $w ($w1, $w2, $w3) {
         $w->discard_changes;
         ok $w->is_reserved, 'instance ' . $w->name . ' is reserved after force';
@@ -349,18 +414,18 @@ subtest 'worker host reservation model' => sub {
     }
 
     throws_ok {
-        $workers->release_host('testhost', $other_operator);
+        $workers->release_host('testhost', $other_operator, permissions($other_operator));
     }
     qr/Insufficient permissions/, 'non-admin release fails when instances are foreign-owned';
 
-    $workers->release_host('testhost', $admin);
+    $workers->release_host('testhost', $admin, permissions($admin));
     for my $w ($w1, $w2, $w3) {
         $w->discard_changes;
         ok !$w->is_reserved, 'instance ' . $w->name . ' is released';
     }
 
-    $workers->reserve_host('testhost', $operator, comment => 'host maint', duration => '2h');
-    $w2->release($operator);
+    $workers->reserve_host('testhost', $operator, comment => 'host maint', duration => '2h', permissions($operator));
+    $w2->release($operator, permissions($operator));
     $w2->discard_changes;
     $w1->discard_changes;
     $w3->discard_changes;
@@ -368,20 +433,20 @@ subtest 'worker host reservation model' => sub {
     ok $w1->is_reserved, 'instance 1 is still reserved';
     ok $w3->is_reserved, 'instance 3 is still reserved';
 
-    $workers->release_host('testhost', $operator);
+    $workers->release_host('testhost', $operator, permissions($operator));
 
     $workers->reserve_host(
         'testhost', $operator,
         comment => 'verification',
         duration => '1h',
-        worker_class => 'poo167749'
-    );
+        worker_class => 'poo167749',
+        permissions($operator));
     for my $w ($w1, $w2, $w3) {
         $w->discard_changes;
         is $w->reservation->{worker_class}, 'poo167749', 'worker_class set on ' . $w->name;
     }
 
-    $workers->release_host('testhost', $operator);
+    $workers->release_host('testhost', $operator, permissions($operator));
     $db->txn_rollback;
 };
 

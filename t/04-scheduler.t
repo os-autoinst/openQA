@@ -873,10 +873,16 @@ subtest 'scheduler handles worker reservations' => sub {
         scalar grep { $_->id == $worker->id } @{OpenQA::Scheduler::Model::Jobs::determine_online_workers(0)};
     };
 
-    $worker->reserve($operator, 'scheduled reservation', '1h');
+    $worker->reserve($operator, comment => 'scheduled reservation', duration => '1h', is_operator => 1);
     ok !$is_online->(), 'reserved worker without tag is not returned as an online candidate by the scheduler';
     $worker->release($operator);
-    $worker->reserve($operator, 'scheduled reservation with tag', '1h', 0, 'poo167749');
+    $worker->reserve(
+        $operator,
+        comment => 'scheduled reservation with tag',
+        duration => '1h',
+        worker_class => 'poo167749',
+        is_operator => 1
+    );
     ok $is_online->(), 'reserved worker with verification tag is returned as an online candidate by the scheduler';
     my $scheduler = OpenQA::Scheduler::Model::Jobs->new;
     my $job_prod = $schema->resultset('Jobs')
