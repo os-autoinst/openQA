@@ -1854,9 +1854,9 @@ An archive is created on demand by a Minion job and kept for further downloads
 of the same job. The cache is rotated down to the limit times the watermark as
 soon as it exceeds the limit or the file system holding it has less than the
 configured minimum of free space. Because that check cannot see leftovers of
-interrupted creations, the same cleanup also runs at the start of every result
-cleanup, including the runs which are skipped for sufficient free space via
-`result_cleanup_max_free_percentage`.
+interrupted creations, the same cleanup also runs at the start of the
+`limit_results_and_logs` Minion job, before that job returns early for
+sufficient free space via `result_cleanup_max_free_percentage`.
 
 Leftovers are removed automatically: a temporary file (`job_<id>.zip.tmp.<hex>`)
 once it is older than a day and no creation holds its lock, and a lock file
