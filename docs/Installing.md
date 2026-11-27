@@ -1173,10 +1173,6 @@ effective, also check out the setting `LOCK_NAME`. Both settings can be found
 in [the worker configuration](GettingStarted.md#worker-configuration) where
 they are explained in greater detail.
 
-Once you got workers running they should show up in the admin section of openQA in
-the workers section as 'idle'. When you get so far, you have your own instance
-of openQA up and running and all that is left is to set up some tests.
-
 ### Further systemd units for the worker
 
 The following information is partially openSUSE specific. The `openQA-worker`
