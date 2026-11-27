@@ -732,6 +732,40 @@ subtest 'dry run of the periodic cleanup' => sub {
     is $job->logs_present, 1, 'logs still considered present';
     ok -e $log_file, 'log file still present';
 
+    subtest 'dry run does not archive important jobs' => sub {
+        my $archiving = $app->config->{archiving};
+        local $archiving->{archive_preserved_important_jobs} = 1;
+        local $archiving->{archive_important_jobs_min_free_percentage} = 20;
+        local $archiving->{archive_keep_free_percentage} = 5;
+        local $archiving->{archive_max_duration} = 300;
+        local $df_fake_data{resultdir()} = {bavail => 15, blocks => 100};
+        local $df_fake_data{archivedir()} = {bavail => 10, blocks => 100};
+        path(archivedir())->make_path;
+        my $device_mock = Test::MockModule->new('OpenQA::Task::Job::Limit');
+        $device_mock->redefine(_dirs_on_same_device => 0);
+        my $archive_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
+        my @archived_ids;
+        $archive_mock->redefine(archive => sub ($self, @) { push @archived_ids, $self->id });
+        my $archiving_group = $job_groups->create(
+            {
+                name => 'dry-run-archiving',
+                comments => [{user_id => $user->id, text => 'tag:dry-archive:important'}]});
+        $jobs->create(
+            {
+                TEST => 'dry-run-important',
+                BUILD => 'dry-archive',
+                group_id => $archiving_group->id,
+                state => 'done',
+                result => 'passed'
+            });
+
+        my $dry_job;
+        combined_like { $dry_job = run_gru_job($app, limit_results_and_logs => [{dry_run => 1}]) }
+        qr/Ignoring storage usage threshold during dry run/, 'dry run processes the job groups';
+        is_deeply \@archived_ids, [], 'no jobs archived during dry run';
+        is $dry_job->{notes}->{archiving_stopped}, 'skipped, dry run', 'notes that archiving was skipped';
+    };
+
     subtest 'subsequent normal run still cleans everything' => sub {
         $app->config->{misc_limits}->{result_cleanup_max_free_percentage} = 100;
         combined_from { run_gru_job($app, limit_results_and_logs => []) };

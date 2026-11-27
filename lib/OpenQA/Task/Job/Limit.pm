@@ -73,18 +73,25 @@ sub _limit ($job, $args = undef) {
         }
     }
 
-    try {
-        _archive_important_jobs_upfront(
-            job => $job,
-            archiving_cfg => $archiving_cfg,
-            min_free => $min_free,
-            keep_free => $keep_free,
-            max_dur => $max_dur,
-        );
+    # note: Upfront archiving moves results into the archive dir and removes them from the results dir, so a dry run
+    #       must not run it
+    if ($dry_run) {
+        $job->note(archiving_stopped => 'skipped, dry run');
     }
-    catch ($e) {
-        log_warning "Unable to archive important jobs upfront: $e";
-        $job->note(archiving_stopped => "error: $e");
+    else {
+        try {
+            _archive_important_jobs_upfront(
+                job => $job,
+                archiving_cfg => $archiving_cfg,
+                min_free => $min_free,
+                keep_free => $keep_free,
+                max_dur => $max_dur,
+            );
+        }
+        catch ($e) {
+            log_warning "Unable to archive important jobs upfront: $e";
+            $job->note(archiving_stopped => "error: $e");
+        }
     }
 
     # create temporary job group outside of DB to collect
