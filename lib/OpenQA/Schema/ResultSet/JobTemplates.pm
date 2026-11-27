@@ -78,10 +78,8 @@ sub create_or_update_job_template ($job_templates, $group_id, $args) {
     # Add/update/remove parameter
     my @setting_ids;
     if ($args->{settings}) {
-        if (my $app = OpenQA::App->singleton) {
-            if (my $error_msg = validate_settings_for_submission($args->{settings}, $app->config)) {
-                return {error => $error_msg};
-            }
+        if (my $error_msg = validate_settings_for_submission($args->{settings}, OpenQA::App->singleton->config)) {
+            return {error => $error_msg};
         }
         foreach my $key (sort keys %{$args->{settings}}) {
             my $setting = $job_template_settings->find(

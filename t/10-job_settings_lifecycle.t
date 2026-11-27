@@ -4,13 +4,11 @@
 
 use Test::Most;
 use Test::Warnings ':report_warnings';
-use Test::MockModule;
 use Test::Output qw(combined_like);
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 
-use Mojolicious;
 use OpenQA::App;
 use OpenQA::Schema::ResultSet::Jobs;
 use OpenQA::Test::Case;
@@ -25,6 +23,9 @@ use OpenQA::JobSettings::Lifecycle qw(
   lifecycle_matches
   worst_level
 );
+
+OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 subtest 'parse_lifecycle_rules' => sub {
     my $config = {
@@ -158,19 +159,22 @@ subtest 'apply_lifecycle_prio' => sub {
 };
 
 subtest 'Jobs::_apply_prio_throttling' => sub {
-    my $app = Mojolicious->new;
-    $app->config->{job_settings_lifecycle} = {rule1 => 'DEPR_KEY:=~val:warning:25:De-prioritized deprecated setting',};
-    $app->config->{misc_limits} = {throttle_failing_job_threshold => 0};
-    my $app_mock = Test::MockModule->new('OpenQA::App');
-    $app_mock->redefine(singleton => sub { $app });
+    my $config = $t->app->config;
+    $config->{job_settings_lifecycle} = {rule1 => 'DEPR_KEY:=~val:warning:25:De-prioritized deprecated setting',};
+    delete $config->{misc_limits}->{job_settings_lifecycle_rules};
+    local $config->{misc_limits}->{prio_throttling_data} = undef;
+    local $config->{misc_limits}->{throttle_failing_job_threshold} = 0;
 
-    my $jobs_rs = bless {}, 'OpenQA::Schema::ResultSet::Jobs';
+    my $jobs_rs = $t->app->schema->resultset('Jobs');
     my $settings = {DEPR_KEY => 'val'};
     my $new_job_args = {priority => 50};
     my $debug_msg = $jobs_rs->_apply_prio_throttling($settings, $new_job_args);
 
     is $new_job_args->{priority}, 75, 'Priority adjusted from 50 to 75';
     like $debug_msg, qr/DEPR_KEY \[\+25: value val\]/, 'Throttling debug message contains lifecycle info';
+
+    delete $config->{job_settings_lifecycle};
+    delete $config->{misc_limits}->{job_settings_lifecycle_rules};
 };
 
 subtest 'lifecycle_matches' => sub {
@@ -261,8 +265,6 @@ qr/Invalid lifecycle rule format for 'r_bad_format_empty_key'.*Invalid lifecycle
 };
 
 subtest 'settings and details pages show lifecycle notices' => sub {
-    OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl');
-    my $t = Test::Mojo->new('OpenQA::WebAPI');
     my $config = $t->app->config;
     $config->{job_settings_lifecycle} = {
         r_warn => 'WARN_KEY:=~warn_val:warning:10:Warning setting explanation',
