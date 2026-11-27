@@ -24,6 +24,7 @@ use constant TASK_PRIORITY => -100;
 use constant TASK_TTL => 7 * ONE_DAY;
 use constant GUARD_NAME => 'crosscheck_results_task';
 use constant CLEANUP_TASK => 'limit_results_and_logs';
+use constant STARTED_NOTE => 'crosschecked';
 
 sub register ($self, $app, @args) {
     $app->minion->add_task(TASK_NAME, \&_crosscheck);
@@ -35,10 +36,13 @@ sub enqueue_if_due ($app) {
     my $interval_days = $app->config->{cleanup}->{crosscheck_interval_days} // DEFAULT_INTERVAL_DAYS;
     if ($interval_days > 0) {
         my $last
-          = $app->minion->backend->list_jobs(0, 1, {tasks => [TASK_NAME], states => ['finished']})->{jobs}->[0];
+          = $app->minion->backend->list_jobs(0, 1,
+            {tasks => [TASK_NAME], states => ['finished'], notes => [STARTED_NOTE]})->{jobs}->[0];
         return undef if $last && ($last->{finished} // 0) > time - $interval_days * ONE_DAY;
     }
-    return $app->gru->enqueue(TASK_NAME, [], {priority => TASK_PRIORITY, ttl => TASK_TTL, limit => 1})->{minion_id};
+    # an unfinished run of this task already covers the crosscheck, so a suppressed enqueue is not an error
+    my $enqueued = $app->gru->enqueue(TASK_NAME, [], {priority => TASK_PRIORITY, ttl => TASK_TTL, limit => 1});
+    return $enqueued && $enqueued->{minion_id};
 }
 
 my %PHASES = (parent => \&_parent, groups => \&_groups, prefixes => \&_prefixes, summary => \&_summary);
@@ -227,6 +231,8 @@ sub _parent ($job, $args) {
     # the daily cleanup is the heavier job on the same disks, so it gets the slots and the crosscheck stays idle
     my $cleanup_jobs = $app->minion->jobs({tasks => [CLEANUP_TASK], states => [qw(inactive active)]})->total;
     return $job->finish("Skipping, there are still $cleanup_jobs inactive/active cleanup jobs") if $cleanup_jobs;
+    # only a run that reaches this point counts for the interval, so a skipped run is retried on the next tick
+    $job->note(STARTED_NOTE() => 1);
 
     my $groups_rs = $app->schema->resultset('JobGroups')->search(undef, {order_by => 'id', columns => 'id'});
     my @groups = map { $_->id } $groups_rs->all;
@@ -326,6 +332,8 @@ directories that are not the place their job row records. A summary job aggregat
 the note of the parent job. It is a read-only integrity check: nothing is deleted or repaired.
 
 The function C<enqueue_if_due> is the entry point for the systemd timer: it enqueues a run unless the
-C<[cleanup] crosscheck> switch is off or a run finished within C<[cleanup] crosscheck_interval_days> days.
+C<[cleanup] crosscheck> switch is off or a run that crosschecked started within
+C<[cleanup] crosscheck_interval_days> days. A run that finishes without crosschecking, because the daily cleanup
+was still running, does not start the interval.
 
 =cut

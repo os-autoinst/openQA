@@ -394,6 +394,30 @@ subtest 'enqueue_if_due only enqueues an enabled run that is due' => sub {
 
     $app->config->{cleanup}{crosscheck_interval_days} = 30;
     is $enqueue_if_due->($app), undef, 'the run that just finished suppresses the next enqueue';
+
+    my $pending = $app->gru->enqueue(crosscheck_results_consistency => [], {priority => -100});
+    is $enqueue_if_due->($app), undef, 'an unfinished run of the task suppresses the enqueue without dying';
+    $app->minion->job($pending->{minion_id})->remove;
+};
+
+subtest 'a run that skips because of the daily cleanup does not start the interval' => sub {
+    perform_minion_jobs($app->minion);
+    $app->config->{cleanup}{crosscheck} = 1;
+    $app->config->{cleanup}{crosscheck_interval_days} = 30;
+    my $finished
+      = $app->minion->backend->list_jobs(0, 100, {tasks => ['crosscheck_results_consistency'], states => ['finished']})
+      ->{jobs};
+    $app->minion->job($_->{id})->remove for @$finished;
+
+    my $cleanup_id = $app->minion->enqueue(limit_results_and_logs => []);
+    my $job = run_parent;
+    is $job->{result}, 'Skipping, there are still 1 inactive/active cleanup jobs', 'skipping reported';
+    ok !$job->{notes}{crosschecked}, 'the skipped run does not mark itself as a crosschecked run';
+    $app->minion->job($cleanup_id)->remove;
+
+    ok my $next = OpenQA::Task::Job::Crosscheck::enqueue_if_due($app),
+      'only the skipped run is left, so the interval does not suppress the next enqueue';
+    $app->minion->job($next)->remove;
 };
 
 done_testing();

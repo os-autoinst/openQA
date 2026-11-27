@@ -1829,8 +1829,10 @@ Minion job and runs at the lowest priority, so the _daily_ cleanup keeps the dis
 slots. It only reports and never deletes anything. Enabling `crosscheck = 1` in
 the `[cleanup]` section of the web UI configuration makes
 `openqa-enqueue-result-crosscheck.timer` enqueue it. The timer ticks daily and
-enqueues a run only when the last finished run is older than
-`crosscheck_interval_days` days (default 30, zero means every tick).
+enqueues a run only when the last run that crosschecked started more than
+`crosscheck_interval_days` days ago (default 30, zero means every tick). A run
+that finishes without crosschecking, because the daily cleanup was still
+running, does not start the interval, so the check is retried on the next tick.
 
 ### Automatic archiving of old jobs
 
