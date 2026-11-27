@@ -251,3 +251,14 @@ window.addEventListener('popstate', event => {
 
   loadComments(targetUrl, false);
 });
+
+window.displayElements = displayElements;
+window.showCommentEditor = showCommentEditor;
+window.hideCommentEditor = hideCommentEditor;
+window.renderDate = renderDate;
+window.renderCommentHeading = renderCommentHeading;
+window.updateNumerOfComments = updateNumerOfComments;
+window.deleteComment = deleteComment;
+window.updateComment = updateComment;
+window.addComment = addComment;
+window.insertTemplate = insertTemplate;

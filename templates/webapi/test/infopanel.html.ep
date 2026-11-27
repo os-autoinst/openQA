@@ -165,7 +165,7 @@
                         % }
                         % $class .= ' disabled' if defined $job->clone_id;
                         %= link_post url_for('apiv1_restart', jobid => $testid) => (class => $class, 'data-remote' => 'true', id => 'restart-result', 'data-jobid' => $testid) => begin
-                            <i class="fa-solid fa-2 fa-rotate-left"></i><span><%= $restart_text %></span>
+                             <i class="fa-solid fa-rotate-left"></i><span><%= $restart_text %></span>
                         %= end
                         % my $disabled_note = defined $job->clone_id ? '<p><strong>This job cannot be restarted because it has already been restarted.</strong></p><hr>' : '';
                         <%= help_popover('Restart job' => "$disabled_note
@@ -185,7 +185,7 @@
                     % if (OpenQA::Jobs::Constants::meta_state($job->state) ne OpenQA::Jobs::Constants::FINAL) {
                       <div class="btn-group btn-group-sm">
                         %= link_post url_for('apiv1_cancel', jobid => $job->id) => (class => 'btn btn-warning', 'data-remote' => 'true', id => 'cancel_running') => begin
-                            <i class="fa-solid fa-2 fa-regular fa-circle-xmark"></i><span>Cancel job</span>
+                             <i class="fa-solid fa-regular fa-circle-xmark"></i><span>Cancel job</span>
                         % end
                       </div>
                     % }
@@ -196,7 +196,7 @@
                           onclick="return rescheduleProductForJob(this);" \
                           class="btn btn-danger"\
                            data-url="<%= url_for('apiv1_create_iso')->query(scheduled_product_clone_id => $sp_id, TEST => $job->TEST, _SKIP_CHAINED_DEPS => 1, _INCLUDE_CHILDREN => 1) %>">\
-                             <i class="fa-solid fa-2 fa-rotate"></i><span>Reschedule product from here</span>
+                             <i class="fa-solid fa-rotate"></i><span>Reschedule product from here</span>
                         </a>
                       <%= help_popover('Partial product re-scheduling' => "
                           <p>Schedules the product again using the current job as starting point. That means chained parents of

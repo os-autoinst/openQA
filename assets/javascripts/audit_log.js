@@ -1,9 +1,6 @@
 // jshint multistr: true
 // jshint esversion: 6
 
-let audit_url;
-let ajax_url;
-
 function getURLForType(type, event_data) {
   if (!event_data) {
     return;
@@ -94,8 +91,8 @@ function loadAuditLogTable() {
     lengthMenu: [20, 40, 100],
     processing: true,
     serverSide: true,
-    search: {search: searchquery},
-    ajax: {url: ajax_url, type: 'GET', dataType: 'json'},
+    search: {search: window.searchquery},
+    ajax: {url: window.ajax_url, type: 'GET', dataType: 'json'},
     columns: [
       {data: 'id'},
       {data: 'event_time'},
@@ -114,7 +111,7 @@ function loadAuditLogTable() {
             // I want to have a link to events for cases when one wants to share interesting event
             return (
               '<a href="' +
-              audit_url +
+              window.audit_url +
               '?eventid=' +
               row.id +
               '" title=' +
@@ -441,3 +438,21 @@ function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions) {
     wrapper.removeChild(wrapper.lastChild);
   }
 }
+window.getURLForType = getURLForType;
+window.undoComments = undoComments;
+window.getElementForEventType = getElementForEventType;
+window.loadAuditLogTable = loadAuditLogTable;
+window.dataForLink = dataForLink;
+window.showScheduledProductModalDialog = showScheduledProductModalDialog;
+window.renderScheduledProductSettings = renderScheduledProductSettings;
+window.showScheduledProductSettings = showScheduledProductSettings;
+window.renderFailedJobInfo = renderFailedJobInfo;
+window.renderSuccessfullyScheduledJobs = renderSuccessfullyScheduledJobs;
+window.renderNotes = renderNotes;
+window.renderUnknownResults = renderUnknownResults;
+window.renderScheduledProductResults = renderScheduledProductResults;
+window.showScheduledProductResults = showScheduledProductResults;
+window.rescheduleProductForActionLink = rescheduleProductForActionLink;
+window.rescheduleProduct = rescheduleProduct;
+window.showSettingsAndResults = showSettingsAndResults;
+window.loadProductLogTable = loadProductLogTable;

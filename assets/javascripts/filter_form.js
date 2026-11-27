@@ -220,3 +220,5 @@ function parseFilterArguments(paramHandler) {
   headerSpan.textContent = filterLabels.length > 0 ? 'current: ' + filterLabels.join(', ') : NO_FILTER_LABEL;
   return filterLabels;
 }
+window.setupFilterForm = setupFilterForm;
+window.parseFilterArguments = parseFilterArguments;

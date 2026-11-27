@@ -120,7 +120,7 @@ function stackParallelChildren(depElement, dependencyInfo) {
     initCollapsedParallelChildren(relatedRow, relatedTable, dependencyInfo.parents.Parallel);
 }
 
-function setupOverview(options) {
+export function setupOverview(options) {
   setupLazyLoadingFailedSteps();
   updateTimeago();
   $('.cancel').on('ajax:success', function (event, xhr, status) {
@@ -199,7 +199,9 @@ function setupOverview(options) {
 
   setupFilterForm(options);
   const form = document.getElementById('filter-form');
-  form.todo = false;
+  if (form?.todo) {
+    form.todo.checked = false;
+  }
 
   // initialize filter for modules results
   const modulesResultFilter = document.getElementById('modules_result');
@@ -309,12 +311,12 @@ function changeClassOfDependencyJob(array, className, add) {
   }
 }
 
-function showAddCommentsDialog() {
+export function showAddCommentsDialog() {
   const modal = (window.addCommentsModal = new bootstrap.Modal('#add-comments-modal'));
   modal.show();
 }
 
-function restartJobsWithComment(btn) {
+export function restartJobsWithComment(btn) {
   const form = btn.form;
   const text = form.elements.text.value;
   const jobs = btn.dataset.jobs
@@ -337,7 +339,7 @@ function restartJobsWithComment(btn) {
   });
 }
 
-function addComments(btn) {
+export function addComments(btn) {
   const form = btn.form;
   const text = form.elements.text.value;
   const apiUrl = btn.dataset.url;
@@ -365,3 +367,7 @@ function addComments(btn) {
       done();
     });
 }
+window.setupOverview = setupOverview;
+window.showAddCommentsDialog = showAddCommentsDialog;
+window.restartJobsWithComment = restartJobsWithComment;
+window.addComments = addComments;

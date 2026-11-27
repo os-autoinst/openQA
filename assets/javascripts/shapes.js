@@ -15,7 +15,7 @@ console.warn = console.warn || function () {};
 console.error = console.error || function () {};
 console.info = console.info || function () {};
 
-const MINSIZE = 10;
+const MINSIZE = (window.MINSIZE = 10);
 const CLICK_POINT_CIRCLE_RADIUS = 10;
 
 // Constructor for Shape objects to hold data for all drawn objects.
@@ -527,3 +527,5 @@ CanvasState.prototype.set_bgImage = function (image) {
   this.bgImage = image;
   this.dirty = true;
 };
+window.Shape = Shape;
+window.CanvasState = CanvasState;

@@ -442,7 +442,6 @@ function deleteGroup(elem, isParent) {
 
   return false;
 }
-
 function setupTriStateCheckbox(hiddenId, cbId, btnId, parentValue) {
   const hidden = document.getElementById(hiddenId);
   const cb = document.getElementById(cbId);
@@ -482,3 +481,25 @@ function setupTriStateCheckboxes(container = document) {
     setupTriStateCheckbox(hiddenId, cb.id, btnId, fallbackValue);
   });
 }
+
+window.setupTriStateCheckboxes = setupTriStateCheckboxes;
+window.showAddGroupModal = showAddGroupModal;
+window.showAddJobGroup = showAddJobGroup;
+window.showAddParentGroup = showAddParentGroup;
+window.showError = showError;
+window.fetchHtmlEntry = fetchHtmlEntry;
+window.countEmptyInputs = countEmptyInputs;
+window.validateJobGroupForm = validateJobGroupForm;
+window.createGroup = createGroup;
+window.removeAllDropIndicators = removeAllDropIndicators;
+window.checkDrop = checkDrop;
+window.checkParentDrop = checkParentDrop;
+window.leaveDrag = leaveDrag;
+window.concludeDrop = concludeDrop;
+window.insertParentGroup = insertParentGroup;
+window.insertGroup = insertGroup;
+window.dragGroup = dragGroup;
+window.dragParentGroup = dragParentGroup;
+window.saveReorganizedGroups = saveReorganizedGroups;
+window.handleQuery = handleQuery;
+window.deleteGroup = deleteGroup;

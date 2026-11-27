@@ -212,3 +212,12 @@ function deleteWorker(deleteBtn) {
     }
   );
 }
+window.setupWorkerNeedles = setupWorkerNeedles;
+window.loadWorkerTable = loadWorkerTable;
+window.deleteWorker = deleteWorker;
+window.openReserveModal = openReserveModal;
+window.openHostReserveModal = openHostReserveModal;
+window.submitReserve = submitReserve;
+window.releaseWorker = releaseWorker;
+window.releaseHost = releaseHost;
+window.setupHostPreviousJobs = setupHostPreviousJobs;
