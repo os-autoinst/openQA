@@ -7,6 +7,7 @@ use Mojo::Base 'Mojolicious::Controller', -signatures;
 use OpenQA::App;
 use OpenQA::Utils qw(:DEFAULT assetdir);
 use OpenQA::JobSettings;
+use OpenQA::JobSettings::Lifecycle qw(validate_settings_for_submission);
 use OpenQA::Jobs::Constants;
 use OpenQA::JobDependencies::Constants qw(CHAINED PARALLEL DIRECTLY_CHAINED);
 use OpenQA::Resource::Jobs;
@@ -716,7 +717,8 @@ sub get_status ($self) {
 =item update()
 
 Updates the settings of a job with information specified in a passed JSON argument.
-Columns group_id and priority cannot be set.
+Columns group_id and priority cannot be set. Settings rejected by an error level
+rule of C<[job_settings_lifecycle]> are refused with status 400.
 
 =back
 
@@ -746,7 +748,12 @@ sub update ($self) {
 
     # some settings are stored directly in job table and hence must be updated there
     my @setting_cols = qw(TEST DISTRI VERSION FLAVOR ARCH BUILD MACHINE);
-    if ($settings) { $json->{$_} = delete $settings->{$_} // '' for @setting_cols }
+    if ($settings) {
+        if (my $error_msg = validate_settings_for_submission($settings, $self->app->config)) {
+            return $self->render(json => {error => $error_msg}, status => HTTP_BAD_REQUEST);
+        }
+        $json->{$_} = delete $settings->{$_} // '' for @setting_cols;
+    }
     $job->update($json);
 
     if ($settings) {

@@ -1552,6 +1552,19 @@ subtest 'update job and job settings' => sub {
     $t->put_ok('/api/v1/jobs/99926', json => {group_id => 1002, status => 1})->status_is(400);
     $t->json_is('/error' => 'Column status can not be set', 'error when invalid/not accessible column specified');
 
+    my $config = $t->app->config;
+    $config->{job_settings_lifecycle} = {rule_error => 'OBSOLETE_SETTING:=~.*:error:OBSOLETE_SETTING has been removed'};
+    delete $config->{misc_limits}->{job_settings_lifecycle_rules};
+    $t->put_ok('/api/v1/jobs/99926', json => {settings => {OBSOLETE_SETTING => 'some_val'}})->status_is(400);
+    $t->json_is(
+        '/error' => "Setting 'OBSOLETE_SETTING' has deprecated value 'some_val': OBSOLETE_SETTING has been removed",
+        'setting rejected by an error level lifecycle rule is refused'
+    );
+    $t->get_ok('/api/v1/jobs/99926')->status_is(200);
+    $t->json_is('/job/settings/OBSOLETE_SETTING' => undef, 'rejected setting is not stored');
+    delete $config->{job_settings_lifecycle};
+    delete $config->{misc_limits}->{job_settings_lifecycle_rules};
+
     # set columns of job table
     $t->put_ok('/api/v1/jobs/99926', json => {group_id => 1002, priority => 53})->status_is(200);
     $t->get_ok('/api/v1/jobs/99926')->status_is(200);
