@@ -623,6 +623,18 @@ subtest 'edit job templates' => sub() {
     wait_for_ajax;
     $driver->find_element_by_id('toggle-group-properties')->click();
     ok $driver->find_element_by_id('editor-name')->is_displayed(), 'Group name can still be edited after refresh';
+
+    subtest 'action buttons hidden while templates are loading' => sub {
+        $driver->get('/admin/job_templates/1003');
+        wait_for_ajax;
+        ok $driver->find_element_by_id('editor-form-buttons')->is_displayed(), 'action buttons shown once loaded';
+        # a template request that never finishes leaves the editor in its loading state
+        $driver->execute_script(
+            'window.fetch = function () { return new Promise(function () {}); }; setupTemplateEditor();');
+        ok !$driver->find_element_by_id('editor-form-buttons')->is_displayed(),
+          'action buttons hidden while templates load';
+        ok $driver->find_element_by_id('editor-form')->child('.progress-indication')->is_displayed(), 'spinner shown';
+    };
 };
 
 sub get_cell_contents ($row) {

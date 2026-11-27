@@ -16,13 +16,17 @@ function toggleEdit() {
   }
 }
 
+function toggleTemplateEditorButtons(form, visible) {
+  form.querySelectorAll('.buttons').forEach(buttons => (buttons.style.display = visible ? '' : 'none'));
+}
+
 function setupTemplateEditor() {
   const form = document.getElementById('editor-form');
   if (!form) {
     return;
   }
   form.style.display = '';
-  form.querySelector('.buttons').style.display = 'none';
+  toggleTemplateEditorButtons(form, false);
   form.querySelector('.progress-indication').style.display = '';
   if (editor === undefined) {
     editor = ace.edit('editor-template', {
@@ -60,7 +64,7 @@ function prepareTemplateEditor(data) {
   const form = document.getElementById('editor-form');
   if (form) {
     form.querySelector('.progress-indication').style.display = 'none';
-    form.querySelector('.buttons').style.display = '';
+    toggleTemplateEditorButtons(form, true);
   }
   if (!user_is_admin) {
     return;
@@ -74,7 +78,7 @@ function submitTemplateEditor(button) {
   if (!form) {
     return;
   }
-  form.querySelector('.buttons').style.display = 'none';
+  toggleTemplateEditorButtons(form, false);
   form.querySelector('.progress-indication').style.display = '';
   const result = form.querySelector('.result');
   result.textContent = 'Applying changes...';
@@ -169,7 +173,7 @@ function submitTemplateEditor(button) {
       result.appendChild(p);
     })
     .finally(() => {
-      form.querySelector('.buttons').style.display = '';
+      toggleTemplateEditorButtons(form, true);
       form.querySelector('.progress-indication').style.display = 'none';
     });
 }

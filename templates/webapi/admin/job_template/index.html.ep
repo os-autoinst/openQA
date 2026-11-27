@@ -138,7 +138,7 @@ scenarios:
                     </p>
                 </div>
                 <div class="editor-container col-sm-12">
-                    <p class="buttons">
+                    <p class="buttons" id="editor-form-buttons">
                         <button id="toggle-yaml-guide" type="button" class="btn btn-light"><i class="fa-solid fa-circle-question"></i><span>Show YAML guide</span></button>
                     % if (is_admin) {
                         <button id="expand-template" type="button" class="btn btn-light"><i class="fa-solid fa-expand"></i><span>Show expanded version</span></button>
