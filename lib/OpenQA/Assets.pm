@@ -16,10 +16,4 @@ sub setup ($server) {
     $server->plugin('OpenQA::Plugin::Vite');
 }
 
-sub list ($server = Mojolicious->new(home => Mojo::Home->new('.'))) {
-    # Stub for backward compatibility with 'make node_modules' or similar
-    # In Vite, assets are built via 'npm run build' generating public/dist/
-    say 'Vite assets are pre-compiled and served from public/dist/.';
-}
-
 1;

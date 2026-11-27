@@ -42,9 +42,8 @@ touch %{_sourcedir}/%{short_name}
 # configuration
 /usr/share/openqa/script/initdb --help
 
-# verify whether assets can be loaded
-perl -I/usr/share/openqa/lib -mOpenQA::Assets \
-    -e 'OpenQA::Assets::setup(Mojolicious->new(home => Mojo::Home->new("/usr/share/openqa")))'
+# verify whether the built Vite manifest is installed
+test -e /usr/share/openqa/public/dist/.vite/manifest.json
 
 getent passwd geekotest
 

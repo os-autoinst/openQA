@@ -28,8 +28,7 @@ use OpenQA::Utils;
 use OpenQA::WebAPI;
 use Mojolicious;
 use Mojo::File qw(tempfile path);
-use Mojo::Home;
-use Test::Output qw(combined_from combined_like);
+use Test::Output qw(combined_like);
 
 subtest 'Setup logging to file' => sub {
     local $ENV{OPENQA_LOGFILE} = undef;
@@ -176,12 +175,6 @@ subtest 'Update configuration from Plugin requirements' => sub {
     $app->plugin('FooFoo');
     OpenQA::Setup::update_config($app->config, 'OpenQA::FakePlugin');
     is $app->config->{foofoo}->{is_there}, 'wohoo', 'Right config option for OpenQA::FakePlugin::Foofoo';
-};
-
-subtest 'listing assets (for installation/Makefile)' => sub {
-    my $app = Mojolicious->new(home => Mojo::Home->new("$FindBin::Bin/.."));
-    my $output = combined_from { OpenQA::Assets::list($app) };
-    like $output, qr/Vite assets are pre-compiled and served from public\/dist/, 'Vite message printed';
 };
 
 done_testing();

@@ -19,7 +19,6 @@ contrib/manpages/
 .sass-cache/
 .tidyall.d/
 assets/cache/
-assets/assetpack.db
 docker.env
 node_modules
 nytprof/
