@@ -27,7 +27,7 @@ sub register ($self, $app, $conf = {}) {
             if ($app->mode eq 'development' && !$ENV{OPENQA_VITE_PRODUCTION}) {
                 # Add test suffix if needed
                 my $test_name = $name;
-                if ($app->mode eq 'test' || ($c->stash('mode') // '') eq 'test') {
+                if ($app->mode eq 'test') {
                     $test_name =~ s/\.(js|css)$/.test.$1/;    # uncoverable statement
                 }
                 # Vite dev server serves from / (root) which we've set to 'assets/'
@@ -57,7 +57,7 @@ sub register ($self, $app, $conf = {}) {
             }
 
             my $test_name = $name;
-            if ($app->mode eq 'test' || $c->stash('mode') eq 'test') {
+            if ($app->mode eq 'test') {
                 $test_name =~ s/\.(js|css)$/.test.$1/;
             }
 
