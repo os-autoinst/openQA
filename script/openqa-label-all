@@ -15,8 +15,8 @@ import requests
 
 logging.basicConfig()
 log = logging.getLogger(sys.argv[0] if __name__ == "__main__" else __name__)
-openqa_cmd: list[str] = []
-args: argparse.Namespace = argparse.Namespace()
+openqa_cmd: "list[str]" = []
+args: "argparse.Namespace" = argparse.Namespace()
 
 
 class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
