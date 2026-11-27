@@ -423,6 +423,12 @@ restored dump, never against the instance the dump was taken from:
     pg_restore -d openqa-local --data-only -L whitelist.lst path/to/dump
     ```
 
+    Without `screenshot_links` records no job reaches the exclusive-screenshot
+    deletion in `delete_results`, so this restore validates the candidate filters
+    and the results and logs accounting only and `screenshots_bytes` stays 0. A
+    change touching screenshot accounting needs a restore that includes
+    `screenshots` and `screenshot_links`.
+
 2.  Run the candidate queries of the old and the new revision against that
     database and compare the job IDs they return per job group. Use
     `OPENQA_DATABASE=test`, `TEST_PG` pointing at the restored database and an
