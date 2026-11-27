@@ -203,6 +203,7 @@ subtest 'Repository download with unsupported scheme' => sub {
     like $downloader->download($from, $repo_dir, {is_repo => 1}),
       qr/Unsupported URL scheme "unsupported" for repository download/, 'Unsupported scheme fails';
     ok !-e $repo_dir, 'Target repo not created';
+    unlike $cache_log, qr/waiting .* seconds for next try/, 'Configuration error is not retried';
     $cache_log = '';
 };
 
@@ -266,6 +267,8 @@ subtest 'Repository download when wget is missing' => sub {
 
     like $downloader->download($from, $repo_dir, {is_repo => 1}), qr/External command "wget" is not available/,
       'Reported missing wget error gracefully';
+    unlike $cache_log, qr/waiting .* seconds for next try/, 'Missing wget is not retried';
+    $cache_log = '';
 };
 
 subtest 'Repository download re-syncs existing repo directory' => sub {

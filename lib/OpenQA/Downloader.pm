@@ -65,11 +65,12 @@ sub _download_repo ($self, $url, $target, $options) {
 
     my $url_obj = Mojo::URL->new($url);
     my $scheme = $url_obj->scheme // '';
+    # report configuration errors with a non-retryable code so download() does not retry them
     if ($scheme !~ /^(?:rsync|https?|ftp)$/) {
-        return (undef, qq{Unsupported URL scheme "$scheme" for repository download});
+        return (HTTP_BAD_REQUEST, qq{Unsupported URL scheme "$scheme" for repository download});
     }
     if ($scheme =~ /^(?:https?|ftp)$/ && !which('wget')) {
-        return (undef,
+        return (HTTP_BAD_REQUEST,
             q{External command "wget" is not available. Repository download from HTTP/HTTPS/FTP is not supported.});
     }
 
