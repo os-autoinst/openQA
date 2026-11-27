@@ -574,6 +574,9 @@ subtest 'admin deleting another user account' => sub {
       ->element_exists_not(qq{#user_$sys_id form[action="/admin/user/$sys_id/delete"]},
         'delete form not rendered for system user')->tx->res->dom->at('input[name="csrf_token"]')->attr('value');
     ok $admin_csrf, 'extracted valid CSRF token for admin delete request';
+    is_deeply [$t->tx->res->dom->find('#users thead th')->map('text')->each],
+      ['Username', 'Email', 'Name', 'Nick', 'Provider', 'Role', ''],
+      'user table header lists every column in order';
 
     $t->post_ok("/admin/user/$target_id/delete", form => {csrf_token => $admin_csrf})
       ->status_is(302, 'admin delete of local user returns redirect')

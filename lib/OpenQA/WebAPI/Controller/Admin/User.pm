@@ -50,8 +50,7 @@ sub update ($self) {
 }
 
 sub delete ($self) {
-    my $user_id = $self->param('id') // $self->param('userid');
-    my $user = $self->schema->resultset('Users')->find($user_id);
+    my $user = $self->schema->resultset('Users')->find($self->param('id'));
     return $self->render(text => "Can't find that user", status => HTTP_NOT_FOUND) unless $user;
 
     return $self->render(text => 'Cannot delete system user', status => HTTP_FORBIDDEN)
