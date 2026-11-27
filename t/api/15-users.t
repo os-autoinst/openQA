@@ -187,6 +187,23 @@ subtest 'create_api_key role scoping' => sub {
       ->status_is(200, 'operator user can create operator key')->tx->res->json;
     is $op_key_res->{is_operator}, 1, 'operator key has is_operator=1';
     is $op_key_res->{is_admin}, 0, 'operator key has is_admin=0';
+
+    my $arthur = $app->schema->resultset('Users')->find({username => 'arthur'});
+    $arthur->api_keys->create(
+        {key => 'ARTHURSCOPED01', secret => 'ARTHURSCOPEDSECRET', is_admin => 0, is_operator => 1});
+    my $t_scoped = Test::Mojo->new('OpenQA::WebAPI');
+    $t_scoped->ua(OpenQA::Client->new(apikey => 'ARTHURSCOPED01', apisecret => 'ARTHURSCOPEDSECRET')
+          ->ioloop(Mojo::IOLoop->singleton));
+    $t_scoped->app($app);
+    $t_scoped->post_ok('/api/v1/users/me/api_keys' => form => {role => 'admin'})
+      ->status_is(400, 'operator-scoped key of an admin account cannot create an admin key');
+    my $scoped_res = $t_scoped->post_ok('/api/v1/users/me/api_keys' => form => {role => 'operator'})
+      ->status_is(200, 'operator-scoped key can create operator keys')->tx->res->json;
+    is $scoped_res->{is_admin}, 0, 'key created via a scoped key stays within the caller scope';
+    my $default_res = $t_scoped->post_ok('/api/v1/users/me/api_keys' => form => {comment => 'no role given'})
+      ->status_is(200, 'operator-scoped key can create a key without specifying a role')->tx->res->json;
+    is $default_res->{is_admin}, 0, 'defaulted key permissions come from the key scope, not the account roles';
+    is $default_res->{is_operator}, 1, 'defaulted key permissions keep the operator scope of the caller';
 };
 
 subtest 'test list_api_keys' => sub {

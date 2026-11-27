@@ -99,6 +99,6 @@ $t->get_ok('/api_keys')->status_is(200)
 $t->post_ok('/api_keys', {'X-CSRF-Token' => $token} => form => {role => 'admin'})
   ->status_is(302, 'non-admin cannot create admin key in web UI');
 $t->get_ok('/api_keys')->status_is(200, 'api keys listing page displays')
-  ->content_like(qr/Cannot grant administrator role exceeding own account/, 'error flash is shown');
+  ->content_like(qr/Cannot grant administrator role exceeding own permissions/, 'error flash is shown');
 
 done_testing();

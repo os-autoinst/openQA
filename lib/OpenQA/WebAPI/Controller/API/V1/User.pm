@@ -162,9 +162,9 @@ sub create_api_key ($self) {
     my ($is_operator, $is_admin)
       = defined $requested_role
       ? $self->role_to_permissions($requested_role)
-      : ($requested_is_operator // $user->is_operator, $requested_is_admin // $user->is_admin);
+      : ($requested_is_operator // $self->is_operator, $requested_is_admin // $self->is_admin);
 
-    if (my $perm_error = $self->validate_api_key_role_grant($is_admin, $is_operator, $user)) {
+    if (my $perm_error = $self->validate_api_key_role_grant($is_admin, $is_operator)) {
         return $self->render(
             json => {error => $perm_error},
             status => 400

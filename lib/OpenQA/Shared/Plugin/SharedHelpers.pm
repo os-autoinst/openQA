@@ -108,13 +108,9 @@ sub _role_to_permissions ($c, $role) {
     return (0, 0);
 }
 
-sub _validate_api_key_role_grant ($c, $is_admin, $is_operator, $user) {
-    if ($is_admin && !$user->is_admin) {
-        return 'Cannot grant administrator role exceeding own account';
-    }
-    if ($is_operator && !$user->is_operator && !$user->is_admin) {
-        return 'Cannot grant operator role exceeding own account';
-    }
+sub _validate_api_key_role_grant ($c, $is_admin, $is_operator) {
+    return 'Cannot grant administrator role exceeding own permissions' if $is_admin && !$c->is_admin;
+    return 'Cannot grant operator role exceeding own permissions' if $is_operator && !$c->is_operator;
     return undef;
 }
 
@@ -172,7 +168,8 @@ C<is_admin> permission pair.
 
 =head2 validate_api_key_role_grant
 
-Returns an error message if the requested permissions exceed the calling
-user's account roles, or C<undef> when the grant is allowed.
+Returns an error message if the requested permissions exceed the effective
+permissions of the current request (the account roles bounded by the
+authenticating API key's scope), or C<undef> when the grant is allowed.
 
 =cut
