@@ -380,10 +380,10 @@ subtest 'Validation and parsing of job impact config' => sub {
             target => 'base'
         },
         {
-            desc => 'non-numeric history_runs on base',
-            key => 'history_runs',
-            val => 'many',
-            default => 10,
+            desc => 'non-numeric pue on base',
+            key => 'pue',
+            val => 'high',
+            default => 1.5,
             target => 'base'
         },
         {desc => 'negative model_version on base', key => 'model_version', val => -1, default => 1, target => 'base'},

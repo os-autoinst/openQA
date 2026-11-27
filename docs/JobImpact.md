@@ -76,7 +76,6 @@ commodity server hardware:
 | `embodied_g_per_slot_hour`    | `1.0`   | Amortized embodied manufacturing emissions (g CO₂e/slot-h) |
 | `default_vcpus`               | `1`     | Fallback vCPUs if `QEMUCPUS` is unset                      |
 | `default_ram_mb`              | `1024`  | Fallback RAM in MiB if `QEMURAM` is unset                  |
-| `history_runs`                | `10`    | Historical job runs sampled for restart estimates          |
 | `allow_job_setting_overrides` | `0`     | Disallows per-job manipulation of cost factors             |
 
 ## Factor Resolution Precedence
@@ -97,7 +96,7 @@ priority first):
 
 ```ini
 [job_impact]
-# Enable calculation and UI display (default: 1)
+# Store an impact estimate for each finished job (default: 1)
 enabled = 1
 
 # Currency code stored with each record (default: EUR)

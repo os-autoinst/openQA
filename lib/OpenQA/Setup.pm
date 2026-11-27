@@ -354,9 +354,7 @@ sub default_config () {
             embodied_g_per_slot_hour => 1,
             default_vcpus => 1,
             default_ram_mb => 1024,
-            history_runs => 10,
             allow_job_setting_overrides => 0,
-            methodology_url => '',
         },
         job_details_archive => {
             job_details_archive_cache_dir => undef,
@@ -453,7 +451,7 @@ sub read_config ($app) {
     return $config;
 }
 
-my @JOB_IMPACT_FREE_TEXT_KEYS = qw(currency currency_symbol methodology_url);
+my @JOB_IMPACT_FREE_TEXT_KEYS = qw(currency currency_symbol);
 
 sub _validate_job_impact_section ($app, $cfg, $name, $defaults) {
     for my $key (sort keys %$defaults) {

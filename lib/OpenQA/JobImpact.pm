@@ -23,10 +23,8 @@ our @EXPORT_OK = qw(
 
 sub _is_valid_factor_value ($key, $val) {
     return 0 unless defined $val;
-    if ($key eq 'slot_power_w' || $key eq 'methodology_url') {
-        return 1 if $val eq '';
-    }
-    if ($key =~ /^(currency|currency_symbol|methodology_url)$/) {
+    return 1 if $key eq 'slot_power_w' && $val eq '';
+    if ($key =~ /^(currency|currency_symbol)$/) {
         return 1;
     }
     return looks_like_number($val) && $val >= 0;
@@ -51,7 +49,7 @@ sub resolve_factors (%args) {
     for my $k (keys %$config) {
         my $v = $config->{$k};
         next if !defined $v;
-        next if $v eq '' && $k ne 'slot_power_w' && $k ne 'methodology_url';
+        next if $v eq '' && $k ne 'slot_power_w';
         next unless _is_valid_factor_value($k, $v);
         next if defined $defaults->{$k} && _is_same_value($v, $defaults->{$k});
         $factors{$k} = $v;
@@ -65,7 +63,7 @@ sub resolve_factors (%args) {
         for my $k (keys %$class_factors) {
             my $v = $class_factors->{$k};
             next if !defined $v;
-            next if $v eq '' && $k ne 'slot_power_w' && $k ne 'methodology_url';
+            next if $v eq '' && $k ne 'slot_power_w';
             next unless _is_valid_factor_value($k, $v);
             $factors{$k} = $v;
             $sources{$k} = "ini_class:$c";
