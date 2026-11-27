@@ -105,7 +105,8 @@ sub start_driver ($mojoport) {
             *Selenium::Remote::Driver::get = sub {
                 my ($self, @args) = @_;
                 my $ret = $orig_get->($self, @args);
-                my $timeout = 30;
+                my $timeout = OpenQA::Test::TimeLimit::scale_timeout(30);
+                my $start_time = clock_gettime(CLOCK_MONOTONIC);
                 while (1) {
                     my $jsReady
                       = $_DRIVER->execute_script('if (!document.body) return false; '
@@ -114,7 +115,7 @@ sub start_driver ($mojoport) {
                           . 'if (window.nEditor && (!window.nEditor.bgImage || !window.nEditor.bgImage.complete)) return false; '
                           . 'return true;');
                     last if $jsReady;
-                    if ($timeout <= 0) {
+                    if (clock_gettime(CLOCK_MONOTONIC) - $start_time >= $timeout) {
                         my $src
                           = eval { $_DRIVER->get_page_source } // 'could not get page source';   # uncoverable statement
                         my $curr_url
@@ -126,7 +127,6 @@ sub start_driver ($mojoport) {
                           "Timeout waiting for jsLoaded flag in get(). URL was: $curr_url.\nLOGS:\n$log_str\nHTML was: "
                           . substr $src, 0, 1000;
                     }
-                    $timeout -= 0.1;
                     Time::HiRes::sleep(0.1);
                 }
                 return $ret;
