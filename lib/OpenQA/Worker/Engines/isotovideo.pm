@@ -589,6 +589,7 @@ sub _construct_isotovideo_cmd ($job_settings, $isotovideo) {
             '--rm',
             '--entrypoint', '',
             '--device', '/dev/kvm',
+            '--network', 'pasta:-t,auto,-u,auto,-T,auto,-U,auto',
             '-v', getcwd() . ':/pool',
             '-w', '/pool',
             @local_mounts,
