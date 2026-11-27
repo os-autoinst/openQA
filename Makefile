@@ -490,6 +490,10 @@ test-shfmt: ## Run shfmt on scripts
 .PHONY: test-python-static-checks ## Run all static checks on Python scripts
 test-python-static-checks: test-python-tool-versions test-ruff test-python-conventions test-python-types test-python-code-health
 
+ifeq ($(PYTHON_TESTS),0)
+test-python-unit test-python-unit-no-coverage:
+	@echo "Skipping python unit tests: PYTHON_TESTS=0 is set, the dependencies are not available on this distribution"
+else
 .PHONY: test-python-unit
 test-python-unit: ## Run Python unit tests with statement and branch coverage enforcement
 	$(PYTHON) -m pytest $(PYTEST_COVERAGE_ARGS) $(PYTEST_ARGS)
@@ -497,6 +501,7 @@ test-python-unit: ## Run Python unit tests with statement and branch coverage en
 .PHONY: test-python-unit-no-coverage
 test-python-unit-no-coverage: ## Run Python unit tests without coverage
 	$(PYTHON) -m pytest $(PYTEST_ARGS)
+endif
 
 .PHONY: test-python
 test-python: test-python-static-checks test-python-unit ## Run Python static checks and unit tests

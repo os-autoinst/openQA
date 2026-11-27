@@ -42,6 +42,12 @@
 %else
 %bcond_without python_scripts
 %endif
+# python3-typer and pytest-mock >= 3 are not available on SLE 15 and Leap < 16
+%if 0%{?suse_version} <= 1500
+%bcond_with python_tests
+%else
+%bcond_without python_tests
+%endif
 # exclude additional sub packages that would pull in a lot of extra dependencies on SLE
 %if 0%{?suse_version} && !0%{?is_opensuse}
 %bcond_with devel_package
@@ -148,6 +154,9 @@ ExcludeArch:    %{ix86}
 %{?systemd_requires}
 %if %{with tests}
 BuildRequires:  %{test_requires}
+%if %{with python_tests}
+BuildRequires:  python3-typer
+%endif
 %endif
 Requires(pre):  group(nogroup)
 %if 0%{?suse_version} > 1500
@@ -439,6 +448,9 @@ export CONTAINER_TEST=0
 export HELM_TEST=0
 # We don't want fatal warnings during package building
 export PERL_TEST_WARNINGS_ONLY_REPORT_WARNINGS=1
+%if !%{with python_tests}
+export PYTHON_TESTS=0
+%endif
 make test PROVE_ARGS='-r -v t' CHECKSTYLE=0 TEST_PG_PATH=%{buildroot}/DB
 rm -rf %{buildroot}/DB
 %endif
