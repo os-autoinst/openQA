@@ -4,7 +4,8 @@
 package OpenQA::Worker::Job;
 use Mojo::Base 'Mojo::EventEmitter', -signatures;
 
-use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME DEFAULT_UPLOAD_CHUNK_SIZE DEFAULT_MAX_SETUP_TIME WORKER_COMMAND_ABORT
+use OpenQA::Constants
+  qw(DEFAULT_MAX_JOB_TIME DEFAULT_TIMEOUT_SCALE DEFAULT_UPLOAD_CHUNK_SIZE DEFAULT_MAX_SETUP_TIME WORKER_COMMAND_ABORT
   DEFAULT_MAX_UPLOAD_TIME DEFAULT_UPLOAD_INACTIVITY_TIMEOUT WORKER_COMMAND_QUIT WORKER_COMMAND_CANCEL WORKER_COMMAND_OBSOLETE
   WORKER_SR_BROKEN WORKER_SR_SETUP_FAILURE WORKER_SR_API_FAILURE WORKER_SR_TIMEOUT WORKER_SR_DONE WORKER_SR_DIED DOWNLOAD_PERMISSION);
 use OpenQA::Jobs::Constants;
@@ -203,11 +204,10 @@ sub _compute_timeouts ($job_settings) {
     $max_setup_time = DEFAULT_MAX_SETUP_TIME unless looks_like_number $max_setup_time;
     $max_upload_time = DEFAULT_MAX_UPLOAD_TIME unless looks_like_number $max_upload_time;
     $upload_inactivity_timeout = DEFAULT_UPLOAD_INACTIVITY_TIMEOUT unless looks_like_number $upload_inactivity_timeout;
-    if (looks_like_number $timeout_scale) {
-        $max_job_time *= $timeout_scale;
-        $max_upload_time *= $timeout_scale;
-        $upload_inactivity_timeout *= $timeout_scale;
-    }
+    $timeout_scale = DEFAULT_TIMEOUT_SCALE unless looks_like_number $timeout_scale;
+    $max_job_time *= $timeout_scale;
+    $max_upload_time *= $timeout_scale;
+    $upload_inactivity_timeout *= $timeout_scale;
     return ($max_job_time, $max_setup_time, $max_upload_time, $upload_inactivity_timeout);
 }
 

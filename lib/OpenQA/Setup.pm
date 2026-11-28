@@ -338,6 +338,24 @@ sub default_config () {
             archive_max_duration => 300,
         },
         worker_reservation => {%{+WORKER_RESERVATION_DURATION_DEFAULTS}, comment_required => 1},
+        job_impact => {
+            enabled => 1,
+            model_version => 1,
+            currency => 'EUR',
+            currency_symbol => '€',
+            slot_power_w => '',
+            slot_base_w => 20,
+            cpu_w => 10,
+            mem_w => 0.392,
+            pue => 1.5,
+            grid_g_per_kwh => 300,
+            eur_per_kwh => 0.20,
+            hw_eur_per_slot_hour => 0.01,
+            embodied_g_per_slot_hour => 1,
+            default_vcpus => 1,
+            default_ram_mb => 1024,
+            allow_job_setting_overrides => 0,
+        },
         job_details_archive => {
             job_details_archive_cache_dir => undef,
             job_details_archive_cache_limit_gb => 5,
@@ -427,8 +445,57 @@ sub read_config ($app) {
     _validate_worker_reservation_config($app);
     _validate_worker_timeout($app);
     _validate_security_policy($app, $global_config);
+    _parse_job_impact_by_class($config);
+    _validate_job_impact_config($app);
     _set_default_storage_durations($_) for $config->{default_group_limits}, $config->{no_group_limits};
     return $config;
+}
+
+my @JOB_IMPACT_FREE_TEXT_KEYS = qw(currency currency_symbol);
+
+sub _validate_job_impact_section ($app, $cfg, $name, $defaults) {
+    for my $key (sort keys %$defaults) {
+        next unless exists $cfg->{$key};
+        next if grep { $_ eq $key } @JOB_IMPACT_FREE_TEXT_KEYS;
+        my $val = $cfg->{$key};
+        my $fallback = $defaults->{$key};
+        my $is_valid;
+        if ($key eq 'enabled' || $key eq 'allow_job_setting_overrides') {
+            $is_valid = defined $val && $val =~ /^[01]$/;
+        }
+        elsif ($key eq 'slot_power_w') {
+            $is_valid = !defined $val || $val eq '' || (looks_like_number($val) && $val >= 0);
+            $fallback = '';
+        }
+        else {
+            $is_valid = defined $val && looks_like_number($val) && $val >= 0;
+        }
+        next if $is_valid;
+        my $shown_fallback = $fallback eq '' ? "''" : $fallback;
+        $app->log->warn("Invalid $name $key specified, defaulting to $shown_fallback");
+        $cfg->{$key} = $fallback;
+    }
+}
+
+sub _validate_job_impact_config ($app) {
+    my $defaults = default_config()->{job_impact};
+    _validate_job_impact_section($app, $app->config->{job_impact}, 'job_impact', $defaults);
+    for my $class (sort keys %{$app->config->{job_impact_by_class} // {}}) {
+        _validate_job_impact_section($app, $app->config->{job_impact_by_class}{$class}, "job_impact:$class", $defaults);
+    }
+}
+
+sub _parse_job_impact_by_class ($config) {
+    $config->{job_impact_by_class} = {};
+    return unless my $ini = $config->{ini_config};
+    for my $section ($ini->Sections) {
+        next unless $section =~ /^job_impact:(.+)$/;
+        my $class = $1;
+        for my $param ($ini->Parameters($section)) {
+            my $val = $ini->val($section, $param);
+            $config->{job_impact_by_class}{$class}{$param} = trim $val;
+        }
+    }
 }
 
 sub _validate_worker_reservation_config ($app) {
