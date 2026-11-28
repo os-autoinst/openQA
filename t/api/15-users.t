@@ -231,4 +231,18 @@ subtest 'anonymize audit event data' => sub {
     is $audit_event->user_id, 99903, 'audit event association preserved';
 };
 
+subtest 'anonymize clears every personal column' => sub {
+    my $users = $app->schema->resultset('Users');
+    my $user = $users->create_user('piiuser', email => 'pii@example.com', fullname => 'Pii User', nickname => 'pii');
+    $user->anonymize;
+    $user->discard_changes;
+    my %never_personal
+      = map { $_ => 1 } qw(id username provider is_admin is_operator feature_version deleted_at t_created t_updated);
+    my @columns_with_data
+      = grep { !$never_personal{$_} && defined $user->get_column($_) } $user->result_source->columns;
+    is_deeply \@columns_with_data, [], 'anonymize leaves data only in columns that never hold personal data'
+      or diag "columns still set: @columns_with_data";
+    is $user->username, 'deleted-user-' . $user->id, 'username replaced by the placeholder';
+};
+
 done_testing();
