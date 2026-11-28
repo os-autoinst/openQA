@@ -11,3 +11,30 @@ window.fetch = (url, options) => {
     window.runningFetchRequests--;
   });
 };
+
+// DataTables 3.x performs its Ajax requests via XMLHttpRequest instead of fetch() or jQuery's
+// $.ajax so they are not covered above and would let wait_for_ajax return before the tables are
+// drawn. Decrement only in the complete callback because the draw happens in the success callback.
+if (window.DataTable?.util?.ajax) {
+  const dataTablesAjax = DataTable.util.ajax;
+  DataTable.util.ajax = options => {
+    let finished = false;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      window.runningFetchRequests--;
+    };
+    window.runningFetchRequests++;
+    const complete = options.complete;
+    options.complete = function () {
+      try {
+        if (complete) complete.apply(this, arguments);
+      } finally {
+        finish();
+      }
+    };
+    const xhr = dataTablesAjax(options);
+    xhr.addEventListener('abort', finish);
+    return xhr;
+  };
+}

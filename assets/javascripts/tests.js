@@ -439,6 +439,7 @@ function renderTestLists() {
       }
     ]
   });
+  const resultsSettings = table.settings()[0];
 
   // register event listener to the two range filtering inputs to redraw on input
   filters.forEach(filter => {
@@ -463,7 +464,7 @@ function renderTestLists() {
 
   // add a handler for the actual filtering
   $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
-    if ($(settings.nTable).attr('id') !== 'results') {
+    if (settings !== resultsSettings) {
       return true; // Do not filter other tables
     }
 
