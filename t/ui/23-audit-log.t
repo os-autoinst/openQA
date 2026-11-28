@@ -29,10 +29,8 @@ sub get_auth_headers ($t, $url) {
 }
 
 sub check_data_table_entries ($expected_entry_count, $test_name) {
-    my $table = $driver->find_element_by_id('audit_log_table') or BAIL_OUT 'unable to find DataTable';
-    my $entries = wait_for_data_table $table, $expected_entry_count;
-    is scalar @$entries, $expected_entry_count, $test_name;
-    return $entries;
+    $driver->find_element_by_id('audit_log_table') or BAIL_OUT 'unable to find DataTable';
+    return wait_for_element_count('#audit_log_table tbody tr', $expected_entry_count, description => $test_name);
 }
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');

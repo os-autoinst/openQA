@@ -88,7 +88,6 @@ sub expected_job_id_regex ($offset = 1) {
 }
 
 driver_missing unless my $driver = call_driver;
-disable_timeout;
 disable_bootstrap_animations;
 
 $driver->title_is('openQA', 'on main page');
@@ -341,7 +340,11 @@ subtest 'check cluster jobs restart in test overview page' => sub {
     ok $driver->get('/tests'), 'back on /tests page';
     wait_for_ajax(msg => 'job tables loaded');
     my @scheduled_tds = $driver->find_elements('#scheduled td.test');
-    $driver->find_child_element($scheduled_tds[$_], '.cancel', 'css')->click for (0 .. 5);
+    for (0 .. 5) {
+        my $cancel = $driver->find_child_element($scheduled_tds[$_], '.cancel', 'css');
+        $driver->execute_script('arguments[0].click()', $cancel);
+    }
+    wait_for_ajax(msg => 'cancel restarted jobs');
 
     # Restart a parent job in test results overview page
     is $driver->get('/tests/overview?distri=opensuse&version=13.1&build=0091&groupid=1001'),

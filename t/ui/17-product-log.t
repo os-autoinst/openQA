@@ -118,15 +118,15 @@ subtest 'trigger actions' => sub {
     $driver->element_text_is('#flash-messages span', 'The product has been re-triggered as 2.', 'info message shown'),;
 };
 
-subtest 'rescheduled ISO shown after refreshing page' => sub {
-    $driver->refresh;
+subtest 'rescheduled ISO shown after rescheduling' => sub {
     $driver->find_element('#user-action a')->click();
     $driver->find_element_by_link_text('Scheduled products')->click();
     like $driver->get_title(), qr/Scheduled products log/, 'on product log';
+    wait_for_element_count('#product_log_table tbody tr', 2, description => 'rescheduled ISO shown');
     $table = $driver->find_element_by_id('product_log_table');
     ok $table, 'products tables found';
     @rows = $driver->find_child_elements($table, './tbody/tr[./td[text() = "whatever.iso"]]', 'xpath');
-    is scalar @rows, 2, 'rescheduled ISO shown';
+    is scalar @rows, 2, 'only rows for whatever.iso shown';
     like $rows[0]->get_text(), qr/2.*Demo.*added/,
       'newly added product shown as first row; status is added as async flag was passed';
     like

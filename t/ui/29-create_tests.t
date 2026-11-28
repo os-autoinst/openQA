@@ -60,7 +60,7 @@ subtest 'settings shown in product log' => sub {
     $driver->find_element_by_link_text('product log')->click;
     $driver->title_is('openQA: Scheduled products log', 'on product log details page');
 
-    my $settings = $driver->find_element('.settings-table')->get_text;
+    my $settings = wait_for_element(selector => '.settings-table')->get_text;
     like $settings, qr/ARCH x86_64/, 'ARCH present';
     like $settings, qr/BUILD openqa/, 'BUILD present';
     like $settings, qr/CASEDIR http.*\.git/, 'CASEDIR present';
