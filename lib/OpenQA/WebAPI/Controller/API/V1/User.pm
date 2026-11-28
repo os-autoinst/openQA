@@ -3,6 +3,7 @@
 
 package OpenQA::WebAPI::Controller::API::V1::User;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
+use DateTime;
 use DateTime::Format::Pg;
 use Feature::Compat::Try;
 use List::Util qw(min);
@@ -59,6 +60,22 @@ sub list ($self) {
     pop @paged if my $has_more = @paged > $limit;
     $self->pagination_links_header($limit, $offset, $has_more);
 
+    my @ids = map { $_->id } @paged;
+    my %active_keys_count;
+    if (@ids) {
+        my $active_keys = $self->schema->resultset('ApiKeys')->search(
+            {
+                user_id => {-in => \@ids},
+                -or => [{t_expiration => undef}, {t_expiration => {'>' => \'now()'}}],
+            },
+            {
+                select => ['user_id', {count => '*'}],
+                as => [qw(user_id active_api_keys_count)],
+                group_by => 'user_id',
+            });
+        $active_keys_count{$_->user_id} = $_->get_column('active_api_keys_count') for $active_keys->all;
+    }
+
     my @users_data = map {
         {
             id => $_->id,
@@ -68,6 +85,7 @@ sub list ($self) {
             email => $_->email,
             is_operator => $_->is_operator ? 1 : 0,
             is_admin => $_->is_admin ? 1 : 0,
+            active_api_keys_count => $active_keys_count{$_->id} // 0,
             deleted_at => _format_datetime($_->deleted_at),
             t_created => _format_datetime($_->t_created),
             t_updated => _format_datetime($_->t_updated),

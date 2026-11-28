@@ -1,0 +1,9 @@
+[Unit]
+Description=Audit and clean up stale openQA user accounts weekly.
+
+[Timer]
+OnCalendar=weekly
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,11 @@
+[Unit]
+Description=openQA stale user account audit and cleanup
+After=network.target openqa-webui.service
+Wants=openqa-webui.service
+
+# The audit calls openqa-cli, which needs an admin API key for the geekotest user in
+# ~/.config/openqa/client.conf (see also "openqa-cli api --help").
+[Service]
+Type=oneshot
+User=geekotest
+ExecStart=/usr/share/openqa/script/openqa-audit-stale-users --apply

@@ -227,5 +227,6 @@ style_check_requires:
   ShellCheck:
   shfmt:
   python3-gitlint:
+  python3-pytest:
   python3-ruff:
   python3-typer:

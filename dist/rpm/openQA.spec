@@ -42,6 +42,7 @@
 %else
 %bcond_without python_scripts
 %endif
+
 # exclude additional sub packages that would pull in a lot of extra dependencies on SLE
 %if 0%{?suse_version} && !0%{?is_opensuse}
 %bcond_with devel_package
@@ -57,7 +58,7 @@
 %endif
 # runtime requirements that also the testsuite needs
 %if %{with python_scripts}
-%define python_scripts_requires python3-base python3-requests openQA-client
+%define python_scripts_requires python3-base python3-requests python3-typer openQA-client
 %else
 %define python_scripts_requires %{nil}
 %endif
@@ -95,7 +96,7 @@
 %define qemu qemu
 %endif
 # The following line is generated from dependencies.yaml
-%define style_check_requires ShellCheck perl(Code::TidyAll) perl(Perl::Critic) >= 1.156.0 perl(Perl::Critic::Community) perl(Pod::Markdown) perl(Test::Perl::Critic) python3-gitlint python3-ruff python3-typer python3-yamllint shfmt
+%define style_check_requires ShellCheck perl(Code::TidyAll) perl(Perl::Critic) >= 1.156.0 perl(Perl::Critic::Community) perl(Pod::Markdown) perl(Test::Perl::Critic) python3-gitlint python3-pytest python3-ruff python3-typer python3-yamllint shfmt
 # The following line is generated from dependencies.yaml
 %define cover_requires perl(Devel::Cover) perl(Devel::Cover::Report::Codecovbash)
 # The following line is generated from dependencies.yaml
@@ -246,6 +247,7 @@ a convenient helper for interacting with openQA webui REST API.
 Summary:        Additional scripts in python
 Group:          Development/Tools/Other
 Requires:       %python_scripts_requires
+Recommends:     openldap2-client
 
 %description python-scripts
 Additional scripts for the use of openQA in the python programming language.
@@ -391,7 +393,7 @@ the server.
 
 %prep
 %setup -q
-sed -e 's,/bin/env python,/bin/python,' -i script/openqa-label-all
+sed -e 's,/bin/env python,/bin/python,' -i script/openqa-label-all script/openqa-audit-stale-users
 # Depending on whether we run in OBS or from a gitea repo, there is a
 # node_modules directory or not
 TARGET="%{_sourcedir}"; [ -d "$TARGET/node_modules" ] && TARGET="$TARGET/node_modules"
@@ -445,11 +447,14 @@ rm -rf %{buildroot}/DB
 
 %install
 %if !%{with python_scripts}
-rm script/openqa-label-all
+rm script/openqa-label-all script/openqa-audit-stale-users
 %endif
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
 %make_install
+%if !%{with python_scripts}
+rm -f %{buildroot}%{_unitdir}/openqa-audit-stale-users.service %{buildroot}%{_unitdir}/openqa-audit-stale-users.timer
+%endif
 
 %if 0%{?suse_version} <= 1500
 # we only use sysusers on Tumbleweed
@@ -473,6 +478,7 @@ ln -s %{_datadir}/openqa/script/setup-db %{buildroot}%{_bindir}/openqa-setup-db
 ln -s %{_datadir}/openqa/script/dump-db %{buildroot}%{_bindir}/openqa-dump-db
 %if %{with python_scripts}
 ln -s %{_datadir}/openqa/script/openqa-label-all %{buildroot}%{_bindir}/openqa-label-all
+ln -s %{_datadir}/openqa/script/openqa-audit-stale-users %{buildroot}%{_bindir}/openqa-audit-stale-users
 %endif
 
 install -d -m 755 %{buildroot}%{_datadir}/openqa/client
@@ -632,6 +638,17 @@ fi
 
 %postun continuous-update
 %service_del_postun openqa-continuous-update.timer
+
+%if %{with python_scripts}
+%post python-scripts
+%service_add_post openqa-audit-stale-users.service openqa-audit-stale-users.timer
+
+%preun python-scripts
+%service_del_preun openqa-audit-stale-users.service openqa-audit-stale-users.timer
+
+%postun python-scripts
+%service_del_postun openqa-audit-stale-users.service openqa-audit-stale-users.timer
+%endif
 
 %post local-db
 %service_add_post %{openqa_localdb_services}
@@ -913,6 +930,10 @@ fi
 %files python-scripts
 %{_datadir}/openqa/script/openqa-label-all
 %{_bindir}/openqa-label-all
+%{_datadir}/openqa/script/openqa-audit-stale-users
+%{_bindir}/openqa-audit-stale-users
+%{_unitdir}/openqa-audit-stale-users.service
+%{_unitdir}/openqa-audit-stale-users.timer
 %endif
 
 %files doc
