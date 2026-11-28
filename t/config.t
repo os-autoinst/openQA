@@ -44,6 +44,8 @@ subtest 'Test configuration default modes' => sub {
     $app->mode('test');
     my $config = read_config($app, 'reading config from default with mode test');
     is length($config->{_openid_secret}), 16, 'config has openid_secret';
+    is $config->{cleanup}{crosscheck}, 0, 'crosscheck of results against the filesystem is off by default';
+    is $config->{cleanup}{crosscheck_interval_days}, 30, 'crosscheck interval defaults to a monthly cadence';
     my $test_config = dclone(OpenQA::Setup::default_config());
     my $scheduler_config = $test_config->{scheduler};
     # apply transformations done in read_config

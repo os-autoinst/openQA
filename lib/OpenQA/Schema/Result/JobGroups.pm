@@ -290,6 +290,21 @@ sub find_jobs_with_expired_logs ($self, $preserved_important_jobs_out = undef) {
     return $expired ? [$expired->search({logs_present => 1})->all] : [];
 }
 
+# jobs past the results retention, limited to the ones the size accounting can tell apart. These are queries for
+# the results crosscheck, so they return a resultset with the columns needed to locate the job directory instead of
+# loading all jobs of a group into memory.
+sub _find_results_jobs_by_size ($self, $size_cond) {
+    return undef
+      unless my $expired
+      = $self->_find_expired_jobs($self->keep_results_in_days, $self->keep_important_results_in_days);
+    return $expired->search({result_size => $size_cond, state => {-in => [FINAL_STATES]}},
+        {columns => [qw(id result_dir archived)]});
+}
+
+sub find_jobs_with_cleaned_results ($self) { _find_results_jobs_by_size($self, 0) }
+
+sub find_jobs_with_present_results ($self) { _find_results_jobs_by_size($self, {'>' => 0}) }
+
 # helper function for cleanup task
 sub limit_results_and_logs ($self, $preserved_important_jobs_out = undef) {
     my $config = OpenQA::App->singleton->config;

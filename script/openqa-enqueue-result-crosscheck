@@ -1,0 +1,2 @@
+#!/bin/sh -e
+exec "$(dirname "$0")"/openqa eval -m production -V 'OpenQA::Task::Job::Crosscheck::enqueue_if_due(app)' "$@"
