@@ -201,6 +201,9 @@ test_requires:
   jq:
   os-autoinst:
   postgresql-server: '>= 14'
+  python3-pytest:
+  python3-pytest-cov:
+  python3-pytest-mock:
   python3-setuptools:
   perl(App::cpanminus):
   perl(Selenium::Remote::Driver): '>= 1.23'
@@ -227,5 +230,7 @@ style_check_requires:
   ShellCheck:
   shfmt:
   python3-gitlint:
-  python3-ruff:
+  python3-ruff: '>= 0.11.13'
+  python3-ty: '>= 0.0.4'
   python3-typer:
+  python3-vulture: '>= 2.15'

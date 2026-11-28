@@ -51,7 +51,10 @@ mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
 unstables := $(shell cat tools/unstable_tests.txt | tr '\n' :)
 shellfiles := $$(file --mime-type script/* t/* container/worker/*.sh tools/* | sed -n 's/^\(.*\):.*text\/x-shellscript.*$$/\1/p')
-pyfiles ?= $(shell git ls-files | grep -v '\.md$$' | xargs file --mime-type 2>/dev/null | grep -E 'text/x-script\.python|text/x-python' | grep --invert-match -E '^(t/data|container/openqa_data/)' | cut -d: -f1)
+pyfiles ?= $(shell (git ls-files | grep -v '\.md$$' | xargs file --mime-type 2>/dev/null | grep -E 'text/x-script\.python|text/x-python' | cut -d: -f1; git ls-files '*.py') | grep --invert-match -E '^(t/data|container/openqa_data/)' | sort -u)
+PYTEST_ARGS ?=
+PYTEST_COVERAGE_ARGS ?= --cov --cov-report=term-missing
+PYTHON ?= python3
 
 # tests need these environment variables to be unset
 OPENQA_BASEDIR =
@@ -266,7 +269,7 @@ else
 compile_tests = test-compile
 endif
 
-test: $(checkstyle_tests) $(compile_tests) test-with-database ## Run all tests (including checkstyle, compile test and database tests)
+test: $(checkstyle_tests) $(compile_tests) test-python-unit test-with-database ## Run all tests (including checkstyle, compile test, python tests and database tests)
 ifeq ($(CONTAINER_TEST),1)
 ifeq ($(TESTS),)
 test: test-containers-compose
@@ -455,7 +458,7 @@ setup-hooks: ## Install pre-commit git hooks
 
 # all additional checks not called by prove
 .PHONY: test-checkstyle-standalone
-test-checkstyle-standalone: test-shellcheck test-yaml test-shfmt test-gitlint test-python-static-checks test-markdown ## Run all style and static analysis checks
+test-checkstyle-standalone: test-shellcheck test-yaml test-shfmt test-gitlint test-python test-markdown ## Run all style and static analysis checks
 ifeq ($(CONTAINER_TEST),1)
 test-checkstyle-standalone: test-check-containers
 endif
@@ -485,7 +488,23 @@ test-shfmt: ## Run shfmt on scripts
 	shfmt -d -i 4 -bn -ci -sr $(shellfiles)
 
 .PHONY: test-python-static-checks ## Run all static checks on Python scripts
-test-python-static-checks: test-ruff test-python-conventions
+test-python-static-checks: test-python-tool-versions test-ruff test-python-conventions test-python-types test-python-code-health
+
+ifeq ($(PYTHON_TESTS),0)
+test-python-unit test-python-unit-no-coverage:
+	@echo "Skipping python unit tests: PYTHON_TESTS=0 is set, the dependencies are not available on this distribution"
+else
+.PHONY: test-python-unit
+test-python-unit: ## Run Python unit tests with statement and branch coverage enforcement
+	$(PYTHON) -m pytest $(PYTEST_COVERAGE_ARGS) $(PYTEST_ARGS)
+
+.PHONY: test-python-unit-no-coverage
+test-python-unit-no-coverage: ## Run Python unit tests without coverage
+	$(PYTHON) -m pytest $(PYTEST_ARGS)
+endif
+
+.PHONY: test-python
+test-python: test-python-static-checks test-python-unit ## Run Python static checks and unit tests
 
 .PHONY: test-markdown
 test-markdown: ## Check markdown files for style and consistency
@@ -493,12 +512,39 @@ test-markdown: ## Check markdown files for style and consistency
 
 .PHONY: test-ruff
 test-ruff: ## Run `ruff format --check` and `ruff check` on Python scripts
-	@command -v ruff >/dev/null 2>&1 || echo "Command 'ruff' not found, can not execute python style checks"
+	@command -v ruff >/dev/null 2>&1 || (echo "Command 'ruff' not found, install 'python3-ruff' (Tumbleweed, Leap 16)" && false)
 	@if [ -n "$(pyfiles)" ]; then ruff format --check $(pyfiles) && ruff check $(pyfiles); fi
+
+.PHONY: test-python-types
+test-python-types: ## Run type checks on Python scripts
+	@command -v ty >/dev/null 2>&1 || (echo "Command 'ty' not found, install 'python3-ty' (Tumbleweed, Leap 16)" && false)
+	ty check --python "$$($(PYTHON) -c 'import sys; print(sys.prefix)')" $(pyfiles)
+
+.PHONY: test-python-tool-versions
+test-python-tool-versions: ## Check the installed python tool versions against the floors in dependencies.yaml
+	@status=0; for tool in ruff ty vulture; do \
+		floor=$$(sed -n "s/^  python3-$$tool: '>= *\([0-9.]*\)'/\1/p" dependencies.yaml); \
+		installed=$$($$tool --version 2>/dev/null | awk '{print $$2}'); \
+		if [ -z "$$installed" ]; then \
+			echo "Command '$$tool' not found, install 'python3-$$tool'"; status=1; \
+		elif [ -z "$$floor" ]; then \
+			echo "Error: no version floor for $$tool in dependencies.yaml"; status=1; \
+		elif [ "$$(printf '%s\n%s\n' "$$floor" "$$installed" | sort -V | head -n 1)" != "$$floor" ]; then \
+			echo "Error: $$tool $$installed is older than the floor $$floor from dependencies.yaml; use the CI image registry.opensuse.org/devel/openqa/containers/opensuse/openqa_ci:latest"; \
+			status=1; \
+		else \
+			echo "$$tool $$installed (floor $$floor)"; \
+		fi; \
+	done; exit $$status
+
+.PHONY: test-python-code-health
+test-python-code-health: ## Check Python scripts for dead code
+	@command -v vulture >/dev/null 2>&1 || (echo "Command 'vulture' not found, install 'python3-vulture'" && false)
+	vulture $(pyfiles) --min-confidence 80
 
 .PHONY: test-python-conventions
 test-python-conventions: ## Checks whether Python scripts follow certain coding conventions
-	@if [[ -d tests/ ]] && git grep -nE '^\s*@(unittest\.mock\.|mock\.)?patch' tests/; then \
+	@if git grep -nE '^\s*@(unittest\.mock\.|mock\.)?patch' tests/; then \
 		echo "Error: @patch decorator detected. Avoid to prevent argument ordering bugs."; \
 		echo "   Fix: Use the 'mocker' fixture (pytest-mock) or a 'with patch():' context manager."; \
 		exit 1; \

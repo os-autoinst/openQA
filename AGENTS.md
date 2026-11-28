@@ -18,6 +18,15 @@ JavaScript (Bootstrap).
   fast text-based coverage report restricted to the specific file you changed
   (run this after generating the coverage database).
 - `make test-gitlint`: Must pass after creating or amending git commits.
+- `make test-python`: Run the Python static checks (ruff, conventions, ty,
+  vulture) and the Python unit tests with the 100% statement+branch coverage
+  gate.
+- `make test-python-unit-no-coverage`: Run only the Python unit tests, without
+  the coverage gate.
+- `make test-python-tool-versions`: Report the ruff/ty/vulture versions and fail
+  below the floors declared in `dependencies.yaml`. The `openqa_ci` container
+  image is authoritative: reproduce a CI-only failure inside it instead of
+  downgrading a local tool or adding a suppression.
 - `make test`: Full test suite.
 
 ## Conventions
@@ -47,7 +56,9 @@ JavaScript (Bootstrap).
   requirement. You MUST run tests with `COVERAGE=1` for your specific test
   adaptations, and then run `make check-line-coverage` to verify that all
   new/modified lines are covered. Do not wait for CI/Codecov in PRs to catch
-  missing coverage.
+  missing coverage. Python files under `script/` and `tools/` are gated at
+  100% statement and branch coverage by `make test-python`, which also runs
+  `ty` and `vulture` and fails on any diagnostic.
 
 ## Constraints
 

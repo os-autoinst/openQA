@@ -42,6 +42,12 @@
 %else
 %bcond_without python_scripts
 %endif
+# python3-typer and pytest-mock >= 3 are not available on SLE 15 and Leap < 16
+%if 0%{?suse_version} <= 1500
+%bcond_with python_tests
+%else
+%bcond_without python_tests
+%endif
 # exclude additional sub packages that would pull in a lot of extra dependencies on SLE
 %if 0%{?suse_version} && !0%{?is_opensuse}
 %bcond_with devel_package
@@ -88,14 +94,14 @@
 # Do not require on this in individual sub-packages except for the devel
 # package.
 # The following line is generated from dependencies.yaml
-%define test_requires %common_requires %main_requires %mcp_requires %python_scripts_requires %worker_requires curl file jq openssh-common os-autoinst perl(App::cpanminus) perl(Selenium::Remote::Driver) >= 1.23 perl(Selenium::Remote::WDKeys) perl(Test::Compile) perl(Test::Exception) perl(Test::Fatal) perl(Test::Mock::Time) perl(Test::MockModule) perl(Test::MockObject) perl(Test::Mojo) perl(Test::Most) perl(Test::Output) perl(Test::Pod) perl(Test::Warnings) >= 0.029 postgresql-server >= 14 python3-setuptools
+%define test_requires %common_requires %main_requires %mcp_requires %python_scripts_requires %worker_requires curl file jq openssh-common os-autoinst perl(App::cpanminus) perl(Selenium::Remote::Driver) >= 1.23 perl(Selenium::Remote::WDKeys) perl(Test::Compile) perl(Test::Exception) perl(Test::Fatal) perl(Test::Mock::Time) perl(Test::MockModule) perl(Test::MockObject) perl(Test::Mojo) perl(Test::Most) perl(Test::Output) perl(Test::Pod) perl(Test::Warnings) >= 0.029 postgresql-server >= 14 python3-pytest python3-pytest-cov python3-pytest-mock python3-setuptools
 %ifarch x86_64
 %define qemu qemu qemu-kvm
 %else
 %define qemu qemu
 %endif
 # The following line is generated from dependencies.yaml
-%define style_check_requires ShellCheck perl(Code::TidyAll) perl(Perl::Critic) >= 1.156.0 perl(Perl::Critic::Community) perl(Pod::Markdown) perl(Test::Perl::Critic) python3-gitlint python3-ruff python3-typer python3-yamllint shfmt
+%define style_check_requires ShellCheck perl(Code::TidyAll) perl(Perl::Critic) >= 1.156.0 perl(Perl::Critic::Community) perl(Pod::Markdown) perl(Test::Perl::Critic) python3-gitlint python3-ruff >= 0.11.13 python3-ty >= 0.0.4 python3-typer python3-vulture >= 2.15 python3-yamllint shfmt
 # The following line is generated from dependencies.yaml
 %define cover_requires perl(Devel::Cover) perl(Devel::Cover::Report::Codecovbash)
 # The following line is generated from dependencies.yaml
@@ -148,6 +154,9 @@ ExcludeArch:    %{ix86}
 %{?systemd_requires}
 %if %{with tests}
 BuildRequires:  %{test_requires}
+%if %{with python_tests}
+BuildRequires:  python3-typer
+%endif
 %endif
 Requires(pre):  group(nogroup)
 %if 0%{?suse_version} > 1500
@@ -439,6 +448,9 @@ export CONTAINER_TEST=0
 export HELM_TEST=0
 # We don't want fatal warnings during package building
 export PERL_TEST_WARNINGS_ONLY_REPORT_WARNINGS=1
+%if !%{with python_tests}
+export PYTHON_TESTS=0
+%endif
 make test PROVE_ARGS='-r -v t' CHECKSTYLE=0 TEST_PG_PATH=%{buildroot}/DB
 rm -rf %{buildroot}/DB
 %endif

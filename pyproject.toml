@@ -3,7 +3,7 @@ name = "openQA"
 dynamic = ["version"]
 description = "Framework for automated system-level testing (web-frontend, scheduler and tools)"
 readme = "README.md"
-requires-python = ">=3.6"
+requires-python = ">=3.12"
 license = "GPL-2-or-later"
 authors = [
     { name = "SUSE LLC" },
@@ -20,12 +20,16 @@ Homepage = "https://open.qa"
 
 [dependency-groups]
 dev = [
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
     "ruff",
     "vulture",
     "ty>=0.0.21",
 ]
 
 [tool.coverage.run]
+source = ["script", "tools"]
 branch = true
 
 [tool.coverage.report]
@@ -37,14 +41,13 @@ skip_covered = true
 addopts = "-p no:anyio -p no:doctest -p no:pastebin -p no:nose"
 testpaths = ["tests"]
 python_files = "test_*.py"
-markers = ["qem_behavior(mode): configure the fake_qem fixture behavior"]
 
 [tool.setuptools]
 include-package-data = true
 zip-safe = false
 
-[tool.setuptools.packages]
-find = {}
+[tool.setuptools.packages.find]
+exclude = ["tests*"]
 
 [tool.ruff]
 line-length = 120
@@ -131,7 +134,7 @@ ignore = [
 max-complexity = 9
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["magic-value-comparison", "any-type", "too-many-arguments", "assert", "hardcoded-password-string", "hardcoded-password-func-arg", "too-many-positional-arguments", "undocumented-public-function"]
+"tests/*" = ["magic-value-comparison", "any-type", "too-many-arguments", "assert", "hardcoded-password-string", "hardcoded-password-func-arg", "too-many-positional-arguments", "undocumented-public-function", "private-member-access"]
 
 [tool.ruff.format]
 # Enable reformatting of code snippets in docstrings.
