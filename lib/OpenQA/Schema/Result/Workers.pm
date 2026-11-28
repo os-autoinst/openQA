@@ -161,11 +161,11 @@ sub _reservation_duration ($duration, $is_admin) {
     return $seconds;
 }
 
-sub reserve ($self, $user, $comment = undef, $duration = undef, $force = 0, $worker_class = undef, $scope = 'instance')
-{
-    my $is_admin = $user->is_admin;
+sub reserve ($self, $user, %args) {
+    my ($is_admin, $is_operator) = @args{qw(is_admin is_operator)};
+    my ($comment, $duration, $force, $worker_class, $scope) = @args{qw(comment duration force worker_class scope)};
     die reservation_error(forbidden => 'Insufficient permissions to reserve a worker')
-      unless $is_admin || $user->is_operator;
+      unless $is_admin || $is_operator;
     die reservation_error(invalid => 'A comment is required for worker reservation')
       if OpenQA::App->singleton->config->{worker_reservation}->{comment_required}
       && (!defined $comment || $comment =~ /^\s*$/);
@@ -173,6 +173,7 @@ sub reserve ($self, $user, $comment = undef, $duration = undef, $force = 0, $wor
     die reservation_error(invalid => "Invalid specific worker class '$worker_class'")
       if defined $worker_class && !reservation_class_valid($worker_class);
     my $seconds = _reservation_duration($duration, $is_admin);
+    $scope //= 'instance';
 
     # the conflict check and all property writes must be atomic, a partially written reservation
     # without expiry would keep the worker reserved forever
@@ -191,11 +192,11 @@ sub reserve ($self, $user, $comment = undef, $duration = undef, $force = 0, $wor
     return $self;
 }
 
-sub release ($self, $user) {
+sub release ($self, $user, %args) {
     die reservation_error(invalid => 'Worker is not reserved') unless $self->is_reserved;
     die reservation_error(
         forbidden => 'Insufficient permissions to release reservation owned by ' . $self->_reserved_by_name)
-      unless $user->is_admin || $self->_reservation_properties->{RESERVED_BY_ID} == $user->id;
+      unless $args{is_admin} || $self->_reservation_properties->{RESERVED_BY_ID} == $user->id;
     $self->delete_properties([RESERVATION_PROPERTIES]);
     return $self;
 }

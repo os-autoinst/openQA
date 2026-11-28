@@ -46,9 +46,9 @@ sub stats ($self) {
 }
 
 sub reserve_host ($self, $host, $user, %args) {
-    my $is_admin = $user->is_admin;
+    my ($is_admin, $is_operator) = @args{qw(is_admin is_operator)};
     die reservation_error(forbidden => 'Insufficient permissions to reserve a worker')
-      unless $is_admin || $user->is_operator;
+      unless $is_admin || $is_operator;
 
     my @workers = $self->search({host => $host})->all;
     die reservation_error(not_found => "Worker host '$host' not found") unless @workers;
@@ -69,16 +69,25 @@ sub reserve_host ($self, $host, $user, %args) {
                 );
             }
 
-            $_->reserve($user, $args{comment}, $args{duration}, $args{force}, $args{worker_class}, 'host') for @workers;
+            $_->reserve(
+                $user,
+                comment => $args{comment},
+                duration => $args{duration},
+                force => $args{force},
+                worker_class => $args{worker_class},
+                scope => 'host',
+                is_admin => $is_admin,
+                is_operator => $is_operator,
+            ) for @workers;
         });
 
     return \@workers;
 }
 
 sub release_host ($self, $host, $user, %args) {
-    my $is_admin = $user->is_admin;
+    my ($is_admin, $is_operator) = @args{qw(is_admin is_operator)};
     die reservation_error(forbidden => 'Insufficient permissions to release a worker')
-      unless $is_admin || $user->is_operator;
+      unless $is_admin || $is_operator;
 
     my @workers = $self->search({host => $host})->all;
     die reservation_error(not_found => "Worker host '$host' not found") unless @workers;
@@ -102,7 +111,7 @@ sub release_host ($self, $host, $user, %args) {
                 );
             }
 
-            $_->release($user) for @reserved;
+            $_->release($user, is_admin => $is_admin) for @reserved;
         });
 
     return \@workers;

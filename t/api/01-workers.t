@@ -430,6 +430,47 @@ subtest 'worker reservation API' => sub {
     $other_operator->delete;
 };
 
+subtest 'API key scope limits the reservation powers of admin accounts' => sub {
+    $schema->txn_begin;
+    my $users = $schema->resultset('Users');
+    my $admin = $users->find(99901);
+    $admin->api_keys->create(
+        {key => 'ARTHURSCOPED01', secret => 'ARTHURSCOPEDSECRET', is_admin => 0, is_operator => 1});
+    my $t_admin = client(Test::Mojo->new($t->app), apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR');
+    my $t_scoped = client(Test::Mojo->new($t->app), apikey => 'ARTHURSCOPED01', apisecret => 'ARTHURSCOPEDSECRET');
+
+    my $worker = $workers->create({host => 'scoped-host', instance => 1});
+    my $reservation_url = '/api/v1/workers/' . $worker->id . '/reservation';
+    my $host_reservation_url = '/api/v1/worker_hosts/scoped-host/reservation';
+
+    $t->post_ok($reservation_url, form => {comment => 'operator reservation', duration => '1h'})->status_is(200);
+    $t_scoped->post_ok($reservation_url, form => {comment => 'scoped force', duration => '1h', force => 1})
+      ->status_is(409, 'operator-scoped key of an admin account cannot force an existing reservation');
+    $t_scoped->post_ok($reservation_url, form => {comment => 'scoped indefinite', duration => '0'})
+      ->status_is(403, 'operator-scoped key of an admin account cannot reserve indefinitely')
+      ->json_like('/error' => qr/only allowed for admins/);
+    $t_scoped->delete_ok($reservation_url)
+      ->status_is(403, 'operator-scoped key of an admin account cannot release a foreign reservation');
+
+    $worker->update(
+        {t_seen => time2str('%Y-%m-%d %H:%M:%S', time - DEFAULT_WORKER_TIMEOUT - DB_TIMESTAMP_ACCURACY, 'UTC')});
+    $t_scoped->delete_ok('/api/v1/workers/' . $worker->id . '?force=1')
+      ->status_is(400, 'operator-scoped key of an admin account cannot force the deletion of a reserved worker')
+      ->json_is('/error' => 'Cannot delete a reserved worker.');
+    $t_admin->delete_ok('/api/v1/workers/' . $worker->id . '?force=1')
+      ->status_is(200, 'admin-scoped key can force the deletion of a reserved worker');
+
+    $workers->create({host => 'scoped-host', instance => 1});
+    $t->post_ok($host_reservation_url, form => {comment => 'op host', duration => '1h'})->status_is(200);
+    $t_scoped->post_ok($host_reservation_url, form => {comment => 'scoped host force', duration => '1h', force => 1})
+      ->status_is(409, 'operator-scoped key of an admin account cannot force a host reservation');
+    $t_scoped->delete_ok($host_reservation_url)
+      ->status_is(403, 'operator-scoped key of an admin account cannot release a foreign host reservation');
+    $t_admin->post_ok($host_reservation_url, form => {comment => 'admin host force', duration => '1h', force => 1})
+      ->status_is(200, 'admin-scoped key can force a host reservation');
+    $schema->txn_rollback;
+};
+
 subtest 'worker host reservation API' => sub {
     $schema->txn_begin;
     my $users = $schema->resultset('Users');
@@ -542,7 +583,7 @@ subtest 'worker registration reservation inheritance' => sub {
     my $operator = $users->find(99903);
 
     my $w1 = $workers->create({host => 'inherit-host', instance => 1});
-    $workers->reserve_host('inherit-host', $operator, comment => 'inherit comment', duration => '2h');
+    $workers->reserve_host('inherit-host', $operator, comment => 'inherit comment', duration => '2h', is_operator => 1);
 
     my %reg_params = (
         host => 'inherit-host',
@@ -561,10 +602,10 @@ subtest 'worker registration reservation inheritance' => sub {
     is $w2->reservation->{comment}, 'inherit comment', 'inherited reservation comment matches';
     is $w2->reservation->{scope}, 'host', 'inherited reservation scope is host';
 
-    $workers->release_host('inherit-host', $operator);
+    $workers->release_host('inherit-host', $operator, is_operator => 1);
     $w2->delete;
 
-    $workers->reserve_host('inherit-host', $operator, comment => 'expired comment', duration => '1h');
+    $workers->reserve_host('inherit-host', $operator, comment => 'expired comment', duration => '1h', is_operator => 1);
     $w1->discard_changes;
     $w1->set_property(RESERVED_T_EXPIRES => time - 10);
     ok !$w1->is_reserved, 'worker reservation on host is expired';

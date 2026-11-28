@@ -271,7 +271,7 @@ sub delete ($self) {
         status => 403
     ) if defined(($comment->force_result)[0]);
     return $self->render(json => {error => 'Forbidden (must be author or admin)'}, status => 403)
-      unless ($self->current_user->is_admin || $comment->user_id == $self->current_user->id);
+      unless ($self->is_admin || $comment->user_id == $self->current_user->id);
     $self->emit_event('openqa_comment_delete', {id => $comment_id});
     my $res = $comment->delete();
     $self->render(json => {id => $res->id});

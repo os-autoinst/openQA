@@ -289,7 +289,7 @@ sub delete ($self) {
             status => 400
         ) if ($worker->reservation->{scope} // '') eq 'host' && !$self->param('force');
         return $self->render(json => {error => 'Cannot delete a reserved worker.'}, status => 400)
-          unless $self->param('force') && $self->current_user->is_admin;
+          unless $self->param('force') && $self->is_admin;
     }
     if ($worker->status ne 'dead' || $worker->unfinished_jobs->count) {
         $message = 'Worker ' . $worker->name . ' status is not offline.';
@@ -343,7 +343,17 @@ sub reserve ($self) {
     my $worker_class = $self->param('worker_class');
     return undef
       unless $self->_apply_reservation(
-        sub { $worker->reserve($user, $comment, $self->param('duration'), $self->param('force'), $worker_class) });
+        sub {
+            $worker->reserve(
+                $user,
+                comment => $comment,
+                duration => $self->param('duration'),
+                force => $self->param('force'),
+                worker_class => $worker_class,
+                is_admin => $self->is_admin,
+                is_operator => $self->is_operator,
+            );
+        });
 
     my $reservation = $worker->reservation;
     $self->emit_event(
@@ -373,7 +383,7 @@ Releases an existing worker reservation.
 sub release ($self) {
     return undef unless my $worker = $self->_reservation_worker;
     my $user = $self->current_user;
-    return undef unless $self->_apply_reservation(sub { $worker->release($user) });
+    return undef unless $self->_apply_reservation(sub { $worker->release($user, is_admin => $self->is_admin) });
 
     $self->emit_event('openqa_worker_release', {id => $worker->id, name => $worker->name, user => $user->username});
     $self->render(json => {message => 'Worker ' . $worker->name . ' reservation released successfully.'});
@@ -407,6 +417,8 @@ sub reserve_host ($self) {
                 duration => $self->param('duration'),
                 force => $self->param('force'),
                 worker_class => $worker_class,
+                is_admin => $self->is_admin,
+                is_operator => $self->is_operator,
             );
         });
 
@@ -448,7 +460,12 @@ sub release_host ($self) {
     my $workers = $self->schema->resultset('Workers');
 
     my $worker_list;
-    return undef unless $self->_apply_reservation(sub { $worker_list = $workers->release_host($host, $user) });
+    return undef
+      unless $self->_apply_reservation(
+        sub {
+            $worker_list
+              = $workers->release_host($host, $user, is_admin => $self->is_admin, is_operator => $self->is_operator);
+        });
 
     # Emit openqa_worker_host_release audit event
     my $worker_ids = [map { $_->id } @$worker_list];

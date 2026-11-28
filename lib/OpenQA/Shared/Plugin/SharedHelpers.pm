@@ -20,6 +20,9 @@ sub register ($self, $app, @args) {
     $app->helper(current_user => \&_current_user);
     $app->helper(is_operator => \&_is_operator);
     $app->helper(is_admin => \&_is_admin);
+    $app->helper(format_api_key_role => \&_format_api_key_role);
+    $app->helper(role_to_permissions => \&_role_to_permissions);
+    $app->helper(validate_api_key_role_grant => \&_validate_api_key_role_grant);
     $app->helper(is_api_request => \&_is_api_request);
     $app->helper(is_local_request => \&_is_local_request);
     $app->helper(render_specific_not_found => \&_render_specific_not_found);
@@ -75,14 +78,40 @@ sub _current_user ($c) {
     return $current_user && defined $current_user->{user} ? $current_user->{user} : undef;
 }
 
-sub _is_operator ($c, $user = undef) {
-    $user //= $c->current_user;
-    return ($user && $user->is_operator);
+sub _is_operator ($c) {
+    my $user = $c->current_user;
+    return 0 unless $user;
+    my $api_key = $c->stash('current_api_key');
+    return ($user->is_admin && $api_key->is_admin) || ($user->is_operator && $api_key->is_operator) if $api_key;
+    return $user->is_admin || $user->is_operator;
 }
 
-sub _is_admin ($c, $user = undef) {
+sub _is_admin ($c) {
+    my $user = $c->current_user;
+    return 0 unless $user;
+    my $api_key = $c->stash('current_api_key');
+    return $user->is_admin && $api_key->is_admin if $api_key;
+    return $user->is_admin;
+}
+
+sub _format_api_key_role ($c, $key, $user = undef) {
     $user //= $c->current_user;
-    return ($user && $user->is_admin);
+    return 'User' unless $user && $key;
+    return 'Administrator' if $key->is_admin && $user->is_admin;
+    return 'Operator' if $key->is_operator && ($user->is_admin || $user->is_operator);
+    return 'User';
+}
+
+sub _role_to_permissions ($c, $role) {
+    return (1, 1) if $role eq 'admin';
+    return (1, 0) if $role eq 'operator';
+    return (0, 0);
+}
+
+sub _validate_api_key_role_grant ($c, $is_admin, $is_operator) {
+    return 'Cannot grant administrator role exceeding own permissions' if $is_admin && !$c->is_admin;
+    return 'Cannot grant operator role exceeding own permissions' if $is_operator && !$c->is_operator;
+    return undef;
 }
 
 sub _is_api_request ($c) {
@@ -104,3 +133,43 @@ sub _render_specific_not_found ($c, $title, $error_message) {
 sub _via_domain ($c, $domain) { defined $domain && $c->req->url->to_abs->host eq $domain }
 
 1;
+
+=encoding utf8
+
+=head1 NAME
+
+OpenQA::Shared::Plugin::SharedHelpers - Shared Mojolicious helpers for openQA
+
+=head1 DESCRIPTION
+
+Registers helpers for schema access, the current user and role checks,
+API-key permission scoping, request classification, and rendering.
+
+=head2 is_operator
+
+Returns true if the current user has operator access. Administrator access
+implies operator access. When the request is authenticated with an API key,
+the key must also carry the matching C<is_operator> or C<is_admin> flag.
+
+=head2 is_admin
+
+Returns true if the current user is an administrator. When the request is
+authenticated with an API key, the key must also be an administrator.
+
+=head2 format_api_key_role
+
+Returns the effective role of an API key (C<Administrator>, C<Operator>, or
+C<User>), bounded by the owning user's account roles.
+
+=head2 role_to_permissions
+
+Maps a role name (C<admin>, C<operator>, or C<user>) to an C<is_operator> and
+C<is_admin> permission pair.
+
+=head2 validate_api_key_role_grant
+
+Returns an error message if the requested permissions exceed the effective
+permissions of the current request (the account roles bounded by the
+authenticating API key's scope), or C<undef> when the grant is allowed.
+
+=cut

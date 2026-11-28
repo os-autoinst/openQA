@@ -19,10 +19,32 @@ sub create ($self) {
     my $validation = $self->validation;
     $validation->optional('t_expiration', 'seconds_optional')->datetime;
     $validation->optional('comment')->size(0, API_KEY_COMMENT_MAX_LENGTH);
+    $validation->optional('is_operator')->in('0', '1');
+    $validation->optional('is_admin')->in('0', '1');
+    $validation->optional('role')->in('admin', 'operator', 'user');
+
+    my $requested_role = $validation->is_valid('role') ? $validation->param('role') : undef;
+    my $requested_is_operator = $validation->is_valid('is_operator') ? int($validation->param('is_operator')) : undef;
+    my $requested_is_admin = $validation->is_valid('is_admin') ? int($validation->param('is_admin')) : undef;
 
     my $error;
     if ($validation->has_error) {
         $error = 'Date must be in format ' . DateTime::Format::Pg->format_datetime(DateTime->now());
+    }
+    elsif (defined $requested_role && (defined $requested_is_operator || defined $requested_is_admin)) {
+        $error = 'Cannot specify both role and is_operator/is_admin';
+    }
+
+    my ($is_operator, $is_admin);
+    if (!$error) {
+        ($is_operator, $is_admin)
+          = defined $requested_role
+          ? $self->role_to_permissions($requested_role)
+          : ($requested_is_operator // $self->is_operator, $requested_is_admin // $self->is_admin);
+    }
+
+    if (!$error && (my $perm_error = $self->validate_api_key_role_grant($is_admin, $is_operator))) {
+        $error = $perm_error;
     }
 
     if (!$error && $validation->is_valid('t_expiration')) {
@@ -36,6 +58,8 @@ sub create ($self) {
                     user_id => $user->id,
                     t_expiration => $expiration,
                     comment => $validation->param('comment'),
+                    is_operator => $is_operator,
+                    is_admin => $is_admin,
                 });
         }
         catch ($e) { $error = $e }    # uncoverable statement

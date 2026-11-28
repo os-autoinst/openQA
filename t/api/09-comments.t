@@ -352,6 +352,14 @@ subtest 'delete comment permissions' => sub {
     $t->delete_ok("/api/v1/jobs/99981/comments/$cid2")->status_is(200, 'administrator can delete comments');
 
     client($t);
+    my $cid3 = test_create_comment('jobs', 99981, 'scoped admin permission test comment');
+    $t->app->schema->resultset('Users')->find({username => 'arthur'})
+      ->api_keys->create({key => 'ARTHURSCOPED01', secret => 'ARTHURSCOPEDSECRET', is_admin => 0, is_operator => 1});
+    client($t, apikey => 'ARTHURSCOPED01', apisecret => 'ARTHURSCOPEDSECRET');
+    $t->delete_ok("/api/v1/jobs/99981/comments/$cid3")
+      ->status_is(403, 'operator-scoped key of an admin account cannot delete foreign comments');
+
+    client($t);
 };
 
 done_testing();
