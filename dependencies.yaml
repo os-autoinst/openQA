@@ -110,6 +110,7 @@ main_requires:
   perl(diagnostics):
   perl(strict):
   perl(warnings):
+  perl(Algorithm::Diff):
   perl(BSD::Resource):
   perl(Carp):
   perl(CommonMark):

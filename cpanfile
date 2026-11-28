@@ -4,6 +4,7 @@
 # from dependencies.yaml
 ##################################################
 
+requires 'Algorithm::Diff';
 requires 'Archive::Zip';
 requires 'BSD::Resource';
 requires 'CSS::Minifier::XS', '>= 0.01';

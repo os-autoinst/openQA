@@ -1109,6 +1109,37 @@ subtest 'helper functions of investigation tab' => sub {
     is $html->('Fix foo (#42)', 'https://github.com/o/r/'), 'Fix foo (#42)', 'no link for unexpected URL';
     is $html->('Fix foo (#42)', 'undefined'), 'Fix foo (#42)', 'no link without repository URL';
     is $html->('Fix foo', 'https://github.com/o/r/commit/'), 'Fix foo', 'message without pull request unchanged';
+
+    my $group = [
+        {sign => '-', parts => [['', 'a-'], ['changed', '40'], ['', '-1.x'], ['missing', '.z']]},
+        {sign => '+', parts => [['', 'a-<b>'], ['changed', '37'], ['', '-1.x']]},
+    ];
+    is $driver->execute_script(
+        'const d = document.createElement("div"); d.appendChild(renderDiffGroups(arguments[0])); return d.innerHTML;',
+        [$group, [{sign => '', parts => [['', 'plain <i>&']]}]]),
+      '<span class="diff-line diff-del">-a-<b class="diff-changed">40</b>-1.x<i class="diff-missing">.z</i></span>'
+      . '<span class="diff-line diff-add">+a-&lt;b&gt;<b class="diff-changed">37</b>-1.x</span>'
+      . '<span class="diff-line">plain &lt;i&gt;&amp;</span>',
+      'groups rendered as lines with marked tokens and escaped text';
+
+    my $render = sub ($response) {
+        $driver->execute_script(
+            'const el = document.createElement("div"); renderInvestigationTab.call({panelElement: el}, arguments[0]);'
+              . 'const pres = [...el.querySelectorAll("pre")];'
+              . 'return [pres.map(p => p.querySelectorAll(".diff-line").length), el.querySelectorAll("tbody tr").length,'
+              . ' el.querySelectorAll("a").length, pres.map(p => p.textContent)];',
+            $response
+        );
+    };
+    my @pairs = map { [{sign => '-', parts => [['', "p$_-1"]]}, {sign => '+', parts => [['', "p$_-2"]]}] } 1 .. 6;
+    my $single = [{sign => '-', parts => [['', 'single']]}];
+    my $res = $render->({diff_x => '-single', diff_x_lines => [$single, @pairs], other => '-x'});
+    is_deeply [@$res[0 .. 2]], [[11, 2, 0], 2, 1],
+      'line limit does not split a pair, "Show more" has the rest, other values stay text, _lines key has no row'
+      or always_explain $res;
+    $res = $render->({diff_x => "-a\n+b", diff_y => 'Diff of packages not available'});
+    is_deeply $res->[3], ["-a\n+b", 'Diff of packages not available'], 'diff without groups rendered as text'
+      or always_explain $res;
 };
 
 subtest 'additional investigation notes provided on new failed' => sub {

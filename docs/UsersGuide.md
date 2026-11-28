@@ -754,6 +754,15 @@ available on the web UI host (e.g. for a `CASEDIR` that is a URL or absolute
 path) or if git took longer than `job_investigate_git_timeout` in total or
 failed. Pull request numbers are skipped if time runs out.
 
+The keys `diff_to_last_good` (job settings), `diff_packages_to_last_good` and
+`diff_sut_packages_to_last_good` contain the lines of a diff, sorted by package
+name or settings key with `-` before `+`, so a changed entry is a `-` line
+followed by a `+` line. The lines of multi-line values in the pretty-printed
+`vars.json` are sorted by their own text, so such values can be split up. The
+keys with the suffix `_lines` contain the same lines as groups for the web UI:
+a `-` and a `+` line with the same key form a group of two with the changed
+tokens marked, any other line is a group of one.
+
 <a id="carry-over"></a>
 
 ### Carry over of bug references from previous jobs in same scenario
