@@ -16,6 +16,16 @@
 
     %= include 'layouts/info'
 
+        % if ($activity && $activity->{idle_seconds} && $activity->{idle_seconds} > 14 * 86400) {
+    <div class="alert alert-warning">
+        <strong>Notice:</strong> Host has not executed any jobs for <%= int($activity->{idle_seconds}/86400) %> days. Verify if hardware can be powered down or decommissioned.
+    </div>
+    % } elsif ($activity && !defined $activity->{last_job_finished}) {
+    <div class="alert alert-warning">
+        <strong>Notice:</strong> Host has never executed any jobs. Verify if hardware can be powered down or decommissioned.
+    </div>
+    % }
+
     <div class="row my-3">
         <div class="col-md-6">
             <div class="card h-100">
@@ -26,6 +36,16 @@
                     <div><span>Idle slots: </span><%= $stats->{idle} %></div>
                     <div><span>Reserved slots: </span><%= $stats->{reserved} %></div>
                     <div><span>Offline slots: </span><%= $stats->{dead} %></div>
+                    <div><span>Last job executed: </span>
+                        % if ($activity && $activity->{last_job_finished}) {
+                            <abbr class="timeago" title="<%= $activity->{last_job_finished} %>"><%= $activity->{last_job_finished} %></abbr>
+                        % } else {
+                            Never
+                        % }
+                    </div>
+                    <div><span>Jobs in last 7 days: </span><%= $activity ? $activity->{jobs_last_7d} : 0 %></div>
+                    <div><span>Jobs in last 30 days: </span><%= $activity ? $activity->{jobs_last_30d} : 0 %></div>
+
                 </div>
             </div>
         </div>
