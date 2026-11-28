@@ -282,4 +282,11 @@ subtest 'test suite sets short asset setting to false value' => sub {
     is $overriddenjob->{settings}->{ISO}, '', 'false-evaluating ISO in template overrides posted ISO_URL';
 };
 
+subtest 'handle REPO_URL and REPO_1_URL in schedule_iso' => sub {
+    $rsp = schedule_iso($t, {%params, REPO_1_URL => 'http://localhost/repo1', REPO_URL => 'http://localhost/repo0'});
+    is $rsp->json->{count}, $expected_job_count, 'a regular ISO post creates the expected number of jobs';
+    check_job_setting($t, $rsp, 'REPO_1', 'repo1', 'parameter REPO_1 is correctly set from REPO_1_URL');
+    check_job_setting($t, $rsp, 'REPO', 'repo0', 'parameter REPO is correctly set from REPO_URL');
+};
+
 done_testing();

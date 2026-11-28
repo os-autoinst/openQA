@@ -9,10 +9,11 @@ use Mojo::File 'path';
 use Mojo::URL;
 use OpenQA::Constants 'DOWNLOAD_PERMISSION';
 use OpenQA::UserAgent;
-use OpenQA::Utils 'human_readable_size';
+use OpenQA::Utils qw(human_readable_size);
 use Time::HiRes 'sleep';
 use Feature::Compat::Try;
 use HTTP::Status qw(:constants);
+use File::Which qw(which);
 
 has attempts => 5;
 has [qw(log tmpdir)];
@@ -21,17 +22,25 @@ has ua => sub { OpenQA::UserAgent->new(max_redirects => 5, max_response_size => 
 has res => undef;
 
 sub download ($self, $url, $target, $options = {}) {
+    return "Path traversal attempt detected in target: $target" if $target =~ m{(?:^|/)\.\.(?:/|$)};
+
     my $tmpdir = path($self->tmpdir);
     try { $tmpdir->make_path }
     catch ($e) { return "Unable to create temporary directory: $e" }
     local $ENV{MOJO_TMPDIR} = $tmpdir;
+
+    my $is_repo = $options->{is_repo}
+      // ((($options->{type} // '') eq 'repo') || ((Mojo::URL->new($url)->scheme // '') eq 'rsync'));
 
     my $remaining_attempts = $self->attempts;
     my $log = $self->log;
     my ($code, $err);
     while (1) {
         $options->{on_attempt}->() if $options->{on_attempt};
-        ($code, $err) = $self->_get($url, $target, $options);
+        ($code, $err)
+          = $is_repo
+          ? $self->_download_repo($url, $target, $options)
+          : $self->_get($url, $target, $options);
         return undef unless defined $err;
 
         if ((--$remaining_attempts) && (!defined $code || ($code =~ /^5[0-9]{2}$/))) {
@@ -47,6 +56,99 @@ sub download ($self, $url, $target, $options = {}) {
         last;
     }
     return $err;
+}
+
+sub _remove_tree ($self, $path) {
+    my $log = $self->log;
+    try { $path->remove_tree }
+    catch ($e) { $log->warn("Unable to remove $path: $e") }    # uncoverable statement
+}
+
+sub _download_repo ($self, $url, $target, $options) {
+    my $log = $self->log;
+    my $name = path($target)->basename;
+    $log->info(qq{Downloading repository "$name" from "$url"});
+
+    my $url_obj = Mojo::URL->new($url);
+    my $scheme = $url_obj->scheme // '';
+    # report configuration errors with a non-retryable code so download() does not retry them
+    if ($scheme !~ /^(?:rsync|https?|ftp)$/) {
+        return (HTTP_BAD_REQUEST, qq{Unsupported URL scheme "$scheme" for repository download});
+    }
+    if ($scheme =~ /^(?:https?|ftp)$/ && !which('wget')) {
+        return (HTTP_BAD_REQUEST,
+            q{External command "wget" is not available. Repository download from HTTP/HTTPS/FTP is not supported.});
+    }
+
+    my $target_path = path($target);
+    my $target_dir = $target_path->dirname;
+    my $tmp_target = path($target_dir, ".tmp_${name}_$$");
+    try { $tmp_target->make_path }
+    catch ($e) { return (undef, "Unable to create temporary directory $tmp_target: $e") }    # uncoverable statement
+
+    my $res;
+    if ($scheme eq 'rsync') {
+        my $rsync_url = $url =~ m{/$} ? $url : "$url/";
+        my @cmd = (qw(rsync -avH --delete), $rsync_url, $tmp_target->to_string . '/');
+        $res = OpenQA::Utils::run_cmd_with_log_return_error(\@cmd);
+    }
+    else {
+        my $http_url = $url =~ m{/$} ? $url : "$url/";
+        my $cut_dirs = scalar @{$url_obj->path->parts};
+        my @cmd = (
+            qw(wget --mirror --no-parent --no-host-directories),
+            "--cut-dirs=$cut_dirs", qw(--reject index.html* --directory-prefix),
+            $tmp_target->to_string, $http_url
+        );
+        $res = OpenQA::Utils::run_cmd_with_log_return_error(\@cmd);
+    }
+
+    if ($res->{status}) {
+        # never replace an already-downloaded repo with an empty result (repo cleared on OBS);
+        # keep the previous copy so tests can still run (cf. Syncthing's .stfolder guard)
+        my @staged;
+        if (opendir my $dh, $tmp_target->to_string) {
+            @staged = grep { !/^\.\.?$/ } readdir $dh;
+            closedir $dh;
+        }
+        if (!@staged) {
+            $self->_remove_tree($tmp_target);
+            if (-e $target_path) {
+                $log->info(qq{Repository "$target" is empty remotely; keeping previously downloaded copy});
+                $options->{on_success}->() if $options->{on_success};
+                return (undef, undef);
+            }
+            return (undef, qq{Repository download of "$target" produced an empty result});
+        }
+        # swap the staging directory into place while keeping the previous copy until the new one is there,
+        # so a job reading the repository never sees it missing
+        my $backup = path($target_dir, ".old_${name}_$$");
+        try {
+            $target_path->move_to($backup) if -e $target_path;
+            $tmp_target->move_to($target_path);
+        }
+        catch ($e) {
+            try { $backup->move_to($target_path) if -e $backup && !-e $target_path }
+            catch ($e2) {
+                $log->warn("Unable to restore $target from $backup: $e2")    # uncoverable statement
+            }
+            $self->_remove_tree($tmp_target);
+            return (undef, "Failed to move repository to destination: $e");
+        }
+        $self->_remove_tree($backup);
+        $options->{on_success}->() if $options->{on_success};
+        return (undef, undef);
+    }
+
+    $self->_remove_tree($tmp_target);
+    my $code = $res->{return_code};
+    if ($res->{stderr} =~ /\b([45]\d{2})\b/) {
+        $code = $1;
+    }
+    my $error_detail = $res->{stderr} || ($res->{return_code} ? "exit code $res->{return_code}" : 'unknown error');
+    my $log_message = qq{Download of repository "$target" failed: $error_detail};
+    $log->info($log_message);
+    return ($code, $log_message);
 }
 
 sub _extract_asset ($self, $to_extract, $target) {
