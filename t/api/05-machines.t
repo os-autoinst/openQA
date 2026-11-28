@@ -349,4 +349,65 @@ subtest 'server-side limit with pagination' => sub {
     };
 };
 
+subtest 'deprecation/lifecycle enforcement' => sub {
+    my $admin_t = client($t, apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR');
+    my $config = $admin_t->app->config;
+
+    $config->{job_settings_lifecycle} = {
+        rule_error => 'BAD_SETTING:=~foo:error:BAD_SETTING with foo is not allowed',
+        rule_warn => 'BAD_SETTING:=~bar:warning:BAD_SETTING with bar is deprecated',
+        rule_anchored => 'OTHER_SETTING:=~^baz$:error:OTHER_SETTING must not be baz',
+    };
+    delete $config->{misc_limits}->{job_settings_lifecycle_rules};
+
+    $admin_t->post_ok(
+        '/api/v1/machines',
+        json => {
+            name => 'bad_machine_foo',
+            backend => 'qemu',
+            settings => {
+                BAD_SETTING => 'foo_val',
+                GOOD_SETTING => 'baz',
+            }})->status_is(400);
+    like $admin_t->tx->res->body,
+      qr/Setting 'BAD_SETTING' has deprecated value 'foo_val': BAD_SETTING with foo is not allowed/,
+      'error response message matches';
+
+    $admin_t->post_ok(
+        '/api/v1/machines',
+        json => {
+            name => 'bad_machine_padded_key',
+            backend => 'qemu',
+            settings => {'BAD_SETTING ' => 'foo_val'},
+        })->status_is(400, 'settings key with trailing blank is rejected as deprecated');
+    like $admin_t->tx->res->body,
+      qr/Setting 'BAD_SETTING' has deprecated value 'foo_val': BAD_SETTING with foo is not allowed/,
+      'padded key is validated in its trimmed form';
+
+    $admin_t->post_ok(
+        '/api/v1/machines',
+        json => {
+            name => 'bad_machine_padded_value',
+            backend => 'qemu',
+            settings => {OTHER_SETTING => 'baz '},
+        })->status_is(400, 'settings value with trailing blank is rejected as deprecated');
+    like $admin_t->tx->res->body,
+      qr/Setting 'OTHER_SETTING' has deprecated value 'baz': OTHER_SETTING must not be baz/,
+      'padded value is validated in its trimmed form';
+
+    $admin_t->post_ok(
+        '/api/v1/machines',
+        json => {
+            name => 'warn_machine_bar',
+            backend => 'qemu',
+            settings => {
+                BAD_SETTING => 'bar_val',
+                GOOD_SETTING => 'baz',
+            }})->status_is(200);
+
+    delete $config->{job_settings_lifecycle};
+    delete $config->{misc_limits}->{job_settings_lifecycle_rules};
+    client($t);
+};
+
 done_testing();

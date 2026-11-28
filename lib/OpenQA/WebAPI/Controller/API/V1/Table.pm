@@ -4,6 +4,7 @@
 package OpenQA::WebAPI::Controller::API::V1::Table;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
 
+use OpenQA::JobSettings::Lifecycle qw(validate_settings_for_submission);
 use Mojo::Util qw(trim xml_escape);
 use OpenQA::App;
 use OpenQA::Log 'log_debug';
@@ -361,9 +362,10 @@ sub _prepare_settings ($self, $table, $entry) {
     $entry->{description} = $self->param('description');
     my @settings;
     my @keys;
-    if ($hp->{settings}) {
-        for my $k (keys %{$hp->{settings}}) {
-            my $value = trim $hp->{settings}->{$k};
+    my %settings;
+    if (my $submitted_settings = $hp->{settings}) {
+        for my $k (keys %$submitted_settings) {
+            my $value = trim $submitted_settings->{$k};
             $k = trim $k;
             my %invalid;
             @invalid{$k =~ m/([^\]\[0-9a-zA-Z_\+])/g} = ();
@@ -373,6 +375,10 @@ sub _prepare_settings ($self, $table, $entry) {
             }
             push @settings, {key => $k, value => $value};
             push @keys, $k;
+            $settings{$k} = $value;
+        }
+        if (my $error_msg = validate_settings_for_submission(\%settings, $self->app->config)) {
+            return $error_msg;
         }
     }
     return (undef, \@settings, \@keys);
