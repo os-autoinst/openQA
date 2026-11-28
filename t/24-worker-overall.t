@@ -225,6 +225,19 @@ subtest 'worker load' => sub {
     ok $worker->_check_system_utilization(10, [12, 3, 9]), 'load exceeded on rising flank and old load';
     ok $worker->_check_system_utilization(10, [11, 13, 12]), 'load still exceeded on short load dip';
     ok $worker->_check_system_utilization(10, [11, 12, 13]), 'load still exceeded on falling flank but high';
+
+    subtest 'sleep duration is calculated proportionally to current system load and executed when above low limit' =>
+      sub {
+        $worker->settings->global_settings->{WORKER_LOAD_LOW_LIMIT} = 5;
+        $worker->settings->global_settings->{WORKER_LOAD_FACTOR} = 2;
+        $worker->settings->global_settings->{WORKER_LOAD_JITTER} = 0;
+        my $delay = $worker->_calculate_load_delay;
+        cmp_ok $delay, '>', 15, 'sleep duration is greater than the expected lower bound of 15 seconds';
+        cmp_ok $delay, '<', 25, 'sleep duration is less than the expected upper bound of 25 seconds';
+        $worker->settings->global_settings->{WORKER_LOAD_LOW_LIMIT} = 4;
+        $worker->settings->global_settings->{WORKER_LOAD_FACTOR} = 0;
+        $worker->settings->global_settings->{WORKER_LOAD_JITTER} = 0;
+      };
 };
 
 subtest 'passing return code' => sub {
