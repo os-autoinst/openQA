@@ -38,4 +38,26 @@ subtest 'MCP enabled' => sub {
     like $actions, qr/API help ${mcp_help}Changelog Logout/, 'MCP entry is shown for operator when MCP is enabled';
 };
 
+subtest 'MCP write mode enabled' => sub {
+    $t->app->config->{global}{mcp_enabled} = 'read-write';
+    my $mcp_help = 'MCP help ';
+    $t->get_ok('/tests')->status_is(200);
+    my $actions = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#user-action')->all_text);
+    like $actions, qr/API help ${mcp_help}Changelog Logout/, 'MCP entry is shown for operator in write mode';
+};
+
+subtest 'MCP help page' => sub {
+    $t->app->config->{global}{mcp_enabled} = 'read-write';
+    $t->get_ok('/mcp_help')->status_is(200);
+    my $text = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->all_text);
+    like $text, qr/read-write/, 'mode shown';
+    like $text, qr/openqa_trigger_job/, 'write tool listed in write mode';
+    like $text, qr/opencode/, 'client configuration example shown';
+    $t->app->config->{global}{mcp_enabled} = 'read-only';
+    $t->get_ok('/mcp_help')->status_is(200);
+    $text = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->all_text);
+    like $text, qr/openqa_list_jobs/, 'read tool listed';
+    unlike $text, qr/openqa_trigger_job/, 'write tool not listed in read-only mode';
+};
+
 done_testing();
