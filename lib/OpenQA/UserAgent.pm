@@ -12,8 +12,9 @@ use Scalar::Util ();
 use Time::Seconds;
 use HTTP::Status qw(:constants);
 use Carp;
+use OpenQA::SSHKey qw(parse_public_key signature_payload sign_payload);
 
-has [qw(apikey apisecret base_url)];
+has [qw(apikey apisecret base_url ssh_key)];
 
 sub new ($class, @args) {
     my $self = $class->SUPER::new(@args);
@@ -69,10 +70,23 @@ sub add_auth_headers ($headers, $url, $apikey, $apisecret) {
     }
 }
 
+sub add_ssh_auth_headers ($headers, $url, $private_key_file, $body) {
+    my $timestamp = time;
+    my $public = parse_public_key(path("$private_key_file.pub")->slurp);
+    my $payload = signature_payload(_path_query($url), $timestamp, $body);
+    $headers->header('X-SSH-Key-Fingerprint', $public->{fingerprint});
+    $headers->header('X-SSH-Microtime', $timestamp);
+    $headers->header('X-SSH-Signature', sign_payload($private_key_file, $payload));
+}
+
 sub _add_headers ($self, $tx) {
     my $req = $tx->req;
     my $headers = $req->headers;
     $headers->accept('application/json') unless defined $headers->accept;
+    if ($self->ssh_key) {
+        add_ssh_auth_headers($headers, $req->url, $self->ssh_key, $req->body);
+        return;
+    }
     add_auth_headers($headers, $req->url, $self->apikey, $self->apisecret);
 }
 
