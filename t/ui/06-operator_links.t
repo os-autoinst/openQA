@@ -42,8 +42,9 @@ is $driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', 'lo
 note 'downgrade our own permissions to operator';
 $driver->find_element('#user-action a')->click();
 $driver->find_element_by_link_text('Users')->click;
-my $get_demo_row = "Array.from(document.getElementsByClassName('nick')).filter(e => e.innerText === 'Demo')[0]";
-$driver->execute_script("$get_demo_row.nextElementSibling.querySelectorAll('label')[1].click()");
+my $get_demo_role = "Array.from(document.getElementsByClassName('nick'))"
+  . ".filter(e => e.innerText === 'Demo')[0].closest('tr').querySelector('td.role')";
+$driver->execute_script("$get_demo_role.querySelectorAll('label')[1].click()");
 $driver->accept_alert;
 note 'refresh and return to admin pages';
 $driver->refresh;

@@ -32,7 +32,7 @@ my $output = qx{"$cmd" --prepare_init --init_database --dir="$tempdir" --force -
 is $?, 0, 'command exited with zero return code';
 like $output, qr/overwriting.*$tempdir/i, 'files in temp dbicdh dir specified via --dir overwritten via --force flag';
 like $output, qr/Database initialized/i, 'database initialized';
-ok $schema->resultset('Users')->find({username => 'system'}), 'system user has been created';
+is $schema->resultset('Users')->search({username => 'system'})->count, 1, 'system user has been created';
 
 my $sql_mtime = $tempdir->child("PostgreSQL/deploy/$schema_version/001-auto.sql")->stat->mtime;
 cmp_ok $sql_mtime, '>=', $now, 'SQL code for deployment of current schema version has been updated';

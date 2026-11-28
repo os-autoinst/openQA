@@ -20,6 +20,10 @@ __PACKAGE__->add_columns(
     username => {
         data_type => 'text',
     },
+    password => {
+        data_type => 'text',
+        is_nullable => 1,
+    },
     provider => {
         data_type => 'text',
         default_value => '',
@@ -103,6 +107,7 @@ sub anonymize ($self) {
                     email => undef,
                     fullname => undef,
                     nickname => undef,
+                    password => undef,
                     is_operator => 0,
                     is_admin => 0,
                     deleted_at => DateTime->now,
