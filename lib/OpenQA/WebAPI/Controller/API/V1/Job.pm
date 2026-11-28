@@ -450,23 +450,66 @@ current job.
 Pass descendants=1 as query parameter to include how many restarts have happened as of the
 current job.
 
+Pass details=1 as query parameter to include the test module details. The route
+C</api/v1/jobs/I<jobid>/details> always includes them and additionally accepts:
+
+=over 4
+
+=item modules
+
+Restrict the returned modules to a comma-separated list of names. Defaults to all modules.
+
+=item result
+
+Restrict the returned modules to a comma-separated list of results, e.g. C<failed,softfailed>.
+
+=item needles
+
+Control the needle candidates of each step: C<all> (default), C<worst> for the three
+candidates with the highest similarity or C<none>.
+
+The response includes C<module_counts>, the number of modules per result across the whole
+job, independent of the C<modules> filter.
+
+=back
+
 =back
 
 =cut
 
 sub show ($self) {
+    my $validation = $self->validation;
+    $validation->optional('needles')->in(qw(all worst none));
+    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
+
     my $job_id = int($self->stash('jobid'));
-    my $details = $self->stash('details') || 0;
+    my $details = $self->stash('details') || $self->param('details') || 0;
+    my @modules = grep { length } map { split /,/ } @{$self->every_param('modules')};
+    my @results = grep { length } map { split /,/ } @{$self->every_param('result')};
+    my %valid_results = map { $_ => 1 } MODULE_RESULTS;
+    my @invalid_results = grep { !$valid_results{$_} } @results;
+    return $self->render(
+        json => {error => 'Invalid module result(s): ' . join ', ', @invalid_results},
+        status => HTTP_BAD_REQUEST
+    ) if @invalid_results;
+
     my $check_assets = !!$self->param('check_assets');
     my $follow = $self->param('follow');
     my $unredacted = $self->param('unredacted') && $self->is_operator;
-    return unless my $job = $self->find_job_or_render_not_found($job_id, $follow ? {prefetch => 'settings'} : {});
+    return undef
+      unless my $job = $self->find_job_or_render_not_found($job_id, $follow ? {prefetch => 'settings'} : {});
     $job = $job->latest_job if $follow;
+    my $details_options;
+    if ($details) {
+        $details_options = {needles => $validation->param('needles') // 'all'};
+        $details_options->{modules} = \@modules if @modules;
+        $details_options->{results} = \@results if @results;
+    }
     my $job_data = $job->to_hash(
         assets => 1,
         check_assets => $check_assets,
         deps => 1,
-        details => $details,
+        details => $details_options // $details,
         parent_group => 1,
         unredacted => $unredacted,
     );

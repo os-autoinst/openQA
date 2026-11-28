@@ -1779,6 +1779,51 @@ paths:
       summary: Update job
       tags:
         - jobs
+  /jobs/{jobid}/details:
+    get:
+      description: >
+        Shows details for a specific job including its test modules and steps.
+        The response includes "module_counts" with the number of modules per
+        result across the whole job, independent of the "modules" filter.
+      operationId: getJobDetails
+      parameters:
+        - in: path
+          name: jobid
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: modules
+          description: >
+            A comma-separated list of module names to include. Defaults to all
+            modules.
+          schema:
+            type: string
+        - in: query
+          name: result
+          description: >
+            A comma-separated list of module results to include, e.g.
+            "failed,softfailed". Defaults to all results.
+          schema:
+            type: string
+        - in: query
+          name: needles
+          description: >
+            "all" returns all needle candidates, "worst" the three with the
+            highest similarity per step and "none" omits them. Defaults to
+            "all".
+          schema:
+            type: string
+            enum:
+              - all
+              - worst
+              - none
+      responses:
+        '200':
+          description: OK
+      summary: Get job details
+      tags:
+        - jobs
   /jobs/{jobid}/cancel:
     post:
       description: >

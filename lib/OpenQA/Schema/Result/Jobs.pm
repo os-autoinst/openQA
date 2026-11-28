@@ -498,11 +498,22 @@ sub to_hash ($job, %args) {
         my @args = $dependencies ? ($dependencies->{children} || [], $dependencies->{parents} || []) : ();
         $j = {%$j, %{$job->dependencies(@args)}};
     }
-    if ($args{details}) {
-        my $test_modules = read_test_modules($job);
+    if (my $details = $args{details}) {
+        my $test_modules = read_test_modules($job, ref $details eq 'HASH' ? $details : {});
         $j->{testresults} = ($test_modules ? $test_modules->{modules} : []);
         $j->{logs} = $job->test_resultfile_list;
         $j->{ulogs} = $job->test_uploadlog_list;
+        my %module_counts = map { $_ => 0 } MODULE_RESULTS;
+        my $counts = $job->modules->search(
+            {},
+            {
+                select => ['me.result', {count => '*'}],
+                as => ['result', 'module_count'],
+                group_by => 'me.result',
+                order_by => undef
+            });
+        $module_counts{$_->result} = $_->get_column('module_count') for $counts->all;
+        $j->{module_counts} = \%module_counts;
     }
     if ($args{parent_group} && $job_group) {
         if (my $parent_group = $job_group->parent) {
