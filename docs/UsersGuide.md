@@ -1872,6 +1872,31 @@ before moving each job's results. It stops immediately if:
 > archived important job exceeds the retention for important jobs, it is still
 > subject to deletion during the standard cleanup.
 
+### Cache of downloaded job details
+
+Downloading all results and assets of a job as a ZIP archive uses a cache which is
+configured in the `[job_details_archive]` section of the configuration (see the
+comments in `etc/openqa/openqa.ini` for the settings and their defaults):
+
+- `job_details_archive_cache_dir`: directory of the cached archives
+- `job_details_archive_cache_limit_gb`: maximum size of the cache
+- `job_details_archive_cache_min_free_percentage`: minimum free space on the file
+  system holding the cache
+- `job_details_archive_cache_watermark_percentage`: share of the limit to keep
+  after a rotation
+
+An archive is created on demand by a Minion job and kept for further downloads
+of the same job. The cache is rotated down to the limit times the watermark as
+soon as it exceeds the limit or the file system holding it has less than the
+configured minimum of free space. Because that check cannot see leftovers of
+interrupted creations, the same cleanup also runs at the start of the
+`limit_results_and_logs` Minion job, before that job returns early for
+sufficient free space via `result_cleanup_max_free_percentage`.
+
+Leftovers are removed automatically: a temporary file (`job_<id>.zip.tmp.<hex>`)
+once it is older than a day and no creation holds its lock, and a lock file
+(`job_<id>.zip.lock`) once its archive and temporary file are gone.
+
 ### Space-aware cleanup
 
 The cleanup of logs/results uses time-based retentions and hence is independent
