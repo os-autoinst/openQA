@@ -745,6 +745,7 @@ fi
 %{_datadir}/openqa/script/fetchneedles
 %{_datadir}/openqa/script/initdb
 %{_datadir}/openqa/script/openqa
+%{_datadir}/openqa/script/openqa-audit-retention
 %{_datadir}/openqa/script/openqa-scheduler
 %{_datadir}/openqa/script/openqa-scheduler-daemon
 %{_datadir}/openqa/script/openqa-websockets

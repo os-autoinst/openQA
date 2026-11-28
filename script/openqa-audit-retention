@@ -1,0 +1,271 @@
+#!/usr/bin/env perl
+
+# Copyright SUSE LLC
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+=head1 NAME
+
+openqa-audit-retention - report effective cleanup retention of job groups
+
+=head1 SYNOPSIS
+
+openqa-audit-retention [OPTIONS]
+
+=head1 DESCRIPTION
+
+Prints the effective value and the source of the six retention settings of every
+job group and parent group: C<keep_logs_in_days>,
+C<keep_important_logs_in_days>, C<keep_results_in_days>,
+C<keep_important_results_in_days>, C<keep_jobs_in_days> and
+C<keep_important_jobs_in_days>. The source is C<own> if the row sets the column
+itself, C<parent> if the value comes from the C<default_keep_*> column of the
+parent group and C<default> if it comes from C<[default_group_limits]> in the
+configuration (for parent groups C<own> and C<default> apply to their
+C<default_keep_*> columns). The values are read through the C<keep_*> and
+C<default_keep_*> accessors of the schema, which resolve the same order as
+C<OpenQA::Schema::Result::JobGroups::_get_column_or_default>; the reported source
+has to stay in sync with that method.
+
+A retention value of C<0>, or a value missing from the configuration, means
+"forever".
+
+The nightly cleanup deletes in a fixed order, see
+C<OpenQA::Schema::Result::JobGroups::limit_results_and_logs>: the job row first,
+which removes the whole result directory of that job including its logs, then the
+results of the remaining jobs, whose whole directory goes away as well, and then
+their log files. Each of the six settings is the deadline of one of those
+steps, for the important or the non-important jobs, so a setting that is not
+shorter than the step deleting the same data before it never takes effect.
+Two settings with the same value make the later step ineffective; a setting C<0>
+or unset never expires and therefore governs only when no earlier step expires.
+
+A category whose non-important value never expires does not run at all, which
+C<OpenQA::Schema::Result::JobGroups::_find_expired_jobs> implements with an
+early return, so the important value of that category never applies either:
+C<keep_jobs_in_days=0> also disables C<keep_important_jobs_in_days>.
+
+Each group reports the settings that never take effect as C<ineffective> and a
+C<forever> list with the settings that never expire. Reported as ineffective
+are C<keep_important_jobs_in_days> when the jobs cleanup does not run at all,
+C<keep_results_in_days> when it is not shorter than C<keep_jobs_in_days>,
+C<keep_important_results_in_days> when it is not shorter than the important jobs
+deadline, C<keep_logs_in_days> when it is not shorter than both the result and
+the job deadline and C<keep_important_logs_in_days> when it is not shorter than
+both important deadlines before it.
+
+The script only reads from the database and issues no writes.
+
+=head1 OUTPUT
+
+The default text output has one line per job group and parent group. A setting
+reads C<< <column>=<value>(<source>) >> with C<,forever> appended when the value
+never expires, followed by the ineffective settings in brackets:
+
+  group 42 'Maintenance: SLE 15 SP5' (parent 8 'Maintenance: Single Incidents'): keep_logs_in_days=30(own) keep_important_logs_in_days=90(parent) keep_results_in_days=30(own) keep_important_results_in_days=730(default) keep_jobs_in_days=500(default) keep_important_jobs_in_days=1000(default) [ineffective: keep_logs_in_days]
+
+The bracket is omitted when every setting takes effect.
+
+C<--format json> prints the same data as objects with a numeric C<value>
+(C<null> when no value is configured), a C<source> per setting, the
+C<ineffective> settings, the C<forever> columns and the C<config_defaults> used.
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<--format> I<text>|I<json>
+
+Output format, defaults to C<text> which prints one line per group, C<json>
+prints the same data including the configuration defaults used.
+
+=item B<--help>, B<-h>
+
+Print the usage message and exit.
+
+=back
+
+=cut
+
+use Mojo::Base -strict, -signatures;
+
+use FindBin '$RealBin';
+use lib "$RealBin/../lib";
+
+use Cpanel::JSON::XS ();
+use Getopt::Long::Descriptive;
+use Mojo::Log;
+use Mojolicious;
+use OpenQA::App;
+use OpenQA::Schema;
+use OpenQA::Setup;
+
+my @FORMATS = qw(text json);
+
+my @SETTINGS = qw(
+  keep_logs_in_days
+  keep_important_logs_in_days
+  keep_results_in_days
+  keep_important_results_in_days
+  keep_jobs_in_days
+  keep_important_jobs_in_days
+);
+my @JOBS_SETTINGS = qw(keep_jobs_in_days keep_important_jobs_in_days);
+my @RESULTS_SETTINGS = qw(keep_results_in_days keep_important_results_in_days);
+my @LOGS_SETTINGS = qw(keep_logs_in_days keep_important_logs_in_days);
+my %CONFIG_SETTING = (
+    keep_logs_in_days => 'log_storage_duration',
+    keep_important_logs_in_days => 'important_log_storage_duration',
+    keep_results_in_days => 'result_storage_duration',
+    keep_important_results_in_days => 'important_result_storage_duration',
+    keep_jobs_in_days => 'job_storage_duration',
+    keep_important_jobs_in_days => 'important_job_storage_duration',
+);
+
+my $JSON = Cpanel::JSON::XS->new->utf8->canonical->pretty;
+
+sub read_config () {
+    my $app = Mojolicious->new(log => Mojo::Log->new(level => 'warn'));
+    OpenQA::App->set_singleton($app);
+    OpenQA::Setup::read_config($app);
+    return $app->config->{default_group_limits};
+}
+
+# values inherited from the configuration are strings, so make every value a number
+sub as_number ($value) { return defined $value ? 0 + $value : undef; }
+
+sub is_forever ($value) { !defined $value || $value == 0 }
+
+# a deadline of undef never expires, so it governs only when no earlier deadline expires either
+sub governs ($deadline, @earlier_deadlines) {
+    my ($earliest) = sort { $a <=> $b } grep { defined } @earlier_deadlines;
+    return 1 if !defined $deadline && !defined $earliest;
+    return 0 if !defined $deadline;
+    return !defined $earliest || $deadline < $earliest;
+}
+
+sub setting_source ($row, $column, $is_parent) {
+    my $prefix = $is_parent ? 'default_' : '';
+    return 'own' if defined $row->get_column("$prefix$column");
+    return 'parent' if !$is_parent && defined $row->parent && defined $row->parent->get_column("default_$column");
+    return 'default';
+}
+
+sub effective_settings ($row, $is_parent) {
+    my %settings;
+    for my $column (@SETTINGS) {
+        my $accessor = $is_parent ? "default_$column" : $column;
+        $settings{$column}
+          = {value => as_number($row->$accessor), source => setting_source($row, $column, $is_parent)};
+    }
+    return \%settings;
+}
+
+# The cleanup of a category does not run when its non-important value never expires, so the
+# important value of the same category has no deadline either.
+sub deadlines ($value) {
+    my %deadline;
+    for my $category (\@JOBS_SETTINGS, \@RESULTS_SETTINGS, \@LOGS_SETTINGS) {
+        my ($non_important, $important) = @$category;
+        for my $column ($non_important, $important) {
+            $deadline{$column}
+              = is_forever($value->{$non_important}) || is_forever($value->{$column}) ? undef : $value->{$column};
+        }
+    }
+    return \%deadline;
+}
+
+sub classify ($record) {
+    my $value = {map { $_ => $record->{settings}->{$_}{value} } @SETTINGS};
+    my $deadline = deadlines($value);
+    $record->{forever} = [grep { is_forever($value->{$_}) } @SETTINGS];
+
+    # important builds are only deleted by their own deadline, so keep_important_jobs_in_days
+    # applies as soon as the jobs cleanup runs at all
+    my %ineffective;
+    $ineffective{keep_important_jobs_in_days}
+      = !defined $deadline->{keep_important_jobs_in_days} && !is_forever($value->{keep_important_jobs_in_days});
+    $ineffective{keep_results_in_days}
+      = !governs($deadline->{keep_results_in_days}, $deadline->{keep_jobs_in_days});
+    $ineffective{keep_important_results_in_days}
+      = !governs($deadline->{keep_important_results_in_days}, $deadline->{keep_important_jobs_in_days});
+    $ineffective{keep_logs_in_days}
+      = !governs($deadline->{keep_logs_in_days}, $deadline->{keep_jobs_in_days}, $deadline->{keep_results_in_days});
+    $ineffective{keep_important_logs_in_days} = !governs(
+        $deadline->{keep_important_logs_in_days},
+        $deadline->{keep_important_jobs_in_days},
+        $deadline->{keep_important_results_in_days});
+    $record->{ineffective} = [grep { $ineffective{$_} } @SETTINGS];
+    return $record;
+}
+
+sub record_for ($row, $is_parent) {
+    my $parent = $is_parent ? undef : $row->parent;
+    return classify(
+        {
+            id => $row->id,
+            kind => $is_parent ? 'parent' : 'group',
+            name => $row->name,
+            parent => $parent ? {id => $parent->id, name => $parent->name} : undef,
+            settings => effective_settings($row, $is_parent),
+        });
+}
+
+sub collect_records ($schema) {
+    my $parents = $schema->resultset('JobGroupParents')->search({}, {order_by => 'me.id'});
+    my $groups = $schema->resultset('JobGroups')->search({}, {prefetch => 'parent', order_by => 'me.id'});
+    return [map { record_for($_, 1) } $parents->all], [map { record_for($_, 0) } $groups->all];
+}
+
+sub format_setting ($setting, $column) {
+    my $value = $setting->{value};
+    $value = 'unset' unless defined $value;
+    my $details = $setting->{source};
+    $details .= ',forever' if is_forever($setting->{value});
+    return "$column=$value($details)";
+}
+
+sub text_line ($record) {
+    my $parent = $record->{parent};
+    my $scope = $parent ? sprintf "parent %d '%s'", $parent->{id}, $parent->{name} : 'no parent';
+    my $settings = join ' ', map { format_setting($record->{settings}->{$_}, $_) } @SETTINGS;
+    my $ineffective
+      = @{$record->{ineffective}}
+      ? sprintf ' [ineffective: %s]', join ', ', @{$record->{ineffective}}
+      : '';
+    return sprintf "%s %d '%s' (%s): %s%s\n",
+      $record->{kind}, $record->{id}, $record->{name}, $scope, $settings, $ineffective;
+}
+
+my ($opt, $usage) = describe_options(
+    "$0 %o\n\nReport the effective cleanup retention settings of all job groups and parent groups.",
+    ['format=s', 'output format: text or json', {default => 'text'}],
+    ['help|h', 'print usage message and exit'],
+);
+
+if ($opt->help) {
+    print $usage->text;
+    exit 0;
+}
+
+my $format = $opt->format;
+if (!grep { $_ eq $format } @FORMATS) {
+    print STDERR "Unsupported format '$format'.\n";
+    print STDERR $usage->text;
+    exit 1;
+}
+
+my $defaults = read_config();
+my $schema = OpenQA::Schema::connect_db(deploy => 0, silent => 1, from_script => 1);
+my ($parents, $groups) = collect_records($schema);
+
+if ($format eq 'json') {
+    print $JSON->encode(
+        {
+            config_defaults => {map { $_ => as_number($defaults->{$CONFIG_SETTING{$_}}) } @SETTINGS},
+            parent_groups => $parents,
+            job_groups => $groups,
+        });
+}
+else {
+    print map { text_line($_) } @$parents, @$groups;
+}
