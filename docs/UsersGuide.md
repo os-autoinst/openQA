@@ -301,6 +301,11 @@ request, the test suite setting would 'win' and the value would be foo.
 If the same variable is set with a + prefix in multiple places, the same precedence
 order described above will apply to those settings.
 
+You can also clear multiple settings using a wildcard pattern with a `+` prefix
+and an empty value, e.g. `+ASSET_*=`. This deletes all matching settings. Wildcard
+clearing requires an empty value; specifying a non-empty value with a wildcard is
+rejected with an error.
+
 To remove settings from a job regardless of where they were defined (including
 API POST parameters), you can set `_DROP_SETTINGS` to a comma-separated list of
 setting names or glob patterns (anchored, using `*` wildcards), e.g.

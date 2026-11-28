@@ -38,7 +38,9 @@ sub finalize_job_settings ($settings, $worker_classes) {
     $settings->{DISTRI} = lc($settings->{DISTRI}) if $settings->{DISTRI};
 
     parse_url_settings($settings);
-    handle_plus_in_settings($settings);
+    if (my $error = handle_plus_in_settings($settings)) {
+        return ($error);
+    }
     apply_drop_settings($settings);
     return expand_placeholders($settings);
 }
@@ -125,11 +127,35 @@ sub _expand_placeholder ($settings, $key, $start, $end, $visited, $on_web_ui, $u
 # if *multiple* things set +VARIABLE, whichever comes highest in
 # the usual precedence order wins.
 sub handle_plus_in_settings ($settings) {
-    for (keys %$settings) {
-        if (substr($_, 0, 1) eq '+') {
-            $settings->{substr $_, 1} = delete $settings->{$_};
+    my (@wildcards, @regular);
+    for my $k (keys %$settings) {
+        next unless substr($k, 0, 1) eq '+';
+        if (index($k, '*') != -1) {
+            push @wildcards, $k;
+        }
+        else {
+            push @regular, $k;
         }
     }
+
+    for my $k (@wildcards) {
+        my $val = $settings->{$k};
+        return "Wildcard setting '$k' cannot have a non-empty value" if defined $val && length $val;
+    }
+
+    for my $k (@wildcards) {
+        delete $settings->{$k};
+        my $pattern = substr $k, 1;
+        my $re = _pattern_to_re($pattern);
+        for my $matching_key (grep { $_ ne '_DROP_SETTINGS' && $_ =~ $re } keys %$settings) {
+            delete $settings->{$matching_key};
+        }
+    }
+
+    for my $k (@regular) {
+        $settings->{substr $k, 1} = delete $settings->{$k};
+    }
+    return undef;
 }
 
 sub _pattern_to_re ($pattern) {

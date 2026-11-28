@@ -116,14 +116,96 @@ subtest circular_reference => sub {
 };
 
 subtest 'handle_plus_in_settings' => sub {
-    my $settings = {
-        'ISO' => 'foo.iso',
-        '+ISO' => 'bar.iso',
-        '+ARCH' => 'x86_64',
-        'DISTRI' => 'opensuse',
-    };
-    OpenQA::JobSettings::handle_plus_in_settings($settings);
-    is_deeply $settings, {ISO => 'bar.iso', ARCH => 'x86_64', DISTRI => 'opensuse'}, 'handle the plus correctly';
+    my @cases = (
+        {
+            desc => 'regular plus override replaces target key',
+            input => {'ISO' => 'foo.iso', '+ISO' => 'bar.iso', '+ARCH' => 'x86_64', 'DISTRI' => 'opensuse'},
+            expected => {ISO => 'bar.iso', ARCH => 'x86_64', DISTRI => 'opensuse'},
+        },
+        {
+            desc => 'wildcard plus with empty string clears matching settings',
+            input => {
+                'ASSET_1' => 'a1.raw',
+                'ASSET_256' => 'a256.raw',
+                'MY_ASSET_1' => 'my.raw',
+                'ISO' => 'foo.iso',
+                '+ASSET_*' => '',
+            },
+            expected => {MY_ASSET_1 => 'my.raw', ISO => 'foo.iso'},
+        },
+        {
+            desc => 'wildcard plus with undef clears matching settings',
+            input => {
+                'ASSET_1' => 'a1.raw',
+                '+ASSET_*' => undef,
+            },
+            expected => {},
+        },
+        {
+            desc => 'wildcard plus matching no keys removes only the plus key',
+            input => {
+                'ISO' => 'foo.iso',
+                '+UNKNOWN_*' => '',
+            },
+            expected => {ISO => 'foo.iso'},
+        },
+        {
+            desc => 'wildcard plus preserves specific plus override',
+            input => {
+                'ASSET_1' => 'a1.raw',
+                'ASSET_2' => 'a2.raw',
+                '+ASSET_*' => '',
+                '+ASSET_1' => 'override.raw',
+            },
+            expected => {ASSET_1 => 'override.raw'},
+        },
+        {
+            desc => 'wildcard star clearing does not delete _DROP_SETTINGS',
+            input => {
+                'ISO' => 'foo.iso',
+                '_DROP_SETTINGS' => 'ISO',
+                '+*' => '',
+            },
+            expected => {_DROP_SETTINGS => 'ISO'},
+        },
+        {
+            desc => 'multiple wildcard plus settings clear respective matches',
+            input => {
+                'ASSET_1' => 'a1.raw',
+                'HDD_1' => 'h1.raw',
+                'ISO' => 'foo.iso',
+                '+ASSET_*' => '',
+                '+HDD_*' => '',
+            },
+            expected => {ISO => 'foo.iso'},
+        },
+        {
+            desc => 'wildcard plus with non-empty value yields error',
+            input => {'+ASSET_*' => 'foo'},
+            expected_error => qr/Wildcard setting '\+ASSET_\*' cannot have a non-empty value/,
+        },
+    );
+
+    for my $case (@cases) {
+        my $settings = {%{$case->{input}}};
+        my $err = OpenQA::JobSettings::handle_plus_in_settings($settings);
+        if ($case->{expected_error}) {
+            like $err, $case->{expected_error}, "$case->{desc}: error matches";
+        }
+        else {
+            is $err, undef, "$case->{desc}: no error returned";
+            is_deeply $settings, $case->{expected}, "$case->{desc}: settings match expected";
+        }
+    }
+
+    my $finalize_settings = {'+ASSET_*' => 'foo'};
+    my ($finalize_err) = OpenQA::JobSettings::finalize_job_settings($finalize_settings, []);
+    like $finalize_err, qr/Wildcard setting '\+ASSET_\*' cannot have a non-empty value/,
+      'finalize_job_settings returns error on non-empty wildcard plus';
+
+    my $generate_err = OpenQA::JobSettings::generate_settings({settings => {'+ASSET_*' => 'foo'}});
+    like $generate_err, qr/Wildcard setting '\+ASSET_\*' cannot have a non-empty value/,
+      'generate_settings returns error on non-empty wildcard plus';
 };
 
 subtest '_DROP_SETTINGS' => sub {
