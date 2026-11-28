@@ -1,0 +1,29 @@
+#!/bin/bash
+
+set -euo pipefail
+
+# Print true when the pull request changed a file matching the extended regex, false otherwise
+pr=${1:-}
+pattern=${2:?usage: pr_files_match <pull request number> <extended regex>}
+
+if [[ -z $pr ]]; then
+    echo true
+    exit 0
+fi
+
+changed=$(gh api --paginate "repos/${GITHUB_REPOSITORY:?}/pulls/$pr/files" --jq '.[].filename') || {
+    echo "Could not list files of pull request $pr, assuming relevance" >&2
+    echo true
+    exit 0
+}
+
+if grep -qE "$pattern" <<< "$changed"; then
+    echo true
+else
+    status=$?
+    if [[ $status -ne 1 ]]; then
+        echo "Invalid pattern '$pattern'" >&2
+        exit "$status"
+    fi
+    echo false
+fi

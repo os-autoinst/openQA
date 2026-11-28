@@ -1,14 +1,49 @@
 ---
 name: compose
 # yamllint disable-line rule:truthy
-on: [push, pull_request]
+on:
+  # a branch push inside the repository must not bypass the gate of its pull request
+  push:
+    branches: [master]
+  pull_request:
 jobs:
   webui-docker-compose:
     permissions:
       contents: read
+      pull-requests: read
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      # The build only consumes container files, so unrelated PRs must not be blocked by
+      # live distribution repositories or base image rebuilds
+      - name: Check whether the container build is relevant
+        id: relevant
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RELEVANT: ^container/|^tools/test_containers_compose$|^tools/retry$|^tools/pr_files_match$|^Makefile$|^\.github/workflows/compose\.yml$
+        run: echo "build=$(tools/pr_files_match "$PR_NUMBER" "$RELEVANT")" >> "$GITHUB_OUTPUT"
       - name: Verify that containers can be composed
+        if: steps.relevant.outputs.build == 'true'
         run: make test-containers-compose
+      # Distinguish a container regression from a distribution repository rollover
+      - name: Report base image and repository state
+        if: failure()
+        run: |
+          set +e
+          grep -h '^FROM' container/*/Dockerfile* | awk '{print $2}' | sort -u |
+              while read -r image; do
+                  docker image inspect "$image" --format "base image $image built {{.Created}}" 2>/dev/null ||
+                      echo "base image $image not present locally"
+              done
+          grep -hoE '^FROM opensuse/leap:[0-9.]+' container/*/Dockerfile* | sed 's/.*://' | sort -u |
+              while read -r leap; do
+                  revision=$(curl -sfL --max-time 30 "https://download.opensuse.org/distribution/leap/$leap/repo/oss/repodata/repomd.xml" |
+                      grep -o '<revision>[0-9]*' | head -1 | cut -d'>' -f2)
+                  if [[ -n "$revision" ]]; then
+                      echo "openSUSE Leap $leap repository revision $revision, published $(date -u -d "@$revision" +%FT%TZ)"
+                  else
+                      echo "openSUSE Leap $leap repository revision unknown"
+                  fi
+              done
