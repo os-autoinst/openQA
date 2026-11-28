@@ -4,6 +4,7 @@
 
 use Test::Most;
 
+use Mojo::Base -signatures;
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Utils;
@@ -114,32 +115,34 @@ subtest 'get job with verbose output' => sub {
     combined_like { clone_job_get_job($job_id, $url_handler, \%options) } qr/"id" : $job_id/, 'Job settings logged';
 };
 
+sub create_clone_chain ($first_id, $last_id, $result, $reason) {
+    my @chain = map {
+        $jobs->create(
+            {
+                id => $_,
+                clone_id => $_ < $last_id ? $_ + 1 : undef,
+                state => DONE,
+                result => $result,
+                TEST => 'foo',
+                reason => $reason,
+            })
+    } reverse $first_id .. $last_id;
+    $chain[0]->update({reason => undef});
+    return \@chain;
+}
+
 subtest 'auto_clone limits' => sub {
     $schema->txn_begin;
     my $limit = 3;
     local $t->app->config->{global}{auto_clone_limit} = $limit;
-    my @jobs;
     my $backend_reason = 'backend died: VNC Connection refused';
-    for my $i (reverse 10 .. 15) {
-        my $clone_id = $i < 15 ? $i + 1 : undef;
-        my $new = $jobs->create(
-            {
-                id => $i,
-                clone_id => $clone_id,
-                state => DONE,
-                result => INCOMPLETE,
-                TEST => 'foo',
-                reason => $backend_reason,
-            });
-        push @jobs, $new;
-    }
+    my @jobs = @{create_clone_chain(10, 15, INCOMPLETE, $backend_reason)};
     my $last = $jobs[0];
-    $last->update({reason => undef});
     my ($last_incompletes, $restart, %new);
 
     subtest 'more than auto_clone_limit incompletes - all matching auto_clone_regex' => sub {
-        $last_incompletes = $last->incomplete_ancestors($limit);
-        is scalar @$last_incompletes, $limit, "incomplete_ancestors returns $limit incompletes";
+        $last_incompletes = $last->not_complete_ancestors($limit);
+        is scalar @$last_incompletes, $limit, "not_complete_ancestors returns $limit ancestors";
         $restart = 0;
         $last->_compute_result_and_reason(\%new, 'incomplete', $backend_reason, \$restart);
         is $restart, 0, 'restart false';
@@ -148,9 +151,9 @@ subtest 'auto_clone limits' => sub {
 
     subtest 'more than auto_clone_limit incompletes - but less matching auto_clone_regex' => sub {
         $jobs[3]->update({reason => 'unrelated'});
-        delete $last->{_incomplete_ancestors};
-        $last_incompletes = $last->incomplete_ancestors($limit);
-        is scalar @$last_incompletes, $limit, "incomplete_ancestors returns $limit incompletes";
+        delete $last->{_not_complete_ancestors};
+        $last_incompletes = $last->not_complete_ancestors($limit);
+        is scalar @$last_incompletes, $limit, "not_complete_ancestors returns $limit ancestors";
         $restart = 0;
         %new = ();
         $last->_compute_result_and_reason(\%new, 'incomplete', $backend_reason, \$restart);
@@ -160,15 +163,43 @@ subtest 'auto_clone limits' => sub {
 
     subtest 'less than auto_clone_limit incompletes' => sub {
         $jobs[3]->update({result => 'failed'});
-        delete $last->{_incomplete_ancestors};
-        $last_incompletes = $last->incomplete_ancestors($limit);
-        is scalar @$last_incompletes, 2, 'incomplete_ancestors returns a row of 2 incompletes';
+        delete $last->{_not_complete_ancestors};
+        $last_incompletes = $last->not_complete_ancestors($limit);
+        is scalar @$last_incompletes, 2, 'not_complete_ancestors returns a row of 2 ancestors';
         $restart = 0;
         %new = ();
         $last->_compute_result_and_reason(\%new, 'incomplete', $backend_reason, \$restart);
         is $restart, 1, 'restart true';
         like $new{reason}, qr{Auto-restarting because.*auto_clone_regex}, '$reason is modified';
     };
+    $schema->txn_rollback;
+};
+
+subtest 'job exceeding the setup time is restarted by the default auto_clone_regex' => sub {
+    $schema->txn_begin;
+    my $reason = 'timeout: setup exceeded MAX_SETUP_TIME';
+    my $job = $jobs->create({id => 99950, state => DONE, result => TIMEOUT_EXCEEDED, TEST => 'foo'});
+    my %new;
+    my $restart = 0;
+    $job->_compute_result_and_reason(\%new, TIMEOUT_EXCEEDED, $reason, \$restart);
+    is $restart, 1, 'restart is requested';
+    like $new{reason}, qr{Auto-restarting because reason matches the configured "auto_clone_regex"},
+      'reason is extended';
+    $schema->txn_rollback;
+};
+
+subtest 'setup timeouts are not restarted beyond auto_clone_limit' => sub {
+    $schema->txn_begin;
+    my $limit = 3;
+    local $t->app->config->{global}{auto_clone_limit} = $limit;
+    my $reason = 'timeout: setup exceeded MAX_SETUP_TIME';
+    my $newest = create_clone_chain(20, 23, TIMEOUT_EXCEEDED, $reason)->[0];
+    is scalar @{$newest->not_complete_ancestors($limit)}, $limit, 'ancestors of the setup timeout chain are counted';
+    my %new;
+    my $restart = 0;
+    $newest->_compute_result_and_reason(\%new, TIMEOUT_EXCEEDED, $reason, \$restart);
+    is $restart, 0, 'no further restart is requested';
+    like $new{reason}, qr{Not restarting.*"auto_clone_regex".*3 times.*limit is 3}, 'reason explains the limit';
     $schema->txn_rollback;
 };
 

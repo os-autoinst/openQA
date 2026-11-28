@@ -147,7 +147,7 @@ sub default_config () {
             auto_duplicate_stale_jobs => 1,
             search_results_limit => 50000,
             auto_clone_regex =>
-'^(cache failure: |terminated prematurely: |api failure: Failed to register .* 503|backend died: .*VNC.*(timeout|timed out|refused)|QEMU terminated: Failed to allocate KVM HPT of order 25.* Cannot allocate memory|api failure: 403 response: timestamp mismatch|backend died: Open vSwitch command .* failed:)',
+'^(cache failure: |terminated prematurely: |api failure: Failed to register .* 503|backend died: .*VNC.*(timeout|timed out|refused)|QEMU terminated: Failed to allocate KVM HPT of order 25.* Cannot allocate memory|timeout: setup exceeded MAX_SETUP_TIME|api failure: 403 response: timestamp mismatch|backend died: Open vSwitch command .* failed:)',
             auto_clone_limit => 20,
             force_result_regex => '',
             parallel_children_collapsable_results => join(' ', OK_RESULTS),
@@ -388,8 +388,8 @@ sub read_config ($app) {
     $global_config->{recognized_referers} = [split /\s+/, $global_config->{recognized_referers}];
     if (my $regex = $global_config->{auto_clone_regex}) {
         $app->log->warn(
-            "Specified auto_clone_regex is invalid: $@Not restarting any jobs reported as incomplete by workers.")
-          unless eval { $global_config->{auto_clone_regex} = qr/$regex/ };
+"Specified auto_clone_regex is invalid: $@Not restarting any jobs reported as incomplete or as timed out during setup by workers."
+        ) unless eval { $global_config->{auto_clone_regex} = qr/$regex/ };
     }
     $config->{_openid_secret} = random_string(16);
     $config->{auth}->{method} =~ s/\s//g;
