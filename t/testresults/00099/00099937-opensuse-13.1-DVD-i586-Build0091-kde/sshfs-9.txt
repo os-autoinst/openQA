@@ -1,0 +1,3 @@
+# Command: echo M98FO; bash -oe pipefail /tmp/scriptM98FO.sh ; echo SCRIPT_FINISHEDM98FO-$?-
+# Result:
+guestregister is active

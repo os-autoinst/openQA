@@ -193,9 +193,11 @@ function renderModuleRow(module, snippets) {
     } else if (step.text) {
       if (title === 'wait_serial') {
         const previewLimit = 120;
-        // jshint ignore:start
-        let shortText = textData.replace(/.*# Result:\n*/s, '');
-        // jshint ignore:end
+        const scriptMarker = /;\s*echo SCRIPT_FINISHED\w*-[^\s;]*-/;
+        const openqaWrapper = /^echo \w+;\s*bash\s+.*\/tmp\/script\S+\.sh\s*$/;
+        const rawCommand = textData.match(/^# Command: (.*)$/m)?.[1];
+        const command = rawCommand?.replace(scriptMarker, '').trim();
+        let shortText = command && !openqaWrapper.test(command) ? command : textData.replace(/.*# Result:\n*/s, '');
         if (shortText.length > previewLimit) {
           shortText = shortText.substr(0, previewLimit) + '…';
         }
