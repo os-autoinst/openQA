@@ -546,6 +546,8 @@ sub _construct_isotovideo_cmd ($job_settings, $isotovideo) {
         my $branch = $job_settings->{OS_AUTOINST_GIT_BRANCH} // 'master';
         my $image = $job_settings->{OS_AUTOINST_CONTAINER_IMAGE}
           // 'registry.opensuse.org/devel/openqa/containers/os-autoinst_dev:latest';
+        my $setup_cmd = $job_settings->{OS_AUTOINST_CONTAINER_SETUP} // '';
+        $setup_cmd = "( $setup_cmd ) &&" if $setup_cmd;
 
         my $podman_dir = prjdir() . '/cache/podman';
         path($podman_dir)->make_path;
@@ -587,13 +589,15 @@ sub _construct_isotovideo_cmd ($job_settings, $isotovideo) {
             '--rm',
             '--entrypoint', '',
             '--device', '/dev/kvm',
+            '--network', 'pasta:-t,auto,-u,auto,-T,auto,-U,auto',
             '-v', getcwd() . ':/pool',
             '-w', '/pool',
             @local_mounts,
             @ca_mounts,
 
             $image,
-            'sh', '-c', "git clone --branch=$branch --depth=1 $repo && make -C os-autoinst && os-autoinst/isotovideo -d"
+            'sh', '-c',
+            "git clone --branch=$branch --depth=1 $repo && $setup_cmd make -C os-autoinst && os-autoinst/isotovideo -d"
         );
         return @cmd;
     }

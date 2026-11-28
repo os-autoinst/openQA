@@ -646,7 +646,7 @@ subtest '_construct_isotovideo_cmd' => sub {
     subtest 'containerized with OS_AUTOINST_GIT_REPO' => sub {
         my $settings = {OS_AUTOINST_GIT_REPO => 'https://github.com/foo/os-autoinst.git'};
         my @cmd = OpenQA::Worker::Engines::isotovideo::_construct_isotovideo_cmd($settings, $isotovideo);
-        is scalar(@cmd), 29, 'returns a list of execution arguments';
+        is scalar(@cmd), 31, 'returns a list of execution arguments';
         my $podman_dir = prjdir() . '/cache/podman';
         my $podman_runroot = "$podman_dir/run";
         my $podman_tmp_dir = getcwd() . '/podman_tmp';
@@ -669,17 +669,19 @@ subtest '_construct_isotovideo_cmd' => sub {
         is $cmd[16], '', 'clears entrypoint';
         is $cmd[17], '--device', 'adds device';
         is $cmd[18], '/dev/kvm', 'passes kvm';
-        is $cmd[19], '-v', 'mounts a volume';
-        is $cmd[20], getcwd() . ':/pool', 'mounts getcwd() to pool';
-        is $cmd[21], '-w', 'sets working dir flag';
-        is $cmd[22], '/pool', 'sets working dir';
-        is $cmd[23], '-v', 'mounts share volume';
+        is $cmd[19], '--network', 'configures network';
+        is $cmd[20], 'pasta:-t,auto,-u,auto,-T,auto,-U,auto', 'sets port forwarding';
+        is $cmd[21], '-v', 'mounts a volume';
+        is $cmd[22], getcwd() . ':/pool', 'mounts getcwd() to pool';
+        is $cmd[23], '-w', 'sets working dir flag';
+        is $cmd[24], '/pool', 'sets working dir';
+        is $cmd[25], '-v', 'mounts share volume';
         my $share = prjdir() . '/share';
-        is $cmd[24], "$share:$share:ro", 'mounts share dir ro';
-        is $cmd[25], 'registry.opensuse.org/devel/openqa/containers/os-autoinst_dev:latest', 'uses default image';
-        is $cmd[26], 'sh', 'executes sh';
-        is $cmd[27], '-c', 'runs shell command';
-        like $cmd[28], qr/git clone --branch=master --depth=1 https:\/\/github.com\/foo\/os-autoinst\.git/,
+        is $cmd[26], "$share:$share:ro", 'mounts share dir ro';
+        is $cmd[27], 'registry.opensuse.org/devel/openqa/containers/os-autoinst_dev:latest', 'uses default image';
+        is $cmd[28], 'sh', 'executes sh';
+        is $cmd[29], '-c', 'runs shell command';
+        like $cmd[30], qr/git clone --branch=master --depth=1 https:\/\/github.com\/foo\/os-autoinst\.git/,
           'clones master branch by default';
     };
 
@@ -690,10 +692,23 @@ subtest '_construct_isotovideo_cmd' => sub {
             OS_AUTOINST_CONTAINER_IMAGE => 'my_custom_image:latest'
         };
         my @cmd = OpenQA::Worker::Engines::isotovideo::_construct_isotovideo_cmd($settings, $isotovideo);
-        is scalar(@cmd), 29, 'returns a list of execution arguments';
-        is $cmd[25], 'my_custom_image:latest', 'uses custom image';
-        like $cmd[28], qr/git clone --branch=my_feature --depth=1 https:\/\/github.com\/foo\/os-autoinst\.git/,
+        is scalar(@cmd), 31, 'returns a list of execution arguments';
+        is $cmd[27], 'my_custom_image:latest', 'uses custom image';
+        like $cmd[30], qr/git clone --branch=my_feature --depth=1 https:\/\/github.com\/foo\/os-autoinst\.git/,
           'clones custom branch';
+    };
+
+    subtest 'containerized with OS_AUTOINST_GIT_BRANCH and custom setup command' => sub {
+        my $settings = {
+            OS_AUTOINST_GIT_REPO => 'https://github.com/foo/os-autoinst.git',
+            OS_AUTOINST_GIT_BRANCH => 'my_feature',
+            OS_AUTOINST_CONTAINER_SETUP => 'zypper in ipmitool'
+        };
+        my @cmd = OpenQA::Worker::Engines::isotovideo::_construct_isotovideo_cmd($settings, $isotovideo);
+        is scalar(@cmd), 31, 'returns a list of execution arguments';
+        like $cmd[30], qr/git clone --branch=my_feature --depth=1 https:\/\/github.com\/foo\/os-autoinst\.git/,
+          'clones custom branch';
+        like $cmd[30], qr/zypper in ipmitool/, 'executes setup command';
     };
 
     subtest 'containerized without OS_AUTOINST_GIT_REPO' => sub {
@@ -715,7 +730,7 @@ subtest '_construct_isotovideo_cmd' => sub {
         my $ca_mount = $tmp_dir->to_string;
         is scalar(grep { $_ eq "$ca_mount:$ca_mount:ro" } @cmd), 1, 'mounts existing CA directory';
         is scalar(grep { $_ eq '/nonexistent/dir:/nonexistent/dir:ro' } @cmd), 0, 'ignores non-existent CA directory';
-        is scalar(@cmd), 31, 'adds exactly 2 elements for the single CA mount';
+        is scalar(@cmd), 33, 'adds exactly 2 elements for the single CA mount';
     };
 
     subtest 'clears stale runroot on boot id change' => sub {
