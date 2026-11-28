@@ -1,7 +1,11 @@
 ---
 name: check-helm-chart
 # yamllint disable-line rule:truthy
-on: [push, pull_request]
+on:
+  # a branch push inside the repository must not bypass the gate of its pull request
+  push:
+    branches: [master]
+  pull_request:
 jobs:
   lint-chart:
     permissions:
@@ -29,6 +33,7 @@ jobs:
   install-chart:
     permissions:
       contents: read
+      pull-requests: read
     runs-on: ubuntu-latest
     needs: lint-chart
     env:
@@ -36,6 +41,17 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      # The install pulls images that are rebuilt from master, so unrelated PRs must not
+      # be blocked by them. The remaining steps only fetch tooling; `Install retry`
+      # tracks the moving `main` branch of okurz/retry and is accepted as-is
+      - name: Check whether the chart install is relevant
+        id: relevant
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RELEVANT: ^container/helm/|^tools/test_helm_chart$|^tools/retry$|^tools/pr_files_match$|^Makefile$|^\.github/workflows/check-helm-chart\.yml$
+        run: echo "install=$(tools/pr_files_match "$PR_NUMBER" "$RELEVANT")" >> "$GITHUB_OUTPUT"
 
       - name: Install Helm
         uses: azure/setup-helm@2f5e7bc67f1f9972ab16657bb795f36d8f04de0e  # v5.1.0
@@ -56,18 +72,22 @@ jobs:
         uses: helm/chart-testing-action@720270857a28afd41e2426521a7801db09e9b510  # v2.9.0
 
       - name: Create kind cluster
+        if: steps.relevant.outputs.install == 'true'
         uses: helm/kind-action@ea822c7bf1874f08e5a491df991c228edffc3376  # v1.15.2
 
       - name: Download images
+        if: steps.relevant.outputs.install == 'true'
         run: |
           for i in webui worker; do
             retry -r 7 -s 15 -e docker pull $REGISTRY_PATH/openqa_$i:latest
           done
 
       - name: Load images into the Cluster
+        if: steps.relevant.outputs.install == 'true'
         run: |
           docker exec chart-testing-control-plane crictl pull $REGISTRY_PATH/openqa_webui:latest
           docker exec chart-testing-control-plane crictl pull $REGISTRY_PATH/openqa_worker:latest
 
       - name: Run chart-testing
+        if: steps.relevant.outputs.install == 'true'
         run: make test-helm-install
