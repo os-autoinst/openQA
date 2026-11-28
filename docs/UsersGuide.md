@@ -1872,6 +1872,29 @@ before moving each job's results. It stops immediately if:
 > archived important job exceeds the retention for important jobs, it is still
 > subject to deletion during the standard cleanup.
 
+### Manual archiving of specific jobs
+
+The script `openqa-archive-jobs` archives the results of the specified jobs
+right away. It moves each job's result directory to the archive directory and
+flags the job as archived, regardless of the job's importance, retention and
+the configured `[archiving]` thresholds. Jobs that do not exist, are already
+archived or are not yet finished are skipped. Job IDs can be passed as
+arguments or read from a file (or from standard input via `--file -`).
+
+The script must **not** be run as root but as the user owning the result
+directories (by default `geekotest`). Otherwise the archived files end up being
+owned by root and later cleanup or archiving fails with permission errors. Use
+`--dry-run` to see what would be done first:
+
+```sh
+sudo -u geekotest /usr/share/openqa/script/openqa-archive-jobs --dry-run 1234 1235
+sudo -u geekotest /usr/share/openqa/script/openqa-archive-jobs --file job-ids.txt
+```
+
+The script does not take the Minion locks of the regular cleanup, so avoid
+running it for jobs that the Gru service is cleaning up or archiving at the same
+time.
+
 ### Space-aware cleanup
 
 The cleanup of logs/results uses time-based retentions and hence is independent

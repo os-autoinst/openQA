@@ -751,6 +751,7 @@ fi
 %{_datadir}/openqa/script/openqa-websockets-daemon
 %{_datadir}/openqa/script/openqa-livehandler
 %{_datadir}/openqa/script/openqa-livehandler-daemon
+%{_datadir}/openqa/script/openqa-archive-jobs
 %{_datadir}/openqa/script/openqa-enqueue-asset-cleanup
 %{_datadir}/openqa/script/openqa-enqueue-audit-event-cleanup
 %{_datadir}/openqa/script/openqa-enqueue-bug-cleanup
