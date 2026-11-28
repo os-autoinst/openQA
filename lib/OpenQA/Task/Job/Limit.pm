@@ -76,6 +76,11 @@ sub _limit ($job, $args = undef) {
         $job->note(archiving_stopped => "error: $e");
     }
 
+    # enqueue the cleanup of results left behind by interrupted archiving unless one is already pending
+    my $leftover_jobs
+      = $app->minion->jobs({tasks => ['delete_leftover_results'], states => ['inactive', 'active']})->total;
+    $app->gru->enqueue(delete_leftover_results => [], {delay => ONE_DAY}) unless $leftover_jobs;
+
     # create temporary job group outside of DB to collect
     # jobs without job_group_id
     my $schema = $app->schema;
@@ -385,14 +390,11 @@ sub _archive_important_jobs_upfront (%args) {
             next;
         }
         log_info "Archiving important job $job_id";
-        try {
-            $candidate->archive($signal_guard);
-            $archive_jobs_count++;
-        }
-        catch ($e) {
-            log_warning "Failed to archive job $job_id: $e";
-            push @skipped_ids, $job_id;
-        }
+        my $archived_path;
+        try { $archived_path = $candidate->archive($signal_guard); }
+        catch ($e) { log_warning "Failed to archive job $job_id: $e" }
+        if ($archived_path) { $archive_jobs_count++ }
+        else { push @skipped_ids, $job_id }
     }
     $job->note(archived_jobs => $archive_jobs_count);
     $job->note(archiving_stopped => $archiving_stopped_reason);
