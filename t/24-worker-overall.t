@@ -218,10 +218,7 @@ subtest 'worker load' => sub {
     is $load->[0], 10.93, 'expected load';
     is_deeply $load, [10.93, 10.91, 10.25], 'expected computed system load, rising flank';
     is_deeply OpenQA::Utils::load_avg(path($ENV{OPENQA_CONFIG}, 'invalid_loadavg')), [], 'error on invalid load';
-    $worker->settings->global_settings->{WORKER_LOAD_FACTOR} = 0;
-    $worker->settings->global_settings->{WORKER_LOAD_JITTER} = 0;
     ok !$worker->_check_system_utilization, 'default threshold not exceeded';
-    $worker->settings->global_settings->{WORKER_LOAD_LOW_LIMIT} = 4;
     ok $worker->_check_system_utilization(10), 'stricter threshold exceeded by load';
     ok !$worker->_check_system_utilization(10, [3, 9, 11]), 'load ok on falling flank';
     ok $worker->_check_system_utilization(10, [12, 9, 3]), 'load exceeded on rising flank';
@@ -1129,9 +1126,6 @@ subtest 'handle job status changes' => sub {
             $reset_job_and_queue->();
             $worker_mock->unmock('is_qemu_running');
             $worker->settings->global_settings->{CRITICAL_LOAD_AVG_THRESHOLD} = '10';
-            $worker->settings->global_settings->{WORKER_LOAD_FACTOR} = 0;
-            $worker->settings->global_settings->{WORKER_LOAD_JITTER} = 0;
-
             combined_like { $worker->_handle_job_status_changed($fake_job, {status => 'stopped', reason => 'done'}) }
             qr/Job 42 from some-host finished - reason: done.*Continuing.*769.*despite.*load.*exceeding/s,
               'continuation despite error logged';
