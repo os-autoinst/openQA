@@ -1165,9 +1165,11 @@ and failures due to delays of command execution and
 [thrashing](<https://en.wikipedia.org/wiki/Thrashing_(computer_science)>).
 To prevent "load storms" (synchronized boot avalanches), workers check the
 system load average before picking up jobs. If the load is very high, they
-temporarily reject jobs. If the load is moderately high, they accept a job only
-after a load-proportionate delay to stagger job acceptance. The load
-thresholds, factor, and jitter are configurable in `workers.ini` via
+temporarily reject jobs. The deferral is opt-in: with a non-zero
+`WORKER_LOAD_FACTOR`, a worker whose load is moderately high accepts a job only
+after a load-proportionate delay to stagger job acceptance, while the default
+factor of `0` disables it. The load thresholds, factor, and jitter are
+configurable in `workers.ini` via
 `CRITICAL_LOAD_AVG_THRESHOLD`, `WORKER_LOAD_LOW_LIMIT`, `WORKER_LOAD_FACTOR`
 and `WORKER_LOAD_JITTER`. For this to be more effective, also check out the
 setting `LOCK_NAME`. These settings are explained in greater detail in
