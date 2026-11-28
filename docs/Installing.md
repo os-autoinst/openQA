@@ -1521,10 +1521,13 @@ the openQA instance.
 ### Automatic cloning of incomplete jobs
 
 By default, when a worker reports an incomplete job due to a cache service
-related problem, the job is automatically cloned. It is possible to extend the
-regex to cover other types of incompletes as well by adjusting
-`auto_clone_regex` in the `global` section of the config file. It is also
-possible to assign `0` to prevent the automatic cloning.
+related problem, the job is automatically cloned, as are jobs that exceed
+`MAX_SETUP_TIME`. It is possible to cover other failure reasons as well by
+adjusting `auto_clone_regex` in the `global` section of the config file; an
+explicitly configured value replaces the default. `auto_clone_limit` (20 by
+default) caps how often a chain of such jobs is restarted, and a chain that
+contains a failure with a non-matching reason gets a fresh budget. It is also
+possible to assign `0` to `auto_clone_regex` to prevent the automatic cloning.
 
 Note that jobs marked as incomplete by the stale job detection are not affected
 by this configuration and cloned in any case.

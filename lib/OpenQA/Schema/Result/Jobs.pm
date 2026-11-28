@@ -2046,16 +2046,18 @@ sub descendants ($self, $limit = -1) {
     $self->{_descendants} = $sth->fetchrow_array;
 }
 
-sub incomplete_ancestors ($self, $limit = -1) {
-    my $ancestors = $self->{_incomplete_ancestors};
+sub not_complete_ancestors ($self, $limit = -1) {
+    my $ancestors = $self->{_not_complete_ancestors};
     return $ancestors if defined $ancestors;
-    my $sth = $self->result_source->schema->storage->dbh->prepare(<<~'EOM');
+    my $dbh = $self->result_source->schema->storage->dbh;
+    my $not_complete = join ', ', map { $dbh->quote($_) } NOT_COMPLETE_RESULTS;
+    my $sth = $dbh->prepare(<<~"EOM");
     with recursive orig_id as (
       select ? as orig_id, 0 as level, ? as orig_result, ? as orig_reason
         union all
       select id as orig_id, orig_id.level + 1 as level, result as orig_result, reason as orig_reason
         from jobs join orig_id on orig_id.orig_id = jobs.clone_id
-        where result = 'incomplete' and (? < 0 or level < ?))
+        where result in ($not_complete) and (? < 0 or level < ?))
       select orig_id, level, orig_reason from orig_id order by level asc;
     EOM
     $sth->bind_param(1, $self->id, SQL_BIGINT);
@@ -2066,7 +2068,7 @@ sub incomplete_ancestors ($self, $limit = -1) {
     $sth->execute;
     $ancestors = $sth->fetchall_arrayref;
     shift @$ancestors;
-    $self->{_incomplete_ancestors} = $ancestors;
+    $self->{_not_complete_ancestors} = $ancestors;
 }
 
 sub latest_job ($self) {
@@ -2227,7 +2229,7 @@ sub _compute_result_and_reason ($self, $new_val, $result, $reason, $restart) {
     my $reason_unknown = !$self->reason;
     $new_val->{result} = $result if $result_unknown;
     if (($result_unknown || $reason_unknown) && defined $reason) {
-        # restart incompletes when the reason matches the configured regex
+        # restart jobs that did not complete when the reason matches the configured regex
         my $append_reason = '';
         my $auto_clone_regex = OpenQA::App->singleton->config->{global}->{auto_clone_regex};
         if (    ($result eq INCOMPLETE || $result eq TIMEOUT_EXCEEDED)
@@ -2235,8 +2237,8 @@ sub _compute_result_and_reason ($self, $new_val, $result, $reason, $restart) {
             and $reason =~ $auto_clone_regex)
         {
             my $limit = OpenQA::App->singleton->config->{global}{auto_clone_limit};
-            my $ancestors = $self->incomplete_ancestors($limit + 1);
-            # how many of those incomplete ancestors had a reason not matching auto_clone?
+            my $ancestors = $self->not_complete_ancestors($limit + 1);
+            # how many of those ancestors had a reason not matching auto_clone?
             my $unrelated = grep { $_->[2] !~ m/$auto_clone_regex/ } @$ancestors;
             my $restarts = @$ancestors;
             if ($restarts < $limit || $unrelated > 0) {
