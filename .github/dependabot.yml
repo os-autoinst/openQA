@@ -29,3 +29,12 @@ updates:
     labels:
       - waiting
       - dependencies
+    groups:
+      # major bumps of the CSS dependencies the web UI styling contracts depend on
+      frontend-css-major:
+        patterns:
+          - '@fortawesome/*'
+          - 'bootstrap'
+          - 'chosen-js'
+        update-types:
+          - 'major'

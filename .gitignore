@@ -24,6 +24,7 @@ docker.env
 node_modules
 nytprof/
 /public/packed/
+/public/dist/
 /public/sass/bootstrap.scss
 # Tests
 .prove

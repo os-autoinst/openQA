@@ -337,7 +337,7 @@ async function renderModuleTable(container, response, shouldContinue = () => tru
     (module, i, category) => {
       if (module.category !== category) {
         tbody.appendChild(
-          E('tr', [E('td', [E('i', [], {class: 'fa-regular fa-folderpen'}), '\u00a0' + module.category], {colspan: 3})])
+          E('tr', [E('td', [E('i', [], {class: 'fa-solid fa-folder-open'}), '\u00a0' + module.category], {colspan: 3})])
         );
       }
       tbody.appendChild(renderModuleRow(module, response.snippets));
